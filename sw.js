@@ -1,9 +1,10 @@
-const CACHE_NAME = 'rhythm-preview-v1';
+const CACHE_NAME = 'rhythm-preview-v14';
 const PRECACHE = [
   './',
   './index.html',
   './rythm-r-mark.png',
   './rythm-wordmark.png',
+  './rythm-splash-mark.svg',
   './manifest.webmanifest'
 ];
 

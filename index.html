@@ -15,6 +15,7 @@
   <meta property="og:type" content="website">
   <link rel="icon" type="image/png" href="rythm-r-mark.png">
   <link rel="apple-touch-icon" href="rythm-r-mark.png">
+
   <link rel="manifest" href="manifest.webmanifest">
   <title>Rhythm • One App for the Whole Day</title>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -59,6 +60,25 @@
       --rhythm-low: #D4836A;
       --rhythm-med: #C9A227;
       --rhythm-high: #3D9A8B;
+      --rhythm-ease-out: cubic-bezier(0.32, 0.72, 0, 1);
+      --rhythm-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --rhythm-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 4px 16px rgba(0, 0, 0, 0.18);
+      --rhythm-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 10px 32px rgba(0, 0, 0, 0.28);
+      --rhythm-glow-primary: 0 0 0 1px rgba(91, 184, 168, 0.25);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--rhythm-primary-light);
+      outline-offset: 2px;
+    }
+
+    button, [role="tab"] {
+      touch-action: manipulation;
     }
     
     html, body {
@@ -87,16 +107,130 @@
     }
 
     .task-complete {
-      animation: completePop 0.4s ease forwards;
+      animation: completePop 0.42s var(--rhythm-ease-spring) forwards;
+    }
+
+    @keyframes completePop {
+      0% { transform: scale(1); }
+      35% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes completeCheck {
+      0% { transform: scale(0.6); opacity: 0; }
+      60% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes bannerSlide {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes sheetUp {
+      from { opacity: 0; transform: translateY(100%); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translate(-50%, 12px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    @keyframes toastOut {
+      from { opacity: 1; transform: translate(-50%, 0); }
+      to { opacity: 0; transform: translate(-50%, 8px); }
+    }
+
+    .rhythm-card {
+      box-shadow: var(--rhythm-shadow-sm);
+      transition: transform 0.18s var(--rhythm-ease-out), box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+    }
+
+    .rhythm-card:hover {
+      box-shadow: var(--rhythm-shadow-md);
+    }
+
+    .rhythm-card:active {
+      transform: scale(0.985);
+    }
+
+    .rhythm-empty {
+      background: radial-gradient(ellipse at 50% 0%, rgba(61, 154, 139, 0.08) 0%, transparent 65%), var(--rhythm-surface);
+      border: 1px solid var(--rhythm-border);
+      border-radius: 1.25rem;
+      padding: 2rem 1.25rem;
+      text-align: center;
+    }
+
+    .rhythm-empty-icon {
+      font-size: 1.75rem;
+      margin-bottom: 0.65rem;
+      opacity: 0.9;
     }
 
     .section-header {
-      font-size: 0.95rem;
-      letter-spacing: -.015em;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+      font-weight: 600;
+    }
+
+    .main-nav {
+      position: relative;
+      gap: 0.15rem;
+    }
+
+    .main-nav-tab {
+      flex: 1;
+      padding: 0.65rem 0.25rem 0.55rem;
+      border: none;
+      background: transparent;
+      color: var(--rhythm-muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: color 0.2s ease, border-color 0.25s var(--rhythm-ease-out);
+    }
+
+    .main-nav-tab:hover {
+      color: var(--rhythm-text);
+    }
+
+    .main-nav-tab.nav-active {
+      color: var(--rhythm-primary-light);
+      border-bottom-color: var(--rhythm-primary);
+    }
+
+    .life-nav-tab {
+      flex: 1;
+      padding: 0.55rem 0.25rem;
+      border: none;
+      background: transparent;
+      color: var(--rhythm-muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s ease, border-color 0.25s var(--rhythm-ease-out);
+    }
+
+    .life-nav-tab.life-panel-active {
+      color: var(--rhythm-primary-light);
+      border-bottom-color: var(--rhythm-primary);
+    }
+
+    .tab-content.tab-enter {
+      animation: tabFadeIn 0.22s var(--rhythm-ease-out) forwards;
     }
 
     .nav-active {
-      color: var(--rhythm-primary);
+      color: var(--rhythm-primary-light);
       border-bottom: 3px solid var(--rhythm-primary);
     }
 
@@ -132,10 +266,12 @@
     }
 
     .site-header {
-      display: none;
+      display: block;
       flex-shrink: 0;
       border-bottom: 1px solid var(--rhythm-border);
-      background: linear-gradient(180deg, #141B26 0%, var(--rhythm-bg) 100%);
+      background: linear-gradient(180deg, rgba(20, 27, 38, 0.92) 0%, rgba(15, 20, 25, 0.88) 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .site-header-inner {
@@ -178,7 +314,9 @@
       padding: 0.2rem 0.5rem;
       border: 1px solid var(--rhythm-border);
       border-radius: 999px;
-      margin-left: 0.25rem;
+      margin-left: 0.5rem;
+      align-self: center;
+      flex-shrink: 0;
     }
 
     .site-header-actions {
@@ -251,9 +389,213 @@
       flex: 1;
       min-height: 0;
       overflow-y: auto;
-      overflow-x: hidden;
+      overflow-x: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      padding-bottom: 0.5rem;
+    }
+
+    .library-column {
+      flex: 0 0 220px;
+      min-width: 200px;
+      max-width: 260px;
+      background: var(--rhythm-surface);
+      border: 1px solid var(--rhythm-border);
+      border-radius: 1rem;
+      padding: 0.65rem;
+      box-shadow: var(--rhythm-shadow-sm);
+    }
+
+    .library-column-header {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--rhythm-border);
+    }
+
+    .library-column-tasks {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      max-height: 55vh;
+      overflow-y: auto;
+    }
+
+    .library-column-tasks .library-task-card {
+      margin-bottom: 0;
+    }
+
+    .energy-btn {
+      min-height: 3.25rem;
+      font-size: 0.9rem;
+      transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.12s ease, box-shadow 0.22s ease;
+    }
+
+    .energy-btn.nav-active,
+    .energy-btn.bg-rhythm-low,
+    .energy-btn.bg-rhythm-med,
+    .energy-btn.bg-rhythm-high,
+    .energy-btn.bg-rhythm-primary {
+      box-shadow: var(--rhythm-glow-primary);
+    }
+
+    .status-bar {
+      background: rgba(26, 35, 50, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding-bottom: calc(0.5rem + var(--safe-bottom));
+    }
+
+    .status-bar-btn {
+      min-height: 2.25rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--rhythm-border);
+      background: var(--rhythm-raised);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--rhythm-primary-light);
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    .status-bar-btn:active {
+      transform: scale(0.96);
+      background: var(--rhythm-border);
+    }
+
+    #toast {
+      bottom: calc(1.5rem + var(--safe-bottom));
+      box-shadow: var(--rhythm-shadow-md);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    #toast.toast-show {
+      animation: toastIn 0.32s var(--rhythm-ease-out) forwards;
+    }
+
+    #toast.toast-hide {
+      animation: toastOut 0.22s ease forwards;
+    }
+
+    .modal-overlay-blur {
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .qt-recurrence-row {
+      display: flex;
+      gap: 0.35rem;
+      overflow-x: auto;
+      padding-bottom: 0.15rem;
+      margin: 0 -0.15rem;
+      padding-left: 0.15rem;
+      padding-right: 0.15rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .qt-recurrence-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .qt-recur-chip {
+      flex-shrink: 0;
+      padding: 0.38rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      border: 1px solid var(--rhythm-border);
+      background: var(--rhythm-raised);
+      color: var(--rhythm-muted);
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .qt-recur-chip:hover {
+      border-color: rgba(61, 154, 139, 0.45);
+      color: var(--rhythm-text);
+    }
+
+    .qt-recur-chip.is-active {
+      border-color: var(--rhythm-primary);
+      background: rgba(61, 154, 139, 0.15);
+      color: var(--rhythm-text);
+    }
+
+    .modal-sheet {
+      animation: sheetUp 0.34s var(--rhythm-ease-out) forwards;
+    }
+
+    .modal-grab-pill {
+      width: 2.5rem;
+      height: 0.25rem;
+      border-radius: 999px;
+      background: var(--rhythm-border);
+      margin: 0 auto 0.75rem;
+    }
+
+    .touch-target {
+      min-width: 2.75rem;
+      min-height: 2.75rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .input-polish {
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .input-polish:focus-visible {
+      outline: none;
+      border-color: var(--rhythm-primary-light);
+      box-shadow: 0 0 0 3px rgba(91, 184, 168, 0.22);
+    }
+
+    .onboarding-card {
+      transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.12s ease;
+    }
+
+    .onboarding-card.is-selected {
+      border-color: var(--rhythm-primary) !important;
+      background: rgba(61, 154, 139, 0.1) !important;
+      box-shadow: var(--rhythm-glow-primary);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .splash-logo-stage.is-present,
+      .splash-logo-stage.is-growing,
+      .splash-logo-stage.is-dissolving,
+      .splash-logo-stage.is-present .splash-mark-core,
+      .splash-logo-stage.is-present .splash-mark-wave,
+      .splash-slogan.is-visible,
+      .splash-slogan.is-exiting,
+      .splash-logo-stage.is-dissolving .splash-logo-scale,
+      .splash-screen-v2.is-revealing {
+        animation: none !important;
+      }
+      .splash-slogan.is-visible { opacity: 1; transform: none; }
+      .splash-slogan.is-exiting { opacity: 0; transform: translateY(-20vh); }
+      .splash-logo-stage.is-present { opacity: 1; visibility: visible; }
+      .splash-logo-stage.is-present .splash-logo-scale { transform: scale(0.44); filter: none; }
+      .splash-logo-stage.is-growing .splash-logo-scale { transform: scale(2.95); filter: none; }
+      .splash-logo-stage.is-dissolving { opacity: 0; }
+      .splash-screen-v2.is-revealing { opacity: 0; }
+      .splash-mark-core { opacity: 1; transform: none; }
+      .splash-mark-wave { opacity: 1; }
+      .splash-mark-wave-glow { stroke-dashoffset: 0; opacity: 0; }
     }
 
     #library-list::-webkit-scrollbar {
@@ -280,13 +622,19 @@
     #header-weather:active {
       opacity: 0.85;
     }
+    #app-weather-row {
+      width: 100%;
+    }
+
     #header-weather-hours {
       display: flex;
-      gap: 0.35rem;
+      gap: 0.45rem;
       overflow: hidden;
     }
     .header-weather-chip {
       flex: 1;
+      min-width: 58px;
+      min-height: 3.5rem;
       min-width: 0;
     }
     .weather-pane-row {
@@ -469,7 +817,9 @@
       transform: scale(0.96);
     }
     .library-filter-chip.is-active {
-      transform: scale(1.04);
+      background: rgba(61, 154, 139, 0.18);
+      border-color: var(--rhythm-primary);
+      font-weight: 600;
     }
 
     .library-task-card {
@@ -493,17 +843,328 @@
     }
 
     .suggestion-card {
-      background: linear-gradient(145deg, #1e3a4a, var(--rhythm-surface));
+      background: linear-gradient(145deg, rgba(30, 58, 74, 0.95), var(--rhythm-surface));
+      box-shadow: var(--rhythm-shadow-sm), var(--rhythm-glow-primary);
+      border-left: 3px solid var(--rhythm-accent) !important;
+    }
+
+    .smart-banner-enter {
+      animation: bannerSlide 0.3s var(--rhythm-ease-out) forwards;
+    }
+
+    .smart-banner-mute {
+      position: absolute;
+      top: 0;
+      right: 0;
+      z-index: 2;
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.5rem;
+      color: var(--rhythm-muted);
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .smart-banner-mute:hover {
+      color: var(--rhythm-text);
+      background: var(--rhythm-raised);
+    }
+
+    #smart-bill-footnote {
+      color: #5B8FD9;
+      font-size: 0.62rem;
+      line-height: 1.35;
+      margin-top: 0.35rem;
+    }
+
+    .header-feedback-btn {
+      color: var(--rhythm-muted);
+      transition: color 0.15s ease, background 0.15s ease;
+      border-radius: 0.75rem;
+    }
+
+    .header-feedback-btn:hover {
+      color: var(--rhythm-primary-light);
+      background: var(--rhythm-raised);
+    }
+
+    /* ── Rhythm Brief launcher ── */
+    .rhythm-brief-launcher {
+      display: block;
+      cursor: pointer;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(61, 154, 139, 0.35);
+      background:
+        linear-gradient(135deg, rgba(61, 154, 139, 0.14) 0%, rgba(30, 58, 74, 0.55) 48%, var(--rhythm-surface) 100%);
+      box-shadow: var(--rhythm-shadow-sm), 0 0 0 1px rgba(91, 184, 168, 0.08);
+      padding: 0.85rem 1rem;
+      transition: transform 0.16s var(--rhythm-ease-out), border-color 0.16s ease, box-shadow 0.16s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .rhythm-brief-launcher:hover {
+      border-color: rgba(91, 184, 168, 0.5);
+      box-shadow: var(--rhythm-shadow-sm), var(--rhythm-glow-primary);
+    }
+
+    .rhythm-brief-launcher:active {
+      transform: scale(0.985);
+    }
+
+    .rhythm-brief-launcher:focus-visible {
+      outline: 2px solid var(--rhythm-primary-light);
+      outline-offset: 2px;
+    }
+
+    .rhythm-brief-launcher-icon {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 0.85rem;
+      background: rgba(61, 154, 139, 0.22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--rhythm-primary-light);
+      font-size: 1rem;
+    }
+
+    .rhythm-brief-launcher-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--rhythm-text);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .rhythm-brief-launcher-sub {
+      font-size: 0.68rem;
+      color: var(--rhythm-muted);
+      line-height: 1.35;
+      margin-top: 0.15rem;
+    }
+
+    .rhythm-brief-stat {
+      font-size: 0.58rem;
+      font-weight: 600;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      background: rgba(61, 154, 139, 0.15);
+      color: var(--rhythm-primary-light);
+      white-space: nowrap;
+    }
+
+    .rhythm-brief-stat.is-urgent {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fbbf24;
+    }
+
+    .rhythm-brief-chevron {
+      color: var(--rhythm-primary-light);
+      opacity: 0.7;
+      font-size: 0.7rem;
+      flex-shrink: 0;
+    }
+
+    .tutorial-target-pulse.rhythm-brief-launcher {
+      animation: briefLauncherPulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes briefLauncherPulse {
+      0%, 100% { box-shadow: var(--rhythm-shadow-sm), 0 0 0 0 rgba(91, 184, 168, 0.35); }
+      50% { box-shadow: var(--rhythm-shadow-sm), 0 0 0 6px rgba(91, 184, 168, 0); }
+    }
+
+    /* ── Rhythm Brief modal ── */
+    .rhythm-brief-sheet {
+      max-height: 92vh;
+      overflow-y: auto;
+      border-radius: 1.5rem 1.5rem 0 0;
+    }
+
+    .rhythm-brief-hero {
+      border-radius: 1.15rem;
+      background: linear-gradient(145deg, rgba(61, 154, 139, 0.2), rgba(30, 58, 74, 0.4));
+      border: 1px solid rgba(61, 154, 139, 0.25);
+      padding: 1rem 1.1rem;
+      margin-bottom: 1rem;
+    }
+
+    .rhythm-brief-hero-headline {
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--rhythm-text);
+      letter-spacing: -0.02em;
+    }
+
+    .rhythm-brief-hero-insight {
+      font-size: 0.72rem;
+      color: var(--rhythm-muted);
+      line-height: 1.45;
+      margin-top: 0.45rem;
+    }
+
+    .rhythm-brief-toggle {
+      display: flex;
+      gap: 0.35rem;
+      padding: 0.25rem;
+      border-radius: 0.85rem;
+      background: var(--rhythm-raised);
+      border: 1px solid var(--rhythm-border);
+      margin-bottom: 1rem;
+    }
+
+    .rhythm-brief-toggle-btn {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.65rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      background: transparent;
+      color: var(--rhythm-muted);
+    }
+
+    .rhythm-brief-toggle-btn.is-active {
+      background: var(--rhythm-primary);
+      color: #fff;
+    }
+
+    .rhythm-brief-section {
+      margin-bottom: 1.1rem;
+    }
+
+    .rhythm-brief-section-hdr {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--rhythm-muted);
+      margin-bottom: 0.55rem;
+    }
+
+    .rhythm-brief-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 0.95rem;
+      background: var(--rhythm-surface);
+      border: 1px solid var(--rhythm-border);
+      margin-bottom: 0.45rem;
+    }
+
+    .rhythm-brief-item-priority {
+      width: 1.35rem;
+      height: 1.35rem;
+      border-radius: 0.45rem;
+      background: rgba(61, 154, 139, 0.2);
+      color: var(--rhythm-primary-light);
+      font-size: 0.62rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .rhythm-brief-item-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--rhythm-text);
+      line-height: 1.3;
+    }
+
+    .rhythm-brief-item-meta {
+      font-size: 0.62rem;
+      color: var(--rhythm-muted);
+      margin-top: 0.15rem;
+      line-height: 1.35;
+    }
+
+    .rhythm-brief-empty {
+      font-size: 0.72rem;
+      color: var(--rhythm-muted);
+      padding: 0.65rem 0.75rem;
+      border-radius: 0.95rem;
+      background: var(--rhythm-raised);
+      border: 1px dashed var(--rhythm-border);
+    }
+
+    .rhythm-brief-jump {
+      font-size: 0.62rem;
+      color: var(--rhythm-primary-light);
+      margin-top: 0.35rem;
+      cursor: pointer;
+    }
+
+    .feedback-rating-btn {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.65rem;
+      border: 1px solid var(--rhythm-border);
+      background: var(--rhythm-raised);
+      color: var(--rhythm-muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+
+    .feedback-rating-btn.is-selected {
+      border-color: var(--rhythm-primary);
+      background: rgba(61, 154, 139, 0.2);
+      color: var(--rhythm-primary-light);
+    }
+
+    .tutorial-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 190;
+      display: none;
+      pointer-events: none;
+    }
+
+    .tutorial-overlay.is-active {
+      display: block;
+      pointer-events: auto;
+    }
+
+    .tutorial-highlight {
+      position: fixed;
+      border-radius: 1rem;
+      box-shadow: 0 0 0 9999px rgba(15, 20, 25, 0.78), 0 0 0 2px rgba(91, 184, 168, 0.85), var(--rhythm-glow-primary);
+      transition: top 0.38s var(--rhythm-ease-out), left 0.38s var(--rhythm-ease-out), width 0.38s var(--rhythm-ease-out), height 0.38s var(--rhythm-ease-out);
+      pointer-events: none;
+      z-index: 191;
+    }
+
+    .tutorial-card {
+      position: fixed;
+      left: 1.25rem;
+      right: 1.25rem;
+      bottom: calc(1.25rem + var(--safe-bottom));
+      max-width: 28rem;
+      margin: 0 auto;
+      background: var(--rhythm-surface);
+      border: 1px solid var(--rhythm-border);
+      border-radius: 1.25rem;
+      padding: 1rem 1.1rem 0.9rem;
+      box-shadow: var(--rhythm-shadow-md);
+      z-index: 192;
+    }
+
+    .tutorial-target-pulse {
+      position: relative;
+      z-index: 192 !important;
     }
 
     .empty-state {
-      background: repeating-linear-gradient(
-        45deg,
-        var(--rhythm-raised),
-        var(--rhythm-raised) 10px,
-        var(--rhythm-surface) 10px,
-        var(--rhythm-surface) 20px
-      );
+      background: radial-gradient(ellipse at 50% 0%, rgba(61, 154, 139, 0.08) 0%, transparent 65%), var(--rhythm-surface);
     }
 
     .projection-bar {
@@ -610,39 +1271,42 @@
     }
 
     .rythm-lockup .rythm-logo {
-      height: 2.1rem;
+      height: 2.35rem;
       width: auto;
-      margin-right: -0.05rem;
-      margin-bottom: 0.14rem;
+      margin-right: -0.12rem;
+      margin-bottom: 0.12rem;
     }
 
     .rythm-lockup .rythm-title {
-      font-size: 1.7rem;
+      font-size: 2rem;
       font-weight: 600;
-      margin-left: 0.2rem;
-      transform: translateY(4px);
+      margin-left: 0.15rem;
+      padding-right: 0.35rem;
+      letter-spacing: 0.1em;
+      transform: translateY(5px);
     }
 
-    #splash-screen.is-hidden {
+    .rythm-lockup .rythm-title .ltr-y { color: #5BB8A8; -webkit-text-fill-color: #5BB8A8; }
+    .rythm-lockup .rythm-title .ltr-t { color: #4AAB9A; -webkit-text-fill-color: #4AAB9A; }
+    .rythm-lockup .rythm-title .ltr-h { color: #3D9A8B; -webkit-text-fill-color: #3D9A8B; }
+    .rythm-lockup .rythm-title .ltr-m { color: #5B8FD9; -webkit-text-fill-color: #5B8FD9; }
+
+    /* ── Splash: slogan → slide out → logo appear → fullscreen grow → iris reveal ── */
+    .splash-screen-v2 {
+      background:
+        radial-gradient(ellipse 70% 55% at 50% 42%, rgba(61, 154, 139, 0.14) 0%, transparent 58%),
+        var(--rhythm-bg);
+      overflow: hidden;
+      will-change: opacity, clip-path;
+    }
+
+    .splash-screen-v2.is-hidden {
       display: none !important;
       pointer-events: none;
     }
-    #splash-slogan {
-      opacity: 0;
-      transform: translateY(6px);
-      transition: opacity 350ms ease-out, transform 350ms ease-out;
-    }
 
-    #splash-screen {
-      opacity: 1;
-      overflow: hidden;
-      will-change: opacity;
-    }
-
-    #splash-screen.splash-screen-reveal {
-      opacity: 0;
-      background: transparent !important;
-      transition: opacity 220ms ease-out, background 80ms ease-out;
+    .splash-screen-v2.is-revealing {
+      animation: splashIrisReveal 460ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
       pointer-events: none;
     }
 
@@ -653,114 +1317,326 @@
       justify-content: center;
       width: 100%;
       height: 100%;
-      perspective: 520px;
-      transform-style: preserve-3d;
-    }
-
-    #splash-logo {
-      will-change: transform, opacity, filter;
-      transform-origin: center center;
-      transform-style: preserve-3d;
-    }
-
-    #splash-logo.splash-phase-idle {
-      opacity: 0;
-      transform: scale(0.28) translateZ(-80px);
-    }
-
-    #splash-logo.splash-phase-enter {
-      opacity: 1;
-      transform: scale(1) translateZ(0);
-      filter: blur(0);
-      transition: transform 480ms cubic-bezier(0.23, 1, 0.32, 1), opacity 380ms ease-out, filter 380ms ease-out;
-    }
-
-    #splash-logo.splash-phase-hold {
-      opacity: 1;
-      transform: scale(3.4) translateZ(60px);
-      filter: blur(0);
-      transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    #splash-logo.splash-phase-exit {
-      opacity: 0;
-      transform: scale(0.04) translateZ(-520px);
-      filter: blur(10px);
-      transition: transform 380ms cubic-bezier(0.5, 0, 1, 1), opacity 320ms ease-in, filter 380ms ease-in;
-    }
-
-    #splash-logo.splash-phase-exit .splash-r-group,
-    #splash-logo.splash-phase-exit .splash-glow-ring,
-    #splash-logo.splash-phase-exit .splash-ecg-track,
-    #splash-logo.splash-phase-exit .splash-ecg-dot {
-      animation: none !important;
-    }
-
-    .splash-mark {
       position: relative;
-      width: min(62vw, 17rem);
-      height: min(62vw, 17rem);
     }
 
-    .splash-mark-svg {
+    .splash-slogan {
+      padding: 0 1.75rem;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transform-origin: center center;
+      z-index: 2;
+      flex-shrink: 0;
+    }
+
+    .splash-slogan.is-visible {
+      animation: splashSloganIn 640ms var(--rhythm-ease-out) forwards;
+    }
+
+    .splash-slogan.is-exiting {
+      animation: splashSloganSlideOut 580ms cubic-bezier(0.55, 0.06, 0.92, 0.48) forwards;
+    }
+
+    .splash-slogan.is-gone {
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .splash-slogan-line {
+      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      font-size: clamp(1.5rem, 5vw, 2rem);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      color: var(--rhythm-text);
+      line-height: 1.15;
+    }
+
+    .splash-slogan-accent {
+      background: linear-gradient(90deg, #5BB8A8 0%, #3D9A8B 45%, #00C4A0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .splash-logo-stage {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: min(72vmin, 420px);
+      height: min(72vmin, 420px);
+      opacity: 0;
+      visibility: hidden;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .splash-logo-stage.is-present,
+    .splash-logo-stage.is-growing,
+    .splash-logo-stage.is-covered {
+      visibility: visible;
+    }
+
+    .splash-logo-stage.is-present {
+      animation: splashStageIn 380ms var(--rhythm-ease-out) forwards;
+    }
+
+    .splash-logo-stage.is-present .splash-logo-scale {
+      animation: splashLogoAppear 420ms var(--rhythm-ease-spring) forwards;
+    }
+
+    .splash-logo-stage.is-present .splash-mark-core {
+      animation: splashMarkReveal 420ms var(--rhythm-ease-out) 0.08s forwards;
+    }
+
+    .splash-logo-stage.is-present .splash-mark-wave {
+      animation: splashWaveReveal 360ms var(--rhythm-ease-out) 0.18s forwards;
+    }
+
+    .splash-logo-stage.is-growing .splash-logo-scale {
+      animation: splashLogoFullscreen 540ms cubic-bezier(0.42, 0, 0.18, 1) forwards;
+    }
+
+    .splash-logo-stage.is-growing .splash-logo-glow {
+      animation: splashGlowExpand 540ms ease-out forwards;
+    }
+
+    .splash-logo-stage.is-dissolving .splash-logo-scale {
+      animation: splashLogoDissolve 460ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
+    }
+
+    .splash-logo-glow {
+      position: absolute;
+      inset: 6%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(127, 255, 212, 0.18) 0%, rgba(61, 154, 139, 0.1) 38%, transparent 68%);
+      opacity: 0;
+      transform: scale(0.88);
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(2px);
+    }
+
+    .splash-logo-stage.is-present .splash-logo-glow {
+      opacity: 0.8;
+      transform: scale(0.95);
+      transition: opacity 700ms ease, transform 700ms ease;
+    }
+
+    .splash-logo-scale {
+      position: relative;
       width: 100%;
       height: 100%;
+      transform: scale(0.5);
+      transform-origin: center center;
+      will-change: transform;
+      z-index: 1;
+    }
+
+    .splash-logo-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-origin: 50% 52%;
+    }
+
+    .splash-logo-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
       overflow: visible;
     }
 
-    .splash-glow-ring {
+    .splash-mark-core {
+      opacity: 0;
       transform-origin: 100px 100px;
-      animation: splashGlowRing 2.2s ease-in-out infinite;
     }
 
-    .splash-r-group {
-      transform-origin: 100px 88px;
-      animation: splashHeartPulse 1.15s ease-in-out infinite;
-    }
-
-    .splash-ecg-track {
-      stroke-dasharray: 320;
-      stroke-dashoffset: 320;
+    .splash-mark-wave {
       opacity: 0;
+      stroke-dasharray: none;
+      stroke-dashoffset: 0;
     }
 
-    #splash-logo.splash-logo-active .splash-ecg-track {
-      animation: splashEcgDraw 1.6s ease-in-out infinite;
-    }
-
-    .splash-ecg-dot {
+    .splash-mark-wave-glow {
       opacity: 0;
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
     }
 
-    #splash-logo.splash-logo-active .splash-ecg-dot {
-      animation: splashEcgDot 1.6s ease-in-out infinite;
+    @keyframes splashSloganIn {
+      from { opacity: 0; transform: translateY(10px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    @keyframes splashHeartPulse {
-      0%, 100% { transform: scale(1); }
-      12% { transform: scale(1.07); }
-      24% { transform: scale(1); }
-      36% { transform: scale(1.045); }
-      48% { transform: scale(1); }
+    @keyframes splashSloganSlideOut {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      70% { opacity: 1; transform: translateY(-62vh) scale(0.98); }
+      100% { opacity: 0; transform: translateY(-115vh) scale(0.94); }
     }
 
-    @keyframes splashGlowRing {
-      0%, 100% { opacity: 0.28; transform: scale(0.94); }
-      50% { opacity: 0.62; transform: scale(1.06); }
+    @keyframes splashIrisReveal {
+      0% {
+        opacity: 1;
+        clip-path: circle(120% at 50% 48%);
+      }
+      45% {
+        opacity: 1;
+        clip-path: circle(68% at 50% 48%);
+      }
+      100% {
+        opacity: 0;
+        clip-path: circle(0% at 50% 48%);
+      }
     }
 
-    @keyframes splashEcgDraw {
-      0% { stroke-dashoffset: 320; opacity: 0.25; }
-      35% { stroke-dashoffset: 0; opacity: 1; }
-      70% { stroke-dashoffset: 0; opacity: 1; }
-      100% { stroke-dashoffset: -320; opacity: 0.25; }
+    @keyframes splashStageIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
-    @keyframes splashEcgDot {
-      0%, 28% { opacity: 0; transform: translateX(0); }
-      35% { opacity: 1; }
-      70% { opacity: 1; transform: translateX(0); }
-      100% { opacity: 0; transform: translateX(8px); }
+    @keyframes splashLogoAppear {
+      from { transform: scale(0.34); filter: blur(10px); opacity: 0.5; }
+      to { transform: scale(0.44); filter: blur(0); opacity: 1; }
+    }
+
+    @keyframes splashLogoFullscreen {
+      0% { transform: scale(0.44); }
+      88% { transform: scale(3.05); }
+      100% { transform: scale(2.95); }
+    }
+
+    @keyframes splashGlowExpand {
+      0% { opacity: 0.35; transform: scale(0.82); }
+      100% { opacity: 0.95; transform: scale(1.35); }
+    }
+
+    @keyframes splashLogoDissolve {
+      0% {
+        transform: scale(2.95);
+        filter: blur(0) brightness(1) saturate(1);
+        opacity: 1;
+      }
+      45% {
+        filter: blur(3px) brightness(1.3) saturate(1.15);
+        opacity: 0.9;
+      }
+      100% {
+        transform: scale(3.15);
+        filter: blur(18px) brightness(1.55) saturate(0.5);
+        opacity: 0;
+      }
+    }
+
+    @keyframes splashMarkReveal {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes splashWaveReveal {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes splashGlowTrace {
+      0% { stroke-dashoffset: 200; opacity: 0; }
+      35% { opacity: 0.55; }
+      100% { stroke-dashoffset: 0; opacity: 0; }
+    }
+
+    @keyframes splashWavePulse {
+      0%, 100% { opacity: 1; filter: drop-shadow(0 0 0 transparent); }
+      50% { opacity: 0.92; filter: drop-shadow(0 0 5px rgba(156, 240, 220, 0.65)); }
+    }
+
+    @keyframes splashLogoFadeOut {
+      0% { transform: scale(1); filter: blur(0); }
+      100% { transform: scale(1.05); filter: blur(10px); }
+    }
+
+    .header-context {
+      min-width: 0;
+      flex: 1;
+      line-height: 1.25;
+    }
+
+    .header-context-primary {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--rhythm-text);
+      letter-spacing: -0.02em;
+    }
+
+    .header-context-secondary {
+      font-size: 0.72rem;
+      color: var(--rhythm-muted);
+      margin-top: 0.15rem;
+    }
+
+    .quick-add-bar {
+      flex-shrink: 0;
+      margin-top: auto;
+      padding-top: 0.5rem;
+    }
+
+    .quick-add-bar .quick-add-field {
+      height: 2rem;
+    }
+
+    .quick-add-bar .quick-add-input {
+      height: 2rem;
+      padding: 0 2.15rem 0 0.65rem;
+      font-size: 0.78rem;
+      border-radius: 0.65rem;
+    }
+
+    .quick-add-bar .quick-add-submit {
+      width: 1.6rem;
+      height: 1.6rem;
+      right: 0.2rem;
+      top: 0.2rem;
+      border-radius: 0.5rem;
+    }
+
+    .quick-add-bar .quick-add-submit i {
+      font-size: 0.6rem;
+    }
+
+    .quick-add-bar .quick-add-voice {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 0.65rem;
+    }
+
+    .quick-add-bar .quick-add-voice i {
+      font-size: 0.85rem;
+    }
+
+    .quick-add-hint {
+      font-size: 0.58rem;
+      margin-top: 0.15rem;
+      line-height: 1.2;
+      opacity: 0.75;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #tab-content-today:not(.hidden) {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding-bottom: 0.75rem;
+    }
+
+    #tab-content-today:not(.hidden) #task-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
     }
 
     /* ── Responsive: full website layout (tablet+) ── */
@@ -836,10 +1712,24 @@
         gap: 0.75rem;
       }
 
+      .streaks-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(170px, 48%);
+        gap: 0.75rem;
+        align-items: start;
+      }
+
       #streaks-list {
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
+        min-width: 0;
+      }
+
+      #reward-bank-panel {
+        margin-top: 0;
+        align-self: start;
+        min-width: 0;
       }
 
       #onboarding > .flex-1 {
@@ -849,9 +1739,15 @@
       }
 
       #library-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.85rem;
+        overflow-x: visible;
+      }
+
+      .library-column {
+        flex: 1 1 220px;
+        max-width: none;
       }
 
       .fixed.inset-0.flex.items-end {
@@ -872,10 +1768,6 @@
     }
 
     @media (min-width: 1024px) {
-      .site-header {
-        display: block;
-      }
-
       .site-root {
         display: flex;
         flex-direction: column;
@@ -899,7 +1791,9 @@
       }
 
       #app-chrome > div:nth-child(2) .flex.gap-x-1\.5 button {
-        max-width: 200px;
+        max-width: none;
+        min-height: 3.5rem;
+        font-size: 1rem;
       }
 
       #app-chrome > div:nth-child(4) {
@@ -925,13 +1819,13 @@
 
       #tab-content-streaks:not(.hidden) {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
         grid-template-areas:
-          "title title"
-          "legend legend"
-          "streaks reward"
-          "projection projection"
-          "footer footer";
+          "title"
+          "legend"
+          "body"
+          "projection"
+          "footer";
         gap: 1.5rem;
         align-items: start;
       }
@@ -944,13 +1838,10 @@
         grid-area: legend;
       }
 
-      #tab-content-streaks:not(.hidden) > #streaks-list {
-        grid-area: streaks;
-        grid-template-columns: 1fr;
-      }
-
-      #tab-content-streaks:not(.hidden) > #reward-bank-panel {
-        grid-area: reward;
+      #tab-content-streaks:not(.hidden) > .streaks-body {
+        grid-area: body;
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+        gap: 1.5rem;
       }
 
       #tab-content-streaks:not(.hidden) > .mt-6 {
@@ -1005,11 +1896,21 @@
 
       #tab-content-today:not(.hidden) > #task-list {
         grid-column: 1;
+        grid-row: 2;
+        overflow-y: auto;
+        max-height: calc(100vh - 16rem);
       }
 
-      #tab-content-today:not(.hidden) > .mt-5 {
-        grid-column: 1 / -1;
-        max-width: 640px;
+      #tab-content-today:not(.hidden) > #quick-add-bar {
+        grid-column: 2;
+        grid-row: 2;
+        align-self: start;
+        position: sticky;
+        top: 0.5rem;
+        margin-top: 0;
+        padding-top: 0;
+        max-width: none;
+        width: 100%;
       }
 
       #task-list {
@@ -1029,59 +1930,64 @@
 
       <header id="site-header" class="site-header">
         <div class="site-header-inner">
-          <div class="site-brand">
-            <img src="rythm-r-mark.png" alt="" class="site-brand-icon" width="36" height="36">
-            <span class="site-brand-name">Rhythm</span>
-            <span class="site-brand-tag">Preview</span>
+          <div class="header-context" id="header-context" aria-label="Today at a glance">
+            <div id="header-context-primary" class="header-context-primary"></div>
+            <div id="header-context-secondary" class="header-context-secondary"></div>
           </div>
-          <div class="site-header-actions">
-            <span id="site-header-date"></span>
-            <button type="button" onclick="showSettings()" class="hover:text-rhythm-text transition-colors" aria-label="Settings">
+          <div class="site-header-actions flex items-center gap-1">
+            <button type="button" onclick="showFeedbackModal()" class="header-feedback-btn touch-target p-2" aria-label="Send feedback">
+              <i class="fa-regular fa-comment-dots text-lg"></i>
+            </button>
+            <button type="button" onclick="showSettings()" class="touch-target hover:text-rhythm-text transition-colors rounded-xl" aria-label="Settings">
               <i class="fa-solid fa-cog text-lg"></i>
             </button>
           </div>
         </div>
       </header>
 
-      <!-- Splash / First Impression Loading Screen -->
-      <div id="splash-screen" class="absolute inset-0 bg-rhythm-bg z-[100]">
+      <!-- Splash / Launch screen -->
+      <div id="splash-screen" class="absolute inset-0 z-[100] splash-screen-v2" aria-hidden="true">
         <div id="splash-inner">
-          <div id="splash-slogan" class="text-center mb-6 absolute top-[28%] left-0 right-0 px-6">
-            <p class="font-display text-xl text-rhythm-primary-light tracking-wide">Create Your Rythm</p>
+          <div id="splash-slogan" class="splash-slogan">
+            <p class="splash-slogan-line">Find Your <span class="splash-slogan-accent">Rythm</span></p>
           </div>
-
-          <div id="splash-logo" class="splash-phase-idle flex items-center justify-center">
-            <div class="splash-mark" aria-hidden="true">
-              <svg class="splash-mark-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision">
-                <defs>
-                  <linearGradient id="splash-r-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#5BB8A8"/>
-                    <stop offset="55%" stop-color="#3D9A8B"/>
-                    <stop offset="100%" stop-color="#5B8FD9"/>
-                  </linearGradient>
-                  <linearGradient id="splash-ecg-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#3D9A8B" stop-opacity="0"/>
-                    <stop offset="20%" stop-color="#5BB8A8"/>
-                    <stop offset="80%" stop-color="#5B8FD9"/>
-                    <stop offset="100%" stop-color="#5B8FD9" stop-opacity="0"/>
-                  </linearGradient>
-                  <filter id="splash-soft-glow" x="-40%" y="-40%" width="180%" height="180%">
-                    <feGaussianBlur stdDeviation="4" result="blur"/>
-                    <feMerge>
-                      <feMergeNode in="blur"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
-                </defs>
-                <circle class="splash-glow-ring" cx="100" cy="100" r="78" fill="none" stroke="#3D9A8B" stroke-width="1.5" opacity="0.35"/>
-                <circle class="splash-glow-ring" cx="100" cy="100" r="68" fill="rgba(61,154,139,0.06)" stroke="none"/>
-                <g class="splash-r-group" filter="url(#splash-soft-glow)">
-                  <text x="100" y="118" text-anchor="middle" font-family="'Space Grotesk', 'Inter', sans-serif" font-size="108" font-weight="600" fill="url(#splash-r-grad)">R</text>
-                </g>
-                <path class="splash-ecg-track" d="M 18 152 H 52 L 58 152 L 64 118 L 72 168 L 80 138 L 88 152 H 118 L 124 152 L 130 128 L 138 158 L 146 132 L 154 152 H 182"
-                  fill="none" stroke="url(#splash-ecg-grad)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle class="splash-ecg-dot" cx="18" cy="152" r="3.5" fill="#5BB8A8"/>
-              </svg>
+          <div id="splash-logo" class="splash-logo-stage" aria-hidden="true">
+            <div class="splash-logo-glow" aria-hidden="true"></div>
+            <div class="splash-logo-scale">
+              <div class="splash-logo-wrap">
+                <svg class="splash-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="splash-ring-grad" x1="100" y1="34" x2="100" y2="166" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stop-color="#6BC4B8"/>
+                      <stop offset="50%" stop-color="#3D9A8B"/>
+                      <stop offset="100%" stop-color="#0A5C50"/>
+                    </linearGradient>
+                    <linearGradient id="splash-ribbon-grad" x1="16" y1="100" x2="184" y2="100" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stop-color="#0A6B5C"/>
+                      <stop offset="30%" stop-color="#2BA88C"/>
+                      <stop offset="50%" stop-color="#9CF0DC"/>
+                      <stop offset="70%" stop-color="#2BA88C"/>
+                      <stop offset="100%" stop-color="#00C4A0"/>
+                    </linearGradient>
+                    <filter id="splash-mark-shadow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000000" flood-opacity="0.32"/>
+                    </filter>
+                    <filter id="splash-wave-glow-filter" x="-40%" y="-80%" width="180%" height="260%">
+                      <feGaussianBlur stdDeviation="1.8" result="blur"/>
+                      <feMerge>
+                        <feMergeNode in="blur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <g class="splash-mark-core" filter="url(#splash-mark-shadow)">
+                    <circle cx="100" cy="100" r="56" fill="none" stroke="url(#splash-ring-grad)" stroke-width="7.5"/>
+                    <path d="M 12 100 H 44 M 156 100 H 188" stroke="url(#splash-ribbon-grad)" stroke-width="5.5" stroke-linecap="round"/>
+                    <path class="splash-mark-wave-glow" pathLength="200" d="M 44 100 H 62 C 65 100 67 96 69 100 C 71 104 73 100 76 100 C 79 100 82 52 86 100 C 90 148 92 100 95 100 C 97 100 99 90 102 100 H 156" fill="none" stroke="#9CF0DC" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#splash-wave-glow-filter)"/>
+                    <path class="splash-mark-wave" d="M 44 100 H 62 C 65 100 67 96 69 100 C 71 104 73 100 76 100 C 79 100 82 52 86 100 C 90 148 92 100 95 100 C 97 100 99 90 102 100 H 156" fill="none" stroke="url(#splash-ribbon-grad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </g>
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -1101,7 +2007,7 @@
             
             <div class="space-y-3">
               <!-- Easy -->
-              <div onclick="selectRoutineLevel('easy')" class="bg-rhythm-surface hover:bg-rhythm-raised active:bg-rhythm-border border border-rhythm-border rounded-3xl p-4 cursor-pointer transition-all">
+              <div onclick="selectRoutineLevel('easy')" class="onboarding-card bg-rhythm-surface hover:bg-rhythm-raised active:bg-rhythm-border border border-rhythm-border rounded-3xl p-4 cursor-pointer transition-all">
                 <div class="flex items-center gap-3">
                   <div class="text-2xl">😌</div>
                   <div class="flex-1">
@@ -1113,7 +2019,7 @@
               </div>
 
               <!-- Moderate -->
-              <div onclick="selectRoutineLevel('moderate')" class="bg-rhythm-surface hover:bg-rhythm-raised active:bg-rhythm-border border border-rhythm-border rounded-3xl p-4 cursor-pointer transition-all">
+              <div onclick="selectRoutineLevel('moderate')" class="onboarding-card bg-rhythm-surface hover:bg-rhythm-raised active:bg-rhythm-border border border-rhythm-border rounded-3xl p-4 cursor-pointer transition-all">
                 <div class="flex items-center gap-3">
                   <div class="text-2xl">🧘</div>
                   <div class="flex-1">
@@ -1125,7 +2031,7 @@
               </div>
 
               <!-- Strict -->
-              <div onclick="selectRoutineLevel('strict')" class="bg-rhythm-surface hover:bg-rhythm-raised active:bg-rhythm-border border border-rhythm-border rounded-3xl p-4 cursor-pointer transition-all">
+              <div onclick="selectRoutineLevel('strict')" class="onboarding-card bg-rhythm-surface hover:bg-rhythm-raised active:bg-rhythm-border border border-rhythm-border rounded-3xl p-4 cursor-pointer transition-all">
                 <div class="flex items-center gap-3">
                   <div class="text-2xl">⏰</div>
                   <div class="flex-1">
@@ -1148,30 +2054,18 @@
       <div id="app-shell" class="flex flex-col flex-1 min-h-0">
       <div id="app-chrome">
                   <!-- Header -->
-      <div class="px-5 pt-3 pb-2 bg-rhythm-bg border-b border-rhythm-border">
-        <div class="flex items-start justify-between gap-2">
-          <div id="header-weather" class="flex-1 min-w-0" onclick="showOutdoorWeatherPane()">
-            <div class="flex items-center gap-1 mb-1 min-w-0">
-              <div id="header-weather-summary" class="text-[10px] text-rhythm-muted truncate leading-snug flex-1"></div>
-              <span class="text-[9px] text-rhythm-muted/70 flex-shrink-0">Details ›</span>
-            </div>
-            <div id="header-weather-hours"></div>
+      <div id="app-weather-row" class="px-5 pt-3 pb-2.5 bg-rhythm-bg border-b border-rhythm-border">
+        <div id="header-weather" class="w-full min-w-0" onclick="showOutdoorWeatherPane()">
+          <div class="flex items-center gap-1 mb-1.5 min-w-0">
+            <div id="header-weather-summary" class="text-[11px] text-rhythm-muted truncate leading-snug flex-1"></div>
+            <span class="text-[9px] text-rhythm-muted/70 flex-shrink-0">Details ›</span>
           </div>
-
-          <div class="flex items-center gap-x-1.5 text-right flex-shrink-0 pt-0.5">
-            <div>
-              <div id="today-date" class="text-xs text-rhythm-muted"></div>
-              <div id="today-label" class="font-semibold text-sm">Today</div>
-            </div>
-            <div onclick="showSettings()" class="w-9 h-9 flex items-center justify-center text-rhythm-muted active:text-rhythm-text">
-              <i class="fa-solid fa-cog text-lg"></i>
-            </div>
-          </div>
+          <div id="header-weather-hours"></div>
         </div>
       </div>
 
       <!-- Energy Bar -->
-      <div class="px-5 pt-2 pb-1.5 bg-rhythm-bg">
+      <div class="px-5 pt-2.5 pb-2.5 bg-rhythm-bg">
         <div class="flex items-center justify-between mb-1">
           <div class="text-xs font-medium text-rhythm-muted flex items-center gap-x-1.5">
             <i class="fa-solid fa-battery-half"></i>
@@ -1180,63 +2074,99 @@
           <div id="energy-label" class="text-[10px] px-2 py-0.5 rounded-full bg-rhythm-surface text-rhythm-primary-light font-medium"></div>
         </div>
         
-        <div class="flex gap-x-1.5">
+        <div class="flex gap-x-2">
           <button onclick="setEnergy(1)" id="energy-1"
-            class="flex-1 py-2 rounded-2xl text-xs font-semibold flex items-center justify-center gap-x-1.5 active:scale-[0.985] transition-all bg-rhythm-surface hover:bg-rhythm-raised border border-rhythm-border">
-            <i class="fa-solid fa-battery-quarter text-rhythm-low"></i>
+            class="energy-btn flex-1 py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-x-2 active:scale-[0.985] transition-all bg-rhythm-surface hover:bg-rhythm-raised border border-rhythm-border">
+            <i class="fa-solid fa-battery-quarter text-rhythm-low text-base"></i>
             <span>Low</span>
           </button>
           <button onclick="setEnergy(2)" id="energy-2"
-            class="flex-1 py-2 rounded-2xl text-xs font-semibold flex items-center justify-center gap-x-1.5 active:scale-[0.985] transition-all bg-rhythm-primary text-white border border-rhythm-primary">
-            <i class="fa-solid fa-battery-half text-rhythm-med"></i>
+            class="energy-btn flex-1 py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-x-2 active:scale-[0.985] transition-all bg-rhythm-primary text-white border border-rhythm-primary">
+            <i class="fa-solid fa-battery-half text-rhythm-med text-base"></i>
             <span>Medium</span>
           </button>
           <button onclick="setEnergy(3)" id="energy-3"
-            class="flex-1 py-2 rounded-2xl text-xs font-semibold flex items-center justify-center gap-x-1.5 active:scale-[0.985] transition-all bg-rhythm-surface hover:bg-rhythm-raised border border-rhythm-border">
-            <i class="fa-solid fa-battery-full text-rhythm-primary-light"></i>
+            class="energy-btn flex-1 py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-x-2 active:scale-[0.985] transition-all bg-rhythm-surface hover:bg-rhythm-raised border border-rhythm-border">
+            <i class="fa-solid fa-battery-full text-rhythm-primary-light text-base"></i>
             <span>High</span>
           </button>
         </div>
       </div>
 
+      <!-- Rhythm Brief — smart day/week digest -->
+      <div id="rhythm-brief-launcher" class="rhythm-brief-launcher mx-5 mt-2 mb-1 hidden" role="button" tabindex="0"
+        onclick="showRhythmBriefModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showRhythmBriefModal();}"
+        aria-label="Open your Rhythm Brief">
+        <div class="flex items-center gap-3">
+          <div class="rhythm-brief-launcher-icon" aria-hidden="true">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="rhythm-brief-launcher-title">Rhythm Brief</div>
+            <div id="rhythm-brief-preview-line" class="rhythm-brief-launcher-sub">Your smart day-at-a-glance</div>
+            <div id="rhythm-brief-preview-stats" class="flex flex-wrap gap-1.5 mt-1.5"></div>
+          </div>
+          <i class="fa-solid fa-chevron-right rhythm-brief-chevron" aria-hidden="true"></i>
+        </div>
+      </div>
+
       <!-- Smart Suggestion Banner -->
       <div id="smart-banner" onclick="handleSmartSuggestion()"
-        class="mx-5 mt-2 mb-0.5 px-3 py-2.5 rounded-2xl suggestion-card border border-rhythm-primary/40 cursor-pointer active:opacity-90 hidden">
-        <div class="flex gap-x-2.5">
+        class="mx-5 mt-2 mb-0.5 px-3 py-2.5 rounded-2xl suggestion-card border border-rhythm-primary/40 cursor-pointer active:opacity-90 hidden relative">
+        <button type="button" onclick="event.stopImmediatePropagation(); muteSmartSuggestions()"
+          class="smart-banner-mute touch-target text-[10px] flex items-center gap-x-1" aria-label="Mute smart suggestions">
+          <i class="fa-solid fa-volume-xmark text-[9px]"></i>
+          <span>mute</span>
+        </button>
+        <div class="flex gap-x-2.5 pr-12">
           <div class="mt-0.5">
             <i class="fa-solid fa-lightbulb text-rhythm-accent text-base"></i>
           </div>
           <div class="flex-1 min-w-0">
             <div id="smart-banner-label" class="text-[10px] uppercase tracking-wider text-rhythm-accent font-semibold mb-px">Smart Suggestion</div>
             <div id="smart-text" class="text-xs leading-snug text-rhythm-text font-medium"></div>
+            <div id="smart-bill-footnote" class="hidden"></div>
             <div class="flex items-center gap-x-2 mt-1.5 flex-wrap">
               <div id="smart-cta" class="text-[10px] px-2.5 py-px bg-rhythm-primary/25 text-rhythm-primary-light rounded-full inline-block">Tap to start</div>
               <div onclick="event.stopImmediatePropagation(); dismissSuggestion()" class="text-[10px] text-rhythm-primary-light/60 hover:text-rhythm-primary-light">dismiss</div>
-              <div onclick="event.stopImmediatePropagation(); muteSmartSuggestions()" class="text-[10px] text-rhythm-primary-light/60 hover:text-rhythm-primary-light flex items-center gap-x-1">
-                <i class="fa-solid fa-volume-xmark text-[9px]"></i>
-                <span>mute</span>
-              </div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- App tutorial overlay -->
+      <div id="tutorial-overlay" class="tutorial-overlay" aria-hidden="true">
+        <div id="tutorial-highlight" class="tutorial-highlight hidden"></div>
+        <div id="tutorial-card" class="tutorial-card hidden" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+          <div class="flex items-center justify-between gap-3 mb-1.5">
+            <div id="tutorial-step-label" class="text-[10px] uppercase tracking-wider text-rhythm-accent font-semibold"></div>
+            <button type="button" onclick="skipAppTutorial()" class="text-[10px] text-rhythm-muted hover:text-rhythm-text">Skip tour</button>
+          </div>
+          <div id="tutorial-title" class="text-sm font-semibold text-rhythm-text mb-1"></div>
+          <div id="tutorial-body" class="text-xs text-rhythm-muted leading-relaxed mb-3"></div>
+          <div class="flex gap-2">
+            <button type="button" id="tutorial-back-btn" onclick="prevTutorialStep()" class="flex-1 py-2.5 rounded-xl bg-rhythm-raised border border-rhythm-border text-xs font-medium text-rhythm-muted">Back</button>
+            <button type="button" id="tutorial-next-btn" onclick="nextTutorialStep()" class="flex-[2] py-2.5 rounded-xl bg-rhythm-primary text-white text-xs font-semibold">Next</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Tab Navigation -->
-      <div class="px-5 pt-2 flex border-b border-rhythm-border bg-rhythm-bg">
-        <div onclick="switchTab('today')" id="tab-today"
-          class="nav-active flex-1 pb-2 text-center text-xs font-semibold cursor-pointer">Today</div>
-        <div onclick="switchTab('life')" id="tab-life"
-          class="flex-1 pb-2 text-center text-xs font-semibold text-rhythm-muted cursor-pointer">Life</div>
-        <div onclick="switchTab('streaks')" id="tab-streaks"
-          class="flex-1 pb-2 text-center text-xs font-semibold text-rhythm-muted cursor-pointer">Streaks</div>
-        <div onclick="switchTab('library')" id="tab-library"
-          class="flex-1 pb-2 text-center text-xs font-semibold text-rhythm-muted cursor-pointer">Library</div>
+      <div class="main-nav px-5 pt-2 flex border-b border-rhythm-border bg-rhythm-bg" role="tablist" aria-label="Main navigation">
+        <button type="button" role="tab" aria-selected="true" onclick="switchTab('today')" id="tab-today"
+          class="main-nav-tab nav-active">Today</button>
+        <button type="button" role="tab" aria-selected="false" onclick="switchTab('streaks')" id="tab-streaks"
+          class="main-nav-tab">Streaks</button>
+        <button type="button" role="tab" aria-selected="false" onclick="switchTab('life')" id="tab-life"
+          class="main-nav-tab">Life</button>
+        <button type="button" role="tab" aria-selected="false" onclick="switchTab('library')" id="tab-library"
+          class="main-nav-tab">Library</button>
       </div>
       </div><!-- /app-chrome -->
 
       <div id="app-scroll">
       <!-- TODAY TAB -->
-      <div id="tab-content-today" class="tab-content px-5 pt-3 pb-6 bg-rhythm-bg">
+      <div id="tab-content-today" class="tab-content px-5 pt-3 bg-rhythm-bg">
         <div class="flex items-center justify-between mb-3">
           <div class="section-header font-semibold text-rhythm-text">Today's Tasks</div>
           <div onclick="reprioritizeTasks()" class="text-xs flex items-center gap-x-1 text-rhythm-primary-light active:text-rhythm-primary-light cursor-pointer">
@@ -1249,51 +2179,60 @@
         <div id="task-list" class="space-y-2"></div>
 
         <!-- Quick Add -->
-        <div class="mt-5">
-          <div class="flex gap-x-2">
-            <div class="flex-1 relative">
+        <div id="quick-add-bar" class="quick-add-bar">
+          <div class="flex gap-x-1.5 items-center">
+            <div class="quick-add-field flex-1 relative">
               <input id="quick-add-input" type="text" spellcheck="true" autocapitalize="words"
-                class="w-full bg-rhythm-surface border border-rhythm-border focus:border-rhythm-primary rounded-2xl py-3 px-4 text-sm placeholder:text-rhythm-muted outline-none"
+                class="quick-add-input input-polish w-full bg-rhythm-surface border border-rhythm-border focus:border-rhythm-primary placeholder:text-rhythm-muted outline-none"
                 placeholder="Add new task...">
-              <button onclick="addHabitFromInput()"
-                class="absolute right-1.5 top-1.5 bg-rhythm-primary hover:bg-rhythm-primary-light active:opacity-90 transition-colors text-white w-8 h-8 rounded-2xl flex items-center justify-center">
-                <i class="fa-solid fa-plus text-sm"></i>
+              <button type="button" onclick="addHabitFromInput()"
+                class="quick-add-submit absolute bg-rhythm-primary hover:bg-rhythm-primary-light active:opacity-90 transition-colors text-white flex items-center justify-center"
+                aria-label="Add task">
+                <i class="fa-solid fa-plus"></i>
               </button>
             </div>
-            
-            <!-- Voice Button -->
-            <button onclick="startVoiceAdd()" 
-              class="w-12 h-12 flex-shrink-0 bg-rhythm-surface hover:bg-rhythm-raised active:bg-rhythm-border transition-colors border border-rhythm-border rounded-2xl flex items-center justify-center text-rhythm-primary-light">
-              <i class="fa-solid fa-microphone text-xl"></i>
+            <button type="button" onclick="startVoiceAdd()"
+              class="quick-add-voice flex-shrink-0 bg-rhythm-surface hover:bg-rhythm-raised active:bg-rhythm-border transition-colors border border-rhythm-border flex items-center justify-center text-rhythm-primary-light"
+              aria-label="Add task by voice">
+              <i class="fa-solid fa-microphone"></i>
             </button>
           </div>
-          <div class="text-center mt-1">
-            <span class="text-[10px] text-rhythm-muted">Say “add milk to grocery” or “add task walk the dog.”</span>
+          <div class="text-center min-w-0">
+            <span class="quick-add-hint text-rhythm-muted">Say “add milk to grocery” or “add task walk the dog”</span>
           </div>
         </div>
       </div>
 
       <!-- LIFE TAB -->
       <div id="tab-content-life" class="tab-content px-5 pt-3 pb-6 bg-rhythm-bg hidden">
-        <div class="flex border-b border-rhythm-border mb-4">
-          <div onclick="switchLifePanel('bills')" id="life-panel-tab-bills"
-            class="life-panel-active flex-1 pb-2 text-center text-xs font-semibold cursor-pointer">Bills</div>
-          <div onclick="switchLifePanel('grocery')" id="life-panel-tab-grocery"
-            class="flex-1 pb-2 text-center text-xs font-semibold text-rhythm-muted cursor-pointer">Grocery</div>
-          <div onclick="switchLifePanel('schedule')" id="life-panel-tab-schedule"
-            class="flex-1 pb-2 text-center text-xs font-semibold text-rhythm-muted cursor-pointer">Schedule</div>
-          <div onclick="switchLifePanel('subscriptions')" id="life-panel-tab-subscriptions"
-            class="flex-1 pb-2 text-center text-xs font-semibold text-rhythm-muted cursor-pointer">Subs</div>
+        <div class="main-nav flex border-b border-rhythm-border mb-4" role="tablist" aria-label="Life sections">
+          <button type="button" role="tab" aria-selected="true" onclick="switchLifePanel('schedule')" id="life-panel-tab-schedule"
+            class="life-nav-tab life-panel-active">Schedule</button>
+          <button type="button" role="tab" aria-selected="false" onclick="switchLifePanel('grocery')" id="life-panel-tab-grocery"
+            class="life-nav-tab">Grocery</button>
+          <button type="button" role="tab" aria-selected="false" onclick="switchLifePanel('bills')" id="life-panel-tab-bills"
+            class="life-nav-tab">Bills</button>
+          <button type="button" role="tab" aria-selected="false" onclick="switchLifePanel('subscriptions')" id="life-panel-tab-subscriptions"
+            class="life-nav-tab">Subs</button>
         </div>
 
-        <!-- Bills Panel -->
-        <div id="life-panel-bills" class="life-panel">
+        <!-- Schedule Panel -->
+        <div id="life-panel-schedule" class="life-panel">
           <div class="flex items-center justify-between mb-1">
-            <div class="section-header font-semibold text-rhythm-text">Bills</div>
-            <button onclick="addBillFromPrompt()" class="text-xs text-rhythm-primary-light font-medium">+ Add</button>
+            <div class="section-header font-semibold text-rhythm-text">Today's Schedule</div>
+            <div id="schedule-free-time" class="text-xs text-rhythm-primary-light font-medium"></div>
           </div>
-          <div id="bills-monthly-total" class="hidden text-[10px] text-rhythm-muted mb-2"></div>
-          <div id="bills-list" class="space-y-2"></div>
+          <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+            <button type="button" id="work-schedule-chip" onclick="showWorkScheduleModal()"
+              class="text-[10px] px-2.5 py-1 rounded-full border border-rhythm-border bg-rhythm-raised text-rhythm-muted active:bg-rhythm-border">
+              Hours: Flexible
+            </button>
+            <span id="schedule-availability" class="text-[10px] text-rhythm-muted"></span>
+          </div>
+          <div id="schedule-sync-badge" class="text-[10px] text-rhythm-muted mb-2"></div>
+          <div id="schedule-list" class="space-y-2 mb-4"></div>
+          <button onclick="showAddCalendarEventModal()"
+            class="w-full py-2.5 text-xs bg-rhythm-surface hover:bg-rhythm-border border border-rhythm-border rounded-2xl text-rhythm-text">+ Add event</button>
         </div>
 
         <!-- Grocery Panel -->
@@ -1326,23 +2265,14 @@
           </div>
         </div>
 
-        <!-- Schedule Panel -->
-        <div id="life-panel-schedule" class="life-panel hidden">
+        <!-- Bills Panel -->
+        <div id="life-panel-bills" class="life-panel hidden">
           <div class="flex items-center justify-between mb-1">
-            <div class="section-header font-semibold text-rhythm-text">Today's Schedule</div>
-            <div id="schedule-free-time" class="text-xs text-rhythm-primary-light font-medium"></div>
+            <div class="section-header font-semibold text-rhythm-text">Bills</div>
+            <button onclick="addBillFromPrompt()" class="text-xs text-rhythm-primary-light font-medium">+ Add</button>
           </div>
-          <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-            <button type="button" id="work-schedule-chip" onclick="showWorkScheduleModal()"
-              class="text-[10px] px-2.5 py-1 rounded-full border border-rhythm-border bg-rhythm-raised text-rhythm-muted active:bg-rhythm-border">
-              Hours: Flexible
-            </button>
-            <span id="schedule-availability" class="text-[10px] text-rhythm-muted"></span>
-          </div>
-          <div id="schedule-sync-badge" class="text-[10px] text-rhythm-muted mb-2"></div>
-          <div id="schedule-list" class="space-y-2 mb-4"></div>
-          <button onclick="showAddCalendarEventModal()"
-            class="w-full py-2.5 text-xs bg-rhythm-surface hover:bg-rhythm-border border border-rhythm-border rounded-2xl text-rhythm-text">+ Add event</button>
+          <div id="bills-monthly-total" class="hidden text-[10px] text-rhythm-muted mb-2"></div>
+          <div id="bills-list" class="space-y-2"></div>
         </div>
 
         <!-- Subscriptions Panel -->
@@ -1368,13 +2298,13 @@
 
       <!-- STREAKS TAB -->
       <div id="tab-content-streaks" class="tab-content px-5 pt-3 pb-6 bg-rhythm-bg hidden">
-        <div class="section-header font-semibold text-rhythm-text mb-2">YOUR STREAKS</div>
+        <div class="section-header font-semibold text-rhythm-text mb-2">Your streaks</div>
         <div id="streak-badge-legend"></div>
-        
-        <div id="streaks-list" class="space-y-3"></div>
 
-        <!-- Cheat Day Fund -->
-        <div id="reward-bank-panel" class="mt-5"></div>
+        <div class="streaks-body">
+          <div id="streaks-list" class="space-y-3"></div>
+          <div id="reward-bank-panel"></div>
+        </div>
 
         <!-- Projection Panel -->
         <div class="mt-6">
@@ -1400,27 +2330,23 @@
           </div>
           <div id="library-stats" class="text-[10px] text-rhythm-muted mb-2"></div>
 
-          <div id="library-filters-scroll" class="library-filters-scroll -mx-5 px-5">
-            <div id="library-filters" class="library-filters"></div>
-          </div>
-
-          <div class="relative mb-2">
+          <div class="relative mb-3">
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-rhythm-muted text-xs"></i>
             <input id="library-search" type="text" oninput="onLibrarySearch()"
-              class="w-full bg-rhythm-raised/90 border border-rhythm-border focus:border-rhythm-primary rounded-2xl py-2 pl-8 pr-3 text-xs placeholder:text-rhythm-muted outline-none"
+              class="input-polish w-full bg-rhythm-raised/90 border border-rhythm-border focus:border-rhythm-primary rounded-2xl py-2.5 pl-8 pr-3 text-xs placeholder:text-rhythm-muted outline-none"
               placeholder="Quick search...">
           </div>
         </div>
         
-        <div id="library-list" class="space-y-1 pr-1 pb-4"></div>
+        <div id="library-list" class="pr-1 pb-4"></div>
       </div>
       </div><!-- /app-scroll -->
 
       <!-- Bottom status / autonomy hint -->
-      <div class="px-5 py-2 bg-rhythm-bg border-t border-rhythm-border text-[10px] flex items-center gap-x-2 text-rhythm-muted flex-shrink-0">
-        <i class="fa-solid fa-robot"></i>
-        <span id="calendar-status-text" class="flex-1">Task-first • Calendar-aware suggestions</span>
-        <button onclick="simulateContextChange()" class="text-rhythm-primary-light font-medium active:text-rhythm-primary-light">Simulate day</button>
+      <div class="status-bar px-5 py-2.5 border-t border-rhythm-border/80 text-xs flex items-center gap-x-2.5 text-rhythm-muted flex-shrink-0">
+        <i class="fa-solid fa-sparkles text-rhythm-primary-light/80"></i>
+        <span id="calendar-status-text" class="flex-1 leading-snug">Task-first • Calendar-aware suggestions</span>
+        <button type="button" onclick="simulateContextChange()" class="status-bar-btn">Simulate day</button>
       </div>
       </div><!-- /app-shell -->
       </div><!-- /app-content-wrap -->
@@ -1428,16 +2354,29 @@
   </div><!-- /site-root -->
 
   <!-- Toast -->
-  <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-rhythm-surface text-sm border border-rhythm-border shadow-xl px-4 py-2 rounded-3xl flex items-center gap-x-2">
+  <div id="toast" class="hidden fixed left-1/2 -translate-x-1/2 bg-rhythm-surface/95 text-sm border border-rhythm-border px-4 py-2.5 rounded-2xl flex items-center gap-x-2.5 z-[200]" role="status" aria-live="polite">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-rhythm-primary-light text-base"></i>
     <span id="toast-text"></span>
   </div>
 
   <script>
     // ==================== CONFIG & STATE ====================
     const STORAGE_KEY = 'rhythm_state_v1';
+
+    // Feedback: set recipientEmail to your inbox (FormSubmit delivers there).
+    // Optional: add a Web3Forms access key at https://web3forms.com to override FormSubmit.
+    const FEEDBACK_CONFIG = {
+      recipientEmail: 'sandetay@gmail.com',
+      web3formsAccessKey: '',
+      appName: 'Rythm',
+      appVersion: 'preview-1.1'
+    };
+
+    let rhythmBriefMode = 'day';
     let state = {
       habits: [],
       completions: {}, // { "habitId": ["2026-01-01", ...] }
+      habitSkips: {},    // { "habitId": ["2026-01-07", ...] } — skip breaks streak
       dailyEnergy: {},   // { "2026-01-01": 1|2|3 }
       customUsage: {},   // track frequency of custom adds
       bills: [],
@@ -1460,10 +2399,15 @@
         calendarConnections: {
           google: { connected: false, email: null, connectedAt: null },
           outlook: { connected: false, email: null, connectedAt: null },
-          apple: { connected: false, email: null, connectedAt: null }
+          apple: { connected: false, email: null, connectedAt: null },
+          samsung: { connected: false, email: null, connectedAt: null }
         },
+        importedCalendarEvents: [],
         workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
         showWelcomeBanner: false,
+        tutorialActive: false,
+        tutorialCompleted: false,
+        tutorialStep: 0,
         smartSuggestionsMuted: false,
         tipIndex: 0,
         weatherUnit: 'fahrenheit'
@@ -1485,7 +2429,7 @@
     ];
 
     let currentTab = 'today';
-    let currentLifePanel = 'bills';
+    let currentLifePanel = 'schedule';
     let currentLibraryFilter = 'all';
     let librarySearchQuery = '';
     let subscriptionSearchQuery = '';
@@ -1768,9 +2712,15 @@
     };
 
     // ==================== UTILITIES ====================
+    function dateStrLocal(d = new Date()) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
     function todayStr() {
-      const d = new Date();
-      return d.toISOString().split('T')[0];
+      return dateStrLocal();
     }
 
     function formatDateShort(dateStr) {
@@ -1793,8 +2743,10 @@
         subscriptions: [],
         metricLogs: {},
         rewardBank: { points: 0, totalEarned: 0, cheatDownsUsed: 0, lastCheatDate: null },
-        calendarCache: null,
-        customLibrary: [],
+        habitSkips: {},
+        feedbackLog: [],
+      calendarCache: null,
+      customLibrary: [],
         healthSyncs: {},
         settings: {
           weightLb: 160,
@@ -1807,20 +2759,27 @@
           calendarConnections: {
             google: { connected: false, email: null, connectedAt: null },
             outlook: { connected: false, email: null, connectedAt: null },
-            apple: { connected: false, email: null, connectedAt: null }
+            apple: { connected: false, email: null, connectedAt: null },
+            samsung: { connected: false, email: null, connectedAt: null }
           },
+          importedCalendarEvents: [],
           workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
           showWelcomeBanner: false,
+          tutorialActive: false,
+          tutorialCompleted: false,
+          tutorialStep: 0,
           smartSuggestionsMuted: false,
           tipIndex: 0,
-          weatherUnit: 'fahrenheit'
+          weatherUnit: 'fahrenheit',
+          calendarSources: [],
+          routineLevel: null
         }
       };
     }
 
     function resetUiSessionVars() {
       currentTab = 'today';
-      currentLifePanel = 'bills';
+      currentLifePanel = 'schedule';
       currentLibraryFilter = 'all';
       librarySearchQuery = '';
       subscriptionSearchQuery = '';
@@ -1875,6 +2834,7 @@
       }
       if (!state.habits) state.habits = [];
       if (!state.completions) state.completions = {};
+      if (!state.habitSkips) state.habitSkips = {};
 
       currentEnergy = state.settings.energyToday || 2;
       if (!state.settings.maintenancePreference) {
@@ -1892,6 +2852,25 @@
       if (state.settings.tipIndex === undefined) {
         state.settings.tipIndex = 0;
       }
+      if (state.settings.tutorialCompleted === undefined) {
+        state.settings.tutorialCompleted = false;
+      }
+      if (state.settings.tutorialActive === undefined) {
+        state.settings.tutorialActive = false;
+      }
+      if (state.settings.tutorialStep === undefined) {
+        state.settings.tutorialStep = 0;
+      }
+      if (!state.settings.calendarSources) {
+        state.settings.calendarSources = [];
+      }
+      if (state.settings.routineLevel) {
+        selectedRoutineLevel = state.settings.routineLevel;
+      }
+      const today = todayStr();
+      state.habits.forEach(h => {
+        if (!h.added_at) h.added_at = today;
+      });
       if (!state.settings.profile) {
         state.settings.profile = { age: null, gender: null, heightIn: null };
       }
@@ -1918,6 +2897,13 @@
       } else if (!state.settings.calendarConnections.apple) {
         state.settings.calendarConnections.apple = { connected: false, email: null, connectedAt: null };
       }
+      if (!state.settings.calendarConnections.samsung) {
+        state.settings.calendarConnections.samsung = { connected: false, email: null, connectedAt: null };
+      }
+      if (!state.settings.importedCalendarEvents) {
+        state.settings.importedCalendarEvents = [];
+      }
+      persistCalendarEventIds();
       if (!state.healthSyncs) state.healthSyncs = {};
       if (!state.bills) state.bills = [];
       state.bills.forEach(b => {
@@ -1937,6 +2923,7 @@
       if (!state.subscriptions) state.subscriptions = [];
       if (!state.metricLogs) state.metricLogs = {};
       if (!state.rewardBank) state.rewardBank = { points: 0, totalEarned: 0, cheatDownsUsed: 0, lastCheatDate: null };
+      if (!state.feedbackLog) state.feedbackLog = [];
       if (state.rewardBank.cheatDaysUsed != null && state.rewardBank.cheatDownsUsed == null) {
         state.rewardBank.cheatDownsUsed = state.rewardBank.cheatDaysUsed;
       }
@@ -2230,18 +3217,29 @@
       return state.completions[habitId] || [];
     }
 
+    function getHabitSkips(habitId) {
+      return state.habitSkips?.[habitId] || [];
+    }
+
+    function getHabitLastActivityDate(habitId) {
+      const all = [...getCompletions(habitId), ...getHabitSkips(habitId)].sort();
+      return all.length ? all[all.length - 1] : null;
+    }
+
     function computeCurrentStreak(habitId) {
       const dates = [...getCompletions(habitId)].sort().reverse();
       if (dates.length === 0) return 0;
 
       let streak = 0;
-      let checkDate = new Date(todayStr());
-      
+      const checkDate = new Date();
+      checkDate.setHours(12, 0, 0, 0);
+
       const dateSet = new Set(dates);
-      
-      // Count consecutive days going backwards
+      const skipSet = new Set(getHabitSkips(habitId));
+
       for (let i = 0; i < 365; i++) {
-        const ds = checkDate.toISOString().split('T')[0];
+        const ds = dateStrLocal(checkDate);
+        if (skipSet.has(ds)) break;
         if (dateSet.has(ds)) {
           streak++;
           checkDate.setDate(checkDate.getDate() - 1);
@@ -2526,9 +3524,10 @@
     function getStreakDateRange(streakDays) {
       if (!streakDays || streakDays <= 0) return [];
       const dates = [];
-      const d = new Date(todayStr() + 'T12:00:00');
+      const d = new Date();
+      d.setHours(12, 0, 0, 0);
       for (let i = 0; i < streakDays; i++) {
-        dates.push(d.toISOString().split('T')[0]);
+        dates.push(dateStrLocal(d));
         d.setDate(d.getDate() - 1);
       }
       return dates.reverse();
@@ -2653,8 +3652,9 @@
 
       const type = getHabitMetricType(habit);
       const cutoff = new Date();
+      cutoff.setHours(12, 0, 0, 0);
       cutoff.setDate(cutoff.getDate() - 30);
-      const cutoffStr = cutoff.toISOString().split('T')[0];
+      const cutoffStr = dateStrLocal(cutoff);
       const recent = dataPoints.filter(p => p.date >= cutoffStr);
       const sample = recent.length > 0 ? recent : dataPoints;
 
@@ -2750,15 +3750,51 @@
       return /schedule|book\s+(an?\s+)?|set up\s+(an?\s+)?|make\s+(an?\s+)?appointment|arrange|remind me to/i.test((title || '').toLowerCase());
     }
 
+    function getHabitAddedDate(habit) {
+      return habit?.added_at || todayStr();
+    }
+
+    function getNextDueDate(habit) {
+      const interval = habit?.interval_days;
+      if (interval == null || interval <= 1) return todayStr();
+      const last = getHabitLastActivityDate(habit.id);
+      const anchor = last || getHabitAddedDate(habit);
+      const next = new Date(anchor + 'T12:00:00');
+      next.setDate(next.getDate() + interval);
+      return dateStrLocal(next);
+    }
+
+    function stampHabitMeta(habit) {
+      if (!habit.added_at) habit.added_at = todayStr();
+      return habit;
+    }
+
     function formatUpcomingLabel(habit, daysUntil) {
-      if (isDueToday(habit)) return 'Due today';
-      if (daysUntil <= 0) return 'Due soon';
-      if (daysUntil === 1) return 'Tomorrow';
+      if (daysUntil <= 0) return 'Due today';
+      if (daysUntil === 1) return 'Due tomorrow';
       if (daysUntil <= 6) return `In ${daysUntil} days`;
       if (daysUntil <= 13) return 'Next week';
       if (daysUntil <= 21) return 'In ~2 weeks';
       if (daysUntil <= 45) return 'Next month';
       return `In ~${daysUntil} days`;
+    }
+
+    function getHabitDueTag(habit) {
+      if (isOneOffTask(habit)) return null;
+      if (isDailyTask(habit)) {
+        if (!isDueToday(habit)) return null;
+        return { text: 'Due today', cls: 'text-amber-300 bg-amber-900/35' };
+      }
+      const daysUntil = getDaysUntilHabitDue(habit);
+      const text = formatUpcomingLabel(habit, daysUntil);
+      const urgent = daysUntil <= 0;
+      const soon = daysUntil <= 2;
+      const cls = urgent
+        ? 'text-amber-300 bg-amber-900/35'
+        : soon
+          ? 'text-sky-300 bg-sky-900/30'
+          : 'text-rhythm-muted bg-rhythm-raised/80';
+      return { text, cls };
     }
 
     function formatIntervalLabel(days) {
@@ -2777,12 +3813,8 @@
     function getDaysUntilHabitDue(habit) {
       if (isOneOffTask(habit)) return 0;
       if (!habit.interval_days || habit.interval_days <= 1) return 0;
-      const comps = getCompletions(habit.id);
-      const last = comps.length ? comps[comps.length - 1] : null;
-      if (!last) return 0;
-      const nextDue = new Date(last);
-      nextDue.setDate(nextDue.getDate() + habit.interval_days);
-      return Math.round((nextDue - new Date(todayStr())) / 86400000);
+      const nextDue = getNextDueDate(habit);
+      return Math.round((new Date(nextDue + 'T12:00:00') - new Date(todayStr() + 'T12:00:00')) / 86400000);
     }
 
     function getEffectiveDifficulty(habit, energy) {
@@ -2803,14 +3835,12 @@
       const today = todayStr();
       let pool = state.habits.filter(h => {
         if ((getCompletions(h.id) || []).includes(today)) return false;
-        if (isNonDailyRecurring(h)) return false;
         return isDueToday(h);
       });
 
       if (energy === 1) {
         const extras = state.habits.filter(h => {
           if (pool.some(p => p.id === h.id)) return false;
-          if (isNonDailyRecurring(h)) return false;
           if ((getCompletions(h.id) || []).includes(today)) return false;
           const isEasy = (h.difficulty || 2) <= 1 && (h.est_minutes || 10) <= 15;
           if (!isEasy) return false;
@@ -2911,6 +3941,9 @@
       if (/for the week|per week|every week|weekly/.test(lower)) defaults.interval_days = 7;
       else if (/biweekly|every two weeks|every 2 weeks|fortnight/.test(lower)) defaults.interval_days = 14;
       else if (/for the month|per month|monthly/.test(lower)) defaults.interval_days = 30;
+      else if (/quarter|every 3 months|90 day/.test(lower)) defaults.interval_days = 90;
+      else if (/semi.?annual|twice a year|every 6 months|biannual/.test(lower)) defaults.interval_days = 180;
+      else if (/annual|yearly|every year|once a year/.test(lower)) defaults.interval_days = 365;
       else if (/daily|every day|each day/.test(lower)) defaults.interval_days = null;
       else if (isSchedulingTaskTitle(title)) defaults.interval_days = 0;
       if (/save|saving|money|budget|invest/.test(lower)) {
@@ -2955,6 +3988,30 @@
 
     function closeQuickTaskModal() {
       document.getElementById('quick-task-modal')?.remove();
+    }
+
+    const TASK_RECURRENCE_OPTIONS = [
+      { key: 'daily', label: 'Daily', days: null },
+      { key: '7', label: 'Weekly', days: 7 },
+      { key: '14', label: 'Biweekly', days: 14 },
+      { key: '30', label: 'Monthly', days: 30 },
+      { key: '90', label: 'Quarterly', days: 90 },
+      { key: '180', label: 'Semi-Annual', days: 180 },
+      { key: '365', label: 'Annual', days: 365 }
+    ];
+
+    function resolveQuickTaskInterval(title, intervalUserPicked, selectedInterval) {
+      if (isSchedulingTaskTitle(title)) return 0;
+      if (intervalUserPicked) return selectedInterval;
+      const inferred = inferTaskDefaults(title).interval_days;
+      return inferred != null ? inferred : 0;
+    }
+
+    function formatQuickTaskFreqLabel(intervalUserPicked, selectedInterval, title) {
+      if (isSchedulingTaskTitle(title)) return 'One-time';
+      if (!intervalUserPicked) return 'One-time';
+      if (selectedInterval === 0) return 'One-time';
+      return formatIntervalLabel(selectedInterval);
     }
 
     function initHorizontalScrollRows() {
@@ -3080,26 +4137,23 @@
 
           <div id="qt-summary" class="text-[10px] text-rhythm-muted mb-3 px-1"></div>
 
+          <div id="qt-recurrence-section" class="mb-3">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold">Repeat</label>
+              <span class="text-[9px] text-rhythm-muted/80">optional · swipe for more</span>
+            </div>
+            <div class="qt-recurrence-row" role="group" aria-label="Task recurrence">
+              ${TASK_RECURRENCE_OPTIONS.map(opt => `
+                <button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>
+              `).join('')}
+            </div>
+          </div>
+
           <details id="qt-options" class="mb-4 text-xs text-rhythm-muted group">
             <summary class="cursor-pointer text-rhythm-primary-light font-medium mb-3 list-none flex items-center gap-1.5">
               <i class="fa-solid fa-sliders text-[10px]"></i>
-              <span id="qt-options-label">Adjust Task Settings</span>
+              <span id="qt-options-label">More options</span>
             </summary>
-
-            <button type="button" id="qt-set-recurrence" class="hidden text-[10px] text-rhythm-primary-light font-medium mb-3 flex items-center gap-1">
-              <i class="fa-solid fa-repeat text-[9px]"></i>
-              <span>Set recurrence</span>
-            </button>
-
-            <div id="qt-interval-wrap" class="hidden mb-3">
-              <label class="block text-xs text-rhythm-muted mb-1.5">How often?</label>
-              <div class="grid grid-cols-2 gap-1.5">
-                <button type="button" data-interval="" class="qt-interval py-2 rounded-xl text-xs font-semibold border border-rhythm-border bg-rhythm-raised text-rhythm-muted">Daily</button>
-                <button type="button" data-interval="7" class="qt-interval py-2 rounded-xl text-xs font-semibold border border-rhythm-border bg-rhythm-raised text-rhythm-muted">Weekly</button>
-                <button type="button" data-interval="14" class="qt-interval py-2 rounded-xl text-xs font-semibold border border-rhythm-border bg-rhythm-raised text-rhythm-muted">Biweekly</button>
-                <button type="button" data-interval="30" class="qt-interval py-2 rounded-xl text-xs font-semibold border border-rhythm-border bg-rhythm-raised text-rhythm-muted">Monthly</button>
-              </div>
-            </div>
 
             <div id="qt-energy-section">
               <label class="block text-xs text-rhythm-muted mb-1.5">Energy needed</label>
@@ -3131,11 +4185,14 @@
       `;
       document.body.appendChild(modal);
 
-      let selectedInterval = editTask
-        ? (editTask.interval_days == null ? null : (editTask.interval_days || 0))
-        : inferred.interval_days;
+      let selectedInterval = undefined;
+      let intervalUserPicked = false;
       let selectedDiff = editTask ? (editTask.difficulty || 2) : inferred.difficulty;
-      let intervalWrapForced = false;
+
+      if (isEdit && editTask && editTask.interval_days !== 0) {
+        selectedInterval = editTask.interval_days == null ? null : editTask.interval_days;
+        intervalUserPicked = true;
+      }
 
       const titleInput = modal.querySelector('#qt-title');
       const summaryEl = modal.querySelector('#qt-summary');
@@ -3149,33 +4206,31 @@
       const energySection = modal.querySelector('#qt-energy-section');
       const minutesSection = modal.querySelector('#qt-minutes-section');
       const optionsLabel = modal.querySelector('#qt-options-label');
-      const intervalWrap = modal.querySelector('#qt-interval-wrap');
-      const setRecurrenceBtn = modal.querySelector('#qt-set-recurrence');
+      const recurrenceSection = modal.querySelector('#qt-recurrence-section');
+
+      function recurrenceOptionMatches(opt) {
+        if (!intervalUserPicked) return false;
+        if (opt.days === null) return selectedInterval === null;
+        return opt.days === selectedInterval;
+      }
 
       function updateIntervalButtons() {
-        modal.querySelectorAll('.qt-interval').forEach(btn => {
-          const v = btn.dataset.interval;
-          const match = (v === '' && selectedInterval == null) || (v !== '' && parseInt(v, 10) === selectedInterval);
-          btn.className = `qt-interval py-2 rounded-xl text-xs font-semibold border ${match ? 'border-rhythm-primary bg-rhythm-primary/15 text-rhythm-text' : 'border-rhythm-border bg-rhythm-raised text-rhythm-muted'}`;
+        modal.querySelectorAll('.qt-recur-chip').forEach(btn => {
+          const opt = TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
+          const active = opt && recurrenceOptionMatches(opt);
+          btn.classList.toggle('is-active', active);
+          btn.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
       }
 
-      function shouldShowIntervalWrap() {
-        const title = titleInput.value.trim();
-        if (isSchedulingTaskTitle(title)) return false;
-        const inf = inferTaskDefaults(title);
-        if (intervalWrapForced) return true;
-        if (isEdit && editTask && (editTask.interval_days == null || editTask.interval_days > 1)) return true;
-        if (inf.interval_days != null && inf.interval_days > 1) return true;
-        if (inf.interval_days == null && /daily|every day|each day/i.test(title.toLowerCase())) return true;
-        if (selectedInterval == null || (selectedInterval && selectedInterval > 1)) return true;
-        return false;
-      }
-
-      function updateIntervalWrapVisibility() {
-        const show = shouldShowIntervalWrap();
-        intervalWrap?.classList.toggle('hidden', !show);
-        setRecurrenceBtn?.classList.toggle('hidden', show || isSchedulingTaskTitle(titleInput.value.trim()));
+      function updateRecurrenceVisibility() {
+        const scheduling = isSchedulingTaskTitle(titleInput.value.trim());
+        recurrenceSection?.classList.toggle('hidden', scheduling);
+        if (scheduling) {
+          intervalUserPicked = false;
+          selectedInterval = undefined;
+          updateIntervalButtons();
+        }
       }
 
       function getActiveGoalInput() {
@@ -3185,17 +4240,12 @@
       function applyInferredDefaults() {
         const title = titleInput.value.trim();
         const inf = inferTaskDefaults(title);
-        if (isSchedulingTaskTitle(title)) {
-          selectedInterval = 0;
-        } else if (!intervalWrapForced && !isEdit) {
-          selectedInterval = inf.interval_days;
-        } else if (!intervalWrapForced) {
-          selectedInterval = inf.interval_days;
+        if (!isEdit) {
+          selectedDiff = inf.difficulty;
+          minutesInput.value = inf.est_minutes;
         }
-        selectedDiff = inf.difficulty;
-        minutesInput.value = inf.est_minutes;
+        updateRecurrenceVisibility();
         updateIntervalButtons();
-        updateIntervalWrapVisibility();
         modal.querySelectorAll('.qt-diff').forEach(btn => {
           const match = parseInt(btn.dataset.diff, 10) === selectedDiff;
           btn.className = `qt-diff flex-1 py-2 rounded-xl text-xs font-semibold border ${match ? 'border-rhythm-primary bg-rhythm-primary/15 text-rhythm-text' : 'border-rhythm-border bg-rhythm-raised text-rhythm-muted'}`;
@@ -3203,10 +4253,11 @@
       }
 
       function refreshSummary() {
-        const inf = inferTaskDefaults(titleInput.value.trim());
+        const title = titleInput.value.trim();
+        const inf = inferTaskDefaults(title);
         const metricOnly = isMetricOnlyTask(inf);
         const mins = parseInt(minutesInput.value, 10);
-        const freq = selectedInterval === 0 ? 'One-time' : formatIntervalLabel(selectedInterval);
+        const freq = formatQuickTaskFreqLabel(intervalUserPicked, selectedInterval, title);
         const tag = isLibrary ? ' · tagged Personal' : '';
         const activeGoal = getActiveGoalInput();
         const goalVal = activeGoal?.value || inf.target_value || '';
@@ -3226,7 +4277,7 @@
         const metricOnly = isMetricOnlyTask(inf);
         energySection.classList.toggle('hidden', metricOnly);
         minutesSection.classList.toggle('hidden', metricOnly);
-        optionsLabel.textContent = 'Adjust Task Settings';
+        optionsLabel.textContent = 'More options';
 
         if (inf.unit) {
           if (metricOnly) {
@@ -3245,14 +4296,10 @@
           goalWrap.classList.add('hidden');
         }
         if (!isEdit && !modal.querySelector('#qt-options').open) applyInferredDefaults();
-        else updateIntervalWrapVisibility();
+        else updateRecurrenceVisibility();
         refreshSummary();
       }
       titleInput.oninput = refreshGoalField;
-      setRecurrenceBtn.onclick = () => {
-        intervalWrapForced = true;
-        updateIntervalWrapVisibility();
-      };
       minutesInput.oninput = refreshSummary;
       goalInputMain.oninput = refreshSummary;
       goalInput.oninput = refreshSummary;
@@ -3266,15 +4313,22 @@
           goalInputMain.value = editTask.target_value;
           goalInput.value = editTask.target_value;
         }
-        applyInferredDefaults();
+        updateIntervalButtons();
       }
       refreshGoalField();
 
-      modal.querySelectorAll('.qt-interval').forEach(btn => {
+      modal.querySelectorAll('.qt-recur-chip').forEach(btn => {
         btn.onclick = () => {
-          intervalWrapForced = true;
-          const v = btn.dataset.interval;
-          selectedInterval = v === '' ? null : parseInt(v, 10);
+          const opt = TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
+          if (!opt) return;
+          const already = recurrenceOptionMatches(opt);
+          if (already) {
+            intervalUserPicked = false;
+            selectedInterval = undefined;
+          } else {
+            intervalUserPicked = true;
+            selectedInterval = opt.days;
+          }
           updateIntervalButtons();
           refreshSummary();
         };
@@ -3302,7 +4356,7 @@
           id: isEdit ? options.editTaskId : (mode === 'library' ? 'custom-lib-' : 'custom-') + Date.now(),
           title,
           category: mode === 'library' ? 'personal' : 'custom',
-          interval_days: selectedInterval,
+          interval_days: resolveQuickTaskInterval(title, intervalUserPicked, selectedInterval),
           est_minutes: minutes,
           difficulty: selectedDiff,
           is_preset: false,
@@ -3350,7 +4404,7 @@
             closeQuickTaskModal();
             return;
           }
-          state.habits.push(task);
+          state.habits.push(stampHabitMeta(task));
           state.customUsage[task.id] = 1;
           saveState();
           renderTasks();
@@ -3365,28 +4419,9 @@
     }
 
     function reprioritizeTasks() {
+      renderTodayFeed();
+      updateHeaderContext();
       const energy = currentEnergy;
-      const container = document.getElementById('task-list');
-      const cards = Array.from(container.children).filter(card => card.dataset.habitId && card.dataset.feedType === 'habit');
-      if (cards.length === 0) return;
-      
-      const habitMap = {};
-      state.habits.forEach(h => habitMap[h.id] = h);
-      
-      cards.sort((a, b) => {
-        const hidA = a.dataset.habitId;
-        const hidB = b.dataset.habitId;
-        const ha = habitMap[hidA];
-        const hb = habitMap[hidB];
-        if (!ha || !hb) return 0;
-        
-        const scoreA = getEffectiveDifficulty(ha, energy);
-        const scoreB = getEffectiveDifficulty(hb, energy);
-        return scoreA - scoreB;
-      });
-      
-      cards.forEach(card => container.appendChild(card));
-      
       showToast(`Tasks sorted for ${energy === 1 ? 'low' : energy === 3 ? 'high' : 'medium'} energy`);
     }
 
@@ -3396,21 +4431,25 @@
       saveState();
       
       // Update UI buttons
-      [1,2,3].forEach(l => {
+      const energyBase = 'energy-btn flex-1 py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-x-2 active:scale-[0.985] transition-all';
+      const energyIcons = { 1: 'fa-battery-quarter text-rhythm-low', 2: 'fa-battery-half text-rhythm-med', 3: 'fa-battery-full text-rhythm-primary-light' };
+      const energyLabels = { 1: 'Low', 2: 'Medium', 3: 'High' };
+      [1, 2, 3].forEach(l => {
         const el = document.getElementById(`energy-${l}`);
         if (!el) return;
         if (l === level) {
-          el.className = `flex-1 py-2 rounded-2xl text-xs font-semibold flex items-center justify-center gap-x-1.5 active:scale-[0.985] transition-all ${l === 1 ? 'bg-rhythm-low text-white border border-rhythm-low' : l === 2 ? 'bg-rhythm-med text-white border border-rhythm-med' : 'bg-rhythm-high text-white border border-rhythm-high'}`;
+          el.className = `${energyBase} ${l === 1 ? 'bg-rhythm-low text-white border border-rhythm-low' : l === 2 ? 'bg-rhythm-med text-white border border-rhythm-med' : 'bg-rhythm-high text-white border border-rhythm-high'}`;
         } else {
-          el.className = `flex-1 py-2 rounded-2xl text-xs font-semibold flex items-center justify-center gap-x-1.5 active:scale-[0.985] transition-all bg-rhythm-surface hover:bg-rhythm-raised border border-rhythm-border`;
+          el.className = `${energyBase} bg-rhythm-surface hover:bg-rhythm-raised border border-rhythm-border`;
         }
+        el.innerHTML = `<i class="fa-solid ${energyIcons[l]} text-base"></i><span>${energyLabels[l]}</span>`;
       });
       
       const labels = {1: 'Low - Small Wins', 2: 'Medium - Balanced', 3: 'High - Go Big'};
       document.getElementById('energy-label').textContent = labels[level];
       
       renderTasks();
-      reprioritizeTasks();
+      updateHeaderContext();
       updateSmartBanner();
       if (currentTab === 'life' && currentLifePanel === 'grocery') renderGrocery();
       if (currentTab === 'streaks') renderRewardBank();
@@ -3707,7 +4746,7 @@
       const sorted = [...state.bills].sort((a, b) => getBillUrgency(a) - getBillUrgency(b));
 
       if (sorted.length === 0) {
-        container.innerHTML = `<div class="text-center py-6 text-sm text-rhythm-muted bg-rhythm-surface rounded-3xl">No bills yet. Tap + Add to track one.</div>`;
+        container.innerHTML = rhythmEmptyHtml('💳', 'No bills yet', 'Tap + Add to track due dates and amounts.');
         return;
       }
 
@@ -4121,7 +5160,7 @@
       const checked = items.filter(g => g.checked);
 
       if (items.length === 0) {
-        container.innerHTML = `<div class="text-center py-6 text-sm text-rhythm-muted bg-rhythm-surface rounded-3xl">${isMeal ? 'Pick a meal above to load ingredients.' : 'Grocery list is empty. Add items below or say “add milk to grocery list.”'}</div>`;
+        container.innerHTML = rhythmEmptyHtml('🛒', isMeal ? 'Pick a recipe' : 'Grocery list is empty', isMeal ? 'Select a meal chip above to load ingredients.' : 'Add items below or try voice: “add milk to grocery list.”');
         return;
       }
 
@@ -4401,12 +5440,7 @@
       const soon = state.habits.filter(h => {
         if (isDueToday(h)) return false;
         if (!isNonDailyRecurring(h)) return false;
-        const comps = getCompletions(h.id);
-        const last = comps.length ? comps[comps.length - 1] : null;
-        if (!last) return true;
-        const nextDue = new Date(last);
-        nextDue.setDate(nextDue.getDate() + h.interval_days);
-        const daysUntil = Math.round((nextDue - new Date(todayStr())) / 86400000);
+        const daysUntil = getDaysUntilHabitDue(h);
         return daysUntil >= 0 && daysUntil <= 3;
       });
       const longBlock = state.habits.filter(h =>
@@ -4484,12 +5518,32 @@
         .slice(0, limit || 5);
     }
 
+    function getStableCalendarEventId(e, index = 0) {
+      if (e?.id) return e.id;
+      const time = (e?.time || '00:00').replace(':', '');
+      const titleSlug = (e?.title || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'event';
+      return `ev-${time}-${titleSlug}`;
+    }
+
     function normalizeCalendarEvents(events) {
       return (events || []).map((e, i) => ({
         ...e,
-        id: e.id || `ev-${(e.time || '00:00').replace(':', '')}-${i}-${Date.now()}`,
+        id: getStableCalendarEventId(e, i),
         durationMin: e.durationMin || 30
       }));
+    }
+
+    function filterCalendarEventsById(events, eventId) {
+      return (events || []).filter(e => getStableCalendarEventId(e) !== eventId);
+    }
+
+    function persistCalendarEventIds() {
+      if (state.settings.mockCalendar?.events) {
+        state.settings.mockCalendar.events = normalizeCalendarEvents(state.settings.mockCalendar.events);
+      }
+      if (state.settings.importedCalendarEvents?.length) {
+        state.settings.importedCalendarEvents = normalizeCalendarEvents(state.settings.importedCalendarEvents);
+      }
     }
 
     function parseEventTimeInput(raw) {
@@ -4581,15 +5635,26 @@
 
     function deleteCalendarEvent(eventId) {
       if (!confirm('Remove this event from today\'s schedule?')) return;
-      const filterEv = arr => (arr || []).filter(e => e.id !== eventId);
-      if (state.calendarCache) {
-        state.calendarCache.events = filterEv(state.calendarCache.events);
-      }
+
       if (state.settings.mockCalendar?.events) {
-        state.settings.mockCalendar.events = filterEv(state.settings.mockCalendar.events);
+        state.settings.mockCalendar.events = filterCalendarEventsById(state.settings.mockCalendar.events, eventId);
       }
+      if (state.settings.importedCalendarEvents?.length) {
+        state.settings.importedCalendarEvents = filterCalendarEventsById(state.settings.importedCalendarEvents, eventId);
+      }
+      if (state.calendarCache) {
+        state.calendarCache.events = filterCalendarEventsById(state.calendarCache.events, eventId);
+        const avail = computeDayAvailability({
+          events: state.calendarCache.events.map(e => ({
+            time: e.time,
+            title: e.title,
+            durationMin: e.durationMin || 30
+          }))
+        });
+        state.calendarCache.freeMinutes = avail.freeMinutes;
+      }
+
       saveState();
-      refreshCalendarCache();
       renderSchedule();
       renderTodayFeed();
       updateSmartBanner();
@@ -4621,25 +5686,25 @@
       const events = cache.events || [];
 
       if (events.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-6 text-sm text-rhythm-muted bg-rhythm-surface rounded-3xl">
-            <div class="font-medium text-rhythm-text mb-1">Open schedule</div>
-            <div class="text-xs">${cache.note || 'No events on calendar today.'}</div>
-          </div>`;
+        container.innerHTML = rhythmEmptyHtml('📅', 'Open schedule', cache.note || 'No events on calendar today. Tap + Add event or connect a calendar in Settings.');
         return;
       }
 
       normalizeCalendarEvents(events).forEach(ev => {
         const row = document.createElement('div');
-        row.className = 'bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-x-3';
+        row.className = 'rhythm-card bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-x-3';
         row.innerHTML = `
           <div class="text-sm font-semibold text-rhythm-primary-light tabular-nums w-14">${ev.time}</div>
           <div class="flex-1 min-w-0">
             <div class="font-medium">${ev.title}</div>
             ${ev.durationMin ? `<div class="text-xs text-rhythm-muted">${ev.durationMin} min</div>` : ''}
           </div>
-          <button type="button" onclick="deleteCalendarEvent('${ev.id}')" class="text-rhythm-muted hover:text-rose-400 text-sm px-1" title="Delete event">×</button>
+          <button type="button" class="cal-delete-btn text-rhythm-muted hover:text-rose-400 text-sm px-1" title="Delete event">×</button>
         `;
+        row.querySelector('.cal-delete-btn').onclick = (e) => {
+          e.stopPropagation();
+          deleteCalendarEvent(ev.id);
+        };
         container.appendChild(row);
       });
 
@@ -5382,7 +6447,7 @@
       removeSubscriptionCancelTask(sub);
       const taskId = 'sub-cancel-' + sub.id;
       state.habits = state.habits || [];
-      state.habits.push({
+      state.habits.push(stampHabitMeta({
         id: taskId,
         title: getSubscriptionCancelTaskTitle(sub),
         category: 'personal',
@@ -5392,7 +6457,7 @@
         is_preset: false,
         linkedSubscriptionId: sub.id,
         is_subscription_cancel: true
-      });
+      }));
       sub.cancelTaskId = taskId;
     }
 
@@ -5472,10 +6537,7 @@
       }
 
       if (!filteredSubs.length) {
-        container.innerHTML = `
-          <div class="text-center py-5 text-sm text-rhythm-muted bg-rhythm-surface rounded-3xl">
-            No tracked subscriptions match "${subscriptionSearchQuery}".
-          </div>`;
+        container.innerHTML = rhythmEmptyHtml('🔍', 'No matches', `Nothing matches "${subscriptionSearchQuery}". Try another search or add a service.`);
         return;
       }
 
@@ -5491,7 +6553,7 @@
         const preset = resolveSubscriptionPreset(sub);
         const cycleLabel = sub.cycle === 'yearly' ? 'Yearly' : 'Monthly';
         const card = document.createElement('div');
-        card.className = `sub-tracked-card bg-rhythm-surface border border-rhythm-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 ${active ? '' : 'opacity-55'}`;
+        card.className = `sub-tracked-card rhythm-card bg-rhythm-surface border border-rhythm-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 ${active ? '' : 'opacity-55'}`;
         card.innerHTML = `
           ${subscriptionBrandLogoHtml(preset || sub, 'md')}
           <div class="flex-1 min-w-0">
@@ -5510,12 +6572,12 @@
 
     function switchLifePanel(panel) {
       currentLifePanel = panel;
-      ['bills', 'grocery', 'schedule', 'subscriptions'].forEach(name => {
+      ['schedule', 'grocery', 'bills', 'subscriptions'].forEach(name => {
         document.getElementById(`life-panel-${name}`)?.classList.toggle('hidden', name !== panel);
         const tab = document.getElementById(`life-panel-tab-${name}`);
         if (tab) {
           tab.classList.toggle('life-panel-active', name === panel);
-          tab.classList.toggle('text-rhythm-muted', name !== panel);
+          tab.setAttribute('aria-selected', name === panel ? 'true' : 'false');
         }
       });
       if (panel === 'bills') renderBills();
@@ -5546,6 +6608,7 @@
       state.habits.forEach(h => {
         const comps = getCompletions(h.id) || [];
         if (comps.includes(today)) return;
+        if (getHabitSkips(h.id).includes(today)) return;
 
         if (isOneOffTask(h)) {
           if (comps.length === 0) active.push(h);
@@ -5558,6 +6621,10 @@
         }
 
         if (isNonDailyRecurring(h)) {
+          if (isDueToday(h)) {
+            active.push(h);
+            return;
+          }
           const key = getNonDailySectionKey(h);
           if (key === 'weekly') weekly.push(h);
           else if (key === 'biweekly') biweekly.push(h);
@@ -5587,9 +6654,9 @@
     function isDueToday(habit) {
       const today = todayStr();
       const comps = getCompletions(habit.id);
-      
-      // Already done today?
+
       if (comps.includes(today)) return false;
+      if (getHabitSkips(habit.id).includes(today)) return false;
 
       if (isOneOffTask(habit)) {
         return comps.length === 0;
@@ -5599,15 +6666,7 @@
         return true; // daily
       }
       
-      // Recurring: check last done or next_due
-      const last = comps.length > 0 ? comps[comps.length - 1] : null;
-      if (!last) return true;
-      
-      const lastDate = new Date(last);
-      const nextDue = new Date(lastDate);
-      nextDue.setDate(nextDue.getDate() + habit.interval_days);
-      
-      return nextDue <= new Date(today);
+      return getDaysUntilHabitDue(habit) <= 0;
     }
 
     function renderHabitCard(habit, container, options = {}) {
@@ -5623,19 +6682,20 @@
       const daysUntil = getDaysUntilHabitDue(habit);
       const dueToday = isDueToday(habit);
       const showMuted = muted && !dueToday;
-      const dueNote = upcomingLabel
-        ? `<span class="text-xs px-1.5 rounded ${dueToday ? 'text-amber-300 bg-amber-900/35' : 'text-rhythm-muted bg-rhythm-raised/80'}">${upcomingLabel}</span>`
-        : (!dueToday && daysUntil <= 2 && isDailyTask(habit)
-          ? `<span class="text-sky-400 text-xs px-1.5 rounded bg-sky-900/30">due ${daysUntil === 1 ? 'tomorrow' : 'soon'}</span>`
-          : '');
+      const dueTag = upcomingLabel
+        ? { text: upcomingLabel, cls: dueToday ? 'text-amber-300 bg-amber-900/35' : 'text-rhythm-muted bg-rhythm-raised/80' }
+        : getHabitDueTag(habit);
+      const dueNote = dueTag
+        ? `<span class="text-xs px-1.5 rounded ${dueTag.cls}">${dueTag.text}</span>`
+        : '';
 
       const card = document.createElement('div');
-      card.className = `habit-card habit-row bg-rhythm-surface border border-rhythm-border rounded-3xl px-4 py-3.5 flex items-center gap-x-3 active:bg-rhythm-border cursor-pointer${showMuted ? ' opacity-45' : ''}`;
+      card.className = `habit-card rhythm-card habit-row bg-rhythm-surface border border-rhythm-border rounded-3xl px-4 py-3.5 flex items-center gap-x-3 active:bg-rhythm-border cursor-pointer${showMuted ? ' opacity-45' : ''}`;
       card.dataset.habitId = habit.id;
       card.dataset.feedType = 'habit';
 
       card.innerHTML = `
-        <div onclick="completeHabit('${habit.id}', event)" class="w-9 h-9 flex-shrink-0 rounded-2xl border-2 border-rhythm-border active:border-rhythm-primary flex items-center justify-center text-xl">
+        <div onclick="completeHabit('${habit.id}', event)" class="touch-target w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-rhythm-border active:border-rhythm-primary flex items-center justify-center text-xl">
           <i class="fa-regular fa-circle text-rhythm-muted"></i>
         </div>
         <div class="flex-1 min-w-0" onclick="completeHabit('${habit.id}', event)">
@@ -5653,10 +6713,11 @@
           ${syncedStats ? `<div class="text-[9px] text-sky-300 mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
           ${isSyncable ? `<button type="button" data-sync-health="${habit.id}" class="text-[10px] text-sky-400 mt-0.5 hover:underline bg-transparent border-0 p-0 cursor-pointer">Sync Garmin</button>` : ''}
           <div class="flex items-center justify-end gap-2 mt-1">
+            ${dueToday && !isOneOffTask(habit) ? `<button type="button" onclick="skipRecurringHabit('${habit.id}', event)" class="text-[10px] text-rhythm-muted hover:text-amber-300 px-1" title="Skip this cycle — resets streak">Skip</button>` : ''}
             <button type="button" onclick="event.stopImmediatePropagation(); showHabitDetail('${habit.id}')" class="text-rhythm-primary-light text-xs" title="Details">
               <i class="fa-solid fa-info-circle"></i>
             </button>
-            <button type="button" onclick="deleteHabitFromToday('${habit.id}', event)" class="text-rhythm-muted hover:text-rose-400 text-xs px-1" title="Remove task">×</button>
+            <button type="button" onclick="deleteHabitFromToday('${habit.id}', event)" class="touch-target text-rhythm-muted hover:text-rose-400 text-sm" title="Remove task">×</button>
           </div>
         </div>
       `;
@@ -5738,7 +6799,7 @@
 
       if (!hasAny) {
         container.innerHTML = `
-          <div onclick="showQuickTaskModal({ mode: 'habit' })" class="empty-state rounded-3xl p-6 text-center border border-rhythm-border cursor-pointer active:bg-rhythm-raised/40 transition-colors">
+          <div onclick="showQuickTaskModal({ mode: 'habit' })" class="rhythm-empty empty-state cursor-pointer active:scale-[0.99] transition-transform">
             <i class="fa-solid fa-plus-circle text-3xl text-rhythm-primary mb-2"></i>
             <div class="font-medium">No tasks yet</div>
             <div class="text-xs text-rhythm-muted mt-1">Tap here to add a task, or browse the Library tab.</div>
@@ -5773,6 +6834,37 @@
 
     function renderTasks() {
       renderTodayFeed();
+      updateHeaderContext();
+      if (currentTab === 'today') updateRhythmBriefLauncher();
+    }
+
+    function skipRecurringHabit(habitId, event) {
+      if (event) event.stopImmediatePropagation();
+
+      const habit = state.habits.find(h => h.id === habitId);
+      if (!habit || isOneOffTask(habit)) return;
+
+      const today = todayStr();
+      if (!isDueToday(habit)) {
+        showToast('This task is not due right now');
+        return;
+      }
+
+      if (!state.habitSkips) state.habitSkips = {};
+      if (!state.habitSkips[habitId]) state.habitSkips[habitId] = [];
+      if (state.habitSkips[habitId].includes(today)) {
+        showToast('Already skipped today');
+        return;
+      }
+
+      state.habitSkips[habitId].push(today);
+      state.habitSkips[habitId].sort();
+      saveState();
+      renderTasks();
+      renderStreaks();
+      updateSmartBanner();
+      if (currentProjectionHabit === habitId) showProjections(habitId);
+      showToast(`Skipped — streak reset for ${habit.title}`);
     }
 
     function completeHabit(habitId, e) {
@@ -5787,6 +6879,10 @@
       const comps = state.completions[habitId];
       if (comps.includes(today)) {
         showToast("Already done today");
+        return;
+      }
+      if (getHabitSkips(habitId).includes(today)) {
+        showToast("You skipped this today — it stays skipped");
         return;
       }
       
@@ -5864,6 +6960,578 @@
         };
         banner.classList.remove('hidden');
       }
+    }
+
+    // ==================== FEEDBACK ====================
+    function getFeedbackContextSnapshot() {
+      return {
+        app: FEEDBACK_CONFIG.appName,
+        version: FEEDBACK_CONFIG.appVersion,
+        url: location.href,
+        tab: currentTab,
+        lifePanel: currentLifePanel,
+        energy: currentEnergy,
+        taskCount: state.habits?.length || 0,
+        billCount: state.bills?.length || 0,
+        groceryCount: (state.groceryMaster || []).filter(g => !g.checked).length,
+        userAgent: navigator.userAgent,
+        screen: `${window.innerWidth}x${window.innerHeight}`,
+        timestamp: new Date().toISOString()
+      };
+    }
+
+    function formatFeedbackBody(payload) {
+      const ctx = payload.context || {};
+      return [
+        `Category: ${payload.category}`,
+        `Rating: ${payload.rating || '—'}/5`,
+        '',
+        payload.message,
+        '',
+        '--- Context ---',
+        `Tab: ${ctx.tab}`,
+        `Energy: ${ctx.energy}`,
+        `Tasks: ${ctx.taskCount}`,
+        `Bills: ${ctx.billCount}`,
+        `Grocery (unchecked): ${ctx.groceryCount}`,
+        `URL: ${ctx.url}`,
+        `Screen: ${ctx.screen}`,
+        `Time: ${ctx.timestamp}`
+      ].join('\n');
+    }
+
+    function logFeedbackLocally(payload) {
+      if (!state.feedbackLog) state.feedbackLog = [];
+      state.feedbackLog.unshift({
+        id: 'fb-' + Date.now(),
+        ...payload,
+        sentAt: new Date().toISOString()
+      });
+      state.feedbackLog = state.feedbackLog.slice(0, 50);
+      saveState();
+    }
+
+    async function submitFeedback(formData) {
+      const payload = {
+        category: formData.category || 'General',
+        rating: formData.rating || null,
+        message: (formData.message || '').trim(),
+        replyEmail: (formData.replyEmail || '').trim(),
+        context: getFeedbackContextSnapshot()
+      };
+
+      if (!payload.message) {
+        showToast('Please describe your feedback');
+        return false;
+      }
+
+      const bodyText = formatFeedbackBody(payload);
+
+      try {
+        if (FEEDBACK_CONFIG.web3formsAccessKey) {
+          const res = await fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({
+              access_key: FEEDBACK_CONFIG.web3formsAccessKey,
+              subject: `${FEEDBACK_CONFIG.appName} Feedback: ${payload.category}`,
+              from_name: payload.replyEmail ? 'Rythm User' : 'Anonymous Rythm User',
+              email: payload.replyEmail || FEEDBACK_CONFIG.recipientEmail,
+              message: bodyText
+            })
+          });
+          const data = await res.json();
+          if (!data.success) throw new Error(data.message || 'Web3Forms failed');
+        } else if (FEEDBACK_CONFIG.recipientEmail) {
+          const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(FEEDBACK_CONFIG.recipientEmail)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({
+              name: payload.replyEmail || 'Anonymous',
+              email: payload.replyEmail || 'noreply@rythm.app',
+              message: bodyText,
+              _subject: `${FEEDBACK_CONFIG.appName} Feedback: ${payload.category}`,
+              _template: 'table'
+            })
+          });
+          const data = await res.json();
+          if (!data.success) throw new Error('FormSubmit failed');
+        } else {
+          const mailto = `mailto:?subject=${encodeURIComponent(FEEDBACK_CONFIG.appName + ' Feedback')}&body=${encodeURIComponent(bodyText)}`;
+          window.location.href = mailto;
+        }
+
+        logFeedbackLocally({ ...payload, delivery: 'sent' });
+        return true;
+      } catch (err) {
+        logFeedbackLocally({ ...payload, delivery: 'queued', error: String(err) });
+        try {
+          await navigator.clipboard.writeText(bodyText);
+          showToast('Could not send online — feedback copied to clipboard');
+        } catch (_) {
+          showToast('Saved locally — configure FEEDBACK_CONFIG.recipientEmail to receive submissions');
+        }
+        return true;
+      }
+    }
+
+    function showFeedbackModal() {
+      const modal = document.createElement('div');
+      modal.id = 'feedback-modal';
+      modal.className = 'fixed inset-0 bg-rhythm-bg/70 modal-overlay-blur flex items-end z-[70]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-lg mb-1 flex items-center justify-between">
+            <span>Send Feedback</span>
+            <button type="button" onclick="this.closest('#feedback-modal').remove()" class="text-rhythm-muted text-2xl leading-none">×</button>
+          </div>
+          <p class="text-xs text-rhythm-muted mb-4 leading-relaxed">Help shape Rythm — bugs, ideas, and UX notes go straight to the builder.</p>
+
+          <label class="block text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Category</label>
+          <select id="fb-category" class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-3 mb-3 outline-none text-rhythm-text text-sm">
+            <option value="Bug">Bug report</option>
+            <option value="Feature idea">Feature idea</option>
+            <option value="UX / Design">UX / Design</option>
+            <option value="Rhythm Brief">Rhythm Brief</option>
+            <option value="Performance">Performance</option>
+            <option value="General">General</option>
+          </select>
+
+          <label class="block text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">How's your experience? (optional)</label>
+          <div class="flex gap-2 mb-3" id="fb-rating-row">
+            ${[1, 2, 3, 4, 5].map(n => `<button type="button" class="feedback-rating-btn" data-rating="${n}">${n}</button>`).join('')}
+          </div>
+
+          <label class="block text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Your feedback</label>
+          <textarea id="fb-message" rows="4" placeholder="What happened? What would you change?"
+            class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-3 mb-3 outline-none text-rhythm-text text-sm resize-none"></textarea>
+
+          <label class="block text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Email (optional — if you want a reply)</label>
+          <input id="fb-email" type="email" placeholder="you@email.com"
+            class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-3 mb-4 outline-none text-rhythm-text text-sm">
+
+          <button type="button" id="fb-submit" class="w-full py-3.5 rounded-2xl bg-rhythm-primary text-white font-semibold active:opacity-90">
+            Send feedback
+          </button>
+          <p class="text-[10px] text-rhythm-muted text-center mt-2 leading-relaxed">Includes anonymous context (tab, task counts) to help debug.</p>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      let selectedRating = null;
+      modal.querySelectorAll('.feedback-rating-btn').forEach(btn => {
+        btn.onclick = () => {
+          selectedRating = parseInt(btn.dataset.rating, 10);
+          modal.querySelectorAll('.feedback-rating-btn').forEach(b => b.classList.toggle('is-selected', b === btn));
+        };
+      });
+
+      const submitBtn = modal.querySelector('#fb-submit');
+      submitBtn.onclick = async () => {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending…';
+        const ok = await submitFeedback({
+          category: modal.querySelector('#fb-category').value,
+          rating: selectedRating,
+          message: modal.querySelector('#fb-message').value,
+          replyEmail: modal.querySelector('#fb-email').value
+        });
+        if (ok) {
+          showToast('Thanks — feedback sent!');
+          modal.remove();
+        } else {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Send feedback';
+        }
+      };
+
+      setTimeout(() => modal.querySelector('#fb-message')?.focus(), 80);
+    }
+
+    // ==================== RHYTHM BRIEF ====================
+    function getWeekBounds(refDateStr) {
+      const d = new Date((refDateStr || todayStr()) + 'T12:00:00');
+      const day = d.getDay();
+      const start = new Date(d);
+      start.setDate(d.getDate() - day);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      return { start: dateStrLocal(start), end: dateStrLocal(end) };
+    }
+
+    function formatBriefDateLabel(dateStr) {
+      const d = new Date(dateStr + 'T12:00:00');
+      const today = todayStr();
+      if (dateStr === today) return 'Today';
+      const tomorrow = dateStrLocal(new Date(new Date(today + 'T12:00:00').getTime() + 86400000));
+      if (dateStr === tomorrow) return 'Tomorrow';
+      return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function isHabitScheduledOn(habit, dateStr) {
+      const comps = getCompletions(habit.id) || [];
+      if (comps.includes(dateStr)) return false;
+      if (isOneOffTask(habit)) return comps.length === 0 && dateStr === todayStr();
+      if (isDailyTask(habit)) return true;
+      return getNextDueDate(habit) === dateStr;
+    }
+
+    function collectBriefTasks(mode) {
+      const today = todayStr();
+      const items = [];
+
+      if (mode === 'day') {
+        state.habits.forEach(h => {
+          if (isDueToday(h)) items.push({ habit: h, date: today, daysUntil: 0 });
+        });
+      } else {
+        const { start, end } = getWeekBounds(today);
+        const cursor = new Date(start + 'T12:00:00');
+        const endDate = new Date(end + 'T12:00:00');
+        while (cursor <= endDate) {
+          const ds = dateStrLocal(cursor);
+          state.habits.forEach(h => {
+            if (isHabitScheduledOn(h, ds)) {
+              const daysUntil = Math.round((cursor - new Date(today + 'T12:00:00')) / 86400000);
+              items.push({ habit: h, date: ds, daysUntil });
+            }
+          });
+          cursor.setDate(cursor.getDate() + 1);
+        }
+      }
+
+      return items.sort((a, b) => {
+        const scoreA = (a.daysUntil <= 0 ? 0 : a.daysUntil <= 2 ? 1 : 2) * 100 + getEffectiveDifficulty(a.habit, currentEnergy);
+        const scoreB = (b.daysUntil <= 0 ? 0 : b.daysUntil <= 2 ? 1 : 2) * 100 + getEffectiveDifficulty(b.habit, currentEnergy);
+        if (scoreA !== scoreB) return scoreA - scoreB;
+        return a.date.localeCompare(b.date);
+      });
+    }
+
+    function collectBriefBills(mode) {
+      return state.bills
+        .filter(b => {
+          const status = getBillStatus(b);
+          if (status === 'paid' || status === 'autopay') return false;
+          const days = getDaysUntilBillDue(b);
+          return mode === 'day' ? days <= 0 || status === 'due_today' || status === 'overdue' : days <= 6;
+        })
+        .sort((a, b) => getBillUrgency(a) - getBillUrgency(b));
+    }
+
+    function collectBriefEvents(mode) {
+      const cache = state.calendarCache || refreshCalendarCache();
+      if (mode === 'day') {
+        return (cache.events || []).slice().sort((a, b) => parseTimeMins(a.time) - parseTimeMins(b.time));
+      }
+      const weekDays = [];
+      const todayEvents = (cache.events || []).map(e => ({ ...e, dayLabel: 'Today' }));
+      if (todayEvents.length) {
+        weekDays.push({ date: todayStr(), label: 'Today', events: todayEvents });
+      }
+      (cache.weekAhead || []).forEach(day => {
+        const evs = (day.events || []).map(e => ({
+          time: e.time || '—',
+          title: typeof e === 'string' ? e : e.title,
+          durationMin: e.durationMin || 30,
+          dayLabel: day.dayLabel
+        }));
+        if (evs.length) weekDays.push({ date: '', label: day.dayLabel, events: evs });
+      });
+      return weekDays;
+    }
+
+    function buildBriefHeadline(mode, ctx, tasks, bills, events) {
+      const energyWord = ['', 'lighter', 'balanced', 'high-energy'][ctx.energy] || 'balanced';
+      const taskCount = tasks.length;
+      const overdueBills = bills.filter(b => getBillStatus(b) === 'overdue').length;
+
+      if (mode === 'day') {
+        if (taskCount === 0 && !events.length && !bills.length) {
+          return `Today's wide open — a ${energyWord} day to recharge or get ahead on groceries and planning.`;
+        }
+        if (overdueBills > 0) {
+          return `${overdueBills} bill${overdueBills > 1 ? 's' : ''} need attention today, with ${taskCount} task${taskCount === 1 ? '' : 's'} queued for your ${energyWord} energy.`;
+        }
+        const top = tasks[0]?.habit;
+        if (top && ctx.energy === 1) {
+          return `Low-energy day — if you do one thing, make it ${top.title.toLowerCase()}. Everything else can wait.`;
+        }
+        if (events.length && ctx.bestGap?.minutes >= 20) {
+          const ev = events[0];
+          return `${events.length} event${events.length > 1 ? 's' : ''} on the calendar · ~${ctx.bestGap.minutes} min free${ctx.bestGap.beforeEvent ? ` before ${ctx.bestGap.beforeEvent}` : ''} for tasks.`;
+        }
+        return `${taskCount} task${taskCount === 1 ? '' : 's'} sorted for your ${energyWord} energy — highest-impact items first.`;
+      }
+
+      const byDay = {};
+      tasks.forEach(t => { byDay[t.date] = (byDay[t.date] || 0) + 1; });
+      const busiest = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0];
+      if (busiest && busiest[1] >= 3) {
+        return `Busiest day: ${formatBriefDateLabel(busiest[0])} (${busiest[1]} tasks). Front-load groceries and bills earlier in the week.`;
+      }
+      const activeDays = Object.keys(byDay).length;
+      return `${taskCount} task${taskCount === 1 ? '' : 's'} across ${activeDays || 'the'} day${activeDays === 1 ? '' : 's'} — paced for a ${energyWord} week.`;
+    }
+
+    function buildBriefInsight(mode, ctx, tasks, bills, grocery) {
+      const parts = [];
+      const outdoor = tasks.filter(t => /outdoor|mow|lawn|yard|walk|pool/i.test(t.habit.title));
+      const rainRisk = typeof getAfternoonRainRisk === 'function' ? getAfternoonRainRisk() : null;
+
+      if (mode === 'day' && outdoor.length && rainRisk?.risky) {
+        parts.push(`Rain risk this afternoon — consider moving ${outdoor[0].habit.title.toLowerCase()} or tackling it early.`);
+      } else if (mode === 'day' && ctx.freeTime >= 60) {
+        parts.push(`~${ctx.freeTime} minutes of flexible time in your 7am–10pm window.`);
+      }
+
+      if (bills.length) {
+        const manual = bills.filter(b => !b.autopay);
+        if (manual.length) parts.push(`${manual.length} bill${manual.length > 1 ? 's' : ''} to handle in Life → Bills.`);
+      }
+
+      if (grocery.length >= 5) {
+        parts.push(`${grocery.length} grocery items waiting — good to batch with an errand day.`);
+      } else if (grocery.length > 0) {
+        parts.push(`${grocery.length} grocery item${grocery.length > 1 ? 's' : ''} on your list.`);
+      }
+
+      if (!parts.length) {
+        return mode === 'day'
+          ? 'No urgent life-admin flags — focus on your task stack below.'
+          : 'Week looks steady — use daily briefs for day-of prioritization.';
+      }
+      return parts.join(' ');
+    }
+
+    function buildRhythmBrief(mode) {
+      const ctx = getContext();
+      const tasks = collectBriefTasks(mode);
+      const bills = collectBriefBills(mode);
+      const grocery = (state.groceryMaster || []).filter(g => !g.checked);
+      const events = collectBriefEvents(mode);
+      const doFirst = tasks.slice(0, 3);
+      const week = getWeekBounds(todayStr());
+
+      return {
+        mode,
+        ctx,
+        tasks,
+        doFirst,
+        bills,
+        grocery: grocery.slice(0, mode === 'day' ? 6 : 8),
+        groceryTotal: grocery.length,
+        events,
+        week,
+        headline: buildBriefHeadline(mode, ctx, tasks, bills, mode === 'day' ? events : []),
+        insight: buildBriefInsight(mode, ctx, tasks, bills, grocery)
+      };
+    }
+
+    function escapeBriefHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function renderBriefTaskItem(item, rank) {
+      const h = item.habit;
+      const dueLabel = item.daysUntil <= 0 ? 'Due today' : item.daysUntil === 1 ? 'Tomorrow' : formatBriefDateLabel(item.date);
+      const diff = getDifficultyLabel(h.difficulty);
+      return `
+        <div class="rhythm-brief-item">
+          ${rank ? `<div class="rhythm-brief-item-priority">${rank}</div>` : ''}
+          <div class="min-w-0 flex-1">
+            <div class="rhythm-brief-item-title">${escapeBriefHtml(h.title)}</div>
+            <div class="rhythm-brief-item-meta">${escapeBriefHtml(dueLabel)} · ${h.est_minutes || 10} min · ${diff} energy</div>
+          </div>
+        </div>`;
+    }
+
+    function renderRhythmBriefModalContent(brief) {
+      const mode = brief.mode;
+      const doFirstHtml = brief.doFirst.length
+        ? brief.doFirst.map((item, i) => renderBriefTaskItem(item, i + 1)).join('')
+        : '<div class="rhythm-brief-empty">Nothing due — add from Library or quick-add when you\'re ready.</div>';
+
+      let scheduleHtml = '';
+      if (mode === 'day') {
+        const evs = brief.events;
+        scheduleHtml = evs.length
+          ? evs.map(e => `
+              <div class="rhythm-brief-item">
+                <div class="min-w-0 flex-1">
+                  <div class="rhythm-brief-item-title">${escapeBriefHtml(e.time)} · ${escapeBriefHtml(e.title)}</div>
+                  <div class="rhythm-brief-item-meta">${e.durationMin || 30} min${brief.ctx.bestGap ? ` · next gap ~${brief.ctx.bestGap.minutes} min` : ''}</div>
+                </div>
+              </div>`).join('')
+          : '<div class="rhythm-brief-empty">No events today — open day for deep work or chores.</div>';
+      } else {
+        const weekEvs = brief.events;
+        scheduleHtml = weekEvs.length
+          ? weekEvs.map(day => `
+              <div class="mb-2">
+                <div class="text-[10px] font-semibold text-rhythm-primary-light mb-1">${escapeBriefHtml(day.label)}</div>
+                ${day.events.map(e => `
+                  <div class="rhythm-brief-item">
+                    <div class="min-w-0 flex-1">
+                      <div class="rhythm-brief-item-title">${escapeBriefHtml(e.time)} · ${escapeBriefHtml(e.title)}</div>
+                    </div>
+                  </div>`).join('')}
+              </div>`).join('')
+          : '<div class="rhythm-brief-empty">No calendar events loaded — add events in Life → Schedule or import a calendar.</div>';
+      }
+
+      const tasksHtml = brief.tasks.length > 3
+        ? brief.tasks.slice(3, mode === 'day' ? 8 : 12).map(item => renderBriefTaskItem(item, null)).join('')
+        : '';
+
+      const billsHtml = brief.bills.length
+        ? brief.bills.map(b => {
+            const st = getBillStatus(b);
+            const urgent = st === 'overdue' || st === 'due_today';
+            return `
+              <div class="rhythm-brief-item">
+                <div class="min-w-0 flex-1">
+                  <div class="rhythm-brief-item-title">${escapeBriefHtml(b.name)} ${formatBillAmount(b.amount)}</div>
+                  <div class="rhythm-brief-item-meta">${urgent ? 'Due now' : `Due in ${getDaysUntilBillDue(b)} day${getDaysUntilBillDue(b) === 1 ? '' : 's'}`}${b.autopay ? ' · autopay' : ''}</div>
+                </div>
+              </div>`;
+          }).join('')
+        : '<div class="rhythm-brief-empty">No urgent bills this period.</div>';
+
+      const groceryHtml = brief.grocery.length
+        ? `<div class="rhythm-brief-item">
+            <div class="min-w-0 flex-1">
+              <div class="rhythm-brief-item-title">${brief.groceryTotal} item${brief.groceryTotal === 1 ? '' : 's'} on list</div>
+              <div class="rhythm-brief-item-meta">${escapeBriefHtml(brief.grocery.map(g => g.name).join(', '))}</div>
+            </div>
+          </div>`
+        : '<div class="rhythm-brief-empty">Grocery list is clear.</div>';
+
+      const periodLabel = mode === 'day'
+        ? new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+        : `${formatBriefDateLabel(brief.week.start)} – ${formatBriefDateLabel(brief.week.end)}`;
+
+      return `
+        <div class="rhythm-brief-toggle" role="tablist">
+          <button type="button" class="rhythm-brief-toggle-btn ${mode === 'day' ? 'is-active' : ''}" data-brief-mode="day" role="tab">Today</button>
+          <button type="button" class="rhythm-brief-toggle-btn ${mode === 'week' ? 'is-active' : ''}" data-brief-mode="week" role="tab">This week</button>
+        </div>
+        <div class="text-[10px] text-rhythm-muted mb-2">${escapeBriefHtml(periodLabel)}</div>
+        <div class="rhythm-brief-hero">
+          <div class="rhythm-brief-hero-headline">${escapeBriefHtml(brief.headline)}</div>
+          <div class="rhythm-brief-hero-insight">${escapeBriefHtml(brief.insight)}</div>
+        </div>
+        <div class="rhythm-brief-section">
+          <div class="rhythm-brief-section-hdr"><i class="fa-solid fa-bolt text-rhythm-accent"></i> Do first</div>
+          ${doFirstHtml}
+        </div>
+        <div class="rhythm-brief-section">
+          <div class="rhythm-brief-section-hdr"><i class="fa-regular fa-calendar text-sky-400"></i> Schedule</div>
+          ${scheduleHtml}
+          <div class="rhythm-brief-jump" onclick="closeRhythmBriefModal(); switchTab('life'); switchLifePanel('schedule')">Open full schedule →</div>
+        </div>
+        ${tasksHtml ? `<div class="rhythm-brief-section">
+          <div class="rhythm-brief-section-hdr"><i class="fa-solid fa-list-check text-rhythm-primary-light"></i> Also on deck</div>
+          ${tasksHtml}
+        </div>` : ''}
+        <div class="rhythm-brief-section">
+          <div class="rhythm-brief-section-hdr"><i class="fa-solid fa-receipt text-amber-400"></i> Bills</div>
+          ${billsHtml}
+          <div class="rhythm-brief-jump" onclick="closeRhythmBriefModal(); switchTab('life'); switchLifePanel('bills')">Life → Bills →</div>
+        </div>
+        <div class="rhythm-brief-section">
+          <div class="rhythm-brief-section-hdr"><i class="fa-solid fa-cart-shopping text-sky-300"></i> Grocery</div>
+          ${groceryHtml}
+          <div class="rhythm-brief-jump" onclick="closeRhythmBriefModal(); switchTab('life'); switchLifePanel('grocery')">Life → Grocery →</div>
+        </div>
+      `;
+    }
+
+    function closeRhythmBriefModal() {
+      document.getElementById('rhythm-brief-modal')?.remove();
+    }
+
+    function refreshRhythmBriefModal(mode) {
+      rhythmBriefMode = mode;
+      const body = document.getElementById('rhythm-brief-body');
+      if (!body) return;
+      const brief = buildRhythmBrief(mode);
+      body.innerHTML = renderRhythmBriefModalContent(brief);
+      wireRhythmBriefModal(body);
+    }
+
+    function wireRhythmBriefModal(container) {
+      container.querySelectorAll('[data-brief-mode]').forEach(btn => {
+        btn.onclick = () => refreshRhythmBriefModal(btn.dataset.briefMode);
+      });
+    }
+
+    function showRhythmBriefModal(mode) {
+      rhythmBriefMode = mode || rhythmBriefMode || 'day';
+      closeRhythmBriefModal();
+      const brief = buildRhythmBrief(rhythmBriefMode);
+
+      const modal = document.createElement('div');
+      modal.id = 'rhythm-brief-modal';
+      modal.className = 'fixed inset-0 bg-rhythm-bg/75 modal-overlay-blur flex items-end z-[65]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="closeRhythmBriefModal()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="rhythm-brief-sheet relative w-full bg-rhythm-surface border-t border-rhythm-border p-5 text-sm">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <div class="rhythm-brief-launcher-icon" style="width:2rem;height:2rem;font-size:0.85rem"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+              <div>
+                <div class="font-semibold text-base">Rhythm Brief</div>
+                <div class="text-[10px] text-rhythm-muted">Smart digest · tasks, schedule, life</div>
+              </div>
+            </div>
+            <button type="button" onclick="closeRhythmBriefModal()" class="text-rhythm-muted text-2xl leading-none px-1">×</button>
+          </div>
+          <div id="rhythm-brief-body">${renderRhythmBriefModalContent(brief)}</div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      wireRhythmBriefModal(modal.querySelector('#rhythm-brief-body'));
+    }
+
+    function updateRhythmBriefLauncher() {
+      const el = document.getElementById('rhythm-brief-launcher');
+      const lineEl = document.getElementById('rhythm-brief-preview-line');
+      const statsEl = document.getElementById('rhythm-brief-preview-stats');
+      if (!el || !lineEl || !statsEl) return;
+
+      const showOnToday = currentTab === 'today';
+      const onBriefTutorialStep = state.settings.tutorialActive && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'rhythm-brief';
+      const hideDuringOtherTutorial = state.settings.tutorialActive && !onBriefTutorialStep;
+      el.classList.toggle('hidden', !showOnToday || hideDuringOtherTutorial);
+
+      const brief = buildRhythmBrief('day');
+      const taskN = brief.tasks.length;
+      const billN = brief.bills.length;
+      const evN = brief.events.length;
+      const groceryN = brief.groceryTotal;
+
+      if (taskN === 0 && billN === 0 && evN === 0) {
+        lineEl.textContent = 'Tap for your smart day brief';
+      } else if (brief.doFirst[0]) {
+        lineEl.textContent = `Start with ${brief.doFirst[0].habit.title}${taskN > 1 ? ` · ${taskN} tasks today` : ''}`;
+      } else {
+        lineEl.textContent = `${taskN} task${taskN === 1 ? '' : 's'} prioritized for today`;
+      }
+
+      const chips = [];
+      if (taskN) chips.push(`<span class="rhythm-brief-stat">${taskN} task${taskN === 1 ? '' : 's'}</span>`);
+      if (evN) chips.push(`<span class="rhythm-brief-stat">${evN} event${evN === 1 ? '' : 's'}</span>`);
+      if (billN) chips.push(`<span class="rhythm-brief-stat${billN ? ' is-urgent' : ''}">${billN} bill${billN === 1 ? '' : 's'}</span>`);
+      if (groceryN) chips.push(`<span class="rhythm-brief-stat">${groceryN} grocery</span>`);
+      statsEl.innerHTML = chips.join('') || '<span class="rhythm-brief-stat">All clear</span>';
     }
 
     // ==================== SMART BANNER / CONTEXT ====================
@@ -6280,13 +7948,13 @@
       { id: 'energy-levels', reason: '<strong>Energy levels</strong> reshape your Today list — <strong>Low</strong> surfaces quick wins, <strong>Medium</strong> balances the day, and <strong>High</strong> pushes bigger tasks to the top. Try switching before you start.', cta: 'Set energy', action: 'energy' },
       { id: 'library-browse', reason: 'The <strong>Library</strong> is a catalog of chores and habits — tap any card to add it to your rhythm without typing from scratch.', cta: 'Open Library', action: 'library' },
       { id: 'library-custom', reason: 'Built something unique? Use <strong>+ Yours</strong> in the Library to save custom tasks you can re-add anytime.', cta: 'Add custom task', action: 'library-custom' },
-      { id: 'library-filters', reason: 'Library filters (Daily, Weekly, Health, etc.) help you browse by area of life — combine them with the search bar for fast picks.', cta: 'Browse Library', action: 'library' },
+      { id: 'library-columns', reason: 'The <strong>Library</strong> is organized in columns — Daily Habits, Weekly Chores, Monthly Maintenance, and more. Use the search bar to narrow down fast.', cta: 'Browse Library', action: 'library' },
       { id: 'quick-add', reason: 'Type in the quick-add bar on Today to spin up a one-off task — set difficulty and schedule before you save.', cta: 'Add a task', action: 'quick-add' },
       { id: 'schedule-interval', reason: 'When adding a task, <strong>Adjust schedule</strong> supports daily, weekly, biweekly, monthly, and custom intervals — chores can repeat on your cadence.', cta: 'Add scheduled task', action: 'quick-add' },
       { id: 'life-bills', reason: 'The <strong>Life</strong> tab tracks bills with due dates and overdue states — Rhythm can nudge you when something needs attention.', cta: 'View bills', action: 'life-bills' },
       { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> with a master list and trip mode — add items by voice or keyboard and check them off while shopping.', cta: 'Open grocery', action: 'life-grocery' },
       { id: 'life-schedule', reason: '<strong>Life → Schedule</strong> holds appointments and events — block time so suggestions can find gaps between meetings.', cta: 'View schedule', action: 'life-schedule' },
-      { id: 'calendar-sync', reason: 'Connect Google, Outlook, or Apple calendars in <strong>Settings</strong> — Rhythm reads free time and avoids suggesting tasks during busy blocks.', cta: 'Connect calendar', action: 'settings' },
+      { id: 'calendar-sync', reason: 'Link Google, Outlook, Apple, or Samsung calendars in <strong>Settings</strong>, then import a <strong>.ics</strong> file — Rhythm reads free time and avoids suggesting tasks during busy blocks.', cta: 'Connect calendar', action: 'settings' },
       { id: 'work-schedule', reason: 'Set your work hours during onboarding or in Settings — off-hours and weekends unlock different suggestion windows.', cta: 'Profile settings', action: 'settings' },
       { id: 'weather-strip', reason: 'The hourly weather strip at the top forecasts the next few hours — tap it for the full outdoor pane when planning yard work or a walk.', cta: 'See forecast', action: 'weather' },
       { id: 'outdoor-rain', reason: 'Outdoor tasks get rain warnings when afternoon showers are likely — reschedule before you get caught in the weather.', cta: 'Check weather', action: 'weather' },
@@ -6347,28 +8015,30 @@
       if (banner) banner.onclick = handleSmartSuggestion;
     }
 
-    function pickBestContextualSuggestion(candidates, overdueBill, dueTodayBill) {
+    function pickBestContextualSuggestion(candidates) {
       if (!candidates.length) return buildAppTipSuggestion();
 
       candidates.sort((a, b) => b.score - a.score);
       const best = candidates.find(isRelevantContextualSuggestion);
       if (!best) return buildAppTipSuggestion();
-
-      if (best.type !== 'bill' && overdueBill) {
-        best.reason += ` <span class="text-rhythm-primary-light/60 text-[11px]">(${overdueBill.name} overdue)</span>`;
-      } else if (best.type !== 'bill' && dueTodayBill && !overdueBill) {
-        best.reason += ` <span class="text-rhythm-primary-light/60 text-[11px]">(${dueTodayBill.name} due today)</span>`;
-      }
-
       return best;
+    }
+
+    function getManualBillFootnote(activeBills) {
+      const manual = (activeBills || []).filter(b => !b.autopay);
+      const overdue = manual.find(b => getBillStatus(b) === 'overdue');
+      if (overdue) return `${overdue.name} is overdue`;
+      const dueToday = manual.find(b => getBillStatus(b) === 'due_today');
+      if (dueToday) return `${dueToday.name} is due today`;
+      return '';
     }
 
     function buildWelcomeSuggestion() {
       return {
         score: 100,
         type: 'welcome',
-        cta: 'Explore Library',
-        reason: `Welcome to Rhythm. Your life management app. Selecting an energy level automatically prioritizes certain tasks, <strong>Low</strong> looks for quick wins, <strong>Medium</strong> balances your day, and <strong>High</strong> prioritizes bigger tasks. Peek at the <strong>Library</strong> for chores & habits, <strong>Life</strong> for bills, grocery & schedule, and <strong>Streaks</strong> once you're rolling.`
+        cta: 'Learn more',
+        reason: `Welcome to Rhythm — your life management app. <strong>Low</strong> energy surfaces quick wins, <strong>Medium</strong> balances your day, and <strong>High</strong> pushes bigger tasks. Tap <strong>Learn more</strong> for a quick tour of the basics.`
       };
     }
 
@@ -6395,7 +8065,7 @@
     }
 
     function buildSmartSuggestion(ctx) {
-      if (state.settings.showWelcomeBanner) {
+      if (state.settings.showWelcomeBanner && !state.settings.tutorialCompleted) {
         return buildWelcomeSuggestion();
       }
 
@@ -6554,7 +8224,209 @@
         });
       }
 
-      return pickBestContextualSuggestion(candidates, overdueBill, dueTodayBill);
+      return pickBestContextualSuggestion(candidates);
+    }
+
+    const APP_TUTORIAL_STEPS = [
+      {
+        id: 'energy',
+        title: 'Set your energy',
+        body: 'Choose Low, Medium, or High to match how you feel. Rhythm re-sorts Today\'s list so the right tasks rise to the top.',
+        target: () => document.querySelector('#energy-1')?.closest('.flex.gap-x-2'),
+        prepare: () => switchTab('today')
+      },
+      {
+        id: 'today-list',
+        title: 'Today\'s tasks',
+        body: 'Your action list lives here — tap the circle to complete a task. Daily chores show up every day; weekly and monthly tasks appear when they\'re actually due.',
+        target: () => document.getElementById('task-list') || document.getElementById('tab-content-today'),
+        prepare: () => switchTab('today')
+      },
+      {
+        id: 'quick-add',
+        title: 'Quick add',
+        body: 'Type a one-off task and press Enter or tap + to add it. Use the mic for voice commands on supported browsers.',
+        target: () => document.getElementById('quick-add-bar'),
+        prepare: () => switchTab('today')
+      },
+      {
+        id: 'rhythm-brief',
+        title: 'Rhythm Brief',
+        body: 'Your smart digest — tap for a <strong>Today</strong> or <strong>This week</strong> briefing. Tasks, schedule, bills, and grocery are sorted by what matters most right now.',
+        target: () => document.getElementById('rhythm-brief-launcher'),
+        prepare: () => {
+          switchTab('today');
+          updateRhythmBriefLauncher();
+          document.getElementById('rhythm-brief-launcher')?.classList.remove('hidden');
+        }
+      },
+      {
+        id: 'tabs',
+        title: 'Four main areas',
+        body: '<strong>Today</strong> is your feed, <strong>Streaks</strong> tracks progress, <strong>Life</strong> holds bills & schedule, and <strong>Library</strong> is your chore catalog.',
+        target: () => document.querySelector('.main-nav'),
+        prepare: () => switchTab('today')
+      },
+      {
+        id: 'streaks',
+        title: 'Streaks tab',
+        body: 'See habit streaks, projections, and your Cheat Day Fund — right next to Today so progress stays top of mind.',
+        target: () => document.getElementById('tab-streaks'),
+        prepare: () => switchTab('today')
+      },
+      {
+        id: 'life',
+        title: 'Life tab',
+        body: 'Manage bills, grocery, calendar events, and subscriptions — due dates and overdue states feed into smart suggestions later.',
+        target: () => document.getElementById('tab-life'),
+        prepare: () => switchTab('today')
+      },
+      {
+        id: 'library',
+        title: 'Library',
+        body: 'Browse columns of preset chores and habits. Tap any card to add it to your rhythm — weekly tasks won\'t be due the same day you add them.',
+        target: () => document.getElementById('tab-library'),
+        prepare: () => switchTab('today')
+      },
+      {
+        id: 'weather',
+        title: 'Weather strip',
+        body: 'Hourly forecast at the top helps plan outdoor chores. Tap for the full outdoor weather pane.',
+        target: () => document.getElementById('header-weather'),
+        prepare: () => switchTab('today')
+      },
+      {
+        id: 'smart',
+        title: 'Smart suggestions',
+        body: 'This panel weighs your energy, calendar gaps, weather, and bills to recommend what to do next. Mute it anytime from the corner.',
+        target: () => document.getElementById('smart-banner'),
+        prepare: () => switchTab('today')
+      }
+    ];
+
+    let tutorialTargetEl = null;
+
+    function clearTutorialHighlight() {
+      if (tutorialTargetEl) {
+        tutorialTargetEl.classList.remove('tutorial-target-pulse');
+        tutorialTargetEl = null;
+      }
+    }
+
+    function positionTutorialHighlight(el) {
+      const highlight = document.getElementById('tutorial-highlight');
+      if (!highlight || !el) return;
+      const rect = el.getBoundingClientRect();
+      const pad = 6;
+      highlight.classList.remove('hidden');
+      highlight.style.top = `${Math.max(8, rect.top - pad)}px`;
+      highlight.style.left = `${Math.max(8, rect.left - pad)}px`;
+      highlight.style.width = `${rect.width + pad * 2}px`;
+      highlight.style.height = `${rect.height + pad * 2}px`;
+    }
+
+    function renderTutorialStep(stepIndex) {
+      const step = APP_TUTORIAL_STEPS[stepIndex];
+      if (!step) return completeAppTutorial();
+
+      state.settings.tutorialStep = stepIndex;
+      saveState();
+
+      const overlay = document.getElementById('tutorial-overlay');
+      const card = document.getElementById('tutorial-card');
+      const titleEl = document.getElementById('tutorial-title');
+      const bodyEl = document.getElementById('tutorial-body');
+      const stepLabel = document.getElementById('tutorial-step-label');
+      const backBtn = document.getElementById('tutorial-back-btn');
+      const nextBtn = document.getElementById('tutorial-next-btn');
+
+      if (step.prepare) step.prepare();
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          clearTutorialHighlight();
+          let target = typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
+          if (step.id === 'smart') {
+            const banner = document.getElementById('smart-banner');
+            if (banner) {
+              banner.classList.remove('hidden');
+              banner.querySelector('#smart-banner-label').textContent = 'Smart Suggestion';
+              banner.querySelector('#smart-text').innerHTML = 'After this tour, I\'ll suggest tasks based on your energy, schedule, and weather.';
+              banner.querySelector('#smart-cta').textContent = 'Got it';
+              const footnote = document.getElementById('smart-bill-footnote');
+              if (footnote) footnote.classList.add('hidden');
+            }
+            target = banner || target;
+          }
+          if (target) {
+            tutorialTargetEl = target;
+            target.classList.add('tutorial-target-pulse');
+            target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            positionTutorialHighlight(target);
+          }
+
+          if (overlay) {
+            overlay.classList.add('is-active');
+            overlay.setAttribute('aria-hidden', 'false');
+          }
+          if (card) card.classList.remove('hidden');
+          if (stepLabel) stepLabel.textContent = `Step ${stepIndex + 1} of ${APP_TUTORIAL_STEPS.length}`;
+          if (titleEl) titleEl.textContent = step.title;
+          if (bodyEl) bodyEl.innerHTML = step.body;
+          if (backBtn) backBtn.disabled = stepIndex === 0;
+          if (nextBtn) nextBtn.textContent = stepIndex === APP_TUTORIAL_STEPS.length - 1 ? 'Finish tour' : 'Next';
+        });
+      });
+    }
+
+    function startAppTutorial() {
+      state.settings.showWelcomeBanner = false;
+      state.settings.tutorialActive = true;
+      state.settings.tutorialCompleted = false;
+      state.settings.tutorialStep = 0;
+      saveState();
+      updateSmartBanner();
+      renderTutorialStep(0);
+    }
+
+    function nextTutorialStep() {
+      const next = (state.settings.tutorialStep || 0) + 1;
+      if (next >= APP_TUTORIAL_STEPS.length) {
+        completeAppTutorial();
+        return;
+      }
+      renderTutorialStep(next);
+    }
+
+    function prevTutorialStep() {
+      const prev = Math.max(0, (state.settings.tutorialStep || 0) - 1);
+      renderTutorialStep(prev);
+    }
+
+    function skipAppTutorial() {
+      completeAppTutorial(true);
+    }
+
+    function completeAppTutorial(skipped = false) {
+      clearTutorialHighlight();
+      const overlay = document.getElementById('tutorial-overlay');
+      const card = document.getElementById('tutorial-card');
+      const highlight = document.getElementById('tutorial-highlight');
+      if (overlay) {
+        overlay.classList.remove('is-active');
+        overlay.setAttribute('aria-hidden', 'true');
+      }
+      if (card) card.classList.add('hidden');
+      if (highlight) highlight.classList.add('hidden');
+
+      state.settings.tutorialActive = false;
+      state.settings.tutorialCompleted = true;
+      state.settings.showWelcomeBanner = false;
+      state.settings.tutorialStep = 0;
+      saveState();
+      switchTab('today');
+      updateSmartBanner();
+      showToast(skipped ? 'Tour skipped — smart suggestions are on' : 'Tour complete — smart suggestions are on');
     }
 
     function updateSmartBanner() {
@@ -6567,9 +8439,26 @@
         return;
       }
 
+      if (state.settings.tutorialActive) {
+        banner.classList.add('hidden');
+        resetSmartBannerDatasets(banner);
+        const footnote = document.getElementById('smart-bill-footnote');
+        if (footnote) {
+          footnote.classList.add('hidden');
+          footnote.textContent = '';
+        }
+        renderHeaderWeather();
+        return;
+      }
+
       if (state.settings.smartSuggestionsMuted) {
         banner.classList.add('hidden');
         resetSmartBannerDatasets(banner);
+        const footnote = document.getElementById('smart-bill-footnote');
+        if (footnote) {
+          footnote.classList.add('hidden');
+          footnote.textContent = '';
+        }
         renderHeaderWeather();
         return;
       }
@@ -6584,14 +8473,28 @@
       const ctx = getContext();
       const suggestion = buildSmartSuggestion(ctx);
 
+      const billFootnoteEl = document.getElementById('smart-bill-footnote');
       if (suggestion) {
         textEl.innerHTML = suggestion.reason;
         if (ctaEl) ctaEl.textContent = suggestion.cta || 'Tap to start';
         if (labelEl) {
-          labelEl.textContent = suggestion.type === 'tip' ? 'App tip' : 'Smart Suggestion';
+          labelEl.textContent = suggestion.type === 'welcome' ? 'Welcome' : suggestion.type === 'tip' ? 'App tip' : 'Smart Suggestion';
+        }
+        const billNote = suggestion.type !== 'bill' ? getManualBillFootnote(ctx.activeBills) : '';
+        if (billFootnoteEl) {
+          if (billNote) {
+            billFootnoteEl.textContent = billNote;
+            billFootnoteEl.classList.remove('hidden');
+          } else {
+            billFootnoteEl.textContent = '';
+            billFootnoteEl.classList.add('hidden');
+          }
         }
         ensureSmartBannerHandler(banner);
         banner.classList.remove('hidden');
+        banner.classList.remove('smart-banner-enter');
+        void banner.offsetWidth;
+        banner.classList.add('smart-banner-enter');
         banner.dataset.suggestionHabit = suggestion.habit ? suggestion.habit.id : '';
         banner.dataset.suggestionType = suggestion.type || 'habit';
         banner.dataset.suggestionBill = suggestion.bill ? suggestion.bill.id : '';
@@ -6600,11 +8503,16 @@
       } else {
         banner.classList.add('hidden');
         resetSmartBannerDatasets(banner);
+        if (billFootnoteEl) {
+          billFootnoteEl.textContent = '';
+          billFootnoteEl.classList.add('hidden');
+        }
       }
       renderHeaderWeather();
     }
 
     function handleSmartSuggestion() {
+      if (state.settings.tutorialActive) return;
       const banner = document.getElementById('smart-banner');
       if (!banner) return;
       const type = banner.dataset.suggestionType;
@@ -6620,10 +8528,20 @@
       }
 
       if (type === 'welcome') {
-        state.settings.showWelcomeBanner = false;
-        saveState();
-        switchTab('library');
-        showToast('Low = quick wins · Medium = balanced · High = go big');
+        startAppTutorial();
+        return;
+      }
+
+      if (type === 'automation' && habitId) {
+        const habit = state.habits.find(h => h.id === habitId);
+        if (habit && !habit.interval_days) {
+          habit.interval_days = 7;
+          saveState();
+          showToast('Now recurring every 7 days');
+          renderTasks();
+        }
+        banner.classList.add('hidden');
+        ensureSmartBannerHandler(banner);
         updateSmartBanner();
         return;
       }
@@ -6736,6 +8654,7 @@
     }
 
     function dismissSuggestion() {
+      if (state.settings.tutorialActive) return;
       const banner = document.getElementById('smart-banner');
       const type = banner?.dataset.suggestionType;
 
@@ -6759,7 +8678,7 @@
       }
 
       ensureSmartBannerHandler(banner);
-      banner.classList.add('hidden');
+      if (banner) banner.classList.add('hidden');
     }
 
     // ==================== VOICE ====================
@@ -6939,7 +8858,7 @@
         unit: inf.unit
       };
 
-      state.habits.push(newHabit);
+      state.habits.push(stampHabitMeta(newHabit));
       state.customUsage[newHabit.id] = (state.customUsage[newHabit.id] || 0) + 1;
       saveState();
       renderTasks();
@@ -7077,7 +8996,7 @@
         }
       }
 
-      state.habits.push(taskToAdd);
+      state.habits.push(stampHabitMeta(taskToAdd));
       saveState();
       if (cardEl) {
         cardEl.classList.add('just-added');
@@ -7140,7 +9059,7 @@
       modal.querySelector('#pro-add-reminder').onclick = () => {
         const reminderId = 'pro-schedule-' + task.id;
         if (!state.habits.some(h => h.id === reminderId)) {
-          state.habits.push({
+          state.habits.push(stampHabitMeta({
             id: reminderId,
             title: `Schedule: ${pro.short || task.title}`,
             librarySection: task.librarySection,
@@ -7152,7 +9071,7 @@
             proLinkedTask: task.id,
             note: `Book ${pro.label}`,
             is_pro_reminder: true
-          });
+          }));
           saveState();
           renderTasks();
           updateSmartBanner();
@@ -7197,7 +9116,7 @@
       const intervalLabel = formatIntervalLabel(task.interval_days);
 
       const div = document.createElement('div');
-      div.className = `library-task-card bg-rhythm-raised/70 border ${alreadyAdded || proScheduled ? 'border-rhythm-primary/50' : 'border-rhythm-border/80'} rounded-2xl px-3.5 py-2.5 mb-2`;
+      div.className = `library-task-card rhythm-card bg-rhythm-raised/70 border ${alreadyAdded || proScheduled ? 'border-rhythm-primary/50' : 'border-rhythm-border/80'} rounded-2xl px-3.5 py-2.5 mb-2`;
 
       const pref = getMaintenancePreference();
       let actionCol = '';
@@ -7257,8 +9176,6 @@
     }
 
     function renderLibrary() {
-      renderLibraryFilters();
-
       const container = document.getElementById('library-list');
       const statsEl = document.getElementById('library-stats');
       if (!container) return;
@@ -7274,12 +9191,12 @@
 
       if (tasks.length === 0) {
         container.innerHTML = `
-          <div class="text-center py-10 px-4 rounded-2xl bg-rhythm-raised/70 border border-rhythm-border/50">
+          <div class="library-column w-full max-w-none flex-none text-center py-10 px-4 rounded-2xl bg-rhythm-raised/70 border border-rhythm-border/50">
             <div class="text-2xl mb-2">🔍</div>
             <div class="text-sm text-rhythm-text font-medium">No matches</div>
-            <div class="text-xs text-rhythm-muted mt-1">Try another filter or clear search</div>
-            <button onclick="currentLibraryFilter='all'; librarySearchQuery=''; document.getElementById('library-search').value=''; renderLibrary();"
-              class="mt-3 text-xs text-rhythm-primary-light font-medium">Reset filters</button>
+            <div class="text-xs text-rhythm-muted mt-1">Try clearing search</div>
+            <button onclick="librarySearchQuery=''; document.getElementById('library-search').value=''; renderLibrary();"
+              class="mt-3 text-xs text-rhythm-primary-light font-medium">Clear search</button>
           </div>`;
         return;
       }
@@ -7291,12 +9208,7 @@
         grouped[sec].push(task);
       });
 
-      let sectionOrder = [...LIBRARY_SECTIONS];
-      if (currentLibraryFilter === 'maintenance') {
-        sectionOrder = MAINTENANCE_SECTIONS;
-      } else if (currentLibraryFilter !== 'all') {
-        sectionOrder = sectionOrder.filter(sec => grouped[sec]);
-      }
+      const sectionOrder = [...LIBRARY_SECTIONS];
       Object.keys(grouped).forEach(sec => {
         if (!sectionOrder.includes(sec)) sectionOrder.push(sec);
       });
@@ -7311,31 +9223,21 @@
           return (a.interval_days || 0) - (b.interval_days || 0);
         });
 
-        const hdr = document.createElement('div');
-        hdr.className = 'flex items-center gap-1.5 mt-3 mb-1.5 first:mt-0';
-        hdr.innerHTML = `
-          <span class="text-sm">${getLibrarySectionEmoji(sec)}</span>
-          <span class="feed-section-label text-rhythm-muted font-semibold">${sec}</span>
-          <span class="text-[9px] text-rhythm-muted tabular-nums">${secTasks.length}</span>
+        const col = document.createElement('div');
+        col.className = 'library-column';
+        col.innerHTML = `
+          <div class="library-column-header">
+            <span class="text-sm">${getLibrarySectionEmoji(sec)}</span>
+            <span class="feed-section-label text-rhythm-muted font-semibold flex-1 leading-tight">${sec}</span>
+            <span class="text-[9px] text-rhythm-muted tabular-nums">${secTasks.length}</span>
+          </div>
+          <div class="library-column-tasks"></div>
         `;
-        container.appendChild(hdr);
 
-        secTasks.forEach(task => renderLibraryTaskRow(task, container));
+        const taskList = col.querySelector('.library-column-tasks');
+        secTasks.forEach(task => renderLibraryTaskRow(task, taskList));
+        container.appendChild(col);
       });
-
-      if (currentLibraryFilter === 'maintenance') {
-        const pref = getMaintenancePreference();
-        const tip = document.createElement('div');
-        tip.className = `mt-4 px-3 py-2.5 rounded-2xl border text-[10px] leading-relaxed ${pref === 'hire' ? 'bg-rhythm-accent/15 border-rhythm-accent/30 text-rhythm-accent' : pref === 'diy' ? 'bg-rhythm-primary/15 border-rhythm-primary/30 text-rhythm-primary-light' : 'bg-rhythm-raised/70 border-rhythm-border text-rhythm-muted'}`;
-        if (pref === 'hire') {
-          tip.innerHTML = `<i class="fa-solid fa-user-tie mr-1"></i> <strong>Hire-out profile</strong> — tap Schedule pro to add booking reminders. Change in Settings anytime.`;
-        } else if (pref === 'diy') {
-          tip.innerHTML = `<i class="fa-solid fa-hammer mr-1"></i> <strong>DIY profile</strong> — tasks add straight to your list. Prefer pros sometimes? Switch to Mix in Settings.`;
-        } else {
-          tip.innerHTML = `<i class="fa-solid fa-sliders mr-1"></i> <strong>Mix profile</strong> — + Add for DIY or Schedule pro to book a tech. Set preference in Settings.`;
-        }
-        container.appendChild(tip);
-      }
     }
 
     function addCustomToLibrary() {
@@ -7415,7 +9317,7 @@
       for (let i = 0; i < span; i++) {
         const d = new Date(today);
         d.setDate(d.getDate() - i);
-        const ds = d.toISOString().split('T')[0];
+        const ds = dateStrLocal(d);
         let dayPts = 0;
         state.habits.forEach(h => {
           if ((getCompletions(h.id) || []).includes(ds)) {
@@ -7592,6 +9494,7 @@
       if (!confirmed) return;
 
       delete state.completions[habitId];
+      if (state.habitSkips) delete state.habitSkips[habitId];
       if (state.metricLogs) delete state.metricLogs[habitId];
       if (state.healthSyncs) delete state.healthSyncs[habitId];
 
@@ -7615,7 +9518,7 @@
 
       if (active.length === 0) {
         currentProjectionHabit = null;
-        container.innerHTML = `<div class="text-center py-6 px-4 text-sm text-rhythm-muted bg-rhythm-surface rounded-3xl">Complete a few Task to view your steaks!</div>`;
+        container.innerHTML = rhythmEmptyHtml('🔥', 'No streaks yet', 'Complete a few tasks to view your streaks and projected wins.');
         return;
       }
 
@@ -7626,7 +9529,7 @@
         const badgeHtml = renderStreakBadgeHtml(badge);
         const progressHtml = renderStreakBadgeProgress(streak);
         const card = document.createElement('div');
-        card.className = `bg-rhythm-surface border rounded-3xl px-4 py-3.5 cursor-pointer active:bg-rhythm-border ${isSelected ? 'border-rhythm-primary/60 ring-1 ring-rhythm-primary/30' : 'border-rhythm-border'}`;
+        card.className = `rhythm-card bg-rhythm-surface border rounded-3xl px-4 py-3.5 cursor-pointer active:bg-rhythm-border ${isSelected ? 'border-rhythm-primary/60 shadow-[var(--rhythm-glow-primary)]' : 'border-rhythm-border'}`;
         card.onclick = () => showProjections(habit.id);
         card.innerHTML = `
           <div class="flex justify-between items-start gap-2">
@@ -7777,19 +9680,26 @@
 
     // ==================== CALENDAR MOCK + SIMULATOR ====================
     function getMockCalendar() {
+      const imported = (hasAnyCalendarConnected() && state.settings.importedCalendarEvents?.length)
+        ? state.settings.importedCalendarEvents
+        : [];
+
       if (state.settings.mockCalendar) {
+        const mockEvents = state.settings.mockCalendar.events || [];
         return {
-          events: state.settings.mockCalendar.events || [],
+          events: [...imported, ...mockEvents],
           freeMinutes: state.settings.mockCalendar.freeMinutes ?? 0,
-          note: state.settings.mockCalendar.note || '',
+          note: imported.length
+            ? `Imported calendar — ${imported.length} event${imported.length === 1 ? '' : 's'} today`
+            : (state.settings.mockCalendar.note || ''),
           weekAhead: state.settings.mockCalendar.weekAhead || []
         };
       }
 
       return {
-        events: [],
+        events: imported,
         freeMinutes: 0,
-        note: '',
+        note: imported.length ? `Imported calendar — ${imported.length} event${imported.length === 1 ? '' : 's'} today` : '',
         weekAhead: []
       };
     }
@@ -7805,11 +9715,13 @@
       const choice = options[Math.floor(Math.random() * options.length)];
       
       state.settings.mockWeather = choice.weather;
-      const sampleEvents = choice.freeMinutes >= 90
-        ? [{ time: "10:00", title: "Morning coffee", durationMin: 30 }, { time: "14:00", title: "Free block", durationMin: 60 }]
-        : choice.weather.includes('rainy')
-          ? [{ time: "09:00", title: "Team standup", durationMin: 15 }, { time: "13:00", title: "Working lunch", durationMin: 45 }, { time: "18:00", title: "Dinner prep", durationMin: 30 }]
-          : [{ time: "09:00", title: "Team standup", durationMin: 15 }, { time: "12:30", title: "Lunch", durationMin: 45 }, { time: "17:00", title: "End of day", durationMin: 0 }];
+      const sampleEvents = normalizeCalendarEvents(
+        choice.freeMinutes >= 90
+          ? [{ time: "10:00", title: "Morning coffee", durationMin: 30 }, { time: "14:00", title: "Free block", durationMin: 60 }]
+          : choice.weather.includes('rainy')
+            ? [{ time: "09:00", title: "Team standup", durationMin: 15 }, { time: "13:00", title: "Working lunch", durationMin: 45 }, { time: "18:00", title: "Dinner prep", durationMin: 30 }]
+            : [{ time: "09:00", title: "Team standup", durationMin: 15 }, { time: "12:30", title: "Lunch", durationMin: 45 }, { time: "17:00", title: "End of day", durationMin: 0 }]
+      );
 
       state.settings.mockCalendar = {
         freeMinutes: choice.freeMinutes,
@@ -7878,7 +9790,7 @@
       const modal = document.createElement('div');
       modal.className = `fixed inset-0 bg-rhythm-bg/70 flex items-end z-50`;
       modal.innerHTML = `
-        <div onclick="event.target.remove()" class="absolute inset-0"></div>
+        <div onclick="this.closest('.fixed').remove()" class="absolute inset-0"></div>
         <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5">
           <div class="flex justify-between mb-4">
             <div class="font-semibold text-xl">${habit.title}</div>
@@ -7927,6 +9839,7 @@
       if (!confirm(`Remove "${habit.title}" from your tasks?`)) return;
       state.habits = state.habits.filter(h => h.id !== habitId);
       delete state.completions[habitId];
+      delete state.habitSkips?.[habitId];
       delete state.healthSyncs?.[habitId];
       delete state.metricLogs?.[habitId];
       saveState();
@@ -7941,6 +9854,7 @@
       if (!confirm('Remove this habit entirely?')) return;
       state.habits = state.habits.filter(h => h.id !== habitId);
       delete state.completions[habitId];
+      delete state.habitSkips?.[habitId];
       delete state.healthSyncs?.[habitId];
       delete state.metricLogs?.[habitId];
       saveState();
@@ -7956,7 +9870,7 @@
     function showSettings() {
       settingsWasOpen = true;
       const modal = document.createElement('div');
-      modal.className = `fixed inset-0 bg-rhythm-bg/70 flex items-end z-[60]`;
+      modal.className = `fixed inset-0 bg-rhythm-bg/70 modal-overlay-blur flex items-end z-[60]`;
       
       const profile = getUserProfile();
       const maintPref = getMaintenancePreference();
@@ -7970,14 +9884,26 @@
       ];
       
       modal.innerHTML = `
-        <div onclick="event.target.remove(); settingsWasOpen=false;" class="absolute inset-0"></div>
-        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm max-h-[85vh] overflow-y-auto">
+        <div onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="absolute inset-0"></div>
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm max-h-[85vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-4 flex items-center justify-between">
             <span>Your Rhythm Profile</span>
             <button onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="text-rhythm-muted text-2xl leading-none">×</button>
           </div>
           
           <div class="space-y-4">
+            <div class="flex items-center justify-between gap-3 py-1">
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-rhythm-text">Send feedback</div>
+                <div class="text-[10px] text-rhythm-muted leading-snug">Report bugs or ideas — also in the header <i class="fa-regular fa-comment-dots"></i></div>
+              </div>
+              <button type="button" onclick="this.closest('.fixed').remove(); showFeedbackModal()"
+                class="flex-shrink-0 px-3 py-1.5 rounded-xl bg-rhythm-raised border border-rhythm-border text-xs font-medium text-rhythm-primary-light">
+                Open
+              </button>
+            </div>
+
             <div class="flex items-center justify-between gap-3 py-1">
               <div class="min-w-0">
                 <div class="text-sm font-medium text-rhythm-text">Smart suggestions</div>
@@ -7994,7 +9920,13 @@
               <div class="space-y-2">
                 ${CALENDAR_PROVIDERS.map(p => renderCalendarProviderCard(p, conns[p.id], { onboarding: false })).join('')}
               </div>
-              <div class="text-[10px] text-rhythm-muted mt-1.5">Powers free-time gaps, conflict-aware suggestions &amp; Life schedule</div>
+              <button type="button" onclick="triggerCalendarICSImport('google')"
+                class="w-full mt-2 py-2.5 rounded-2xl bg-rhythm-raised border border-rhythm-border text-xs font-medium text-rhythm-text active:bg-rhythm-border">
+                <i class="fa-solid fa-file-import mr-1.5 text-rhythm-primary-light"></i> Import .ics calendar file
+              </button>
+              <div class="text-[10px] text-rhythm-muted mt-1.5 leading-relaxed">
+                Google, Outlook, Apple &amp; Samsung calendars work via <strong>.ics export</strong> in this web preview. One-tap live OAuth sync ships in the native iOS/Android app.
+              </div>
             </div>
 
             <div>
@@ -8148,20 +10080,28 @@
 
     // ==================== TABS ====================
     function switchTab(tab) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('tab-enter');
+      });
       ['today', 'life', 'streaks', 'library'].forEach(name => {
         const el = document.getElementById(`tab-${name}`);
         if (el) {
           el.classList.remove('nav-active');
-          el.classList.add('text-rhythm-muted');
+          el.setAttribute('aria-selected', 'false');
         }
       });
 
-      document.getElementById(`tab-content-${tab}`)?.classList.remove('hidden');
+      const content = document.getElementById(`tab-content-${tab}`);
+      if (content) {
+        content.classList.remove('hidden');
+        void content.offsetWidth;
+        content.classList.add('tab-enter');
+      }
       const activeTab = document.getElementById(`tab-${tab}`);
       if (activeTab) {
         activeTab.classList.add('nav-active');
-        activeTab.classList.remove('text-rhythm-muted');
+        activeTab.setAttribute('aria-selected', 'true');
       }
       
       currentTab = tab;
@@ -8179,8 +10119,10 @@
         switchLifePanel(currentLifePanel);
       }
       if (tab === 'today') {
+        updateRhythmBriefLauncher();
         updateSmartBanner();
       } else {
+        document.getElementById('rhythm-brief-launcher')?.classList.add('hidden');
         const banner = document.getElementById('smart-banner');
         if (banner) banner.classList.add('hidden');
       }
@@ -8192,37 +10134,60 @@
 
     // ==================== INIT & HELPERS ====================
     function updateDate() {
-      const d = new Date();
-      const formatted = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-      const short = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-      const todayEl = document.getElementById('today-date');
-      const headerEl = document.getElementById('site-header-date');
-      if (todayEl) todayEl.textContent = short;
-      if (headerEl) headerEl.textContent = formatted;
+      updateHeaderContext();
     }
 
-    function showToast(msg) {
+    function rhythmEmptyHtml(icon, title, subtitle = '', extraHtml = '') {
+      return `<div class="rhythm-empty">${icon ? `<div class="rhythm-empty-icon">${icon}</div>` : ''}<div class="text-sm font-medium text-rhythm-text">${title}</div>${subtitle ? `<div class="text-xs text-rhythm-muted mt-1.5 leading-relaxed">${subtitle}</div>` : ''}${extraHtml}</div>`;
+    }
+
+    function showToast(msg, tone = 'success') {
       const toast = document.getElementById('toast');
       const text = document.getElementById('toast-text');
+      const icon = document.getElementById('toast-icon');
+      if (!toast || !text) return;
+
+      const icons = {
+        success: 'fa-circle-check text-rhythm-primary-light',
+        info: 'fa-circle-info text-rhythm-accent',
+        warn: 'fa-triangle-exclamation text-amber-400'
+      };
+      if (icon) icon.className = `fa-solid ${icons[tone] || icons.success} text-base`;
+
+      if (window._toastTimer) clearTimeout(window._toastTimer);
+      if (window._toastHideTimer) clearTimeout(window._toastHideTimer);
+
       text.textContent = msg;
       toast.style.display = 'flex';
-      toast.classList.remove('hidden');
-      
-      setTimeout(() => {
-        toast.style.transition = 'all 0.2s';
-        toast.style.opacity = '0';
-        setTimeout(() => {
-          toast.style.opacity = '1';
-          toast.style.transition = '';
+      toast.classList.remove('hidden', 'toast-hide');
+      toast.classList.add('toast-show');
+
+      window._toastTimer = setTimeout(() => {
+        toast.classList.remove('toast-show');
+        toast.classList.add('toast-hide');
+        window._toastHideTimer = setTimeout(() => {
           toast.classList.add('hidden');
+          toast.classList.remove('toast-hide');
           toast.style.display = 'none';
-        }, 160);
-      }, 2100);
+        }, 220);
+      }, 2400);
     }
 
     function seedIfNeeded() {
       const labels = {1: 'Low - Small Wins', 2: 'Medium - Balanced', 3: 'High - Go Big'};
       document.getElementById('energy-label').textContent = labels[currentEnergy];
+    }
+
+    function initQuickAddInput() {
+      const input = document.getElementById('quick-add-input');
+      if (!input || input.dataset.enterBound === '1') return;
+      input.dataset.enterBound = '1';
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addHabitFromInput();
+        }
+      });
     }
 
     function initEnergyButtons() {
@@ -8286,7 +10251,8 @@
         iconClass: 'fa-brands',
         accent: 'text-red-400',
         btnClass: 'bg-rhythm-raised hover:bg-rhythm-border border-rhythm-border',
-        defaultEmail: 'you@gmail.com'
+        defaultEmail: 'you@gmail.com',
+        icsHint: 'Google Calendar → Settings → Import & export → Export'
       },
       {
         id: 'outlook',
@@ -8296,7 +10262,8 @@
         iconClass: 'fa-brands',
         accent: 'text-sky-400',
         btnClass: 'bg-rhythm-raised hover:bg-rhythm-border border-rhythm-border',
-        defaultEmail: 'you@outlook.com'
+        defaultEmail: 'you@outlook.com',
+        icsHint: 'Outlook.com → Calendar → Share → Publish or export .ics'
       },
       {
         id: 'apple',
@@ -8306,7 +10273,19 @@
         iconClass: 'fa-brands',
         accent: 'text-rhythm-text',
         btnClass: 'bg-rhythm-raised hover:bg-rhythm-border border-rhythm-border',
-        defaultEmail: 'you@icloud.com'
+        defaultEmail: 'you@icloud.com',
+        icsHint: 'Mac Calendar → File → Export, or share calendar as .ics'
+      },
+      {
+        id: 'samsung',
+        name: 'Samsung Calendar',
+        subtitle: 'Galaxy phones & tablets (Google sync)',
+        icon: 'fa-calendar-days',
+        iconClass: 'fa-solid',
+        accent: 'text-indigo-300',
+        btnClass: 'bg-rhythm-raised hover:bg-rhythm-border border-rhythm-border',
+        defaultEmail: 'you@gmail.com',
+        icsHint: 'Samsung Calendar → Settings → Sync with Google, then export from Google Calendar'
       }
     ];
 
@@ -8348,8 +10327,78 @@
       return state.settings.calendarConnections || {
         google: { connected: false, email: null },
         outlook: { connected: false, email: null },
-        apple: { connected: false, email: null }
+        apple: { connected: false, email: null },
+        samsung: { connected: false, email: null }
       };
+    }
+
+    function parseICSDate(value) {
+      if (!value) return null;
+      const clean = value.replace(/[^0-9TZ]/g, '');
+      if (clean.length >= 8) {
+        const y = clean.slice(0, 4);
+        const mo = clean.slice(4, 6);
+        const d = clean.slice(6, 8);
+        const h = clean.length >= 10 ? clean.slice(9, 11) : '00';
+        const mi = clean.length >= 12 ? clean.slice(11, 13) : '00';
+        return new Date(`${y}-${mo}-${d}T${h}:${mi}:00`);
+      }
+      return null;
+    }
+
+    function parseICSContent(text) {
+      const unfolded = text.replace(/\r?\n[ \t]/g, '');
+      const blocks = unfolded.split('BEGIN:VEVENT').slice(1);
+      const today = todayStr();
+      const events = [];
+
+      blocks.forEach(block => {
+        const summary = (block.match(/SUMMARY:([^\r\n]+)/) || [])[1]?.trim();
+        const dtstart = (block.match(/DTSTART[^:]*:([^\r\n]+)/) || [])[1];
+        const dtend = (block.match(/DTEND[^:]*:([^\r\n]+)/) || [])[1];
+        if (!summary) return;
+
+        const start = parseICSDate(dtstart);
+        const end = parseICSDate(dtend);
+        if (!start) return;
+
+        const eventDate = dateStrLocal(start);
+        if (eventDate !== today) return;
+
+        const durationMin = end ? Math.max(15, Math.round((end - start) / 60000)) : 60;
+
+        events.push({
+          time: `${start.getHours()}:${String(start.getMinutes()).padStart(2, '0')}`,
+          title: summary,
+          durationMin
+        });
+      });
+
+      return events;
+    }
+
+    function triggerCalendarICSImport(providerId) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.ics,text/calendar';
+      input.onchange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const events = parseICSContent(text);
+          if (!state.settings.importedCalendarEvents) state.settings.importedCalendarEvents = [];
+          state.settings.importedCalendarEvents = events;
+          applyCalendarSync();
+          saveState();
+          const provider = CALENDAR_PROVIDERS.find(p => p.id === providerId);
+          showToast(`✓ Imported ${events.length} event${events.length === 1 ? '' : 's'} from ${provider?.name || 'calendar'}`);
+          refreshSettingsModal();
+        } catch (err) {
+          showToast('Could not read that calendar file — try exporting .ics again');
+        }
+      };
+      input.click();
     }
 
     function getOnboardingCalendarConnections() {
@@ -8449,7 +10498,7 @@
       }
 
       const email = prompt(
-        `Connect ${provider.name}\n\nSign in to enable gap-aware task suggestions.\n(Prototype — enter your account email:)`,
+        `Link ${provider.name}\n\nLive OAuth sync needs the native app — this preview uses calendar file import.\n\nEnter your account email to link this calendar:`,
         provider.defaultEmail
       );
       if (!email?.trim()) return;
@@ -8461,14 +10510,16 @@
       };
 
       if (isOnboarding) {
-        showToast(`✓ ${provider.name} linked`);
+        showToast(`✓ ${provider.name} linked — import .ics next`);
         showCalendarConnectStep();
+        setTimeout(() => triggerCalendarICSImport(providerId), 400);
       } else {
         state.settings.calendarConnections = conns;
         applyCalendarSync();
         saveState();
-        showToast(`✓ ${provider.name} connected`);
+        showToast(`✓ ${provider.name} linked — import your .ics file`);
         refreshSettingsModal();
+        setTimeout(() => triggerCalendarICSImport(providerId), 400);
       }
     }
 
@@ -8537,7 +10588,10 @@
 
     function selectRoutineLevel(level) {
       selectedRoutineLevel = level;
-      showMaintenancePreferenceStep();
+      document.querySelectorAll('#onboarding .onboarding-card').forEach(card => {
+        card.classList.toggle('is-selected', card.getAttribute('onclick')?.includes(`'${level}'`));
+      });
+      setTimeout(showMaintenancePreferenceStep, 180);
     }
 
     function showMaintenancePreferenceStep() {
@@ -8676,7 +10730,7 @@
       }
       
       // Seed habits from preview
-      state.habits = window.currentPreviewTasks.map((t, i) => ({
+      state.habits = window.currentPreviewTasks.map((t, i) => stampHabitMeta({
         id: 'routine-' + Date.now() + '-' + i,
         title: t.title,
         category: t.category || 'custom',
@@ -8747,14 +10801,16 @@
       const splash = document.getElementById('splash-screen');
       if (!splash) return;
       splash.classList.add('is-hidden');
+      splash.classList.remove('is-revealing');
       splash.style.display = 'none';
+      splash.style.opacity = '';
+      splash.style.clipPath = '';
       splash.style.pointerEvents = 'none';
     }
 
     function showMainContent() {
       const shell = document.getElementById('app-shell');
       if (shell) shell.style.display = 'flex';
-      hideSplash();
     }
 
     function showOnboarding() {
@@ -8789,8 +10845,10 @@
         }
         
         updateDate();
+        updateHeaderContext();
         seedIfNeeded();
         initEnergyButtons();
+        initQuickAddInput();
         
         renderTasks();
         renderBills();
@@ -8813,76 +10871,119 @@
       const splash = document.getElementById('splash-screen');
       const sloganEl = document.getElementById('splash-slogan');
       const logoEl = document.getElementById('splash-logo');
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const SLOGAN_IN_MS = 640;
+      const SLOGAN_HOLD_MS = 1050;
+      const SLOGAN_OUT_MS = 580;
+      const LOGO_APPEAR_MS = 420;
+      const LOGO_GROW_MS = 540;
+      const REVEAL_MS = 460;
+
+      const sloganExitAt = SLOGAN_HOLD_MS + SLOGAN_IN_MS;
+      const logoAppearAt = sloganExitAt + SLOGAN_OUT_MS + 60;
+      const logoGrowAt = logoAppearAt + LOGO_APPEAR_MS;
+      const revealAt = logoGrowAt + LOGO_GROW_MS;
+      const cleanupAt = revealAt + REVEAL_MS;
 
       if (splash) {
-        splash.classList.remove('is-hidden', 'splash-screen-reveal');
+        splash.classList.remove('is-hidden', 'is-revealing');
         splash.style.display = 'block';
         splash.style.opacity = '1';
+        splash.style.clipPath = '';
         splash.style.pointerEvents = 'auto';
-        splash.style.background = '';
       }
 
-      if (logoEl) {
-        logoEl.className = 'splash-phase-idle flex items-center justify-center';
-      }
-
-      if (sloganEl) {
-        sloganEl.style.opacity = '0';
-        sloganEl.style.transform = 'translateY(6px)';
-        sloganEl.style.transition = 'opacity 350ms ease-out, transform 350ms ease-out';
-      }
+      if (logoEl) logoEl.className = 'splash-logo-stage';
+      if (sloganEl) sloganEl.className = 'splash-slogan';
 
       let booted = false;
-      const startReveal = () => {
-        if (!logoEl) return;
-        logoEl.classList.remove('splash-phase-hold', 'splash-phase-enter');
-        logoEl.classList.add('splash-phase-exit');
-        splash?.classList.add('splash-screen-reveal');
-        if (!booted && onComplete) {
-          booted = true;
-          onComplete();
-        }
+      const finishBoot = () => {
+        if (booted) return;
+        booted = true;
+        onComplete?.();
       };
 
-      // Slogan in → out → logo enters → swells toward you → recedes into distance (fast reveal)
-      setTimeout(() => {
-        if (sloganEl) {
-          sloganEl.style.opacity = '1';
-          sloganEl.style.transform = 'translateY(0)';
-        }
-      }, 60);
+      const startReveal = () => {
+        logoEl?.classList.remove('is-growing');
+        logoEl?.classList.add('is-covered', 'is-dissolving');
+        splash?.classList.add('is-revealing');
+      };
 
-      setTimeout(() => {
-        if (sloganEl) {
-          sloganEl.style.transition = 'opacity 220ms ease-out';
-          sloganEl.style.opacity = '0';
-        }
-      }, 620);
-
-      setTimeout(() => {
-        if (!logoEl) return;
-        logoEl.classList.remove('splash-phase-idle');
-        logoEl.classList.add('splash-phase-enter', 'splash-logo-active');
-      }, 720);
-
-      setTimeout(() => {
-        if (!logoEl) return;
-        logoEl.classList.remove('splash-phase-enter');
-        logoEl.classList.add('splash-phase-hold');
-      }, 1580);
-
-      setTimeout(startReveal, 2100);
-
-      setTimeout(() => {
-        if (logoEl) logoEl.classList.remove('splash-logo-active', 'splash-phase-exit', 'splash-phase-enter', 'splash-phase-hold');
+      const cleanupSplash = () => {
+        logoEl?.classList.remove('is-present', 'is-growing', 'is-covered', 'is-dissolving');
+        sloganEl?.classList.remove('is-visible', 'is-exiting', 'is-gone');
         hideSplash();
-      }, 2550);
+      };
+
+      if (reducedMotion) {
+        requestAnimationFrame(() => sloganEl?.classList.add('is-visible'));
+        setTimeout(() => {
+          sloganEl?.classList.remove('is-visible');
+          sloganEl?.classList.add('is-exiting', 'is-gone');
+          logoEl?.classList.add('is-present');
+        }, 380);
+        setTimeout(() => {
+          logoEl?.classList.remove('is-present');
+          logoEl?.classList.add('is-growing');
+          finishBoot();
+        }, 620);
+        setTimeout(startReveal, 820);
+        setTimeout(cleanupSplash, 1020);
+        return;
+      }
+
+      // 1) Slogan appears alone
+      requestAnimationFrame(() => sloganEl?.classList.add('is-visible'));
+
+      // 2) Slogan slides up and out of the window
+      setTimeout(() => {
+        sloganEl?.classList.remove('is-visible');
+        sloganEl?.classList.add('is-exiting');
+      }, sloganExitAt);
+
+      // 3) Logo appears in center after slogan is gone
+      setTimeout(() => {
+        sloganEl?.classList.add('is-gone');
+        logoEl?.classList.add('is-present');
+      }, logoAppearAt);
+
+      // 4) Logo grows quickly to cover the screen (boot app behind splash)
+      setTimeout(() => {
+        logoEl?.classList.remove('is-present');
+        logoEl?.classList.add('is-growing');
+        finishBoot();
+      }, logoGrowAt);
+
+      // 5) Immediately iris-dissolve into main screen when fullscreen
+      setTimeout(startReveal, revealAt);
+      setTimeout(cleanupSplash, cleanupAt);
+    }
+
+    function updateHeaderContext() {
+      const primary = document.getElementById('header-context-primary');
+      const secondary = document.getElementById('header-context-secondary');
+      if (!primary || !secondary) return;
+
+      const d = new Date();
+      const taskCount = getTodayVisibleTaskCount();
+
+      primary.textContent = d.toLocaleDateString(undefined, { weekday: 'long' });
+      if (taskCount === 0) {
+        secondary.textContent = 'No tasks for today';
+      } else {
+        secondary.textContent = `${taskCount} task${taskCount === 1 ? '' : 's'}`;
+      }
     }
 
     async function init() {
       if (!localStorage.getItem(FACTORY_RESET_VERSION)) {
-        factoryResetApp({ reload: true });
-        return;
+        const hasExistingData = localStorage.getItem(STORAGE_KEY);
+        if (!hasExistingData) {
+          factoryResetApp({ reload: true });
+          return;
+        }
+        localStorage.setItem(FACTORY_RESET_VERSION, '1');
       }
       runSplashSequence(bootApp);
     }
