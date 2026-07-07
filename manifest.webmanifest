@@ -1,0 +1,25 @@
+{
+  "name": "Rhythm — Life Management",
+  "short_name": "Rhythm",
+  "description": "Design preview — energy-based task prioritization, bills, grocery, streaks, and smart suggestions.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F1419",
+  "theme_color": "#0F1419",
+  "categories": ["productivity", "lifestyle"],
+  "icons": [
+    {
+      "src": "rythm-r-mark.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "rythm-r-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
