@@ -3516,6 +3516,26 @@
       return /dog|pet|puppy|kitty|cat walk|walk.*(dog|pet|puppy)/i.test(habit?.title || '');
     }
 
+    function isPhysicalActivity(habit) {
+      if (!habit) return false;
+      const type = getHabitMetricType(habit);
+      if (type === 'steps' || type === 'miles') return true;
+      const title = (habit.title || '').toLowerCase();
+      return /run|swim|jog|hike|workout|bike|cycle|cardio|exercise|row|elliptical|lift|weights?|yoga|pilates|dance|climb|ski|skate|tennis|basketball|soccer|football|boxing|martial/i.test(title);
+    }
+
+    function isCompletedToday(habitId) {
+      return (getCompletions(habitId) || []).includes(todayStr());
+    }
+
+    function hasSyncedToday(habitId) {
+      return !!(state.healthSyncs?.[habitId]?.[todayStr()]);
+    }
+
+    function canShowActivitySync(habit) {
+      return isPhysicalActivity(habit) && isCompletedToday(habit.id) && !hasSyncedToday(habit.id);
+    }
+
     function getHabitMetricType(habit) {
       const unit = (habit.unit || '').toLowerCase();
       const title = habit.title.toLowerCase();
@@ -7187,7 +7207,13 @@
       sortUpcoming(monthly);
       sortUpcoming(longer);
 
-      const sections = [{ type: 'habits', label: "Today's Tasks", items: active, variant: 'active' }];
+      const syncPending = state.habits.filter(h => canShowActivitySync(h));
+
+      const sections = [];
+      if (syncPending.length) {
+        sections.push({ type: 'sync-pending', label: 'Done today — sync activity', items: syncPending, variant: 'completed' });
+      }
+      sections.push({ type: 'habits', label: "Today's Tasks", items: active, variant: 'active' });
       if (weekly.length) sections.push({ type: 'habits', label: 'Weekly — coming up', items: weekly, variant: 'upcoming' });
       if (biweekly.length) sections.push({ type: 'habits', label: 'Biweekly — coming up', items: biweekly, variant: 'upcoming' });
       if (monthly.length) sections.push({ type: 'habits', label: 'Monthly — coming up', items: monthly, variant: 'upcoming' });
@@ -7222,7 +7248,6 @@
       const isOutdoor = /outdoor|park|pool|mow|lawn|fertiliz|yard|walk|fresh air/i.test(habit.title);
       const weatherIcon = isOutdoor ? getWeatherIcon(state.settings.mockWeather) : '';
       const syncedStats = (state.healthSyncs && state.healthSyncs[habit.id] && state.healthSyncs[habit.id][today]) ? state.healthSyncs[habit.id][today] : null;
-      const isSyncable = habit.target_value || /run|swim|jog|hike|workout/i.test(habit.title.toLowerCase());
       const difficultyLabel = getDifficultyLabel(habit.difficulty);
       const daysUntil = getDaysUntilHabitDue(habit);
       const dueToday = isDueToday(habit);
@@ -7256,7 +7281,6 @@
         <div class="text-right">
           ${habit.target_value ? `<div class="text-xs text-rhythm-primary-light font-semibold tabular-nums">${habit.target_value} ${habit.unit}</div>` : ''}
           ${syncedStats ? `<div class="text-[9px] text-sky-300 mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
-          ${isSyncable ? `<button type="button" data-sync-health="${habit.id}" class="text-[10px] text-sky-400 mt-0.5 hover:underline bg-transparent border-0 p-0 cursor-pointer">Sync Garmin</button>` : ''}
           <div class="flex items-center justify-end gap-2 mt-1">
             ${dueToday && !isOneOffTask(habit) ? `<button type="button" onclick="skipRecurringHabit('${habit.id}', event)" class="text-[10px] text-rhythm-muted hover:text-amber-300 px-1" title="Skip this cycle — resets streak">Skip</button>` : ''}
             <button type="button" onclick="event.stopImmediatePropagation(); editHabitFromToday('${habit.id}')" class="text-[10px] text-rhythm-primary-light font-medium px-1" title="Edit task">Edit</button>
@@ -7268,12 +7292,33 @@
         </div>
       `;
       card.addEventListener('contextmenu', (e) => { e.preventDefault(); showHabitDetail(habit.id); });
+      container.appendChild(card);
+    }
+
+    function renderCompletedSyncCard(habit, container) {
+      const syncedStats = state.healthSyncs?.[habit.id]?.[todayStr()];
+      const card = document.createElement('div');
+      card.className = 'habit-card rhythm-card habit-row bg-rhythm-surface/80 border border-sky-500/30 rounded-3xl px-4 py-3.5 flex items-center gap-x-3';
+      card.dataset.habitId = habit.id;
+      card.dataset.feedType = 'sync-pending';
+      card.innerHTML = `
+        <div class="w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-rhythm-primary/50 bg-rhythm-primary/15 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-check text-rhythm-primary-light"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium leading-tight text-rhythm-text">${habit.title}</div>
+          <div class="text-xs text-rhythm-muted mt-0.5">Completed — pull stats from your tracker</div>
+          ${syncedStats ? `<div class="text-[9px] text-sky-300 mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
+        </div>
+        <button type="button" data-sync-health="${habit.id}"
+          class="text-[10px] px-3 py-1.5 rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white font-semibold">Sync</button>
+      `;
       const syncBtn = card.querySelector('[data-sync-health]');
       if (syncBtn) {
         syncBtn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          mockSyncHealth(habit.id);
+          showDeviceSyncModal(habit.id);
         });
       }
       container.appendChild(card);
@@ -7361,7 +7406,9 @@
         container.appendChild(hdr);
 
         section.items.forEach(item => {
-          if (section.type === 'habits') {
+          if (section.type === 'sync-pending') {
+            renderCompletedSyncCard(item, container);
+          } else if (section.type === 'habits') {
             const daysUntil = getDaysUntilHabitDue(item);
             renderHabitCard(item, container, {
               muted: section.variant === 'upcoming',
@@ -9585,22 +9632,84 @@
       };
     }
 
-    // Mock health app sync (Garmin, Apple Health, etc.)
-    // In real app this would use HealthKit / Garmin Connect API after user auth
-    function mockSyncHealth(habitId) {
+    const DEVICE_SYNC_OPTIONS = [
+      { id: 'apple-health', name: 'Apple Health', subtitle: 'iPhone, iPad & Apple Watch', icon: 'fa-apple', iconClass: 'fa-brands', accent: 'text-rhythm-text' },
+      { id: 'health-connect', name: 'Health Connect', subtitle: 'Android & Wear OS watches', icon: 'fa-heart-pulse', iconClass: 'fa-solid', accent: 'text-emerald-400' },
+      { id: 'garmin', name: 'Garmin Connect', subtitle: 'Garmin watches & bike computers', icon: 'fa-watch-fitness', iconClass: 'fa-solid', accent: 'text-sky-400' },
+      { id: 'fitbit', name: 'Fitbit', subtitle: 'Fitbit trackers & Pixel Watch', icon: 'fa-heart', iconClass: 'fa-solid', accent: 'text-teal-300' },
+      { id: 'samsung-health', name: 'Samsung Health', subtitle: 'Galaxy phone & Galaxy Watch', icon: 'fa-mobile-screen', iconClass: 'fa-solid', accent: 'text-indigo-300' },
+      { id: 'strava', name: 'Strava', subtitle: 'Runs, rides & recorded workouts', icon: 'fa-route', iconClass: 'fa-solid', accent: 'text-orange-400' }
+    ];
+
+    function showDeviceSyncModal(habitId) {
       const habit = state.habits.find(h => h.id === habitId);
       if (!habit) return;
-
-      const today = todayStr();
-      const isStructured = /run|swim|workout|jog|hike|exercise|walk|mile|step/i.test(habit.title)
-        || (habit.target_value && habit.unit);
-
-      if (!isStructured) {
-        showToast('Sync available for structured activities (run, swim, etc.)');
+      if (!isPhysicalActivity(habit)) {
+        showToast('Sync is for physical activities only');
+        return;
+      }
+      if (!isCompletedToday(habitId)) {
+        showToast('Complete the task first, then sync your activity');
         return;
       }
 
+      const modal = document.createElement('div');
+      modal.id = 'device-sync-modal';
+      modal.className = 'fixed inset-0 bg-rhythm-bg/75 flex items-end z-[60]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-sky-400 font-semibold">Sync activity</div>
+              <div class="font-semibold text-base text-rhythm-text mt-0.5">${habit.title}</div>
+              <div class="text-xs text-rhythm-muted mt-1">Choose a source — full OAuth linking ships in a future update.</div>
+            </div>
+            <button type="button" onclick="this.closest('#device-sync-modal').remove()" class="text-rhythm-muted text-2xl leading-none px-1">×</button>
+          </div>
+          <div class="space-y-2">
+            ${DEVICE_SYNC_OPTIONS.map(d => `
+              <button type="button" data-device-id="${d.id}"
+                class="w-full text-left bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-3 active:bg-rhythm-border transition-colors">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-rhythm-surface border border-rhythm-border flex items-center justify-center flex-shrink-0">
+                    <i class="${d.iconClass} ${d.icon} ${d.accent}"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-sm">${d.name}</div>
+                    <div class="text-[11px] text-rhythm-muted">${d.subtitle}</div>
+                  </div>
+                  <i class="fa-solid fa-chevron-right text-rhythm-muted/60 text-[10px]"></i>
+                </div>
+              </button>
+            `).join('')}
+          </div>
+          <div class="text-[10px] text-rhythm-muted text-center mt-4 leading-relaxed px-2">
+            On mobile, Apple Health and Health Connect work natively. Garmin, Fitbit, and Strava connect through their apps or web APIs.
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      modal.querySelectorAll('[data-device-id]').forEach(btn => {
+        btn.onclick = () => {
+          const device = DEVICE_SYNC_OPTIONS.find(d => d.id === btn.dataset.deviceId);
+          modal.remove();
+          applyDeviceSync(habitId, device);
+        };
+      });
+    }
+
+    function applyDeviceSync(habitId, device) {
+      const habit = state.habits.find(h => h.id === habitId);
+      if (!habit || !device) return;
+      if (!isPhysicalActivity(habit)) return;
+
+      const today = todayStr();
       const stats = buildMockDeviceStats(habit);
+      stats.source = device.id;
+      stats.sourceLabel = device.name;
 
       if (!state.healthSyncs) state.healthSyncs = {};
       if (!state.healthSyncs[habitId]) state.healthSyncs[habitId] = {};
@@ -9608,16 +9717,19 @@
 
       const type = getHabitMetricType(habit);
       const val = type === 'steps' ? stats.steps : type === 'miles' ? parseFloat(stats.distance) : null;
-      if (val != null) {
-        logMetricValue(habitId, val, 'device');
-      }
+      if (val != null) logMetricValue(habitId, val, 'device');
 
       saveState();
       renderTasks();
+      renderStreaks();
       if (currentTab === 'streaks' && currentProjectionHabit === habitId) {
         showProjections(habitId);
       }
-      showToast(`Synced from Garmin/Apple Health: ${stats.steps} steps • ${stats.distance} mi • ${stats.duration} min • ${stats.calories} cal`);
+      showToast(`Synced from ${device.name}: ${stats.steps} steps · ${stats.distance} mi · ${stats.duration} min`);
+    }
+
+    function mockSyncHealth(habitId) {
+      showDeviceSyncModal(habitId);
     }
 
     // ==================== LIBRARY ====================
@@ -10513,7 +10625,7 @@
             <button onclick="removeHabit('${habitId}', this)" 
               class="flex-1 py-3 bg-rhythm-surface active:bg-rose-900/70 text-rose-300 rounded-2xl font-semibold">Remove habit</button>
             
-            ${ (habit.target_value || /run|swim|jog|hike|workout/i.test(habit.title.toLowerCase())) ? `<button onclick="mockSyncHealth('${habitId}'); this.closest('.fixed').remove()" class="flex-1 py-3 bg-sky-600 active:bg-sky-500 rounded-2xl font-semibold text-sm">Sync Garmin/Health</button>` : '' }
+            ${ canShowActivitySync(habit) ? `<button onclick="showDeviceSyncModal('${habitId}'); this.closest('.fixed').remove()" class="flex-1 py-3 bg-sky-600 active:bg-sky-500 rounded-2xl font-semibold text-sm">Sync</button>` : '' }
           </div>
           
           <div class="text-[10px] text-center mt-3 text-rhythm-muted">Voice command also works: “complete ${habit.title.toLowerCase()}”</div>
