@@ -15,20 +15,33 @@ Or double-click `index.html` to open directly in your browser (some features lik
 
 ## Share With Testers
 
-### Option A — Netlify Drop (fastest, free)
+### Option A — GitHub Pages (recommended if repo is on GitHub)
+
+Your repo: **https://github.com/SANDETAY/Rythm**
+
+1. On GitHub, open the repo → **Settings** → **Pages**
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**
+3. Push to `main` — the workflow in `.github/workflows/deploy-pages.yml` deploys automatically
+4. After 1–2 minutes, share: **https://sandetay.github.io/Rythm/**
+
+Every `git push` to `main` updates the live site. Testers can also **Add to Home Screen** on iPhone/Android for a full-screen app experience.
+
+**First-time setup (one click in GitHub UI):** If Pages shows 404, you must enable GitHub Actions as the Pages source once (step 2 above). The workflow file is already in the repo.
+
+### Option B — Netlify Drop (fastest, no GitHub)
 
 1. Run `npm run zip` to create `rhythm-webapp-deploy.zip`
 2. Go to [https://app.netlify.com/drop](https://app.netlify.com/drop)
 3. Drag the zip onto the page
 4. Copy the URL Netlify gives you and send it to testers
 
-### Option B — Netlify connected site
+### Option C — Netlify connected site
 
 1. Push this folder to a GitHub repo
 2. Connect the repo in Netlify (build command: none, publish directory: `.`)
 3. Every push auto-deploys
 
-### Option C — Add to iPhone home screen
+### Option D — Add to iPhone home screen
 
 1. Open the deployed URL in Safari
 2. Tap Share → **Add to Home Screen**
@@ -50,6 +63,17 @@ Or double-click `index.html` to open directly in your browser (some features lik
 | Subscriptions tracker | Live (manual + CSV import) |
 
 Data is stored in the browser (`localStorage`). Each tester gets their own isolated data on their device.
+
+## Run Simulation Tests
+
+```powershell
+cd C:\Users\Taylor\Rythm
+py -m pip install playwright
+py -m playwright install chromium
+py scripts\sim-test.py
+```
+
+Runs 12 headless mobile-browser scenarios (onboarding, smart suggestions, Rhythm Brief, energy sort, streaks, calendar simulate, fitness sync).
 
 ## Reset for Fresh Test
 

@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Rhythm">
+  <meta name="format-detection" content="telephone=no">
   <meta name="theme-color" content="#0F1419">
   <meta name="description" content="Rhythm — your life management app. Energy-based tasks, bills, grocery, streaks, and smart suggestions. Design preview for testers.">
   <meta name="robots" content="noindex, nofollow">
@@ -1744,6 +1746,129 @@
       flex: 1 1 auto;
       min-height: 0;
       overflow-y: auto;
+    }
+
+    /* ── Mobile-first: phone layout (default + small screens) ── */
+    @media (max-width: 767px) {
+      .site-header-inner {
+        padding: 0.65rem 1rem;
+        gap: 0.75rem;
+      }
+
+      .header-context-primary {
+        font-size: 0.82rem;
+      }
+
+      .header-context-secondary {
+        font-size: 0.68rem;
+      }
+
+      #app-weather-row {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+      }
+
+      #app-chrome > div:nth-child(2),
+      #smart-banner,
+      #rhythm-brief-launcher,
+      .main-nav,
+      .tab-content {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+      }
+
+      #smart-banner {
+        margin-left: 1rem !important;
+        margin-right: 1rem !important;
+      }
+
+      #rhythm-brief-launcher {
+        margin-left: 1rem !important;
+        margin-right: 1rem !important;
+      }
+
+      .energy-btn {
+        min-height: 2.85rem;
+        font-size: 0.78rem;
+        padding-top: 0.65rem !important;
+        padding-bottom: 0.65rem !important;
+      }
+
+      .energy-btn span {
+        display: none;
+      }
+
+      .energy-btn i {
+        font-size: 1.1rem !important;
+      }
+
+      .main-nav-tab {
+        font-size: 0.72rem;
+        padding: 0.55rem 0.15rem 0.45rem;
+      }
+
+      .status-bar {
+        font-size: 0.68rem;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        gap: 0.5rem;
+      }
+
+      .status-bar-btn {
+        font-size: 0.65rem;
+        padding: 0.3rem 0.6rem;
+        flex-shrink: 0;
+      }
+
+      #calendar-status-text {
+        font-size: 0.65rem;
+        line-height: 1.3;
+      }
+
+      .quick-add-hint {
+        display: none;
+      }
+
+      .library-column {
+        flex: 0 0 85vw;
+        min-width: 85vw;
+        max-width: 85vw;
+      }
+
+      .streaks-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      #reward-bank-panel {
+        order: -1;
+      }
+
+      .fixed.inset-0 .rounded-t-3xl,
+      .rhythm-brief-sheet {
+        max-height: 92vh !important;
+        padding-bottom: calc(1.25rem + var(--safe-bottom)) !important;
+      }
+
+      #onboarding {
+        padding: 1rem !important;
+      }
+
+      .onboarding-title {
+        font-size: 1.35rem;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .main-nav-tab {
+        font-size: 0.65rem;
+        letter-spacing: -0.02em;
+      }
+
+      .section-header {
+        font-size: 0.92rem;
+      }
     }
 
     /* ── Responsive: full website layout (tablet+) ── */
@@ -8625,9 +8750,11 @@
       if (!el || !lineEl || !statsEl) return;
 
       const showOnToday = currentTab === 'today';
+      const onboarded = !!localStorage.getItem('rhythm_onboarded');
       const onBriefTutorialStep = state.settings.tutorialActive && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'rhythm-brief';
-      const tutorialAllowsBrief = state.settings.tutorialCompleted || onBriefTutorialStep;
-      el.classList.toggle('hidden', !showOnToday || !tutorialAllowsBrief);
+      const hideDuringEarlyTutorial = state.settings.tutorialActive && !onBriefTutorialStep && !state.settings.tutorialCompleted;
+      const allowBrief = !hideDuringEarlyTutorial && (state.settings.tutorialCompleted || onBriefTutorialStep || onboarded);
+      el.classList.toggle('hidden', !showOnToday || !allowBrief);
 
       const brief = buildRhythmBrief('day');
       const taskN = brief.tasks.length;
@@ -10266,10 +10393,6 @@
         showToast('Sync is for physical activities only');
         return;
       }
-      if (!isCompletedToday(habitId)) {
-        showToast('Complete the task first, then sync your activity');
-        return;
-      }
 
       const modal = document.createElement('div');
       modal.id = 'device-sync-modal';
@@ -11255,7 +11378,7 @@
             <button onclick="removeHabit('${habitId}', this)" 
               class="flex-1 py-3 bg-rhythm-surface active:bg-rose-900/70 text-rose-300 rounded-2xl font-semibold">Remove habit</button>
             
-            ${ canShowActivitySync(habit) ? `<button onclick="showDeviceSyncModal('${habitId}'); this.closest('.fixed').remove()" class="flex-1 py-3 bg-sky-600 active:bg-sky-500 rounded-2xl font-semibold text-sm">Sync</button>` : '' }
+            ${ isPhysicalActivity(habit) ? `<button onclick="showDeviceSyncModal('${habitId}'); this.closest('.fixed').remove()" class="flex-1 py-3 bg-sky-600 active:bg-sky-500 rounded-2xl font-semibold text-sm">${hasSyncedToday(habitId) ? 'Re-sync' : 'Sync'}</button>` : '' }
           </div>
           
           <div class="text-[10px] text-center mt-3 text-rhythm-muted">Voice command also works: “complete ${habit.title.toLowerCase()}”</div>
@@ -11694,6 +11817,7 @@
       renderLibrary();
       renderStreaks();
       updateSmartBanner();
+      updateRhythmBriefLauncher();
       renderHeaderWeather();
     }
 
@@ -12259,10 +12383,10 @@
       applyCalendarSync();
       saveState();
 
+      localStorage.setItem('rhythm_onboarded', '1');
       hideOnboardingOverlay();
       refreshAppAfterOnboarding();
 
-      localStorage.setItem('rhythm_onboarded', '1');
       const calSummary = hasAnyCalendarConnected() ? ` · ${getConnectedCalendarsLabel()}` : '';
       showToast(`Rhythm set · ${getMaintenancePrefLabel()}${calSummary}`);
     }
@@ -12277,10 +12401,10 @@
       state.settings.tutorialCompleted = false;
       saveState();
 
+      localStorage.setItem('rhythm_onboarded', '1');
       hideOnboardingOverlay();
       refreshAppAfterOnboarding();
 
-      localStorage.setItem('rhythm_onboarded', '1');
       showToast('Your four starter tasks are in Today — tap Learn more anytime for the guided tour.');
     }
 
@@ -12346,6 +12470,7 @@
         renderLibrary();
         renderStreaks();
         updateSmartBanner();
+        updateRhythmBriefLauncher();
         renderHeaderWeather();
         initHorizontalScrollRows();
 
