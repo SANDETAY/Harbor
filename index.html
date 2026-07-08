@@ -5661,6 +5661,16 @@
       return ws.label || `${ws.start}–${ws.end}`;
     }
 
+    function getTodayIncompleteTaskMinutes() {
+      const today = todayStr();
+      return state.habits.reduce((sum, h) => {
+        if (!isDueToday(h)) return sum;
+        if ((getCompletions(h.id) || []).includes(today)) return sum;
+        if (getHabitSkips(h.id).includes(today)) return sum;
+        return sum + (h.est_minutes || 10);
+      }, 0);
+    }
+
     function getTodayBusyBlocks(extraEvents) {
       const blocks = [];
       const ws = state.settings.workSchedule || { mode: 'flexible' };
@@ -5756,20 +5766,37 @@
       gaps.sort((a, b) => b.minutes - a.minutes);
 
       const ws = state.settings.workSchedule || { mode: 'flexible' };
+      const taskMinutes = getTodayIncompleteTaskMinutes();
+      const dayWindow = AWAKE_DAY_END - AWAKE_DAY_START;
+      const timedBusyMinutes = busy.reduce((sum, b) => sum + (b.end - b.start), 0);
+      const committedMinutes = timedBusyMinutes + taskMinutes;
+      const dayFreeMinutes = Math.max(0, dayWindow - committedMinutes);
       const factors = [];
       if (ws.mode === 'preset' || ws.mode === 'custom') factors.push('work');
       const eventCount = (options.events || state.calendarCache?.events || []).length;
       if (eventCount > 0) factors.push('events');
+      if (taskMinutes > 0) factors.push('tasks');
 
       return {
         freeMinutes,
+        dayFreeMinutes,
+        committedMinutes,
+        taskMinutes,
+        timedBusyMinutes,
         gaps,
         busy,
         workLabel: getWorkScheduleLabel(ws),
         summary: factors.length
-          ? `After ${factors.join(' & ')} · 7am–10pm window`
+          ? `${formatDurationShort(committedMinutes)} planned · ${factors.join(' + ')} · 7am–10pm`
           : 'Open day — set hours or add events for smarter gaps'
       };
+    }
+
+    function formatScheduleLoadLabel(avail) {
+      const free = avail?.dayFreeMinutes ?? 0;
+      if (free >= 45) return `${formatDurationShort(free)} free`;
+      if (free > 0) return `${formatDurationShort(free)} left`;
+      return 'Packed today';
     }
 
     function getCalendarGaps() {
@@ -6144,11 +6171,40 @@
       return parseEventTimeFromPicker(hour, minute, ampm);
     }
 
+    function parseStoredTimeParts(time24, format = getEventTimeFormat()) {
+      if (!time24) return getDefaultEventTimeParts(format);
+      const [h, m] = time24.split(':').map(Number);
+      if (isNaN(h) || isNaN(m)) return getDefaultEventTimeParts(format);
+      if (format === '24h') {
+        return { hour: String(h).padStart(2, '0'), minute: String(m).padStart(2, '0'), ampm: h >= 12 ? 'PM' : 'AM' };
+      }
+      return { hour: String(h % 12 || 12), minute: String(m).padStart(2, '0'), ampm: h >= 12 ? 'PM' : 'AM' };
+    }
+
+    function getCalendarEventById(eventId) {
+      return getAllCalendarEvents().find(e => e.id === eventId || getStableCalendarEventId(e) === eventId) || null;
+    }
+
+    function updateCalendarEventInStores(eventId, updated) {
+      const matches = (e) => e.id === eventId || getStableCalendarEventId(e) === eventId;
+      const patchList = (list) => normalizeCalendarEvents(
+        (list || []).map(e => matches(e) ? { ...e, ...updated, id: e.id } : e)
+      );
+
+      if (state.settings.mockCalendar?.events?.some(matches)) {
+        state.settings.mockCalendar.events = patchList(state.settings.mockCalendar.events);
+      }
+      if (state.settings.importedCalendarEvents?.some(matches)) {
+        state.settings.importedCalendarEvents = patchList(state.settings.importedCalendarEvents);
+      }
+    }
+
     function wireEventTimeFormatToggle(modal, calState) {
       const chips = modal.querySelectorAll('.cal-format-chip');
 
       const renderPicker = () => {
-        const defaults = getDefaultEventTimeParts(calState.timeFormat);
+        const defaults = calState.initialTimeParts || getDefaultEventTimeParts(calState.timeFormat);
+        if (calState.initialTimeParts) calState.initialTimeParts = null;
         const fields = modal.querySelector('#cal-ev-time-fields');
         if (fields) {
           const hour = fields.querySelector('#cal-ev-hour')?.value;
@@ -6241,15 +6297,24 @@
       render();
     }
 
-    function showAddCalendarEventModal() {
+    function showAddCalendarEventModal(editEvent = null) {
+      const isEdit = !!editEvent;
       const now = new Date();
       const timeFormat = getEventTimeFormat();
+      const eventDate = editEvent ? getEventDate(editEvent) : todayStr();
+      const [viewYear, viewMonth] = eventDate.split('-').map(Number);
       const calState = {
-        selectedDate: todayStr(),
-        viewYear: now.getFullYear(),
-        viewMonth: now.getMonth(),
-        timeFormat
+        selectedDate: eventDate,
+        viewYear,
+        viewMonth: viewMonth - 1,
+        timeFormat,
+        editingId: editEvent?.id || null,
+        initialTimeParts: editEvent ? parseStoredTimeParts(editEvent.time, timeFormat) : null
       };
+      const initialDuration = editEvent?.durationMin || 30;
+      const durationChipActive = (mins) => mins === initialDuration
+        ? 'border-rhythm-primary text-rhythm-text bg-rhythm-primary/15'
+        : 'border-rhythm-border bg-rhythm-raised text-rhythm-muted';
 
       const modal = document.createElement('div');
       modal.id = 'add-calendar-event-modal';
@@ -6258,7 +6323,7 @@
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
         <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm max-h-[92vh] overflow-y-auto">
           <div class="modal-grab-pill" aria-hidden="true"></div>
-          <div class="font-semibold text-lg mb-3">Add Event</div>
+          <div class="font-semibold text-lg mb-3">${isEdit ? 'Edit Event' : 'Add Event'}</div>
 
           <div class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Event</div>
           <input id="cal-ev-title" type="text" placeholder="Coffee with a friend"
@@ -6280,23 +6345,24 @@
           <div class="flex flex-wrap gap-1.5 mb-2" id="cal-ev-duration-chips">
             ${[15, 30, 45, 60, 90, 120].map(mins => `
               <button type="button" data-duration="${mins}"
-                class="cal-duration-chip px-3 py-1.5 rounded-full border text-xs font-semibold ${mins === 30 ? 'border-rhythm-primary text-rhythm-text bg-rhythm-primary/15' : 'border-rhythm-border bg-rhythm-raised text-rhythm-muted'}">
+                class="cal-duration-chip px-3 py-1.5 rounded-full border text-xs font-semibold ${durationChipActive(mins)}">
                 ${formatDurationShort(mins)}
               </button>
             `).join('')}
           </div>
-          <input id="cal-ev-duration" type="number" min="5" max="480" step="5" value="30" placeholder="Custom minutes"
+          <input id="cal-ev-duration" type="number" min="5" max="480" step="5" value="${initialDuration}" placeholder="Custom minutes"
             class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-3 mb-4 outline-none text-rhythm-text">
 
           <div class="flex gap-2">
             <button type="button" onclick="this.closest('#add-calendar-event-modal').remove()"
               class="flex-1 py-3 rounded-2xl bg-rhythm-raised border border-rhythm-border text-rhythm-muted font-semibold">Cancel</button>
             <button type="button" id="cal-ev-save-btn"
-              class="flex-1 py-3 rounded-2xl bg-rhythm-primary text-white font-semibold">Add</button>
+              class="flex-1 py-3 rounded-2xl bg-rhythm-primary text-white font-semibold">${isEdit ? 'Save' : 'Add'}</button>
           </div>
         </div>
       `;
       document.body.appendChild(modal);
+      if (editEvent?.title) modal.querySelector('#cal-ev-title').value = editEvent.title;
       wireMiniCalendar(modal, calState);
       wireEventTimeFormatToggle(modal, calState);
 
@@ -6325,15 +6391,20 @@
         }
         const durationMin = Math.min(480, Math.max(5, parseInt(durationInput.value, 10) || 30));
         const eventDate = calState.selectedDate;
-        const newEvent = { id: 'ev-' + Date.now(), date: eventDate, time, title, durationMin };
 
-        if (!state.settings.mockCalendar) {
-          state.settings.mockCalendar = { events: [], freeMinutes: 0, note: '', weekAhead: [] };
+        if (calState.editingId) {
+          updateCalendarEventInStores(calState.editingId, { date: eventDate, time, title, durationMin });
+        } else {
+          const newEvent = { id: 'ev-' + Date.now(), date: eventDate, time, title, durationMin };
+          if (!state.settings.mockCalendar) {
+            state.settings.mockCalendar = { events: [], freeMinutes: 0, note: '', weekAhead: [] };
+          }
+          state.settings.mockCalendar.events = normalizeCalendarEvents([
+            ...(state.settings.mockCalendar.events || []),
+            newEvent
+          ]).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
         }
-        state.settings.mockCalendar.events = normalizeCalendarEvents([
-          ...(state.settings.mockCalendar.events || []),
-          newEvent
-        ]).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+
         refreshCalendarCache();
         saveState();
         switchTab('life');
@@ -6342,10 +6413,12 @@
         updateSmartBanner();
         modal.remove();
         const when = formatEventDateLabel(eventDate);
-        if (hasAnyCalendarConnected()) {
+        if (calState.editingId) {
+          showToast(`Event updated: ${title} · ${when} ${formatScheduleEventTime(time)}`);
+        } else if (hasAnyCalendarConnected()) {
           showToast(`Synced to ${getConnectedCalendarsLabel()}`);
         } else {
-          showToast(`Event added: ${title} · ${when} ${time}`);
+          showToast(`Event added: ${title} · ${when} ${formatScheduleEventTime(time)}`);
         }
       };
 
@@ -6386,16 +6459,25 @@
     function renderScheduleEventRow(ev, options = {}) {
       const { showDate = false } = options;
       const row = document.createElement('div');
-      row.className = 'rhythm-card bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-x-3';
+      row.className = 'rhythm-card bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-x-3 active:bg-rhythm-border/40';
       row.innerHTML = `
-        <div class="text-sm font-semibold text-rhythm-primary-light tabular-nums w-16 flex-shrink-0">${formatScheduleEventTime(ev.time)}</div>
-        <div class="flex-1 min-w-0">
-          <div class="font-medium">${ev.title}</div>
-          ${showDate ? `<div class="text-[10px] text-rhythm-muted">${formatEventDateLabel(getEventDate(ev))}</div>` : ''}
-          ${ev.durationMin ? `<div class="text-xs text-rhythm-muted">${ev.durationMin} min</div>` : ''}
+        <div class="cal-event-body flex items-center gap-x-3 flex-1 min-w-0 cursor-pointer">
+          <div class="text-sm font-semibold text-rhythm-primary-light tabular-nums w-16 flex-shrink-0">${formatScheduleEventTime(ev.time)}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-medium">${ev.title}</div>
+            ${showDate ? `<div class="text-[10px] text-rhythm-muted">${formatEventDateLabel(getEventDate(ev))}</div>` : ''}
+            ${ev.durationMin ? `<div class="text-xs text-rhythm-muted">${ev.durationMin} min</div>` : ''}
+          </div>
         </div>
+        <button type="button" class="cal-edit-btn text-[10px] text-rhythm-primary-light font-medium px-1" title="Edit event">Edit</button>
         <button type="button" class="cal-delete-btn text-rhythm-muted hover:text-rose-400 text-sm px-1" title="Delete event">×</button>
       `;
+      const openEdit = () => showAddCalendarEventModal(getCalendarEventById(ev.id) || ev);
+      row.querySelector('.cal-event-body').onclick = openEdit;
+      row.querySelector('.cal-edit-btn').onclick = (e) => {
+        e.stopPropagation();
+        openEdit();
+      };
       row.querySelector('.cal-delete-btn').onclick = (e) => {
         e.stopPropagation();
         deleteCalendarEvent(ev.id);
@@ -6415,7 +6497,7 @@
       const cache = state.calendarCache;
       const avail = computeDayAvailability();
       if (freeEl) {
-        freeEl.textContent = avail.freeMinutes > 0 ? `${formatDurationShort(avail.freeMinutes)} free` : 'Packed today';
+        freeEl.textContent = formatScheduleLoadLabel(avail);
       }
       if (detailEl) detailEl.textContent = avail.summary;
       if (chipEl) chipEl.textContent = `Hours: ${avail.workLabel}`;
