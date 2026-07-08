@@ -5931,6 +5931,25 @@
       return (events || []).filter(e => getEventDate(e) === dateStr);
     }
 
+    function getAllCalendarEvents() {
+      const cal = getMockCalendar();
+      return normalizeCalendarEvents(cal.events || [])
+        .sort((a, b) => `${getEventDate(a)} ${a.time}`.localeCompare(`${getEventDate(b)} ${b.time}`));
+    }
+
+    function formatScheduleEventTime(time24) {
+      if (!time24) return '—';
+      const [h, m] = time24.split(':').map(Number);
+      if (isNaN(h)) return time24;
+      if (getEventTimeFormat() === '24h') {
+        return `${String(h).padStart(2, '0')}:${String(m || 0).padStart(2, '0')}`;
+      }
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      const min = String(m || 0).padStart(2, '0');
+      return min === '00' ? `${h12} ${ampm}` : `${h12}:${min} ${ampm}`;
+    }
+
     function formatEventDateLabel(dateStr) {
       if (dateStr === todayStr()) return 'Today';
       const d = new Date(`${dateStr}T12:00:00`);
@@ -6232,7 +6251,8 @@
         ]).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
         refreshCalendarCache();
         saveState();
-        renderSchedule();
+        switchTab('life');
+        switchLifePanel('schedule');
         renderTodayFeed();
         updateSmartBanner();
         modal.remove();
@@ -6258,7 +6278,7 @@
     }
 
     function deleteCalendarEvent(eventId) {
-      if (!confirm('Remove this event from today\'s schedule?')) return;
+      if (!confirm('Remove this event from your schedule?')) return;
 
       if (state.settings.mockCalendar?.events) {
         state.settings.mockCalendar.events = filterCalendarEventsById(state.settings.mockCalendar.events, eventId);
@@ -6266,18 +6286,7 @@
       if (state.settings.importedCalendarEvents?.length) {
         state.settings.importedCalendarEvents = filterCalendarEventsById(state.settings.importedCalendarEvents, eventId);
       }
-      if (state.calendarCache) {
-        state.calendarCache.events = filterCalendarEventsById(state.calendarCache.events, eventId);
-        const avail = computeDayAvailability({
-          events: state.calendarCache.events.map(e => ({
-            time: e.time,
-            title: e.title,
-            durationMin: e.durationMin || 30
-          }))
-        });
-        state.calendarCache.freeMinutes = avail.freeMinutes;
-      }
-
+      refreshCalendarCache();
       saveState();
       renderSchedule();
       renderTodayFeed();
@@ -6289,6 +6298,26 @@
       }
     }
 
+    function renderScheduleEventRow(ev, options = {}) {
+      const { showDate = false } = options;
+      const row = document.createElement('div');
+      row.className = 'rhythm-card bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-x-3';
+      row.innerHTML = `
+        <div class="text-sm font-semibold text-rhythm-primary-light tabular-nums w-16 flex-shrink-0">${formatScheduleEventTime(ev.time)}</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium">${ev.title}</div>
+          ${showDate ? `<div class="text-[10px] text-rhythm-muted">${formatEventDateLabel(getEventDate(ev))}</div>` : ''}
+          ${ev.durationMin ? `<div class="text-xs text-rhythm-muted">${ev.durationMin} min</div>` : ''}
+        </div>
+        <button type="button" class="cal-delete-btn text-rhythm-muted hover:text-rose-400 text-sm px-1" title="Delete event">×</button>
+      `;
+      row.querySelector('.cal-delete-btn').onclick = (e) => {
+        e.stopPropagation();
+        deleteCalendarEvent(ev.id);
+      };
+      return row;
+    }
+
     function renderSchedule() {
       const container = document.getElementById('schedule-list');
       const freeEl = document.getElementById('schedule-free-time');
@@ -6297,8 +6326,8 @@
       if (!container) return;
 
       updateCalendarStatusUI();
-
-      const cache = state.calendarCache || refreshCalendarCache();
+      refreshCalendarCache();
+      const cache = state.calendarCache;
       const avail = computeDayAvailability();
       if (freeEl) {
         freeEl.textContent = avail.freeMinutes > 0 ? `${formatDurationShort(avail.freeMinutes)} free` : 'Packed today';
@@ -6306,33 +6335,36 @@
       if (detailEl) detailEl.textContent = avail.summary;
       if (chipEl) chipEl.textContent = `Hours: ${avail.workLabel}`;
 
-      container.innerHTML = '';
-      const events = cache.events || [];
+      const today = todayStr();
+      const allEvents = getAllCalendarEvents();
+      const todayEvents = allEvents.filter(e => getEventDate(e) === today);
+      const upcomingEvents = allEvents.filter(e => getEventDate(e) > today);
 
-      if (events.length === 0) {
-        container.innerHTML = rhythmEmptyHtml('📅', 'Open schedule', cache.note || 'No events on calendar today. Tap + Add event or connect a calendar in Settings.');
+      container.innerHTML = '';
+
+      if (todayEvents.length === 0 && upcomingEvents.length === 0) {
+        container.innerHTML = rhythmEmptyHtml('📅', 'Open schedule', cache?.note || 'No events on calendar today. Tap + Add event or connect a calendar in Settings.');
         return;
       }
 
-      normalizeCalendarEvents(events).forEach(ev => {
-        const row = document.createElement('div');
-        row.className = 'rhythm-card bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-x-3';
-        row.innerHTML = `
-          <div class="text-sm font-semibold text-rhythm-primary-light tabular-nums w-14">${ev.time}</div>
-          <div class="flex-1 min-w-0">
-            <div class="font-medium">${ev.title}</div>
-            ${ev.durationMin ? `<div class="text-xs text-rhythm-muted">${ev.durationMin} min</div>` : ''}
-          </div>
-          <button type="button" class="cal-delete-btn text-rhythm-muted hover:text-rose-400 text-sm px-1" title="Delete event">×</button>
-        `;
-        row.querySelector('.cal-delete-btn').onclick = (e) => {
-          e.stopPropagation();
-          deleteCalendarEvent(ev.id);
-        };
-        container.appendChild(row);
-      });
+      if (todayEvents.length) {
+        todayEvents.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
+      } else {
+        const hint = document.createElement('div');
+        hint.className = 'text-xs text-rhythm-muted mb-3 px-1';
+        hint.textContent = 'Nothing on the calendar today.';
+        container.appendChild(hint);
+      }
 
-      if (cache.note) {
+      if (upcomingEvents.length) {
+        const hdr = document.createElement('div');
+        hdr.className = 'feed-section-label text-rhythm-muted mb-2 mt-3 text-[10px] uppercase tracking-wider font-semibold';
+        hdr.textContent = 'Upcoming';
+        container.appendChild(hdr);
+        upcomingEvents.forEach(ev => container.appendChild(renderScheduleEventRow(ev, { showDate: true })));
+      }
+
+      if (cache?.note) {
         const note = document.createElement('div');
         note.className = 'text-xs text-rhythm-muted text-center mt-2 px-2';
         note.textContent = cache.note;
