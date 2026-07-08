@@ -8078,8 +8078,8 @@
 
       const showOnToday = currentTab === 'today';
       const onBriefTutorialStep = state.settings.tutorialActive && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'rhythm-brief';
-      const hideDuringOtherTutorial = state.settings.tutorialActive && !onBriefTutorialStep;
-      el.classList.toggle('hidden', !showOnToday || hideDuringOtherTutorial);
+      const tutorialAllowsBrief = state.settings.tutorialCompleted || onBriefTutorialStep;
+      el.classList.toggle('hidden', !showOnToday || !tutorialAllowsBrief);
 
       const brief = buildRhythmBrief('day');
       const taskN = brief.tasks.length;
@@ -8888,7 +8888,6 @@
           switchTab('today');
           hideTutorialSmartBanner();
           updateRhythmBriefLauncher();
-          document.getElementById('rhythm-brief-launcher')?.classList.remove('hidden');
         }
       }
     ];
@@ -9116,6 +9115,7 @@
       renderTasks();
       renderStreaks();
       updateSmartBanner();
+      updateRhythmBriefLauncher();
       showToast(skipped ? 'Tour skipped — smart suggestions are on' : 'Tour complete — smart suggestions are on');
     }
 
