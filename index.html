@@ -1255,6 +1255,11 @@
       z-index: 192 !important;
     }
 
+    #projection-panel.tutorial-target-pulse,
+    #projection-content.tutorial-target-pulse {
+      z-index: 192 !important;
+    }
+
     .tutorial-interactive-target {
       position: relative;
       z-index: 200 !important;
@@ -9436,15 +9441,38 @@
         prepare: () => switchTab('streaks')
       },
       {
-        id: 'projections',
-        title: 'Projected Wins',
-        body: 'Tap your completed task to open <strong>Projected Wins</strong> below — forecasts for savings, steps, pages, and more.',
+        id: 'projections-tap',
+        title: 'Open Projected Wins',
+        body: 'Tap a streak with a measurable goal (steps, savings, pages) to open your forecast below.',
         target: () => document.querySelector('#streaks-list .rhythm-card') || document.getElementById('streaks-list'),
         waitFor: 'projection-open',
         interactive: true,
         prepare: () => {
           switchTab('streaks');
+          currentProjectionHabit = null;
           renderStreaks();
+        }
+      },
+      {
+        id: 'projections-read',
+        title: 'Projected Wins',
+        body: 'This panel forecasts where your habit is headed — daily pace, 30-day projection, and equivalents. Take your time reading it, then tap <strong>Next</strong> when you\'re ready.',
+        target: () => document.getElementById('projection-panel'),
+        highlightUnion: () => {
+          const section = document.querySelector('#tab-content-streaks > .mt-6');
+          if (section) return section.getBoundingClientRect();
+          const panel = document.getElementById('projection-panel');
+          return panel ? panel.getBoundingClientRect() : null;
+        },
+        cardAtTop: true,
+        prepare: () => {
+          switchTab('streaks');
+          renderStreaks();
+          requestAnimationFrame(() => {
+            const section = document.querySelector('#tab-content-streaks > .mt-6') || document.getElementById('projection-panel');
+            section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            refreshTutorialHighlight();
+          });
         }
       },
       {
@@ -9508,8 +9536,9 @@
 
     function applyTutorialInteractivity(step, target, overlay, card) {
       const interactive = isTutorialInteractiveStep(step);
+      const cardAtTop = !!(step?.cardAtTop || interactive);
       if (overlay) overlay.classList.toggle('is-interactive-step', interactive);
-      if (card) card.classList.toggle('tutorial-card-interactive', interactive);
+      if (card) card.classList.toggle('tutorial-card-interactive', cardAtTop);
       if (target && interactive) target.classList.add('tutorial-interactive-target');
     }
 
@@ -9568,14 +9597,19 @@
       const step = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
       if (!step) return;
       clearTutorialHighlight();
-      const unionRect = step.highlightUnion?.();
-      if (unionRect) {
-        positionTutorialHighlightRect(unionRect);
-        return;
-      }
       const overlay = document.getElementById('tutorial-overlay');
       const card = document.getElementById('tutorial-card');
+      const unionRect = step.highlightUnion?.();
       const target = typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
+      if (unionRect) {
+        positionTutorialHighlightRect(unionRect);
+        if (target) {
+          tutorialTargetEl = target;
+          target.classList.add('tutorial-target-pulse');
+          applyTutorialInteractivity(step, target, overlay, card);
+        }
+        return;
+      }
       if (target) {
         tutorialTargetEl = target;
         target.classList.add('tutorial-target-pulse');
@@ -9589,11 +9623,12 @@
       const step = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
       if (!step?.waitFor || step.waitFor !== trigger || tutorialWaitSatisfied) return;
       tutorialWaitSatisfied = true;
+      const delay = trigger === 'projection-open' ? 450 : 700;
       setTimeout(() => {
         if (!state.settings.tutorialActive) return;
         const current = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
         if (current?.waitFor === trigger) nextTutorialStep();
-      }, 700);
+      }, delay);
     }
 
     function renderTutorialStep(stepIndex) {
@@ -9636,11 +9671,13 @@
             tutorialTargetEl = target;
             target.classList.add('tutorial-target-pulse');
             applyTutorialInteractivity(step, target, overlay, card);
-            target.scrollIntoView({
-              block: isTutorialInteractiveStep(step) ? 'center' : 'nearest',
-              behavior: 'smooth'
-            });
-            positionTutorialHighlight(target);
+            if (!unionRect) {
+              target.scrollIntoView({
+                block: (isTutorialInteractiveStep(step) || step.cardAtTop) ? 'center' : 'nearest',
+                behavior: 'smooth'
+              });
+              positionTutorialHighlight(target);
+            }
           }
 
           if (overlay) {
@@ -9649,7 +9686,7 @@
           }
           if (card) {
             card.classList.remove('hidden');
-            if (!target) card.classList.remove('tutorial-card-interactive');
+            if (!target && !step.cardAtTop) card.classList.remove('tutorial-card-interactive');
           }
           if (stepLabel) stepLabel.textContent = `Step ${stepIndex + 1} of ${APP_TUTORIAL_STEPS.length}`;
           if (titleEl) titleEl.textContent = step.title;
@@ -10956,8 +10993,17 @@
       updateProjectionHint();
     }
 
+    function finishProjectionPanelRender(panelEl) {
+      panelEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (state.settings.tutorialActive && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'projections-read') {
+        requestAnimationFrame(() => refreshTutorialHighlight());
+      }
+    }
+
     function showProjections(habitId) {
-      if (currentProjectionHabit === habitId) {
+      const tutorialOnReadStep = state.settings.tutorialActive
+        && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'projections-read';
+      if (currentProjectionHabit === habitId && !tutorialOnReadStep) {
         currentProjectionHabit = null;
         renderStreaks();
         return;
@@ -10987,7 +11033,7 @@
           <div class="text-xs text-center mt-3 text-rhythm-muted">${metricLogger ? 'Log an activity to see projections' : 'Only measurable goals get 30-day projections'}</div>
         `;
         bindProjectionMetricLogger(panel, habitId);
-        panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        finishProjectionPanelRender(panel);
         return;
       }
 
