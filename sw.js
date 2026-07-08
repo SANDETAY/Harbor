@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rhythm-preview-v22';
+const CACHE_NAME = 'rhythm-preview-v23';
 const PRECACHE = [
   './',
   './index.html',

@@ -559,14 +559,105 @@
       box-shadow: 0 0 0 3px rgba(91, 184, 168, 0.22);
     }
 
-    .onboarding-card {
+    #onboarding {
+      background:
+        radial-gradient(ellipse 130% 70% at 50% -15%, rgba(61, 154, 139, 0.2) 0%, transparent 52%),
+        radial-gradient(ellipse 80% 50% at 100% 100%, rgba(30, 58, 74, 0.35) 0%, transparent 50%),
+        var(--rhythm-bg);
+    }
+
+    .onboarding-progress {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .onboarding-progress-dot {
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 999px;
+      background: var(--rhythm-border);
+      transition: width 0.25s var(--rhythm-ease-out), background 0.2s ease;
+    }
+
+    .onboarding-progress-dot.is-active {
+      width: 1.35rem;
+      background: var(--rhythm-primary);
+    }
+
+    .onboarding-progress-dot.is-done {
+      background: rgba(91, 184, 168, 0.55);
+    }
+
+    .onboarding-step-label {
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--rhythm-muted);
+      text-align: center;
+      margin-bottom: 0.35rem;
+    }
+
+    .onboarding-title {
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      text-align: center;
+      color: var(--rhythm-text);
+    }
+
+    .onboarding-subtitle {
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: var(--rhythm-muted);
+      text-align: center;
+      margin-top: 0.45rem;
+      padding: 0 0.5rem;
+    }
+
+    .onboarding-card,
+    .onboarding-option {
       transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.12s ease;
     }
 
-    .onboarding-card.is-selected {
+    .onboarding-card:active,
+    .onboarding-option:active {
+      transform: scale(0.985);
+    }
+
+    .onboarding-card.is-selected,
+    .onboarding-option.is-selected {
       border-color: var(--rhythm-primary) !important;
-      background: rgba(61, 154, 139, 0.1) !important;
+      background: rgba(61, 154, 139, 0.12) !important;
       box-shadow: var(--rhythm-glow-primary);
+    }
+
+    .onboarding-option {
+      border: 1px solid var(--rhythm-border);
+      border-radius: 1.25rem;
+      padding: 1rem;
+      cursor: pointer;
+      background: rgba(30, 41, 51, 0.55);
+      backdrop-filter: blur(8px);
+    }
+
+    .onboarding-option-icon {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.1rem;
+    }
+
+    .onboarding-hero-wordmark {
+      filter: drop-shadow(0 8px 24px rgba(61, 154, 139, 0.15));
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -847,6 +938,26 @@
       animation: bannerSlide 0.3s var(--rhythm-ease-out) forwards;
     }
 
+    .smart-banner-welcome-nudge {
+      animation: welcomeBannerGlow 2.4s ease-in-out infinite;
+    }
+
+    @keyframes welcomeBannerGlow {
+      0%, 100% { box-shadow: var(--rhythm-shadow-sm), var(--rhythm-glow-primary); }
+      50% { box-shadow: var(--rhythm-shadow-sm), 0 0 0 3px rgba(91, 184, 168, 0.28), var(--rhythm-glow-primary); }
+    }
+
+    #smart-cta.welcome-cta-pulse {
+      animation: welcomeCtaPulse 1.6s ease-in-out infinite;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    @keyframes welcomeCtaPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(91, 184, 168, 0.5); transform: scale(1); }
+      50% { box-shadow: 0 0 0 5px rgba(91, 184, 168, 0); transform: scale(1.05); }
+    }
+
     .smart-banner-mute {
       position: absolute;
       top: 0;
@@ -881,16 +992,16 @@
       background: var(--rhythm-raised);
     }
 
-    /* ── Rhythm Brief launcher ── */
+    /* ── Rhythm Brief launcher (slimmer than smart banner) ── */
     .rhythm-brief-launcher {
       display: block;
       cursor: pointer;
-      border-radius: 1.25rem;
-      border: 1px solid rgba(61, 154, 139, 0.35);
+      border-radius: 1rem;
+      border: 1px solid rgba(61, 154, 139, 0.3);
       background:
-        linear-gradient(135deg, rgba(61, 154, 139, 0.14) 0%, rgba(30, 58, 74, 0.55) 48%, var(--rhythm-surface) 100%);
-      box-shadow: var(--rhythm-shadow-sm), 0 0 0 1px rgba(91, 184, 168, 0.08);
-      padding: 0.85rem 1rem;
+        linear-gradient(135deg, rgba(61, 154, 139, 0.1) 0%, rgba(30, 58, 74, 0.45) 48%, var(--rhythm-surface) 100%);
+      box-shadow: var(--rhythm-shadow-sm), 0 0 0 1px rgba(91, 184, 168, 0.06);
+      padding: 0.5rem 0.8rem;
       transition: transform 0.16s var(--rhythm-ease-out), border-color 0.16s ease, box-shadow 0.16s ease;
       -webkit-tap-highlight-color: transparent;
     }
@@ -910,20 +1021,20 @@
     }
 
     .rhythm-brief-launcher-icon {
-      width: 2.35rem;
-      height: 2.35rem;
-      border-radius: 0.85rem;
-      background: rgba(61, 154, 139, 0.22);
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 0.6rem;
+      background: rgba(61, 154, 139, 0.18);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       color: var(--rhythm-primary-light);
-      font-size: 1rem;
+      font-size: 0.75rem;
     }
 
     .rhythm-brief-launcher-title {
-      font-size: 0.82rem;
+      font-size: 0.72rem;
       font-weight: 600;
       color: var(--rhythm-text);
       letter-spacing: -0.02em;
@@ -931,16 +1042,16 @@
     }
 
     .rhythm-brief-launcher-sub {
-      font-size: 0.68rem;
+      font-size: 0.6rem;
       color: var(--rhythm-muted);
-      line-height: 1.35;
-      margin-top: 0.15rem;
+      line-height: 1.3;
+      margin-top: 0.1rem;
     }
 
     .rhythm-brief-stat {
-      font-size: 0.58rem;
+      font-size: 0.52rem;
       font-weight: 600;
-      padding: 0.15rem 0.45rem;
+      padding: 0.1rem 0.35rem;
       border-radius: 999px;
       background: rgba(61, 154, 139, 0.15);
       color: var(--rhythm-primary-light);
@@ -1224,6 +1335,25 @@
       text-align: center;
       flex: 1;
       min-width: 0;
+    }
+
+    .cal-format-chip {
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--rhythm-border);
+      background: var(--rhythm-raised);
+      color: var(--rhythm-muted);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+
+    .cal-format-chip.is-active {
+      border-color: var(--rhythm-primary);
+      background: rgba(61, 154, 139, 0.15);
+      color: var(--rhythm-primary-light);
     }
 
     .empty-state {
@@ -1913,58 +2043,66 @@
       </div>
 
       <!-- Onboarding (low-friction, first-run only) -->
-      <div id="onboarding" class="absolute inset-0 bg-rhythm-bg z-50 flex flex-col p-5 overflow-hidden hidden">
-        <div class="flex-1 flex flex-col justify-center">
-          <div class="text-center mb-8">
-            <img src="rythm-wordmark.png" alt="Rhythm" class="rythm-wordmark h-12 w-auto mx-auto mb-3" width="480" height="227">
-            <div class="text-rhythm-muted text-sm">Create Your Rhythm</div>
+      <div id="onboarding" class="absolute inset-0 z-50 flex flex-col p-5 overflow-hidden hidden">
+        <div class="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
+          <div class="text-center mb-6">
+            <img src="rythm-wordmark.png" alt="Rhythm" class="rythm-wordmark onboarding-hero-wordmark h-11 w-auto mx-auto mb-2" width="480" height="227">
+            <div class="text-rhythm-muted text-xs tracking-wide">Create your rhythm in under a minute</div>
+          </div>
+
+          <div class="onboarding-progress" aria-hidden="true">
+            <span class="onboarding-progress-dot is-active"></span>
+            <span class="onboarding-progress-dot"></span>
+            <span class="onboarding-progress-dot"></span>
+            <span class="onboarding-progress-dot"></span>
           </div>
 
           <div class="mb-4">
-            <div class="text-[10px] uppercase tracking-widest text-rhythm-muted mb-1 text-center">Step 1 of 4</div>
-            <div class="text-xs uppercase tracking-widest text-rhythm-muted mb-3 text-center">How structured do you want your daily routine?</div>
+            <div class="onboarding-step-label">Step 1 of 4</div>
+            <div class="onboarding-title">How structured is your routine?</div>
+            <div class="onboarding-subtitle">Pick a starting pace — you can always adjust later.</div>
             
-            <div class="space-y-3">
-              <!-- Easy -->
-              <div onclick="selectRoutineLevel('easy')" class="onboarding-card bg-rhythm-surface hover:bg-rhythm-raised active:bg-rhythm-border border border-rhythm-border rounded-3xl p-4 cursor-pointer transition-all">
+            <div class="space-y-2.5 mt-4">
+              <div onclick="selectRoutineLevel('easy')" class="onboarding-option onboarding-card cursor-pointer">
                 <div class="flex items-center gap-3">
-                  <div class="text-2xl">😌</div>
-                  <div class="flex-1">
-                    <div class="font-semibold">Easy</div>
-                    <div class="text-xs text-rhythm-muted">Just a few flexible things I naturally do most days.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1">Save · Walk · Read · Bed</div>
+                  <div class="onboarding-option-icon bg-emerald-900/40 text-emerald-300">😌</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-sm">Easy</div>
+                    <div class="text-xs text-rhythm-muted leading-snug">A few flexible things I naturally do most days.</div>
+                    <div class="text-[10px] text-rhythm-primary-light mt-1 font-medium">Save · Walk · Read · Bed</div>
                   </div>
+                  <i class="fa-solid fa-chevron-right text-rhythm-muted/60 text-[10px]"></i>
                 </div>
               </div>
 
-              <!-- Moderate -->
-              <div onclick="selectRoutineLevel('moderate')" class="onboarding-card bg-rhythm-surface hover:bg-rhythm-raised active:bg-rhythm-border border border-rhythm-border rounded-3xl p-4 cursor-pointer transition-all">
+              <div onclick="selectRoutineLevel('moderate')" class="onboarding-option onboarding-card cursor-pointer">
                 <div class="flex items-center gap-3">
-                  <div class="text-2xl">🧘</div>
-                  <div class="flex-1">
-                    <div class="font-semibold">Moderate</div>
-                    <div class="text-xs text-rhythm-muted">A reliable list of my usual daily tasks.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1">Save · Walk · Read · Bed</div>
+                  <div class="onboarding-option-icon bg-sky-900/40 text-sky-300">🧘</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-sm">Moderate</div>
+                    <div class="text-xs text-rhythm-muted leading-snug">A reliable list of my usual daily tasks.</div>
+                    <div class="text-[10px] text-rhythm-primary-light mt-1 font-medium">Save · Walk · Read · Bed</div>
                   </div>
+                  <i class="fa-solid fa-chevron-right text-rhythm-muted/60 text-[10px]"></i>
                 </div>
               </div>
 
-              <!-- Strict -->
-              <div onclick="selectRoutineLevel('strict')" class="onboarding-card bg-rhythm-surface hover:bg-rhythm-raised active:bg-rhythm-border border border-rhythm-border rounded-3xl p-4 cursor-pointer transition-all">
+              <div onclick="selectRoutineLevel('strict')" class="onboarding-option onboarding-card cursor-pointer">
                 <div class="flex items-center gap-3">
-                  <div class="text-2xl">⏰</div>
-                  <div class="flex-1">
-                    <div class="font-semibold">Strict</div>
-                    <div class="text-xs text-rhythm-muted">Time-boxed schedule to stay on track.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1">Save · Walk · Read · Bed</div>
+                  <div class="onboarding-option-icon bg-amber-900/40 text-amber-300">⏰</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-sm">Strict</div>
+                    <div class="text-xs text-rhythm-muted leading-snug">Time-boxed schedule to stay on track.</div>
+                    <div class="text-[10px] text-rhythm-primary-light mt-1 font-medium">Save · Walk · Read · Bed</div>
                   </div>
+                  <i class="fa-solid fa-chevron-right text-rhythm-muted/60 text-[10px]"></i>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="text-center">
-            <button onclick="skipOnboarding()" class="text-xs text-rhythm-muted hover:text-rhythm-text underline">Just explore</button>
+          <div class="text-center pt-1">
+            <button onclick="skipOnboarding()" class="text-xs text-rhythm-muted hover:text-rhythm-text underline underline-offset-2">Just explore</button>
           </div>
         </div>
       </div>
@@ -2040,14 +2178,14 @@
       <div id="rhythm-brief-launcher" class="rhythm-brief-launcher mx-5 mt-0 mb-1 hidden" role="button" tabindex="0"
         onclick="showRhythmBriefModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showRhythmBriefModal();}"
         aria-label="Open your Rhythm Brief">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2.5">
           <div class="rhythm-brief-launcher-icon" aria-hidden="true">
             <i class="fa-solid fa-wand-magic-sparkles"></i>
           </div>
           <div class="flex-1 min-w-0">
             <div class="rhythm-brief-launcher-title">Rhythm Brief</div>
             <div id="rhythm-brief-preview-line" class="rhythm-brief-launcher-sub">Your smart day-at-a-glance</div>
-            <div id="rhythm-brief-preview-stats" class="flex flex-wrap gap-1.5 mt-1.5"></div>
+            <div id="rhythm-brief-preview-stats" class="flex flex-wrap gap-1 mt-1"></div>
           </div>
           <i class="fa-solid fa-chevron-right rhythm-brief-chevron" aria-hidden="true"></i>
         </div>
@@ -2323,6 +2461,7 @@
         },
         importedCalendarEvents: [],
         workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
+        eventTimeFormat: '12h',
         showWelcomeBanner: false,
         tutorialActive: false,
         tutorialCompleted: false,
@@ -2683,6 +2822,7 @@
           },
           importedCalendarEvents: [],
           workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
+          eventTimeFormat: '12h',
           showWelcomeBanner: false,
           tutorialActive: false,
           tutorialCompleted: false,
@@ -3049,8 +3189,33 @@
       }
     }
 
+    function isComplexMaintenanceTask(task) {
+      const section = task.librarySection || '';
+      const isMaint = MAINTENANCE_SECTIONS.includes(section) || section === 'Weekly Chores';
+      if (!isMaint) return false;
+      if (task.proOption) return true;
+      if ((task.difficulty || 2) >= 3) return true;
+      if ((task.est_minutes || 0) >= 50) return true;
+      return false;
+    }
+
+    function isDiyFriendlyTask(task) {
+      if (isPersonalLibraryTask(task)) return true;
+      const section = task.librarySection || '';
+      if (!MAINTENANCE_SECTIONS.includes(section) && section !== 'Weekly Chores') return false;
+      return !task.proOption && (task.difficulty || 2) <= 2;
+    }
+
+    function matchesMaintenancePreference(task) {
+      const pref = getMaintenancePreference();
+      if (pref === 'mixed' || pref === 'diy') return true;
+      if (pref === 'hire') return !isComplexMaintenanceTask(task);
+      return true;
+    }
+
     function getFilteredLibraryTasks() {
       let tasks = commonTasks.filter(t => {
+        if (!matchesMaintenancePreference(t)) return false;
         if (currentLibraryFilter !== 'all' && getTaskFilterType(t) !== currentLibraryFilter) return false;
         if (librarySearchQuery) {
           const q = librarySearchQuery.toLowerCase();
@@ -5766,14 +5931,99 @@
       return `${String(h24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     }
 
-    function getDefaultEventTimeParts() {
+    function getEventTimeFormat() {
+      return state.settings.eventTimeFormat === '24h' ? '24h' : '12h';
+    }
+
+    function setEventTimeFormat(format) {
+      state.settings.eventTimeFormat = format === '24h' ? '24h' : '12h';
+      saveState();
+    }
+
+    function getDefaultEventTimeParts(format = getEventTimeFormat()) {
       const now = new Date();
       let h = now.getHours();
       const m = Math.ceil(now.getMinutes() / 15) * 15;
       if (m >= 60) h = (h + 1) % 24;
+      const minute = String(m % 60).padStart(2, '0');
+      if (format === '24h') {
+        return { hour: String(h).padStart(2, '0'), minute, ampm: h >= 12 ? 'PM' : 'AM' };
+      }
       const ampm = h >= 12 ? 'PM' : 'AM';
       const h12 = h % 12 || 12;
-      return { hour: String(h12), minute: String(m % 60).padStart(2, '0'), ampm };
+      return { hour: String(h12), minute, ampm };
+    }
+
+    function buildEventTimePickerHtml(format, defaults) {
+      const minuteOptions = ['00', '15', '30', '45'].map(v =>
+        `<option value="${v}"${v === defaults.minute ? ' selected' : ''}>${v}</option>`
+      ).join('');
+
+      if (format === '24h') {
+        const hourOptions = Array.from({ length: 24 }, (_, i) => {
+          const v = String(i).padStart(2, '0');
+          return `<option value="${v}"${v === defaults.hour ? ' selected' : ''}>${v}</option>`;
+        }).join('');
+        return `
+          <div id="cal-ev-time-fields" class="flex gap-2">
+            <select id="cal-ev-hour" class="cal-time-select" aria-label="Hour">${hourOptions}</select>
+            <select id="cal-ev-minute" class="cal-time-select" aria-label="Minute">${minuteOptions}</select>
+          </div>`;
+      }
+
+      const hourOptions = Array.from({ length: 12 }, (_, i) => {
+        const v = String(i + 1);
+        return `<option value="${v}"${v === defaults.hour ? ' selected' : ''}>${v}</option>`;
+      }).join('');
+      return `
+        <div id="cal-ev-time-fields" class="flex gap-2">
+          <select id="cal-ev-hour" class="cal-time-select" aria-label="Hour">${hourOptions}</select>
+          <select id="cal-ev-minute" class="cal-time-select" aria-label="Minute">${minuteOptions}</select>
+          <select id="cal-ev-ampm" class="cal-time-select" aria-label="AM or PM">
+            <option value="AM"${defaults.ampm === 'AM' ? ' selected' : ''}>AM</option>
+            <option value="PM"${defaults.ampm === 'PM' ? ' selected' : ''}>PM</option>
+          </select>
+        </div>`;
+    }
+
+    function readEventTimePickerValues(modal, format) {
+      const hour = modal.querySelector('#cal-ev-hour')?.value;
+      const minute = modal.querySelector('#cal-ev-minute')?.value;
+      if (format === '24h') {
+        return parseEventTimeInput(`${hour}:${minute}`);
+      }
+      const ampm = modal.querySelector('#cal-ev-ampm')?.value;
+      return parseEventTimeFromPicker(hour, minute, ampm);
+    }
+
+    function wireEventTimeFormatToggle(modal, calState) {
+      const wrap = modal.querySelector('#cal-ev-time-wrap');
+      const chips = modal.querySelectorAll('.cal-format-chip');
+
+      const renderPicker = () => {
+        const defaults = getDefaultEventTimeParts(calState.timeFormat);
+        const fields = modal.querySelector('#cal-ev-time-fields');
+        if (fields) {
+          const hour = fields.querySelector('#cal-ev-hour')?.value;
+          const minute = fields.querySelector('#cal-ev-minute')?.value;
+          const ampm = fields.querySelector('#cal-ev-ampm')?.value;
+          if (hour) defaults.hour = calState.timeFormat === '24h' ? hour.padStart(2, '0') : hour;
+          if (minute) defaults.minute = minute;
+          if (ampm) defaults.ampm = ampm;
+        }
+        const container = modal.querySelector('#cal-ev-time-picker');
+        if (container) container.innerHTML = buildEventTimePickerHtml(calState.timeFormat, defaults);
+      };
+
+      chips.forEach(chip => {
+        chip.onclick = () => {
+          calState.timeFormat = chip.dataset.format;
+          setEventTimeFormat(calState.timeFormat);
+          chips.forEach(c => c.classList.toggle('is-active', c.dataset.format === calState.timeFormat));
+          renderPicker();
+        };
+      });
+      renderPicker();
     }
 
     function buildMiniCalendarHtml(selectedDate, viewYear, viewMonth) {
@@ -5843,19 +6093,13 @@
 
     function showAddCalendarEventModal() {
       const now = new Date();
+      const timeFormat = getEventTimeFormat();
       const calState = {
         selectedDate: todayStr(),
         viewYear: now.getFullYear(),
-        viewMonth: now.getMonth()
+        viewMonth: now.getMonth(),
+        timeFormat
       };
-      const timeDefaults = getDefaultEventTimeParts();
-      const hourOptions = Array.from({ length: 12 }, (_, i) => {
-        const v = String(i + 1);
-        return `<option value="${v}"${v === timeDefaults.hour ? ' selected' : ''}>${v}</option>`;
-      }).join('');
-      const minuteOptions = ['00', '15', '30', '45'].map(v =>
-        `<option value="${v}"${v === timeDefaults.minute ? ' selected' : ''}>${v}</option>`
-      ).join('');
 
       const modal = document.createElement('div');
       modal.id = 'add-calendar-event-modal';
@@ -5873,15 +6117,14 @@
           <div class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Date</div>
           <div id="cal-ev-calendar" class="bg-rhythm-raised border border-rhythm-border rounded-2xl p-3 mb-3"></div>
 
-          <div class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Time</div>
-          <div class="flex gap-2 mb-3">
-            <select id="cal-ev-hour" class="cal-time-select" aria-label="Hour">${hourOptions}</select>
-            <select id="cal-ev-minute" class="cal-time-select" aria-label="Minute">${minuteOptions}</select>
-            <select id="cal-ev-ampm" class="cal-time-select" aria-label="AM or PM">
-              <option value="AM"${timeDefaults.ampm === 'AM' ? ' selected' : ''}>AM</option>
-              <option value="PM"${timeDefaults.ampm === 'PM' ? ' selected' : ''}>PM</option>
-            </select>
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold">Time</div>
+            <div class="flex gap-1.5" id="cal-ev-time-wrap">
+              <button type="button" class="cal-format-chip${timeFormat === '12h' ? ' is-active' : ''}" data-format="12h">12H</button>
+              <button type="button" class="cal-format-chip${timeFormat === '24h' ? ' is-active' : ''}" data-format="24h">24H</button>
+            </div>
           </div>
+          <div id="cal-ev-time-picker" class="mb-3"></div>
 
           <div class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Duration</div>
           <div class="flex flex-wrap gap-1.5 mb-2" id="cal-ev-duration-chips">
@@ -5905,6 +6148,7 @@
       `;
       document.body.appendChild(modal);
       wireMiniCalendar(modal, calState);
+      wireEventTimeFormatToggle(modal, calState);
 
       const durationInput = modal.querySelector('#cal-ev-duration');
       modal.querySelectorAll('.cal-duration-chip').forEach(chip => {
@@ -5923,11 +6167,7 @@
           showToast('Enter an event title');
           return;
         }
-        const time = parseEventTimeFromPicker(
-          modal.querySelector('#cal-ev-hour').value,
-          modal.querySelector('#cal-ev-minute').value,
-          modal.querySelector('#cal-ev-ampm').value
-        );
+        const time = readEventTimePickerValues(modal, calState.timeFormat);
         if (!time) {
           showToast('Pick a valid time');
           return;
@@ -8910,6 +9150,8 @@
         ensureSmartBannerHandler(banner);
         banner.classList.remove('hidden');
         banner.classList.remove('smart-banner-enter');
+        banner.classList.toggle('smart-banner-welcome-nudge', suggestion.type === 'welcome');
+        if (ctaEl) ctaEl.classList.toggle('welcome-cta-pulse', suggestion.type === 'welcome');
         void banner.offsetWidth;
         banner.classList.add('smart-banner-enter');
         banner.dataset.suggestionHabit = suggestion.habit ? suggestion.habit.id : '';
@@ -8919,6 +9161,8 @@
         banner.dataset.suggestionAction = suggestion.action || '';
       } else {
         banner.classList.add('hidden');
+        banner.classList.remove('smart-banner-welcome-nudge');
+        if (ctaEl) ctaEl.classList.remove('welcome-cta-pulse');
         resetSmartBannerDatasets(banner);
         if (billFootnoteEl) {
           billFootnoteEl.textContent = '';
@@ -9540,6 +9784,9 @@
       div.className = `library-task-card rhythm-card bg-rhythm-raised/70 border ${alreadyAdded || proScheduled ? 'border-rhythm-primary/50' : 'border-rhythm-border/80'} rounded-2xl px-3.5 py-2.5 mb-2`;
 
       const pref = getMaintenancePreference();
+      const diyBadge = (pref === 'diy' && isDiyFriendlyTask(task) && !isPersonal)
+        ? '<span class="text-[9px] px-1.5 py-px rounded-full bg-emerald-900/40 text-emerald-300 font-semibold">DIY</span>'
+        : '';
       let actionCol = '';
 
       if (isPersonal) {
@@ -9576,6 +9823,7 @@
           <div class="flex-1 min-w-0">
             <div class="font-medium text-sm leading-tight text-rhythm-text">${task.title}</div>
             <div class="flex flex-wrap items-center gap-1 mt-1">
+              ${diyBadge}
               <span class="text-[9px] px-1.5 py-px rounded-full ${getEnergyBadgeClass(diff)}">${getDifficultyLabel(diff)}</span>
               <span class="text-[9px] text-rhythm-muted">${task.est_minutes}m</span>
               <span class="text-[9px] px-1.5 py-px rounded bg-rhythm-surface/80 text-rhythm-primary-light/90">${intervalLabel}</span>
@@ -9610,7 +9858,8 @@
       if (statsEl) {
         const added = state.habits.filter(h => commonTasks.some(t => t.id === h.id)).length;
         const prefTag = getMaintenancePrefLabel();
-        statsEl.textContent = `${tasks.length} shown · ${added} in your Rhythm · ${prefTag}`;
+        const prefNote = getMaintenancePreference() === 'hire' ? ' · pro-focused' : (getMaintenancePreference() === 'diy' ? ' · DIY catalog' : '');
+        statsEl.textContent = `${tasks.length} shown · ${added} in your Rhythm · ${prefTag}${prefNote}`;
       }
 
       if (tasks.length === 0) {
@@ -10359,7 +10608,7 @@
                   <button type="button" data-maint-pref="${opt.id}"
                     class="maint-pref-btn flex-1 py-2.5 px-1 rounded-2xl text-[10px] font-semibold border transition-all ${maintPref === opt.id ? 'bg-rhythm-primary border-rhythm-primary text-white' : 'bg-rhythm-raised border-rhythm-border text-rhythm-muted'}">
                     <i class="fa-solid ${opt.icon} block text-xs mb-0.5"></i>
-                    ${opt.id === 'diy' ? 'DIY' : opt.id === 'hire' ? 'Hire' : 'Mix'}
+                    ${opt.id === 'diy' ? 'DIY' : opt.id === 'hire' ? 'Use a Professional' : 'Mix of Both'}
                   </button>
                 `).join('')}
               </div>
@@ -10707,26 +10956,34 @@
     const MAINTENANCE_PREF_OPTIONS = [
       {
         id: 'diy',
-        title: 'I DIY',
+        title: 'DIY',
         subtitle: 'I handle home, yard & car maintenance myself',
         icon: 'fa-hammer',
         color: 'emerald'
       },
       {
         id: 'hire',
-        title: 'I hire out',
-        subtitle: 'Schedule pros for HVAC, lawn, repairs & more',
+        title: 'Use a Professional',
+        subtitle: 'Book pros for HVAC, lawn, repairs & more',
         icon: 'fa-user-tie',
         color: 'sky'
       },
       {
         id: 'mixed',
-        title: 'Mix of both',
+        title: 'Mix of Both',
         subtitle: 'Some tasks I do, some I book with a pro',
         icon: 'fa-sliders',
         color: 'amber'
       }
     ];
+
+    function renderOnboardingProgress(step) {
+      const dots = [1, 2, 3, 4].map(n => {
+        const cls = n < step ? 'is-done' : (n === step ? 'is-active' : '');
+        return `<span class="onboarding-progress-dot ${cls}"></span>`;
+      }).join('');
+      return `<div class="onboarding-progress" aria-hidden="true">${dots}</div>`;
+    }
 
     function getMaintenancePreference() {
       return state.settings.maintenancePreference || 'mixed';
@@ -10735,7 +10992,7 @@
     function getMaintenancePrefLabel(pref) {
       const p = pref || getMaintenancePreference();
       const opt = MAINTENANCE_PREF_OPTIONS.find(o => o.id === p);
-      return opt ? opt.title : 'Mix of both';
+      return opt ? opt.title : 'Mix of Both';
     }
 
     function getCalendarConnections() {
@@ -10974,11 +11231,12 @@
       const connectedCount = CALENDAR_PROVIDERS.filter(p => conns[p.id]?.connected).length;
 
       onboarding.innerHTML = `
-        <div class="flex-1 flex flex-col p-2 overflow-auto">
+        <div class="flex-1 flex flex-col justify-center max-w-md mx-auto w-full p-1 overflow-auto">
+          ${renderOnboardingProgress(3)}
           <div class="text-center mb-4">
-            <div class="text-[10px] uppercase tracking-widest text-rhythm-muted mb-1">Step 3 of 4</div>
-            <div class="text-xl font-semibold">Connect your calendars</div>
-            <div class="text-xs text-rhythm-muted mt-1">Rhythm reads free time &amp; conflicts — never replaces your calendar app.</div>
+            <div class="onboarding-step-label">Step 3 of 4</div>
+            <div class="onboarding-title">Connect your calendars</div>
+            <div class="onboarding-subtitle">Rhythm reads free time &amp; conflicts — never replaces your calendar app.</div>
           </div>
 
           <div class="space-y-2.5 mb-4">
@@ -11012,35 +11270,35 @@
 
     function showMaintenancePreferenceStep() {
       const onboarding = document.getElementById('onboarding');
-      const template = ROUTINE_TEMPLATES[selectedRoutineLevel];
 
       onboarding.innerHTML = `
-        <div class="flex-1 flex flex-col p-2 overflow-auto">
+        <div class="flex-1 flex flex-col justify-center max-w-md mx-auto w-full p-1 overflow-auto">
+          ${renderOnboardingProgress(2)}
           <div class="text-center mb-4">
-            <div class="text-[10px] uppercase tracking-widest text-rhythm-muted mb-1">Step 2 of 4</div>
-            <div class="text-xl font-semibold">Home maintenance</div>
-            <div class="text-xs text-rhythm-muted mt-1">How do you usually handle upkeep? We'll tailor your library.</div>
+            <div class="onboarding-step-label">Step 2 of 4</div>
+            <div class="onboarding-title">Home maintenance</div>
+            <div class="onboarding-subtitle">How do you usually handle upkeep? We'll tailor your library.</div>
           </div>
 
-          <div class="space-y-3 mb-4">
+          <div class="space-y-2.5 mb-4">
             ${MAINTENANCE_PREF_OPTIONS.map(opt => `
               <div onclick="selectMaintenancePreference('${opt.id}')"
-                class="bg-rhythm-surface hover:bg-rhythm-border active:bg-rhythm-border border border-rhythm-border rounded-3xl p-4 cursor-pointer transition-all">
+                class="onboarding-option onboarding-card cursor-pointer${selectedMaintenancePref === opt.id ? ' is-selected' : ''}">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-2xl bg-rhythm-border flex items-center justify-center flex-shrink-0">
-                    <i class="fa-solid ${opt.icon} text-${opt.color}-400"></i>
+                  <div class="onboarding-option-icon bg-${opt.color}-900/35 text-${opt.color}-300">
+                    <i class="fa-solid ${opt.icon}"></i>
                   </div>
                   <div class="flex-1 min-w-0">
-                    <div class="font-semibold">${opt.title}</div>
-                    <div class="text-xs text-rhythm-muted">${opt.subtitle}</div>
+                    <div class="font-semibold text-sm">${opt.title}</div>
+                    <div class="text-xs text-rhythm-muted leading-snug">${opt.subtitle}</div>
                   </div>
-                  <i class="fa-solid fa-chevron-right text-rhythm-muted text-xs"></i>
+                  <i class="fa-solid fa-chevron-right text-rhythm-muted/60 text-[10px]"></i>
                 </div>
               </div>
             `).join('')}
           </div>
 
-          <button onclick="selectMaintenancePreference('mixed')" class="text-xs text-rhythm-muted text-center underline">Skip — decide later</button>
+          <button onclick="selectMaintenancePreference('mixed')" class="text-xs text-rhythm-muted text-center underline underline-offset-2 w-full">Skip — decide later</button>
         </div>
       `;
     }
@@ -11065,16 +11323,17 @@
       const onboarding = document.getElementById('onboarding');
 
       onboarding.innerHTML = `
-        <div class="flex-1 flex flex-col p-2">
+        <div class="flex-1 flex flex-col justify-center max-w-md mx-auto w-full p-1">
+          ${renderOnboardingProgress(4)}
           <div class="text-center mb-3">
-            <div class="text-[10px] uppercase tracking-widest text-rhythm-muted mb-1">Step 4 of 4</div>
-            <div class="text-xl font-semibold">${template.name} Routine</div>
-            <div class="text-xs text-rhythm-muted leading-relaxed px-2">These four tasks will land in your <strong>Today</strong> tab — your guide for the quick tour after you start.</div>
+            <div class="onboarding-step-label">Step 4 of 4</div>
+            <div class="onboarding-title">${template.name} routine</div>
+            <div class="onboarding-subtitle">These four tasks land in <strong>Today</strong> — your guide for the quick tour after you start.</div>
           </div>
           
-          <div id="routine-preview" class="flex-1 space-y-2 overflow-auto mb-4"></div>
+          <div id="routine-preview" class="space-y-2 overflow-auto mb-4 max-h-[42vh]"></div>
           
-          <button onclick="applyRoutineAndStart()" class="w-full bg-rhythm-primary active:bg-rhythm-primary-light py-3 rounded-2xl font-semibold">Start My Rhythm</button>
+          <button onclick="applyRoutineAndStart()" class="w-full bg-rhythm-primary active:bg-rhythm-primary-light py-3.5 rounded-2xl font-semibold shadow-[var(--rhythm-glow-primary)]">Start My Rhythm</button>
         </div>
       `;
 
