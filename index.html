@@ -114,6 +114,116 @@
       transform: scale(0.985);
     }
 
+    .swipe-row {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.5rem;
+      margin-bottom: 0.5rem;
+      --swipe-reveal: 8.75rem;
+    }
+
+    .swipe-row-actions {
+      position: absolute;
+      inset: 0 0 0 auto;
+      width: var(--swipe-reveal);
+      display: none;
+      align-items: stretch;
+    }
+
+    .swipe-action {
+      flex: 1;
+      border: none;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      padding: 0 0.35rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .swipe-action-edit {
+      background: linear-gradient(180deg, #4aab9a 0%, var(--rhythm-primary) 100%);
+    }
+
+    .swipe-action-delete {
+      background: linear-gradient(180deg, #e35d6a 0%, #be123c 100%);
+    }
+
+    .swipe-action-view {
+      background: linear-gradient(180deg, #5b8fd9 0%, #3d6eb5 100%);
+    }
+
+    .swipe-row-content {
+      position: relative;
+      z-index: 1;
+      background: inherit;
+      will-change: transform;
+    }
+
+    .swipe-row-content.is-dragging {
+      transition: none !important;
+    }
+
+    @media (max-width: 767px) {
+      .swipe-row-actions {
+        display: flex;
+      }
+
+      .row-inline-actions {
+        display: none !important;
+      }
+
+      .swipe-row-content {
+        touch-action: pan-y;
+        transition: transform 0.24s var(--rhythm-ease-out);
+      }
+
+      .swipe-row-content.habit-card:active,
+      .swipe-row-content.rhythm-card:active {
+        transform: none;
+      }
+
+      .swipe-row.is-open .swipe-row-content {
+        transform: translateX(calc(-1 * var(--swipe-reveal)));
+      }
+
+      .swipe-row-hint {
+        display: block;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .swipe-row {
+        display: contents;
+        --swipe-reveal: 0;
+      }
+
+      .swipe-row-actions {
+        display: none !important;
+      }
+
+      .swipe-row-content {
+        transform: none !important;
+      }
+
+      .swipe-row-hint {
+        display: none !important;
+      }
+    }
+
+    .swipe-row-hint {
+      display: none;
+      font-size: 0.62rem;
+      color: var(--rhythm-muted);
+      text-align: center;
+      margin: -0.15rem 0 0.45rem;
+      opacity: 0.75;
+    }
+
     .task-complete {
       animation: completePop 0.42s var(--rhythm-ease-spring) forwards;
     }
@@ -2547,6 +2657,7 @@
           </div>
         </div>
 
+        <div id="task-swipe-hint" class="swipe-row-hint">Swipe a task left for Edit or Delete</div>
         <!-- Task List -->
         <div id="task-list" class="space-y-2"></div>
 
@@ -5994,9 +6105,13 @@
 
       const renderItem = (item) => {
         const row = document.createElement('div');
-        row.className = `habit-row bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-x-3 cursor-pointer ${item.checked ? 'opacity-50' : ''}`;
+        row.className = 'swipe-row';
         row.dataset.groceryId = item.id;
-        row.innerHTML = `
+        row.dataset.swipeId = item.id;
+        row.dataset.swipeType = 'grocery';
+        row.style.setProperty('--swipe-reveal', '4.5rem');
+        const actionsHtml = `<button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove item"><i class="fa-solid fa-trash-can"></i> Remove</button>`;
+        const contentHtml = `
           <div onclick="toggleGroceryItem('${item.id}')" class="w-8 h-8 flex-shrink-0 rounded-xl border-2 ${item.checked ? 'border-rhythm-primary bg-rhythm-primary' : 'border-rhythm-border'} flex items-center justify-center">
             ${item.checked ? '<i class="fa-solid fa-check text-white text-sm"></i>' : ''}
           </div>
@@ -6004,8 +6119,10 @@
             <div class="font-medium ${item.checked ? 'line-through text-rhythm-muted' : ''}">${item.name}</div>
             ${item.qty ? `<div class="text-xs text-rhythm-muted">${item.qty}</div>` : ''}
           </div>
-          <button onclick="event.stopImmediatePropagation(); removeGroceryItem('${item.id}')" class="text-rhythm-muted hover:text-rose-400 text-sm">×</button>
+          <button onclick="event.stopImmediatePropagation(); removeGroceryItem('${item.id}')" class="row-inline-actions text-rhythm-muted hover:text-rose-400 text-sm">×</button>
         `;
+        row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
+          `habit-row bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-x-3 cursor-pointer ${item.checked ? 'opacity-50' : ''}`);
         return row;
       };
 
@@ -6017,6 +6134,7 @@
         container.appendChild(hdr);
       }
       checked.forEach(item => container.appendChild(renderItem(item)));
+      bindSwipeRows(container);
     }
 
     function refreshCalendarCache() {
@@ -8147,6 +8265,180 @@
       return isHabitActiveThisPeriod(habit);
     }
 
+    // ==================== MOBILE SWIPE ROWS ====================
+    let swipeRowDocListenerBound = false;
+    const SWIPE_REVEAL_PX = 140;
+
+    function isSwipeMobile() {
+      return window.innerWidth < 768;
+    }
+
+    function closeAllSwipeRows(except) {
+      document.querySelectorAll('.swipe-row.is-open').forEach(row => {
+        if (except && row === except) return;
+        row.classList.remove('is-open');
+        const content = row.querySelector('.swipe-row-content');
+        if (content) {
+          content.style.transform = '';
+          content.classList.remove('is-dragging');
+        }
+      });
+    }
+
+    function runSwipeRowAction(row, action) {
+      const type = row.dataset.swipeType;
+      const id = row.dataset.swipeId;
+      if (!type || !id) return;
+
+      if (type === 'habit') {
+        if (action === 'edit') editHabitFromToday(id);
+        else if (action === 'delete') deleteHabitFromToday(id, null);
+      } else if (type === 'grocery') {
+        if (action === 'delete') removeGroceryItem(id);
+      } else if (type === 'streak') {
+        if (action === 'view') showProjections(id);
+        else if (action === 'delete') deleteStreak(id, null);
+      } else if (type === 'sync') {
+        if (action === 'sync') showDeviceSyncModal(id);
+      }
+    }
+
+    function buildSwipeRowHtml(actionsHtml, contentHtml, extraClass = '') {
+      return `
+        <div class="swipe-row-actions" aria-hidden="true">${actionsHtml}</div>
+        <div class="swipe-row-content ${extraClass}">${contentHtml}</div>
+      `;
+    }
+
+    function bindSwipeRows(root) {
+      if (!isSwipeMobile() || !root) return;
+
+      root.querySelectorAll('.swipe-row:not([data-swipe-bound])').forEach(row => {
+        row.dataset.swipeBound = '1';
+        const content = row.querySelector('.swipe-row-content');
+        const actions = row.querySelector('.swipe-row-actions');
+        if (!content || !actions) return;
+
+        const revealPx = actions.offsetWidth || SWIPE_REVEAL_PX;
+
+        row.querySelectorAll('.swipe-action').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeAllSwipeRows();
+            runSwipeRowAction(row, btn.dataset.action);
+          });
+        });
+
+        let startX = 0;
+        let startY = 0;
+        let startOffset = 0;
+        let dragging = false;
+        let axisLock = null;
+
+        const getOffset = () => (row.classList.contains('is-open') ? revealPx : 0);
+
+        const setOffset = (px, animate) => {
+          const clamped = Math.max(0, Math.min(revealPx, px));
+          content.classList.toggle('is-dragging', !animate);
+          if (animate) {
+            content.style.transform = '';
+            row.classList.toggle('is-open', clamped >= revealPx * 0.45);
+          } else {
+            row.classList.remove('is-open');
+            content.style.transform = `translateX(${-clamped}px)`;
+          }
+        };
+
+        const onStart = (clientX, clientY) => {
+          if (!isSwipeMobile()) return;
+          closeAllSwipeRows(row);
+          startX = clientX;
+          startY = clientY;
+          startOffset = getOffset();
+          dragging = true;
+          axisLock = null;
+        };
+
+        const onMove = (clientX, clientY, e) => {
+          if (!dragging) return;
+          const dx = clientX - startX;
+          const dy = clientY - startY;
+          if (!axisLock) {
+            if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+            axisLock = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+          }
+          if (axisLock === 'y') {
+            dragging = false;
+            content.classList.remove('is-dragging');
+            return;
+          }
+          if (e?.cancelable) e.preventDefault();
+          setOffset(startOffset - dx, false);
+        };
+
+        const onEnd = (clientX) => {
+          if (!dragging) return;
+          dragging = false;
+          content.classList.remove('is-dragging');
+          const dx = clientX - startX;
+          const projected = startOffset - dx;
+          const shouldOpen = projected > revealPx * 0.38 || (startOffset < revealPx * 0.5 && dx < -28);
+          if (shouldOpen) {
+            row.classList.add('is-open');
+            content.style.transform = '';
+            closeAllSwipeRows(row);
+          } else {
+            row.classList.remove('is-open');
+            content.style.transform = '';
+          }
+        };
+
+        content.addEventListener('touchstart', (e) => {
+          if (e.touches.length !== 1) return;
+          onStart(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+
+        content.addEventListener('touchmove', (e) => {
+          if (!dragging || e.touches.length !== 1) return;
+          onMove(e.touches[0].clientX, e.touches[0].clientY, e);
+        }, { passive: false });
+
+        content.addEventListener('touchend', (e) => {
+          const touch = e.changedTouches[0];
+          if (touch) onEnd(touch.clientX);
+        });
+
+        content.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'touch') return;
+          onStart(e.clientX, e.clientY);
+          try { content.setPointerCapture(e.pointerId); } catch (_) {}
+        });
+
+        content.addEventListener('pointermove', (e) => {
+          if (e.pointerType === 'touch' || !dragging) return;
+          onMove(e.clientX, e.clientY, e);
+        });
+
+        content.addEventListener('pointerup', (e) => {
+          if (e.pointerType === 'touch') return;
+          onEnd(e.clientX);
+        });
+      });
+
+      if (!swipeRowDocListenerBound) {
+        swipeRowDocListenerBound = true;
+        document.addEventListener('click', (e) => {
+          if (!isSwipeMobile()) return;
+          if (e.target.closest('.swipe-row')) return;
+          closeAllSwipeRows();
+        }, true);
+        window.addEventListener('resize', () => {
+          if (!isSwipeMobile()) closeAllSwipeRows();
+        });
+      }
+    }
+
     function renderHabitCard(habit, container, options = {}) {
       const { muted = false, upcomingLabel = '' } = options;
       const today = todayStr();
@@ -8166,18 +8458,25 @@
         ? `<span class="text-xs px-1.5 rounded ${dueTag.cls}">${dueTag.text}</span>`
         : '';
 
-      const card = document.createElement('div');
-      card.className = `habit-card rhythm-card habit-row bg-rhythm-surface border border-rhythm-border rounded-3xl px-4 py-3.5 flex items-center gap-x-3 active:bg-rhythm-border cursor-pointer${showMuted ? ' opacity-45' : ''}`;
-      card.dataset.habitId = habit.id;
-      card.dataset.feedType = 'habit';
+      const row = document.createElement('div');
+      row.className = 'swipe-row';
+      row.dataset.habitId = habit.id;
+      row.dataset.swipeId = habit.id;
+      row.dataset.feedType = 'habit';
+      row.dataset.swipeType = 'habit';
 
-      card.innerHTML = `
+      const actionsHtml = `
+        <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit task"><i class="fa-solid fa-pen"></i> Edit</button>
+        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove task"><i class="fa-solid fa-trash-can"></i> Delete</button>
+      `;
+
+      const contentHtml = `
         <div onclick="completeHabit('${habit.id}', event)" class="touch-target w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-rhythm-border active:border-rhythm-primary flex items-center justify-center text-xl">
           <i class="fa-regular fa-circle text-rhythm-muted"></i>
         </div>
         <div class="flex-1 min-w-0" onclick="completeHabit('${habit.id}', event)">
           <div class="font-medium leading-tight${showMuted ? ' text-rhythm-muted' : ''}">${habit.title} ${weatherIcon ? `<span class="ml-1 text-base" title="Current weather: ${state.settings.mockWeather || 'unknown'}">${weatherIcon}</span>` : ''}</div>
-          <div class="flex items-center gap-x-2 mt-0.5">
+          <div class="flex items-center gap-x-2 mt-0.5 flex-wrap">
             ${isRecurring ? `<span class="text-rhythm-primary-light/80 text-xs px-1.5 rounded bg-rhythm-primary/15">${formatIntervalLabel(habit.interval_days)}</span>` : ''}
             ${isOneOffTask(habit) ? `<span class="text-rhythm-muted text-xs px-1.5 rounded bg-rhythm-raised">One-time</span>` : ''}
             ${dueNote}
@@ -8188,7 +8487,7 @@
         <div class="text-right">
           ${habit.target_value ? `<div class="text-xs text-rhythm-primary-light font-semibold tabular-nums">${habit.target_value} ${habit.unit}</div>` : ''}
           ${syncedStats ? `<div class="text-[9px] text-sky-300 mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
-          <div class="flex items-center justify-end gap-2 mt-1">
+          <div class="row-inline-actions flex items-center justify-end gap-2 mt-1">
             ${dueToday && !isOneOffTask(habit) ? `<button type="button" onclick="skipRecurringHabit('${habit.id}', event)" class="text-[10px] text-rhythm-muted hover:text-amber-300 px-1" title="Skip this cycle — resets streak">Skip</button>` : ''}
             <button type="button" onclick="event.stopImmediatePropagation(); editHabitFromToday('${habit.id}')" class="text-[10px] text-rhythm-primary-light font-medium px-1" title="Edit task">Edit</button>
             <button type="button" onclick="event.stopImmediatePropagation(); showHabitDetail('${habit.id}')" class="text-rhythm-primary-light text-xs" title="Details">
@@ -8198,17 +8497,24 @@
           </div>
         </div>
       `;
-      card.addEventListener('contextmenu', (e) => { e.preventDefault(); showHabitDetail(habit.id); });
-      container.appendChild(card);
+
+      row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
+        `habit-card rhythm-card habit-row bg-rhythm-surface border border-rhythm-border rounded-3xl px-4 py-3.5 flex items-center gap-x-3 active:bg-rhythm-border cursor-pointer${showMuted ? ' opacity-45' : ''}`);
+      const content = row.querySelector('.swipe-row-content');
+      content?.addEventListener('contextmenu', (e) => { e.preventDefault(); showHabitDetail(habit.id); });
+      container.appendChild(row);
     }
 
     function renderCompletedSyncCard(habit, container) {
       const syncedStats = state.healthSyncs?.[habit.id]?.[todayStr()];
-      const card = document.createElement('div');
-      card.className = 'habit-card rhythm-card habit-row bg-rhythm-surface/80 border border-sky-500/30 rounded-3xl px-4 py-3.5 flex items-center gap-x-3';
-      card.dataset.habitId = habit.id;
-      card.dataset.feedType = 'sync-pending';
-      card.innerHTML = `
+      const row = document.createElement('div');
+      row.className = 'swipe-row';
+      row.dataset.habitId = habit.id;
+      row.dataset.swipeId = habit.id;
+      row.dataset.feedType = 'sync-pending';
+      row.dataset.swipeType = 'sync';
+      const actionsHtml = `<button type="button" class="swipe-action swipe-action-view" data-action="sync" aria-label="Sync activity"><i class="fa-solid fa-rotate"></i> Sync</button>`;
+      const contentHtml = `
         <div class="w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-rhythm-primary/50 bg-rhythm-primary/15 flex items-center justify-center text-lg">
           <i class="fa-solid fa-check text-rhythm-primary-light"></i>
         </div>
@@ -8218,9 +8524,13 @@
           ${syncedStats ? `<div class="text-[9px] text-sky-300 mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
         </div>
         <button type="button" data-sync-health="${habit.id}"
-          class="text-[10px] px-3 py-1.5 rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white font-semibold">Sync</button>
+          class="row-inline-actions text-[10px] px-3 py-1.5 rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white font-semibold">Sync</button>
       `;
-      const syncBtn = card.querySelector('[data-sync-health]');
+
+      row.style.setProperty('--swipe-reveal', '4.5rem');
+      row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
+        'habit-card rhythm-card habit-row bg-rhythm-surface/80 border border-sky-500/30 rounded-3xl px-4 py-3.5 flex items-center gap-x-3');
+      const syncBtn = row.querySelector('[data-sync-health]');
       if (syncBtn) {
         syncBtn.addEventListener('click', (e) => {
           e.preventDefault();
@@ -8228,7 +8538,7 @@
           showDeviceSyncModal(habit.id);
         });
       }
-      container.appendChild(card);
+      container.appendChild(row);
     }
 
     function renderBillFeedCard(bill, container) {
@@ -8330,6 +8640,10 @@
           }
         });
       });
+
+      const hint = document.getElementById('task-swipe-hint');
+      if (hint) hint.style.display = hasAny && isSwipeMobile() ? 'block' : 'none';
+      bindSwipeRows(container);
     }
 
     function renderTasks() {
@@ -9871,7 +10185,7 @@
       {
         id: 'edit-delete-task',
         title: 'Edit or remove tasks',
-        body: 'You can tap <strong>×</strong> to remove a task or open one to edit details — you can always add habits back from the Library. No need to do that now. Tap <strong>Next</strong> when you\'re ready to see your <strong>Streaks</strong> tab.',
+        body: 'Swipe a task left for <strong>Edit</strong> or <strong>Delete</strong> — you can always add habits back from the Library. No need to do that now. Tap <strong>Next</strong> when you\'re ready to see your <strong>Streaks</strong> tab.',
         target: () => getTutorialTaskCard(),
         prepare: () => switchTab('today')
       },
@@ -11670,12 +11984,18 @@
         const badge = getStreakBadge(streak);
         const badgeHtml = renderStreakBadgeHtml(badge);
         const progressHtml = renderStreakBadgeProgress(streak);
-        const card = document.createElement('div');
-        card.className = `rhythm-card bg-rhythm-surface border rounded-3xl px-4 py-3.5 cursor-pointer active:bg-rhythm-border ${isSelected ? 'border-rhythm-primary/60 shadow-[var(--rhythm-glow-primary)]' : 'border-rhythm-border'}`;
-        card.dataset.habitId = habit.id;
-        card.onclick = () => showProjections(habit.id);
-        card.innerHTML = `
-          <div class="flex justify-between items-start gap-2">
+        const row = document.createElement('div');
+        row.className = 'swipe-row';
+        row.dataset.habitId = habit.id;
+        row.dataset.swipeId = habit.id;
+        row.dataset.swipeType = 'streak';
+
+        const actionsHtml = `
+          <button type="button" class="swipe-action swipe-action-view" data-action="view" aria-label="View projections"><i class="fa-solid fa-chart-line"></i> View</button>
+          <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete streak"><i class="fa-solid fa-trash-can"></i> Delete</button>
+        `;
+        const contentHtml = `
+          <div class="flex justify-between items-start gap-2 w-full" onclick="showProjections('${habit.id}')">
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap mb-0.5">
                 <div class="font-semibold">${habit.title}</div>
@@ -11692,12 +12012,15 @@
                 </div>
               </div>
               <button type="button" onclick="deleteStreak('${habit.id}', event)"
-                class="text-rhythm-muted hover:text-rose-400 text-sm px-1 pt-0.5" title="Delete streak permanently">×</button>
+                class="row-inline-actions text-rhythm-muted hover:text-rose-400 text-sm px-1 pt-0.5" title="Delete streak permanently">×</button>
             </div>
           </div>
         `;
-        container.appendChild(card);
+        row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
+          `rhythm-card bg-rhythm-surface border rounded-3xl px-4 py-3.5 cursor-pointer active:bg-rhythm-border ${isSelected ? 'border-rhythm-primary/60 shadow-[var(--rhythm-glow-primary)]' : 'border-rhythm-border'}`);
+        container.appendChild(row);
       });
+      bindSwipeRows(container);
     }
 
     // ==================== STREAKS + PROJECTIONS RENDER ====================
