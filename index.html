@@ -10311,26 +10311,64 @@
     }
 
     function getTutorialTaskCard() {
-      return document.querySelector('#task-list .habit-card[data-feed-type="habit"]')
-        || document.querySelector('#task-list [onclick*="completeHabit"]')?.closest('.habit-card')
+      return document.querySelector('#task-list .swipe-row[data-feed-type="habit"] .swipe-row-content')
+        || document.querySelector('#task-list .swipe-row[data-feed-type="habit"]')
+        || document.querySelector('#task-list [onclick*="completeHabit"]')?.closest('.swipe-row-content, .habit-card')
         || document.querySelector('#task-list .habit-card')
         || document.getElementById('task-list');
     }
 
     function getTutorialQuantStreakCard() {
-      const cards = [...document.querySelectorAll('#streaks-list .rhythm-card[data-habit-id]')];
-      const quant = cards.find(card => {
-        const habit = state.habits.find(h => h.id === card.dataset.habitId);
+      const rows = [...document.querySelectorAll('#streaks-list .swipe-row[data-habit-id], #streaks-list .swipe-row[data-swipe-id]')];
+      const quant = rows.find(row => {
+        const habitId = row.dataset.habitId || row.dataset.swipeId;
+        const habit = state.habits.find(h => h.id === habitId);
         return habit && isQuantitativeHabit(habit);
       });
-      return quant || cards[0] || document.getElementById('streaks-list');
+      const first = rows[0];
+      return (quant || first)?.querySelector('.swipe-row-content') || quant || first
+        || document.querySelector('#streaks-list .rhythm-card[data-habit-id]')
+        || document.getElementById('streaks-list');
+    }
+
+    function shouldSkipTutorialStep(step) {
+      return !!(step?.mobileOnly && !isSwipeMobile());
+    }
+
+    function getAdjacentTutorialStepIndex(from, direction = 1) {
+      let idx = from + direction;
+      while (idx >= 0 && idx < APP_TUTORIAL_STEPS.length) {
+        if (!shouldSkipTutorialStep(APP_TUTORIAL_STEPS[idx])) return idx;
+        idx += direction;
+      }
+      return direction > 0 ? APP_TUTORIAL_STEPS.length : -1;
+    }
+
+    function getTutorialStepBody(step) {
+      if (!step) return '';
+      if (typeof step.body === 'function') return step.body();
+      return step.body;
+    }
+
+    function getVisibleTutorialStepCount() {
+      return APP_TUTORIAL_STEPS.filter(step => !shouldSkipTutorialStep(step)).length;
+    }
+
+    function getVisibleTutorialStepNumber(stepIndex) {
+      let n = 0;
+      for (let i = 0; i <= stepIndex && i < APP_TUTORIAL_STEPS.length; i++) {
+        if (!shouldSkipTutorialStep(APP_TUTORIAL_STEPS[i])) n++;
+      }
+      return n;
     }
 
     const APP_TUTORIAL_STEPS = [
       {
         id: 'today-intro',
         title: 'Today tab',
-        body: 'Your action list lives here. Daily tasks show up every morning — tap the circle to log a win.',
+        body: () => isSwipeMobile()
+          ? 'Your action list lives here. Daily tasks show up every morning — tap the circle to log a win. You can also swipe a task left for quick actions.'
+          : 'Your action list lives here. Daily tasks show up every morning — tap the circle to log a win.',
         target: () => document.getElementById('tab-today'),
         cardPlacement: 'above',
         prepare: () => switchTab('today')
@@ -10346,15 +10384,18 @@
       },
       {
         id: 'edit-delete-task',
-        title: 'Edit or remove tasks',
-        body: 'Swipe a task left for <strong>Edit</strong> or <strong>Delete</strong> — you can always add habits back from the Library. No need to do that now. Tap <strong>Next</strong> when you\'re ready to see your <strong>Streaks</strong> tab.',
+        title: 'Swipe for quick actions',
+        mobileOnly: true,
+        body: 'On phone, <strong>swipe left</strong> on a row to reveal actions — no need to try it now.<br><br><strong>Today:</strong> Edit or Delete tasks.<br><strong>Streaks:</strong> View projections or Delete.<br><strong>Life → Grocery:</strong> Remove items.<br><strong>Sync cards:</strong> Sync activity from your tracker.<br><br>Tap <strong>Next</strong> when you\'re ready for <strong>Streaks</strong>.',
         target: () => getTutorialTaskCard(),
         prepare: () => switchTab('today')
       },
       {
         id: 'streaks-intro',
         title: 'Streaks tab',
-        body: 'Completed tasks build streaks here. Track progress and unlock <strong>Projected Wins</strong> for measurable goals.',
+        body: () => isSwipeMobile()
+          ? 'Completed <strong>tasks</strong> build streaks here. Swipe a streak left for <strong>View</strong> or <strong>Delete</strong>, or tap it to open <strong>Projected Wins</strong> for measurable goals.'
+          : 'Completed <strong>tasks</strong> build streaks here. Track progress and unlock <strong>Projected Wins</strong> for measurable goals.',
         target: () => document.getElementById('tab-streaks'),
         cardPlacement: 'above',
         prepare: () => switchTab('streaks')
@@ -10779,6 +10820,11 @@
     function renderTutorialStep(stepIndex) {
       const step = APP_TUTORIAL_STEPS[stepIndex];
       if (!step) return completeAppTutorial();
+      if (shouldSkipTutorialStep(step)) {
+        const nextIdx = getAdjacentTutorialStepIndex(stepIndex, 1);
+        if (nextIdx >= APP_TUTORIAL_STEPS.length) return completeAppTutorial();
+        return renderTutorialStep(nextIdx);
+      }
 
       if (tutorialAutoAdvanceTimer) {
         clearTimeout(tutorialAutoAdvanceTimer);
@@ -10838,9 +10884,11 @@
             overlay.setAttribute('aria-hidden', 'false');
           }
           if (card) card.classList.remove('hidden');
-          if (stepLabel) stepLabel.textContent = `Step ${stepIndex + 1} of ${APP_TUTORIAL_STEPS.length}`;
+          if (stepLabel) {
+            stepLabel.textContent = `Step ${getVisibleTutorialStepNumber(stepIndex)} of ${getVisibleTutorialStepCount()}`;
+          }
           if (titleEl) titleEl.textContent = step.title;
-          if (bodyEl) bodyEl.innerHTML = step.body;
+          if (bodyEl) bodyEl.innerHTML = getTutorialStepBody(step);
           if (backBtn) backBtn.disabled = stepIndex === 0;
           if (nextBtn) {
             const waiting = !!step.waitFor;
@@ -10898,7 +10946,7 @@
         hideTutorialSmartBanner();
       }
 
-      const next = (state.settings.tutorialStep || 0) + 1;
+      const next = getAdjacentTutorialStepIndex(state.settings.tutorialStep || 0, 1);
       if (next >= APP_TUTORIAL_STEPS.length) {
         completeAppTutorial();
         return;
@@ -10907,7 +10955,8 @@
     }
 
     function prevTutorialStep() {
-      const prev = Math.max(0, (state.settings.tutorialStep || 0) - 1);
+      const prev = getAdjacentTutorialStepIndex(state.settings.tutorialStep || 0, -1);
+      if (prev < 0) return;
       renderTutorialStep(prev);
     }
 
