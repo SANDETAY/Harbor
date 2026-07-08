@@ -656,10 +656,6 @@
       font-size: 1.1rem;
     }
 
-    .onboarding-hero-wordmark {
-      filter: drop-shadow(0 8px 24px rgba(61, 154, 139, 0.15));
-    }
-
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -2854,7 +2850,6 @@
       hourlyForecastCache = null;
       selectedRoutineLevel = null;
       selectedMaintenancePref = 'mixed';
-      window.currentPreviewTasks = null;
     }
 
     function factoryResetApp(options = {}) {
@@ -6004,7 +5999,6 @@
     }
 
     function wireEventTimeFormatToggle(modal, calState) {
-      const wrap = modal.querySelector('#cal-ev-time-wrap');
       const chips = modal.querySelectorAll('.cal-format-chip');
 
       const renderPicker = () => {
@@ -9069,11 +9063,13 @@
     }
 
     function startAppTutorial() {
+      ensureStarterRoutineTasks();
       state.settings.showWelcomeBanner = false;
       state.settings.tutorialActive = true;
       state.settings.tutorialCompleted = false;
       state.settings.tutorialStep = 0;
       saveState();
+      renderTasks();
       updateSmartBanner();
       renderTutorialStep(0);
     }
@@ -9114,8 +9110,11 @@
       state.settings.tutorialCompleted = true;
       state.settings.showWelcomeBanner = false;
       state.settings.tutorialStep = 0;
+      ensureStarterRoutineTasks();
       saveState();
       switchTab('today');
+      renderTasks();
+      renderStreaks();
       updateSmartBanner();
       showToast(skipped ? 'Tour skipped — smart suggestions are on' : 'Tour complete — smart suggestions are on');
     }
@@ -10942,6 +10941,50 @@
       }
     };
 
+    function createStarterHabits() {
+      const ts = Date.now();
+      return STARTER_ROUTINE_TASKS.map((t, i) => stampHabitMeta({
+        id: 'routine-' + ts + '-' + i,
+        title: t.title,
+        category: t.category || 'custom',
+        interval_days: null,
+        est_minutes: t.est_minutes ?? 10,
+        difficulty: t.difficulty ?? 2,
+        is_preset: false,
+        target_value: t.target_value,
+        unit: t.unit
+      }));
+    }
+
+    function ensureStarterRoutineTasks() {
+      if (state.habits?.length > 0) return false;
+      state.habits = createStarterHabits();
+      saveState();
+      return true;
+    }
+
+    function refreshAppAfterOnboarding() {
+      showMainContent();
+      renderTasks();
+      renderBills();
+      renderGrocery();
+      renderSchedule();
+      renderSubscriptions();
+      renderLibrary();
+      renderStreaks();
+      updateSmartBanner();
+      renderHeaderWeather();
+    }
+
+    function repairOnboardedEmptyTodayList() {
+      if (!localStorage.getItem('rhythm_onboarded') || state.habits?.length > 0) return;
+      ensureStarterRoutineTasks();
+      if (!state.settings.tutorialCompleted) {
+        state.settings.showWelcomeBanner = true;
+        saveState();
+      }
+    }
+
     let selectedRoutineLevel = null;
     let selectedMaintenancePref = 'mixed';
     let onboardingCalendarConnections = null;
@@ -11399,8 +11442,11 @@
         `;
         container.appendChild(div);
       });
-      
-      window.currentPreviewTasks = [...tasks];
+    }
+
+    function hideOnboardingOverlay() {
+      const onboarding = document.getElementById('onboarding');
+      if (onboarding) onboarding.style.display = 'none';
     }
 
     function applyRoutineAndStart() {
@@ -11408,72 +11454,39 @@
         skipOnboarding();
         return;
       }
-      
-      state.habits = STARTER_ROUTINE_TASKS.map((t, i) => stampHabitMeta({
-        id: 'routine-' + Date.now() + '-' + i,
-        title: t.title,
-        category: t.category || 'custom',
-        interval_days: null,
-        est_minutes: t.est_minutes || 10,
-        difficulty: t.difficulty || 2,
-        is_preset: false,
-        target_value: t.target_value,
-        unit: t.unit
-      }));
-      
+
+      state.habits = createStarterHabits();
       state.settings.routineLevel = selectedRoutineLevel;
       state.settings.maintenancePreference = selectedMaintenancePref || 'mixed';
       state.settings.showWelcomeBanner = true;
+      state.settings.tutorialCompleted = false;
       state.settings.calendarConnections = JSON.parse(JSON.stringify(getOnboardingCalendarConnections()));
       applyCalendarSync();
       saveState();
-      
-      // Hide onboarding
-      const onboarding = document.getElementById('onboarding');
-      if (onboarding) onboarding.style.display = 'none';
-      
-      // Show all main content
-      showMainContent();
-      
-      // Render everything fresh
-      renderTasks();
-      renderBills();
-      renderGrocery();
-      renderSchedule();
-      renderLibrary();
-      renderStreaks();
-      updateSmartBanner();
-      renderHeaderWeather();
-      
+
+      hideOnboardingOverlay();
+      refreshAppAfterOnboarding();
+
       localStorage.setItem('rhythm_onboarded', '1');
       const calSummary = hasAnyCalendarConnected() ? ` · ${getConnectedCalendarsLabel()}` : '';
       showToast(`Rhythm set · ${getMaintenancePrefLabel()}${calSummary}`);
     }
 
     function skipOnboarding() {
-      const onboarding = document.getElementById('onboarding');
-      if (onboarding) onboarding.style.display = 'none';
-      
-      showMainContent();
+      ensureStarterRoutineTasks();
 
       if (!state.settings.maintenancePreference) {
         state.settings.maintenancePreference = selectedMaintenancePref || 'mixed';
       }
       state.settings.showWelcomeBanner = true;
+      state.settings.tutorialCompleted = false;
       saveState();
-      
-      renderTasks();
-      renderBills();
-      renderGrocery();
-      renderSchedule();
-      renderSubscriptions();
-      renderLibrary();
-      renderStreaks();
-      updateSmartBanner();
-      renderHeaderWeather();
-      
+
+      hideOnboardingOverlay();
+      refreshAppAfterOnboarding();
+
       localStorage.setItem('rhythm_onboarded', '1');
-      showToast("Blank slate — tap Learn more in the smart suggestion when you're ready.");
+      showToast('Your four starter tasks are in Today — tap Learn more anytime for the guided tour.');
     }
 
     function hideSplash() {
@@ -11505,6 +11518,7 @@
 
     function bootApp() {
         loadState();
+        repairOnboardedEmptyTodayList();
         loadCommonTasks();
         refreshCalendarCache();
         if (hasAnyCalendarConnected()) applyCalendarSync();
