@@ -1158,6 +1158,74 @@
       z-index: 192 !important;
     }
 
+    .cal-picker-month {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.2rem;
+      text-align: center;
+    }
+
+    .cal-picker-dow {
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--rhythm-muted);
+      padding: 0.2rem 0;
+    }
+
+    .cal-picker-day {
+      aspect-ratio: 1;
+      border-radius: 0.65rem;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--rhythm-text);
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cal-picker-day:hover:not(:disabled) {
+      background: var(--rhythm-raised);
+    }
+
+    .cal-picker-day.is-selected {
+      background: rgba(61, 154, 139, 0.22);
+      border-color: var(--rhythm-primary);
+      color: var(--rhythm-primary-light);
+    }
+
+    .cal-picker-day.is-today:not(.is-selected) {
+      border-color: var(--rhythm-border);
+    }
+
+    .cal-picker-day:disabled {
+      opacity: 0.25;
+      cursor: default;
+    }
+
+    .cal-picker-day.is-pad {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .cal-time-select {
+      appearance: none;
+      background: var(--rhythm-raised);
+      border: 1px solid var(--rhythm-border);
+      border-radius: 0.85rem;
+      color: var(--rhythm-text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.65rem 0.5rem;
+      text-align: center;
+      flex: 1;
+      min-width: 0;
+    }
+
     .empty-state {
       background: radial-gradient(ellipse at 50% 0%, rgba(61, 154, 139, 0.08) 0%, transparent 65%), var(--rhythm-surface);
     }
@@ -1864,7 +1932,7 @@
                   <div class="flex-1">
                     <div class="font-semibold">Easy</div>
                     <div class="text-xs text-rhythm-muted">Just a few flexible things I naturally do most days.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1">Read · Meditate · Schedule · Hydrate</div>
+                    <div class="text-[10px] text-rhythm-primary-light mt-1">Save · Walk · Read · Bed</div>
                   </div>
                 </div>
               </div>
@@ -1876,7 +1944,7 @@
                   <div class="flex-1">
                     <div class="font-semibold">Moderate</div>
                     <div class="text-xs text-rhythm-muted">A reliable list of my usual daily tasks.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1">Read · Meditate · Schedule · Hydrate</div>
+                    <div class="text-[10px] text-rhythm-primary-light mt-1">Save · Walk · Read · Bed</div>
                   </div>
                 </div>
               </div>
@@ -1888,7 +1956,7 @@
                   <div class="flex-1">
                     <div class="font-semibold">Strict</div>
                     <div class="text-xs text-rhythm-muted">Time-boxed schedule to stay on track.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1">Read · Meditate · Schedule · Hydrate</div>
+                    <div class="text-[10px] text-rhythm-primary-light mt-1">Save · Walk · Read · Bed</div>
                   </div>
                 </div>
               </div>
@@ -1944,26 +2012,9 @@
         </div>
       </div>
 
-      <!-- Rhythm Brief — smart day/week digest -->
-      <div id="rhythm-brief-launcher" class="rhythm-brief-launcher mx-5 mt-2 mb-1 hidden" role="button" tabindex="0"
-        onclick="showRhythmBriefModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showRhythmBriefModal();}"
-        aria-label="Open your Rhythm Brief">
-        <div class="flex items-center gap-3">
-          <div class="rhythm-brief-launcher-icon" aria-hidden="true">
-            <i class="fa-solid fa-wand-magic-sparkles"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="rhythm-brief-launcher-title">Rhythm Brief</div>
-            <div id="rhythm-brief-preview-line" class="rhythm-brief-launcher-sub">Your smart day-at-a-glance</div>
-            <div id="rhythm-brief-preview-stats" class="flex flex-wrap gap-1.5 mt-1.5"></div>
-          </div>
-          <i class="fa-solid fa-chevron-right rhythm-brief-chevron" aria-hidden="true"></i>
-        </div>
-      </div>
-
       <!-- Smart Suggestion Banner -->
       <div id="smart-banner" onclick="handleSmartSuggestion()"
-        class="mx-5 mt-2 mb-0.5 px-3 py-2.5 rounded-2xl suggestion-card border border-rhythm-primary/40 cursor-pointer active:opacity-90 hidden relative">
+        class="mx-5 mt-2 mb-1 px-3 py-2.5 rounded-2xl suggestion-card border border-rhythm-primary/40 cursor-pointer active:opacity-90 hidden relative">
         <button type="button" onclick="event.stopImmediatePropagation(); muteSmartSuggestions()"
           class="smart-banner-mute touch-target text-[10px] flex items-center gap-x-1" aria-label="Mute smart suggestions">
           <i class="fa-solid fa-volume-xmark text-[9px]"></i>
@@ -1982,6 +2033,23 @@
               <div onclick="event.stopImmediatePropagation(); dismissSuggestion()" class="text-[10px] text-rhythm-primary-light/60 hover:text-rhythm-primary-light">Dismiss</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Rhythm Brief — smart day/week digest -->
+      <div id="rhythm-brief-launcher" class="rhythm-brief-launcher mx-5 mt-0 mb-1 hidden" role="button" tabindex="0"
+        onclick="showRhythmBriefModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showRhythmBriefModal();}"
+        aria-label="Open your Rhythm Brief">
+        <div class="flex items-center gap-3">
+          <div class="rhythm-brief-launcher-icon" aria-hidden="true">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="rhythm-brief-launcher-title">Rhythm Brief</div>
+            <div id="rhythm-brief-preview-line" class="rhythm-brief-launcher-sub">Your smart day-at-a-glance</div>
+            <div id="rhythm-brief-preview-stats" class="flex flex-wrap gap-1.5 mt-1.5"></div>
+          </div>
+          <i class="fa-solid fa-chevron-right rhythm-brief-chevron" aria-hidden="true"></i>
         </div>
       </div>
 
@@ -4566,6 +4634,7 @@
       renderTasks();
       updateHeaderContext();
       updateSmartBanner();
+      if (state.settings.tutorialActive) refreshTutorialHighlight();
       if (currentTab === 'life' && currentLifePanel === 'grocery') renderGrocery();
       if (currentTab === 'streaks') renderRewardBank();
     }
@@ -5308,8 +5377,9 @@
 
     function refreshCalendarCache() {
       const cal = getMockCalendar();
+      const todayEvents = filterEventsForDate(normalizeCalendarEvents(cal.events), todayStr());
       const avail = computeDayAvailability({
-        events: (cal.events || []).map(e => ({
+        events: todayEvents.map(e => ({
           time: e.time,
           title: e.title,
           durationMin: e.durationMin || 30
@@ -5317,7 +5387,7 @@
       });
       state.calendarCache = {
         date: todayStr(),
-        events: normalizeCalendarEvents(cal.events),
+        events: todayEvents,
         freeMinutes: avail.freeMinutes,
         note: cal.note || '',
         weekAhead: cal.weekAhead || []
@@ -5636,13 +5706,29 @@
     function getStableCalendarEventId(e, index = 0) {
       if (e?.id) return e.id;
       const time = (e?.time || '00:00').replace(':', '');
+      const date = getEventDate(e).replace(/-/g, '');
       const titleSlug = (e?.title || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'event';
-      return `ev-${time}-${titleSlug}`;
+      return `ev-${date}-${time}-${titleSlug}`;
+    }
+
+    function getEventDate(e) {
+      return e?.date || todayStr();
+    }
+
+    function filterEventsForDate(events, dateStr = todayStr()) {
+      return (events || []).filter(e => getEventDate(e) === dateStr);
+    }
+
+    function formatEventDateLabel(dateStr) {
+      if (dateStr === todayStr()) return 'Today';
+      const d = new Date(`${dateStr}T12:00:00`);
+      return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
     }
 
     function normalizeCalendarEvents(events) {
       return (events || []).map((e, i) => ({
         ...e,
+        date: getEventDate(e),
         id: getStableCalendarEventId(e, i),
         durationMin: e.durationMin || 30
       }));
@@ -5671,18 +5757,132 @@
       return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     }
 
+    function parseEventTimeFromPicker(hour12, minute, ampm) {
+      const h12 = parseInt(hour12, 10);
+      const m = parseInt(minute, 10);
+      if (!h12 || h12 < 1 || h12 > 12 || isNaN(m) || m < 0 || m > 59) return null;
+      let h24 = h12 % 12;
+      if ((ampm || 'AM').toUpperCase() === 'PM') h24 += 12;
+      return `${String(h24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    function getDefaultEventTimeParts() {
+      const now = new Date();
+      let h = now.getHours();
+      const m = Math.ceil(now.getMinutes() / 15) * 15;
+      if (m >= 60) h = (h + 1) % 24;
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      return { hour: String(h12), minute: String(m % 60).padStart(2, '0'), ampm };
+    }
+
+    function buildMiniCalendarHtml(selectedDate, viewYear, viewMonth) {
+      const first = new Date(viewYear, viewMonth, 1);
+      const startDow = first.getDay();
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      const today = todayStr();
+      const monthLabel = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+      const dows = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+      let cells = dows.map(d => `<div class="cal-picker-dow">${d}</div>`).join('');
+
+      for (let i = 0; i < startDow; i++) {
+        cells += '<div class="cal-picker-day is-pad" aria-hidden="true"></div>';
+      }
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = dateStrLocal(new Date(viewYear, viewMonth, day));
+        const isSelected = dateStr === selectedDate;
+        const isToday = dateStr === today;
+        cells += `<button type="button" class="cal-picker-day${isSelected ? ' is-selected' : ''}${isToday ? ' is-today' : ''}" data-date="${dateStr}">${day}</button>`;
+      }
+
+      return `
+        <div class="flex items-center justify-between mb-2">
+          <button type="button" id="cal-ev-prev-month" class="touch-target w-8 h-8 rounded-xl bg-rhythm-raised border border-rhythm-border text-rhythm-muted" aria-label="Previous month">‹</button>
+          <div id="cal-ev-month-label" class="text-xs font-semibold text-rhythm-text">${monthLabel}</div>
+          <button type="button" id="cal-ev-next-month" class="touch-target w-8 h-8 rounded-xl bg-rhythm-raised border border-rhythm-border text-rhythm-muted" aria-label="Next month">›</button>
+        </div>
+        <div class="cal-picker-month mb-1">${cells}</div>
+        <div id="cal-ev-date-label" class="text-[10px] text-rhythm-muted text-center">${formatEventDateLabel(selectedDate)}</div>
+      `;
+    }
+
+    function wireMiniCalendar(modal, stateObj) {
+      const wrap = modal.querySelector('#cal-ev-calendar');
+      if (!wrap) return;
+
+      const render = () => {
+        wrap.innerHTML = buildMiniCalendarHtml(stateObj.selectedDate, stateObj.viewYear, stateObj.viewMonth);
+        wrap.querySelectorAll('.cal-picker-day[data-date]').forEach(btn => {
+          btn.onclick = () => {
+            stateObj.selectedDate = btn.dataset.date;
+            const [y, mo] = stateObj.selectedDate.split('-').map(Number);
+            stateObj.viewYear = y;
+            stateObj.viewMonth = mo - 1;
+            render();
+          };
+        });
+        wrap.querySelector('#cal-ev-prev-month').onclick = () => {
+          stateObj.viewMonth -= 1;
+          if (stateObj.viewMonth < 0) {
+            stateObj.viewMonth = 11;
+            stateObj.viewYear -= 1;
+          }
+          render();
+        };
+        wrap.querySelector('#cal-ev-next-month').onclick = () => {
+          stateObj.viewMonth += 1;
+          if (stateObj.viewMonth > 11) {
+            stateObj.viewMonth = 0;
+            stateObj.viewYear += 1;
+          }
+          render();
+        };
+      };
+      render();
+    }
+
     function showAddCalendarEventModal() {
+      const now = new Date();
+      const calState = {
+        selectedDate: todayStr(),
+        viewYear: now.getFullYear(),
+        viewMonth: now.getMonth()
+      };
+      const timeDefaults = getDefaultEventTimeParts();
+      const hourOptions = Array.from({ length: 12 }, (_, i) => {
+        const v = String(i + 1);
+        return `<option value="${v}"${v === timeDefaults.hour ? ' selected' : ''}>${v}</option>`;
+      }).join('');
+      const minuteOptions = ['00', '15', '30', '45'].map(v =>
+        `<option value="${v}"${v === timeDefaults.minute ? ' selected' : ''}>${v}</option>`
+      ).join('');
+
       const modal = document.createElement('div');
       modal.id = 'add-calendar-event-modal';
       modal.className = 'fixed inset-0 bg-rhythm-bg/60 flex items-end z-[60]';
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm">
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm max-h-[92vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-3">Add Event</div>
-          <input id="cal-ev-title" type="text" placeholder="Coffee with friend"
-            class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-3 mb-2 outline-none text-rhythm-text">
-          <input id="cal-ev-time" type="text" inputmode="numeric" placeholder="Start time (24h, e.g. 14:00)"
-            class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-3 mb-2 outline-none text-rhythm-text">
+
+          <div class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Event</div>
+          <input id="cal-ev-title" type="text" placeholder="Coffee with a friend"
+            class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-3 mb-3 outline-none text-rhythm-text">
+
+          <div class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Date</div>
+          <div id="cal-ev-calendar" class="bg-rhythm-raised border border-rhythm-border rounded-2xl p-3 mb-3"></div>
+
+          <div class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Time</div>
+          <div class="flex gap-2 mb-3">
+            <select id="cal-ev-hour" class="cal-time-select" aria-label="Hour">${hourOptions}</select>
+            <select id="cal-ev-minute" class="cal-time-select" aria-label="Minute">${minuteOptions}</select>
+            <select id="cal-ev-ampm" class="cal-time-select" aria-label="AM or PM">
+              <option value="AM"${timeDefaults.ampm === 'AM' ? ' selected' : ''}>AM</option>
+              <option value="PM"${timeDefaults.ampm === 'PM' ? ' selected' : ''}>PM</option>
+            </select>
+          </div>
+
           <div class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Duration</div>
           <div class="flex flex-wrap gap-1.5 mb-2" id="cal-ev-duration-chips">
             ${[15, 30, 45, 60, 90, 120].map(mins => `
@@ -5694,6 +5894,7 @@
           </div>
           <input id="cal-ev-duration" type="number" min="5" max="480" step="5" value="30" placeholder="Custom minutes"
             class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-3 mb-4 outline-none text-rhythm-text">
+
           <div class="flex gap-2">
             <button type="button" onclick="this.closest('#add-calendar-event-modal').remove()"
               class="flex-1 py-3 rounded-2xl bg-rhythm-raised border border-rhythm-border text-rhythm-muted font-semibold">Cancel</button>
@@ -5703,6 +5904,7 @@
         </div>
       `;
       document.body.appendChild(modal);
+      wireMiniCalendar(modal, calState);
 
       const durationInput = modal.querySelector('#cal-ev-duration');
       modal.querySelectorAll('.cal-duration-chip').forEach(chip => {
@@ -5721,29 +5923,37 @@
           showToast('Enter an event title');
           return;
         }
-        const time = parseEventTimeInput(modal.querySelector('#cal-ev-time').value);
+        const time = parseEventTimeFromPicker(
+          modal.querySelector('#cal-ev-hour').value,
+          modal.querySelector('#cal-ev-minute').value,
+          modal.querySelector('#cal-ev-ampm').value
+        );
         if (!time) {
-          showToast('Use 24h time like 14:00');
+          showToast('Pick a valid time');
           return;
         }
         const durationMin = Math.min(480, Math.max(5, parseInt(durationInput.value, 10) || 30));
+        const eventDate = calState.selectedDate;
+        const newEvent = { id: 'ev-' + Date.now(), date: eventDate, time, title, durationMin };
 
-        if (!state.calendarCache) refreshCalendarCache();
-        const newEvent = { id: 'ev-' + Date.now(), time, title, durationMin };
-        state.calendarCache.events = normalizeCalendarEvents([...(state.calendarCache.events || []), newEvent])
-          .sort((a, b) => a.time.localeCompare(b.time));
-        if (state.settings.mockCalendar) {
-          state.settings.mockCalendar.events = state.calendarCache.events;
+        if (!state.settings.mockCalendar) {
+          state.settings.mockCalendar = { events: [], freeMinutes: 0, note: '', weekAhead: [] };
         }
+        state.settings.mockCalendar.events = normalizeCalendarEvents([
+          ...(state.settings.mockCalendar.events || []),
+          newEvent
+        ]).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+        refreshCalendarCache();
         saveState();
         renderSchedule();
         renderTodayFeed();
         updateSmartBanner();
         modal.remove();
+        const when = formatEventDateLabel(eventDate);
         if (hasAnyCalendarConnected()) {
           showToast(`Synced to ${getConnectedCalendarsLabel()}`);
         } else {
-          showToast(`Event added: ${title} · ${formatDurationShort(durationMin)}`);
+          showToast(`Event added: ${title} · ${when} ${time}`);
         }
       };
     }
@@ -7027,6 +7237,7 @@
       if (currentTab === 'streaks') renderRewardBank();
       
       showToast(`Great job! ${habit.title} logged · +${pointsEarned} pts`);
+      maybeAdvanceTutorial('habit-complete');
       
       // Gentle autonomous follow-up
       setTimeout(() => {
@@ -7615,6 +7826,7 @@
       `;
       document.body.appendChild(modal);
       wireRhythmBriefModal(modal.querySelector('#rhythm-brief-body'));
+      maybeAdvanceTutorial('rhythm-brief-open');
     }
 
     function updateRhythmBriefLauncher() {
@@ -8154,7 +8366,7 @@
         score: 100,
         type: 'welcome',
         cta: 'Learn more',
-        reason: `Welcome to Rhythm — your life management app. <strong>Low</strong> energy surfaces quick wins, <strong>Medium</strong> balances your day, and <strong>High</strong> pushes bigger tasks. Tap <strong>Learn more</strong> for a quick tour of the basics.`
+        reason: `Welcome to Rhythm. Your four starter tasks are ready in <strong>Today</strong> — tap <strong>Learn more</strong> for a quick guided tour using them as your guide.`
       };
     }
 
@@ -8345,94 +8557,115 @@
 
     const APP_TUTORIAL_STEPS = [
       {
-        id: 'energy',
-        title: 'Set your energy',
-        body: 'Choose Low, Medium, or High to match how you feel. Rhythm re-sorts Today\'s list so the right tasks rise to the top.',
-        target: () => document.querySelector('#energy-1')?.closest('.flex.gap-x-2'),
+        id: 'today-intro',
+        title: 'Today tab',
+        body: 'Your action list lives here. Daily tasks show up every morning — tap the circle to log a win.',
+        target: () => document.getElementById('tab-today'),
         prepare: () => switchTab('today')
       },
       {
-        id: 'today-list',
-        title: 'Today\'s tasks',
-        body: 'Your action list lives here — tap the circle to complete a task. Daily chores show up every day; weekly and monthly tasks roll in when a new week or month starts.',
+        id: 'complete-task',
+        title: 'Complete a task',
+        body: 'Try it now — tap the circle on any of your starter tasks to mark it done.',
         target: () => document.getElementById('task-list') || document.getElementById('tab-content-today'),
+        waitFor: 'habit-complete',
         prepare: () => switchTab('today')
       },
       {
-        id: 'quick-add',
-        title: 'Quick add',
-        body: 'Type a one-off task and press Enter or tap + to add it. Use the mic for voice commands on supported browsers.',
-        target: () => document.getElementById('quick-add-bar'),
+        id: 'delete-task',
+        title: 'Remove a task',
+        body: 'Tap <strong>×</strong> on any remaining task to remove it from Today. You can always add tasks back from the Library.',
+        target: () => document.querySelector('#task-list .habit-card [title="Remove task"]')?.closest('.habit-card') || document.getElementById('task-list'),
         prepare: () => switchTab('today')
+      },
+      {
+        id: 'streaks-intro',
+        title: 'Streaks tab',
+        body: 'Completed habits build streaks here. Track progress and unlock <strong>Projected Wins</strong> for measurable goals.',
+        target: () => document.getElementById('tab-streaks'),
+        prepare: () => switchTab('streaks')
+      },
+      {
+        id: 'projections',
+        title: 'Projected Wins',
+        body: 'Tap your completed task below to open <strong>Projected Wins</strong> — forecasts for savings, steps, pages, and more.',
+        target: () => document.getElementById('projection-panel'),
+        waitFor: 'projection-open',
+        prepare: () => {
+          switchTab('streaks');
+          renderStreaks();
+        }
+      },
+      {
+        id: 'life-intro',
+        title: 'Life tab',
+        body: '<strong>Schedule</strong> for events, <strong>Grocery</strong> for lists, <strong>Bills</strong> for due dates, and <strong>Subscriptions</strong> for recurring costs.',
+        target: () => document.getElementById('tab-life'),
+        prepare: () => switchTab('life')
+      },
+      {
+        id: 'library-intro',
+        title: 'Library tab',
+        body: 'Browse preset chores and habits. Tap any card to add it to your Rhythm, or create your own under Personal.',
+        target: () => document.getElementById('tab-library'),
+        prepare: () => switchTab('library')
+      },
+      {
+        id: 'energy-smart',
+        title: 'Energy & Smart Suggestions',
+        body: 'Set your energy level — Rhythm re-sorts Today\'s list. <strong>Smart Suggestions</strong> uses energy, calendar, and weather to nudge what to do next.',
+        target: () => document.querySelector('#energy-1')?.closest('.px-5'),
+        highlightUnion: () => {
+          const energyEl = document.querySelector('#energy-1')?.closest('.px-5');
+          const banner = document.getElementById('smart-banner');
+          if (!energyEl || !banner || banner.classList.contains('hidden')) return null;
+          const r1 = energyEl.getBoundingClientRect();
+          const r2 = banner.getBoundingClientRect();
+          return {
+            top: Math.min(r1.top, r2.top),
+            left: Math.min(r1.left, r2.left),
+            width: Math.max(r1.right, r2.right) - Math.min(r1.left, r2.left),
+            height: Math.max(r1.bottom, r2.bottom) - Math.min(r1.top, r2.top)
+          };
+        },
+        prepare: () => {
+          switchTab('today');
+          showTutorialSmartBanner();
+        }
       },
       {
         id: 'rhythm-brief',
         title: 'Rhythm Brief',
-        body: 'Your smart digest — tap for a <strong>Today</strong> or <strong>This week</strong> briefing. Tasks, schedule, bills, and grocery are sorted by what matters most right now.',
+        body: 'Tap <strong>Rhythm Brief</strong> for a smart day-at-a-glance — tasks, schedule, bills, and grocery sorted by priority.',
         target: () => document.getElementById('rhythm-brief-launcher'),
+        waitFor: 'rhythm-brief-open',
         prepare: () => {
           switchTab('today');
+          hideTutorialSmartBanner();
           updateRhythmBriefLauncher();
           document.getElementById('rhythm-brief-launcher')?.classList.remove('hidden');
         }
-      },
-      {
-        id: 'tabs',
-        title: 'Four main areas',
-        body: '<strong>Today</strong> is your feed, <strong>Streaks</strong> tracks progress, <strong>Life</strong> holds bills & schedule, and <strong>Library</strong> is your chore catalog.',
-        target: () => document.querySelector('.main-nav'),
-        prepare: () => switchTab('today')
-      },
-      {
-        id: 'streaks',
-        title: 'Streaks tab',
-        body: 'See habit streaks, projections, and your Cheat Day Fund — right next to Today so progress stays top of mind.',
-        target: () => document.getElementById('tab-streaks'),
-        prepare: () => switchTab('today')
-      },
-      {
-        id: 'life',
-        title: 'Life tab',
-        body: 'Manage bills, grocery, calendar events, and subscriptions — due dates and overdue states feed into smart suggestions later.',
-        target: () => document.getElementById('tab-life'),
-        prepare: () => switchTab('today')
-      },
-      {
-        id: 'library',
-        title: 'Library',
-        body: 'Browse columns of preset chores and habits. Tap any card to add it to your Rhythm.',
-        target: () => document.getElementById('tab-library'),
-        prepare: () => switchTab('today')
-      },
-      {
-        id: 'weather',
-        title: 'Weather strip',
-        body: 'Hourly forecast at the top helps plan outdoor chores. Tap for the full outdoor weather pane.',
-        target: () => document.getElementById('header-weather'),
-        prepare: () => switchTab('today')
-      },
-      {
-        id: 'smart',
-        title: 'Smart suggestions',
-        body: 'This panel weighs your energy, calendar gaps, weather, and bills to recommend what to do next. Mute it anytime from the corner.',
-        target: () => document.getElementById('smart-banner'),
-        prepare: () => switchTab('today')
       }
     ];
 
     let tutorialTargetEl = null;
+    let tutorialWaitSatisfied = false;
 
     function clearTutorialHighlight() {
-      if (tutorialTargetEl) {
-        tutorialTargetEl.classList.remove('tutorial-target-pulse');
-        tutorialTargetEl = null;
-      }
+      document.querySelectorAll('.tutorial-target-pulse').forEach(el => el.classList.remove('tutorial-target-pulse'));
+      tutorialTargetEl = null;
     }
 
     function positionTutorialHighlight(el) {
       const highlight = document.getElementById('tutorial-highlight');
       if (!highlight || !el) return;
       const rect = el.getBoundingClientRect();
+      positionTutorialHighlightRect(rect);
+    }
+
+    function positionTutorialHighlightRect(rect) {
+      const highlight = document.getElementById('tutorial-highlight');
+      if (!highlight || !rect) return;
       const pad = 6;
       highlight.classList.remove('hidden');
       highlight.style.top = `${Math.max(8, rect.top - pad)}px`;
@@ -8441,11 +8674,63 @@
       highlight.style.height = `${rect.height + pad * 2}px`;
     }
 
+    function showTutorialSmartBanner() {
+      const banner = document.getElementById('smart-banner');
+      if (!banner) return;
+      banner.classList.remove('hidden');
+      const label = banner.querySelector('#smart-banner-label');
+      const text = banner.querySelector('#smart-text');
+      const cta = banner.querySelector('#smart-cta');
+      if (label) label.textContent = 'Smart Suggestion';
+      if (text) text.innerHTML = 'Change your energy level and watch Today\'s list re-sort. I\'ll nudge the best task for how you feel.';
+      if (cta) cta.textContent = 'Try changing energy';
+      resetSmartBannerDatasets(banner);
+      banner.dataset.suggestionType = 'tutorial-demo';
+      const footnote = document.getElementById('smart-bill-footnote');
+      if (footnote) footnote.classList.add('hidden');
+    }
+
+    function hideTutorialSmartBanner() {
+      const banner = document.getElementById('smart-banner');
+      if (banner) banner.classList.add('hidden');
+    }
+
+    function refreshTutorialHighlight() {
+      if (!state.settings.tutorialActive) return;
+      const step = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
+      if (!step) return;
+      clearTutorialHighlight();
+      const unionRect = step.highlightUnion?.();
+      if (unionRect) {
+        positionTutorialHighlightRect(unionRect);
+        return;
+      }
+      const target = typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
+      if (target) {
+        tutorialTargetEl = target;
+        target.classList.add('tutorial-target-pulse');
+        positionTutorialHighlight(target);
+      }
+    }
+
+    function maybeAdvanceTutorial(trigger) {
+      if (!state.settings.tutorialActive) return;
+      const step = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
+      if (!step?.waitFor || step.waitFor !== trigger || tutorialWaitSatisfied) return;
+      tutorialWaitSatisfied = true;
+      setTimeout(() => {
+        if (!state.settings.tutorialActive) return;
+        const current = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
+        if (current?.waitFor === trigger) nextTutorialStep();
+      }, 700);
+    }
+
     function renderTutorialStep(stepIndex) {
       const step = APP_TUTORIAL_STEPS[stepIndex];
       if (!step) return completeAppTutorial();
 
       state.settings.tutorialStep = stepIndex;
+      tutorialWaitSatisfied = false;
       saveState();
 
       const overlay = document.getElementById('tutorial-overlay');
@@ -8461,20 +8746,20 @@
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           clearTutorialHighlight();
+          const unionRect = step.highlightUnion?.();
           let target = typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
-          if (step.id === 'smart') {
-            const banner = document.getElementById('smart-banner');
-            if (banner) {
-              banner.classList.remove('hidden');
-              banner.querySelector('#smart-banner-label').textContent = 'Smart Suggestion';
-              banner.querySelector('#smart-text').innerHTML = 'After this tour, I\'ll suggest tasks based on your energy, schedule, and weather.';
-              banner.querySelector('#smart-cta').textContent = 'Got it';
-              const footnote = document.getElementById('smart-bill-footnote');
-              if (footnote) footnote.classList.add('hidden');
+          if (unionRect) {
+            positionTutorialHighlightRect(unionRect);
+            if (target) {
+              tutorialTargetEl = target;
+              target.classList.add('tutorial-target-pulse');
             }
-            target = banner || target;
-          }
-          if (target) {
+            const banner = document.getElementById('smart-banner');
+            if (banner && !banner.classList.contains('hidden')) {
+              banner.classList.add('tutorial-target-pulse');
+              tutorialTargetEl = banner;
+            }
+          } else if (target) {
             tutorialTargetEl = target;
             target.classList.add('tutorial-target-pulse');
             target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -8490,7 +8775,15 @@
           if (titleEl) titleEl.textContent = step.title;
           if (bodyEl) bodyEl.innerHTML = step.body;
           if (backBtn) backBtn.disabled = stepIndex === 0;
-          if (nextBtn) nextBtn.textContent = stepIndex === APP_TUTORIAL_STEPS.length - 1 ? 'Finish tour' : 'Next';
+          if (nextBtn) {
+            const waiting = !!step.waitFor;
+            nextBtn.disabled = waiting;
+            nextBtn.classList.toggle('opacity-50', waiting);
+            nextBtn.classList.toggle('pointer-events-none', waiting);
+            nextBtn.textContent = waiting
+              ? 'Waiting for you…'
+              : (stepIndex === APP_TUTORIAL_STEPS.length - 1 ? 'Finish tour' : 'Next');
+          }
         });
       });
     }
@@ -8525,6 +8818,8 @@
 
     function completeAppTutorial(skipped = false) {
       clearTutorialHighlight();
+      hideTutorialSmartBanner();
+      tutorialWaitSatisfied = false;
       const overlay = document.getElementById('tutorial-overlay');
       const card = document.getElementById('tutorial-card');
       const highlight = document.getElementById('tutorial-highlight');
@@ -8556,6 +8851,12 @@
       }
 
       if (state.settings.tutorialActive) {
+        const stepId = APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id;
+        if (stepId === 'energy-smart') {
+          showTutorialSmartBanner();
+          renderHeaderWeather();
+          return;
+        }
         banner.classList.add('hidden');
         resetSmartBannerDatasets(banner);
         const footnote = document.getElementById('smart-bill-footnote');
@@ -8628,8 +8929,11 @@
     }
 
     function handleSmartSuggestion() {
-      if (state.settings.tutorialActive) return;
       const banner = document.getElementById('smart-banner');
+      if (state.settings.tutorialActive) {
+        if (banner?.dataset.suggestionType !== 'tutorial-demo') return;
+        return;
+      }
       if (!banner) return;
       const type = banner.dataset.suggestionType;
       const habitId = banner.dataset.suggestionHabit;
@@ -9701,6 +10005,7 @@
       currentProjectionHabit = habitId;
       const habit = state.habits.find(h => h.id === habitId);
       if (!habit) return;
+      maybeAdvanceTutorial('projection-open');
       
       const proj = getProjections(habit, computeCurrentStreak(habitId));
       
@@ -10248,6 +10553,10 @@
       if (tab === 'streaks') {
         renderStreaks();
       }
+
+      if (state.settings.tutorialActive) {
+        requestAnimationFrame(() => refreshTutorialHighlight());
+      }
     }
 
     // ==================== INIT & HELPERS ====================
@@ -10323,10 +10632,10 @@
 
     // Low-friction routine templates (expert-inspired: start small, use defaults, tie to energy)
     const STARTER_ROUTINE_TASKS = [
-      { title: "Read For 10 Minutes", category: "mind", est_minutes: 10, difficulty: 2 },
-      { title: "Meditate for 5 Minutes", category: "mind", est_minutes: 5, difficulty: 1 },
-      { title: "Schedule Appointment", category: "life", est_minutes: 10, difficulty: 2 },
-      { title: "Drink 40 Oz of Water", category: "health", est_minutes: 2, difficulty: 1 }
+      { title: "$5 in savings every day", category: "personal", est_minutes: 0, difficulty: 1, target_value: 5, unit: "dollars" },
+      { title: "Walk 5000 Steps", category: "health", est_minutes: 15, difficulty: 2, target_value: 5000, unit: "steps" },
+      { title: "Read 10 pages of a book", category: "mind", est_minutes: 15, difficulty: 2, target_value: 10, unit: "pages" },
+      { title: "Make your bed every morning", category: "home", est_minutes: 3, difficulty: 1 }
     ];
 
     const ROUTINE_TEMPLATES = {
@@ -10474,6 +10783,7 @@
         const durationMin = end ? Math.max(15, Math.round((end - start) / 60000)) : 60;
 
         events.push({
+          date: eventDate,
           time: `${start.getHours()}:${String(start.getMinutes()).padStart(2, '0')}`,
           title: summary,
           durationMin
@@ -10740,10 +11050,18 @@
       showCalendarConnectStep();
     }
 
+    function formatPreviewTaskMeta(task) {
+      const parts = [];
+      if (task.est_minutes) parts.push(`${task.est_minutes} min`);
+      if (task.target_value && task.unit) {
+        if (task.unit === 'dollars') parts.push(`$${task.target_value}/day`);
+        else parts.push(`${Number(task.target_value).toLocaleString()} ${task.unit}`);
+      }
+      return parts.join(' · ') || 'Daily';
+    }
+
     function showRoutinePreviewStep() {
       const template = ROUTINE_TEMPLATES[selectedRoutineLevel];
-      const prefLabel = getMaintenancePrefLabel(selectedMaintenancePref);
-      const calLabel = getConnectedCalendarsLabel(getOnboardingCalendarConnections());
       const onboarding = document.getElementById('onboarding');
 
       onboarding.innerHTML = `
@@ -10751,39 +11069,16 @@
           <div class="text-center mb-3">
             <div class="text-[10px] uppercase tracking-widest text-rhythm-muted mb-1">Step 4 of 4</div>
             <div class="text-xl font-semibold">${template.name} Routine</div>
-            <div class="text-xs text-rhythm-muted">Tap × to remove tasks, or add your own below.</div>
-            <div class="flex flex-wrap justify-center gap-1.5 mt-2">
-              <div class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rhythm-raised border border-rhythm-border text-[10px] text-rhythm-muted">
-                <i class="fa-solid fa-wrench text-rhythm-muted"></i>
-                <span>${prefLabel}</span>
-                <button onclick="showMaintenancePreferenceStep()" class="text-rhythm-primary-light font-medium">Edit</button>
-              </div>
-              <div class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rhythm-raised border border-rhythm-border text-[10px] text-rhythm-muted">
-                <i class="fa-regular fa-calendar text-rhythm-muted"></i>
-                <span>${calLabel}</span>
-                <button onclick="showCalendarConnectStep()" class="text-rhythm-primary-light font-medium">Edit</button>
-              </div>
-            </div>
+            <div class="text-xs text-rhythm-muted leading-relaxed px-2">These four tasks will land in your <strong>Today</strong> tab — your guide for the quick tour after you start.</div>
           </div>
           
           <div id="routine-preview" class="flex-1 space-y-2 overflow-auto mb-4"></div>
           
-          <div class="space-y-2">
-            <div class="flex gap-2">
-              <input id="preview-add-input" type="text" placeholder="Add a task..." 
-                     class="flex-1 bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-2 text-sm placeholder:text-rhythm-muted">
-              <button onclick="addToPreview()" class="bg-rhythm-primary px-4 rounded-2xl text-sm">Add</button>
-            </div>
-            
-            <div class="flex gap-2">
-              <button onclick="applyRoutineAndStart()" class="flex-1 bg-rhythm-primary active:bg-rhythm-primary-light py-3 rounded-2xl font-semibold">Start My Rhythm</button>
-              <button onclick="skipOnboarding()" class="flex-1 bg-rhythm-surface active:bg-rhythm-border py-3 rounded-2xl">Skip</button>
-            </div>
-          </div>
+          <button onclick="applyRoutineAndStart()" class="w-full bg-rhythm-primary active:bg-rhythm-primary-light py-3 rounded-2xl font-semibold">Start My Rhythm</button>
         </div>
       `;
 
-      renderRoutinePreview(template.tasks);
+      renderRoutinePreview(STARTER_ROUTINE_TASKS);
     }
 
     function renderRoutinePreview(tasks) {
@@ -10791,52 +11086,31 @@
       if (!container) return;
       container.innerHTML = '';
       
-      tasks.forEach((task, index) => {
+      tasks.forEach((task) => {
         const div = document.createElement('div');
-        div.className = `bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-3`;
+        div.className = 'bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-3';
         div.innerHTML = `
-          <div class="flex-1">
-            <div class="font-medium">${task.title}</div>
-            <div class="text-xs text-rhythm-muted">${task.est_minutes} min</div>
+          <div class="w-9 h-9 rounded-xl bg-rhythm-primary/15 flex items-center justify-center flex-shrink-0">
+            <i class="fa-regular fa-circle text-rhythm-primary-light text-sm"></i>
           </div>
-          <button onclick="removeFromPreview(${index}, this)" class="text-rhythm-muted hover:text-rose-400 text-xl leading-none">×</button>
+          <div class="flex-1 min-w-0">
+            <div class="font-medium">${task.title}</div>
+            <div class="text-xs text-rhythm-muted">${formatPreviewTaskMeta(task)}</div>
+          </div>
         `;
         container.appendChild(div);
       });
       
-      // Store current preview tasks globally for this flow
       window.currentPreviewTasks = [...tasks];
     }
 
-    function addToPreview() {
-      const input = document.getElementById('preview-add-input');
-      if (!input || !input.value.trim()) return;
-      
-      const newTask = {
-        title: normalizeUserText(input.value),
-        category: 'custom',
-        est_minutes: 10,
-        difficulty: 2
-      };
-      
-      window.currentPreviewTasks.push(newTask);
-      renderRoutinePreview(window.currentPreviewTasks);
-      input.value = '';
-    }
-
-    function removeFromPreview(index, btn) {
-      window.currentPreviewTasks.splice(index, 1);
-      renderRoutinePreview(window.currentPreviewTasks);
-    }
-
     function applyRoutineAndStart() {
-      if (!selectedRoutineLevel || !window.currentPreviewTasks) {
+      if (!selectedRoutineLevel) {
         skipOnboarding();
         return;
       }
       
-      // Seed habits from preview
-      state.habits = window.currentPreviewTasks.map((t, i) => stampHabitMeta({
+      state.habits = STARTER_ROUTINE_TASKS.map((t, i) => stampHabitMeta({
         id: 'routine-' + Date.now() + '-' + i,
         title: t.title,
         category: t.category || 'custom',
@@ -10900,7 +11174,7 @@
       renderHeaderWeather();
       
       localStorage.setItem('rhythm_onboarded', '1');
-      showToast("Blank slate — your guide is in the smart suggestion above.");
+      showToast("Blank slate — tap Learn more in the smart suggestion when you're ready.");
     }
 
     function hideSplash() {
