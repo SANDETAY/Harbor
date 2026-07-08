@@ -1237,7 +1237,7 @@
 
     .tutorial-overlay.is-active {
       display: block;
-      pointer-events: auto;
+      pointer-events: none;
     }
 
     .tutorial-highlight {
@@ -1261,12 +1261,24 @@
       border-radius: 1.25rem;
       padding: 1rem 1.1rem 0.9rem;
       box-shadow: var(--rhythm-shadow-md);
-      z-index: 192;
+      z-index: 193;
+      pointer-events: auto;
+    }
+
+    .tutorial-card.tutorial-card-interactive {
+      top: calc(0.65rem + var(--safe-top, 0px));
+      bottom: auto;
     }
 
     .tutorial-target-pulse {
       position: relative;
       z-index: 192 !important;
+    }
+
+    .tutorial-interactive-target {
+      position: relative;
+      z-index: 200 !important;
+      pointer-events: auto !important;
     }
 
     .cal-picker-month {
@@ -8606,7 +8618,7 @@
         score: 100,
         type: 'welcome',
         cta: 'Learn more',
-        reason: `Welcome to Rhythm. Your four starter tasks are ready in <strong>Today</strong> — tap <strong>Learn more</strong> for a quick guided tour using them as your guide.`
+        reason: `Welcome to Rhythm. Your four starter tasks are in <strong>Today</strong> — tap the pulsing <strong>Learn more</strong> button below to start your guided tour.`
       };
     }
 
@@ -8807,15 +8819,17 @@
         id: 'complete-task',
         title: 'Complete a task',
         body: 'Try it now — tap the circle on any of your starter tasks to mark it done.',
-        target: () => document.getElementById('task-list') || document.getElementById('tab-content-today'),
+        target: () => document.querySelector('#task-list .habit-card') || document.getElementById('task-list'),
         waitFor: 'habit-complete',
+        interactive: true,
         prepare: () => switchTab('today')
       },
       {
         id: 'delete-task',
         title: 'Remove a task',
         body: 'Tap <strong>×</strong> on any remaining task to remove it from Today. You can always add tasks back from the Library.',
-        target: () => document.querySelector('#task-list .habit-card [title="Remove task"]')?.closest('.habit-card') || document.getElementById('task-list'),
+        target: () => document.querySelector('#task-list .habit-card [title="Remove task"]')?.closest('.habit-card') || document.querySelector('#task-list .habit-card') || document.getElementById('task-list'),
+        interactive: true,
         prepare: () => switchTab('today')
       },
       {
@@ -8828,9 +8842,10 @@
       {
         id: 'projections',
         title: 'Projected Wins',
-        body: 'Tap your completed task below to open <strong>Projected Wins</strong> — forecasts for savings, steps, pages, and more.',
-        target: () => document.getElementById('projection-panel'),
+        body: 'Tap your completed task to open <strong>Projected Wins</strong> below — forecasts for savings, steps, pages, and more.',
+        target: () => document.querySelector('#streaks-list .rhythm-card') || document.getElementById('streaks-list'),
         waitFor: 'projection-open',
+        interactive: true,
         prepare: () => {
           switchTab('streaks');
           renderStreaks();
@@ -8879,6 +8894,7 @@
         body: 'Tap <strong>Rhythm Brief</strong> for a smart day-at-a-glance — tasks, schedule, bills, and grocery sorted by priority.',
         target: () => document.getElementById('rhythm-brief-launcher'),
         waitFor: 'rhythm-brief-open',
+        interactive: true,
         prepare: () => {
           switchTab('today');
           hideTutorialSmartBanner();
@@ -8891,9 +8907,26 @@
     let tutorialTargetEl = null;
     let tutorialWaitSatisfied = false;
 
+    function isTutorialInteractiveStep(step) {
+      return !!(step?.waitFor || step?.interactive);
+    }
+
+    function applyTutorialInteractivity(step, target, overlay, card) {
+      const interactive = isTutorialInteractiveStep(step);
+      if (overlay) overlay.classList.toggle('is-interactive-step', interactive);
+      if (card) card.classList.toggle('tutorial-card-interactive', interactive);
+      if (target && interactive) target.classList.add('tutorial-interactive-target');
+    }
+
     function clearTutorialHighlight() {
-      document.querySelectorAll('.tutorial-target-pulse').forEach(el => el.classList.remove('tutorial-target-pulse'));
+      document.querySelectorAll('.tutorial-target-pulse, .tutorial-interactive-target').forEach(el => {
+        el.classList.remove('tutorial-target-pulse', 'tutorial-interactive-target');
+      });
       tutorialTargetEl = null;
+      const overlay = document.getElementById('tutorial-overlay');
+      const card = document.getElementById('tutorial-card');
+      if (overlay) overlay.classList.remove('is-interactive-step');
+      if (card) card.classList.remove('tutorial-card-interactive');
     }
 
     function positionTutorialHighlight(el) {
@@ -8945,10 +8978,13 @@
         positionTutorialHighlightRect(unionRect);
         return;
       }
+      const overlay = document.getElementById('tutorial-overlay');
+      const card = document.getElementById('tutorial-card');
       const target = typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
       if (target) {
         tutorialTargetEl = target;
         target.classList.add('tutorial-target-pulse');
+        applyTutorialInteractivity(step, target, overlay, card);
         positionTutorialHighlight(target);
       }
     }
@@ -8993,16 +9029,22 @@
             if (target) {
               tutorialTargetEl = target;
               target.classList.add('tutorial-target-pulse');
+              applyTutorialInteractivity(step, target, overlay, card);
             }
             const banner = document.getElementById('smart-banner');
             if (banner && !banner.classList.contains('hidden')) {
               banner.classList.add('tutorial-target-pulse');
+              if (isTutorialInteractiveStep(step)) banner.classList.add('tutorial-interactive-target');
               tutorialTargetEl = banner;
             }
           } else if (target) {
             tutorialTargetEl = target;
             target.classList.add('tutorial-target-pulse');
-            target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            applyTutorialInteractivity(step, target, overlay, card);
+            target.scrollIntoView({
+              block: isTutorialInteractiveStep(step) ? 'center' : 'nearest',
+              behavior: 'smooth'
+            });
             positionTutorialHighlight(target);
           }
 
@@ -9010,7 +9052,10 @@
             overlay.classList.add('is-active');
             overlay.setAttribute('aria-hidden', 'false');
           }
-          if (card) card.classList.remove('hidden');
+          if (card) {
+            card.classList.remove('hidden');
+            if (!target) card.classList.remove('tutorial-card-interactive');
+          }
           if (stepLabel) stepLabel.textContent = `Step ${stepIndex + 1} of ${APP_TUTORIAL_STEPS.length}`;
           if (titleEl) titleEl.textContent = step.title;
           if (bodyEl) bodyEl.innerHTML = step.body;
