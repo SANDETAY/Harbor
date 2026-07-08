@@ -3365,35 +3365,98 @@
       `;
     }
 
+    function isPeriodicGoal(habit) {
+      return habit.interval_days != null && habit.interval_days > 1;
+    }
+
+    function getTotalLogged(sample) {
+      return sample.reduce((s, p) => s + p.value, 0);
+    }
+
+    function getPerPeriodAmount(habit, sample) {
+      if (habit.target_value != null) return habit.target_value;
+      if (!sample.length) return 0;
+      return getTotalLogged(sample) / sample.length;
+    }
+
+    function getPeriodsIn30Days(habit) {
+      const interval = habit.interval_days && habit.interval_days > 1 ? habit.interval_days : 1;
+      return Math.max(1, Math.round(30 / interval));
+    }
+
     function getProjectionDailyRate(habit, sample) {
-      const intervalDays = habit.interval_days && habit.interval_days > 1 ? habit.interval_days : 1;
+      if (isPeriodicGoal(habit)) return 0;
 
       if (!sample.length) {
-        if (habit.target_value != null) return habit.target_value / intervalDays;
-        return 0;
+        return habit.target_value ?? 0;
       }
 
-      const total = sample.reduce((s, p) => s + p.value, 0);
-      if (total <= 0) {
-        if (habit.target_value != null) return habit.target_value / intervalDays;
-        return 0;
-      }
+      const total = getTotalLogged(sample);
+      if (total <= 0) return habit.target_value ?? 0;
 
       if (sample.length >= 2) {
         const first = new Date(sample[0].date + 'T12:00:00');
         const last = new Date(sample[sample.length - 1].date + 'T12:00:00');
-        const spanDays = Math.max(intervalDays, Math.round((last - first) / 86400000) + 1);
+        const spanDays = Math.max(1, Math.round((last - first) / 86400000) + 1);
         return total / spanDays;
       }
 
-      const perCompletion = total / sample.length;
-      return perCompletion / intervalDays;
+      return total;
+    }
+
+    function getProjectionPrimaryLabel(type) {
+      if (type === 'savings') return 'Total saved';
+      if (type === 'miles') return 'Total miles';
+      if (type === 'steps') return 'Total steps';
+      if (type === 'pages') return 'Total pages';
+      return 'Total logged';
+    }
+
+    function getProjectionCadenceLabel(habit) {
+      const d = habit.interval_days;
+      if (d === 7) return 'Per week';
+      if (d === 14) return 'Per cycle';
+      if (d >= 25 && d <= 35) return 'Per month';
+      if (d >= 85 && d <= 95) return 'Per quarter';
+      if (d >= 175 && d <= 185) return 'Per half-year';
+      if (d >= 360) return 'Per year';
+      if (d > 1) return `Every ${d} days`;
+      return 'Daily average';
+    }
+
+    function getLoggedCalorieEstimate(habit, sample, dailyAvg) {
+      const type = getHabitMetricType(habit);
+      if (!type || (type !== 'miles' && type !== 'steps')) {
+        return { totalCal: 0, totalDistance: 0, perDay: [] };
+      }
+
+      let totalCal = 0;
+      let totalDistance = 0;
+      const perDay = [];
+
+      sample.forEach(({ date, value }) => {
+        if (!value || value <= 0) return;
+        let miles = value;
+        if (type === 'steps') miles = value / METRICS.stepsPerMile;
+        const duration = habit.est_minutes || Math.max(8, Math.round(miles * 10));
+        const dayCal = estimateCaloriesBurned(habit, miles, duration);
+        totalCal += dayCal;
+        totalDistance += miles;
+        perDay.push({ date, value, miles, calories: dayCal });
+      });
+
+      if (perDay.length === 0 && dailyAvg > 0) {
+        const fallbackMiles = type === 'steps' ? dailyAvg / METRICS.stepsPerMile : dailyAvg;
+        totalDistance = fallbackMiles;
+        totalCal = estimateCaloriesBurned(habit, fallbackMiles, habit.est_minutes || 20);
+      }
+
+      return { totalCal: Math.round(totalCal), totalDistance, perDay };
     }
 
     function getProjections(habit, currentStreak) {
       const result = {
         title: habit.title,
-        streak: currentStreak,
         metrics: [],
         canProject: false,
         message: ''
@@ -3419,9 +3482,6 @@
       const recent = dataPoints.filter(p => p.date >= cutoffStr);
       const sample = recent.length > 0 ? recent : dataPoints;
 
-      const dailyAvg = getProjectionDailyRate(habit, sample);
-      const projected30 = dailyAvg * 30;
-
       const formatVal = (v) => {
         if (type === 'savings') return '$' + Math.round(v).toLocaleString();
         if (type === 'steps') return Math.round(v).toLocaleString() + ' steps';
@@ -3430,52 +3490,56 @@
         return Math.round(v).toLocaleString() + (habit.unit ? ' ' + habit.unit : '');
       };
 
+      const totalLogged = getTotalLogged(sample);
+      const periodic = isPeriodicGoal(habit);
+      const perPeriod = getPerPeriodAmount(habit, sample);
+      const dailyAvg = getProjectionDailyRate(habit, sample);
+      const projected30 = periodic
+        ? perPeriod * getPeriodsIn30Days(habit)
+        : dailyAvg * 30;
+
       result.canProject = true;
       const hasDevice = habitHasDeviceSync(habit.id);
       const profile = getUserProfile();
 
-      result.metrics.push({ label: 'Streak', value: `${currentStreak} day${currentStreak === 1 ? '' : 's'}` });
-      result.metrics.push({ label: 'Daily average', value: formatVal(dailyAvg) });
-      result.metrics.push({ label: '30-day projection', value: formatVal(projected30) });
+      result.metrics.push({ label: getProjectionPrimaryLabel(type), value: formatVal(totalLogged) });
 
-      if (type === 'miles') {
-        const estSteps30 = Math.round(projected30 * METRICS.stepsPerMile);
-        const estStepsDaily = Math.round(dailyAvg * METRICS.stepsPerMile);
-        result.metrics.push({ label: 'Est. steps (daily avg)', value: estStepsDaily.toLocaleString() + ' steps' });
-        result.metrics.push({ label: 'Est. steps (30-day)', value: estSteps30.toLocaleString() + ' steps' });
+      if (periodic && perPeriod > 0) {
+        result.metrics.push({ label: getProjectionCadenceLabel(habit), value: formatVal(perPeriod) });
+      } else if (dailyAvg > 0) {
+        result.metrics.push({ label: 'Daily average', value: formatVal(dailyAvg) });
       }
 
+      result.metrics.push({ label: '30-day projection', value: formatVal(projected30) });
+
       if (type === 'miles' || type === 'steps') {
-        const streakCal = getStreakCalorieEstimate(habit, currentStreak, dailyAvg);
-        const streakLabel = currentStreak === 1 ? '1 day' : `${currentStreak} days`;
-        const streakNote = streakCal.perDay.length < currentStreak && dailyAvg > 0
-          ? ' — days without a log use your daily average'
-          : '';
+        const loggedCal = getLoggedCalorieEstimate(habit, sample, dailyAvg);
         result.metrics.push({
-          label: hasDevice ? `Est. calories (${streakLabel})` : `Est. calories (${streakLabel}, profile)`,
-          value: `${streakCal.totalCal.toLocaleString()} kcal`
+          label: hasDevice ? 'Est. calories (logged)' : 'Est. calories (logged, profile)',
+          value: `${loggedCal.totalCal.toLocaleString()} kcal`
         });
-        result.streakCalorieDetail = streakCal;
-        result.fatInsightKcal = streakCal.totalCal;
+        result.streakCalorieDetail = loggedCal;
+        result.fatInsightKcal = loggedCal.totalCal;
         result.profileNote = hasDevice
-          ? `Streak calories sum each day's logged distance${streakNote}.`
-          : `Based on your profile (${profile.weightLb} lbs${profile.age ? `, age ${profile.age}` : ''})${streakNote} — add Garmin sync for tighter accuracy.`;
+          ? 'Calories sum your logged activity in this window.'
+          : `Based on your profile (${profile.weightLb} lbs${profile.age ? `, age ${profile.age}` : ''}) — add Garmin sync for tighter accuracy.`;
       }
 
       if (type === 'savings') {
-        result.equivalent = `At this pace you could save ~${formatVal(projected30)} over the next 30 days.`;
+        const cycles = getPeriodsIn30Days(habit);
+        result.equivalent = periodic
+          ? `At ${formatVal(perPeriod)} ${formatIntervalLabel(habit.interval_days).toLowerCase()}, you're on track for ~${formatVal(projected30)} over the next 30 days (${cycles} cycle${cycles === 1 ? '' : 's'}).`
+          : `At this pace you could save ~${formatVal(projected30)} over the next 30 days.`;
       } else if (type === 'steps') {
-        const streakCal = result.streakCalorieDetail;
-        result.equivalent = streakCal?.totalCal
-          ? `~${streakCal.totalCal.toLocaleString()} kcal burned across your ${currentStreak}-day streak (${streakCal.totalDistance.toFixed(1)} mi total).`
+        const loggedCal = result.streakCalorieDetail;
+        result.equivalent = loggedCal?.totalCal
+          ? `~${loggedCal.totalCal.toLocaleString()} kcal burned from ${formatVal(totalLogged)} (${loggedCal.totalDistance.toFixed(1)} mi equivalent).`
           : `That's roughly ${(projected30 / METRICS.stepsPerMile).toFixed(1)} miles over 30 days.`;
       } else if (type === 'miles') {
-        const streakCal = result.streakCalorieDetail;
-        const estSteps30 = Math.round(projected30 * METRICS.stepsPerMile);
-        const stepsNote = ` · ~${estSteps30.toLocaleString()} steps estimated`;
-        result.equivalent = streakCal?.totalCal
-          ? `~${streakCal.totalCal.toLocaleString()} kcal burned across your ${currentStreak}-day streak (${streakCal.totalDistance.toFixed(1)} mi total${stepsNote}).`
-          : `About ${estimateCaloriesBurned(habit, projected30, (habit.est_minutes || 10) * 30).toLocaleString()} kcal projected over 30 days${stepsNote}.`;
+        const loggedCal = result.streakCalorieDetail;
+        result.equivalent = loggedCal?.totalCal
+          ? `~${loggedCal.totalCal.toLocaleString()} kcal burned from ${formatVal(totalLogged)} logged.`
+          : `About ${estimateCaloriesBurned(habit, projected30, (habit.est_minutes || 10) * 30).toLocaleString()} kcal projected over 30 days.`;
       } else {
         result.equivalent = `Based on your logged ${habit.unit || 'values'}, not streak guesses.`;
       }
@@ -9517,8 +9581,7 @@
       const habit = state.habits.find(h => h.id === habitId);
       if (!habit) return;
       
-      const streak = computeCurrentStreak(habitId);
-      const proj = getProjections(habit, streak);
+      const proj = getProjections(habit, computeCurrentStreak(habitId));
       
       const panel = document.getElementById('projection-content');
       panel.classList.remove('hidden');
@@ -9528,16 +9591,10 @@
       const metricLogger = isQuantitativeHabit(habit) ? renderProjectionMetricLogger(habit) : '';
       const showFatInsight = getHabitMetricType(habit) === 'miles' || getHabitMetricType(habit) === 'steps';
       const fatInsightHtml = showFatInsight ? renderFatCalorieInsight(proj.fatInsightKcal || 0) : '';
-      const streakBadge = getStreakBadge(streak);
-      const streakBadgeBlock = streakBadge
-        ? `<div class="mb-2">${renderStreakBadgeHtml(streakBadge, { size: 'lg' })}${renderStreakBadgeProgress(streak)}</div>`
-        : (streak === 1 ? `<div class="text-[10px] text-rhythm-muted mb-2">1-day streak — hit day 2 for your first badge</div>` : '');
 
       if (!proj.canProject) {
         panel.innerHTML = `
           <div class="font-semibold text-base mb-1">${proj.title}</div>
-          ${streakBadgeBlock}
-          <div class="text-sm text-rhythm-muted mb-2">${proj.streak} day streak</div>
           <div class="text-xs bg-rhythm-raised px-3 py-3 rounded-2xl text-rhythm-muted leading-relaxed">${proj.message}</div>
           ${fatInsightHtml}
           ${metricLogger}
@@ -9550,8 +9607,7 @@
 
       panel.innerHTML = `
         <div class="font-semibold text-base mb-1">${proj.title}</div>
-        ${streakBadgeBlock}
-        <div class="text-xs text-rhythm-muted mb-3">${proj.streak} day streak · data-driven forecast</div>
+        <div class="text-xs text-rhythm-muted mb-3">Last 30 days · data-driven forecast</div>
         
         <div class="space-y-2 text-sm">
           ${proj.metrics.map(m => `
