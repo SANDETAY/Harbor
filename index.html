@@ -1315,7 +1315,8 @@
       pointer-events: none;
     }
 
-    .cal-time-select {
+    .cal-time-select,
+    .cal-time-input {
       appearance: none;
       background: var(--rhythm-raised);
       border: 1px solid var(--rhythm-border);
@@ -1327,6 +1328,32 @@
       text-align: center;
       flex: 1;
       min-width: 0;
+      font-variant-numeric: tabular-nums;
+      outline: none;
+    }
+
+    .cal-time-input:focus {
+      border-color: var(--rhythm-primary);
+    }
+
+    .cal-time-fields {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .cal-time-sep {
+      color: var(--rhythm-muted);
+      font-weight: 600;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .cal-time-ampm {
+      max-width: 4.25rem;
+      flex: 0 0 4.25rem;
+      text-transform: uppercase;
     }
 
     .cal-format-chip {
@@ -5980,7 +6007,7 @@
 
     function parseEventTimeInput(raw) {
       const trimmed = (raw || '').trim();
-      const match = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+      const match = trimmed.match(/^(\d{1,2}):(\d{1,2})$/);
       if (!match) return null;
       const h = parseInt(match[1], 10);
       const m = parseInt(match[2], 10);
@@ -5988,12 +6015,21 @@
       return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     }
 
+    function normalizeAmpmInput(val) {
+      const v = (val || '').trim().toUpperCase();
+      if (!v) return 'AM';
+      if (v === 'A' || v === 'AM' || v.startsWith('AM')) return 'AM';
+      if (v === 'P' || v === 'PM' || v.startsWith('PM')) return 'PM';
+      return null;
+    }
+
     function parseEventTimeFromPicker(hour12, minute, ampm) {
-      const h12 = parseInt(hour12, 10);
-      const m = parseInt(minute, 10);
-      if (!h12 || h12 < 1 || h12 > 12 || isNaN(m) || m < 0 || m > 59) return null;
+      const h12 = parseInt(String(hour12 || '').trim(), 10);
+      const m = parseInt(String(minute || '').trim(), 10);
+      const meridiem = normalizeAmpmInput(ampm);
+      if (!h12 || h12 < 1 || h12 > 12 || isNaN(m) || m < 0 || m > 59 || !meridiem) return null;
       let h24 = h12 % 12;
-      if ((ampm || 'AM').toUpperCase() === 'PM') h24 += 12;
+      if (meridiem === 'PM') h24 += 12;
       return `${String(h24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     }
 
@@ -6021,40 +6057,86 @@
     }
 
     function buildEventTimePickerHtml(format, defaults) {
-      const minuteOptions = ['00', '15', '30', '45'].map(v =>
-        `<option value="${v}"${v === defaults.minute ? ' selected' : ''}>${v}</option>`
-      ).join('');
+      const hour = defaults.hour || '';
+      const minute = defaults.minute || '';
+      const ampm = defaults.ampm || 'AM';
 
       if (format === '24h') {
-        const hourOptions = Array.from({ length: 24 }, (_, i) => {
-          const v = String(i).padStart(2, '0');
-          return `<option value="${v}"${v === defaults.hour ? ' selected' : ''}>${v}</option>`;
-        }).join('');
         return `
-          <div id="cal-ev-time-fields" class="flex gap-2">
-            <select id="cal-ev-hour" class="cal-time-select" aria-label="Hour">${hourOptions}</select>
-            <select id="cal-ev-minute" class="cal-time-select" aria-label="Minute">${minuteOptions}</select>
+          <div id="cal-ev-time-fields" class="cal-time-fields">
+            <input id="cal-ev-hour" class="cal-time-input" type="text" inputmode="numeric" pattern="[0-9]*"
+              maxlength="2" aria-label="Hour" value="${hour}" placeholder="HH" autocomplete="off">
+            <span class="cal-time-sep" aria-hidden="true">:</span>
+            <input id="cal-ev-minute" class="cal-time-input" type="text" inputmode="numeric" pattern="[0-9]*"
+              maxlength="2" aria-label="Minute" value="${minute}" placeholder="MM" autocomplete="off">
           </div>`;
       }
 
-      const hourOptions = Array.from({ length: 12 }, (_, i) => {
-        const v = String(i + 1);
-        return `<option value="${v}"${v === defaults.hour ? ' selected' : ''}>${v}</option>`;
-      }).join('');
       return `
-        <div id="cal-ev-time-fields" class="flex gap-2">
-          <select id="cal-ev-hour" class="cal-time-select" aria-label="Hour">${hourOptions}</select>
-          <select id="cal-ev-minute" class="cal-time-select" aria-label="Minute">${minuteOptions}</select>
-          <select id="cal-ev-ampm" class="cal-time-select" aria-label="AM or PM">
-            <option value="AM"${defaults.ampm === 'AM' ? ' selected' : ''}>AM</option>
-            <option value="PM"${defaults.ampm === 'PM' ? ' selected' : ''}>PM</option>
-          </select>
+        <div id="cal-ev-time-fields" class="cal-time-fields">
+          <input id="cal-ev-hour" class="cal-time-input" type="text" inputmode="numeric" pattern="[0-9]*"
+            maxlength="2" aria-label="Hour" value="${hour}" placeholder="h" autocomplete="off">
+          <span class="cal-time-sep" aria-hidden="true">:</span>
+          <input id="cal-ev-minute" class="cal-time-input" type="text" inputmode="numeric" pattern="[0-9]*"
+            maxlength="2" aria-label="Minute" value="${minute}" placeholder="mm" autocomplete="off">
+          <input id="cal-ev-ampm" class="cal-time-input cal-time-ampm" type="text"
+            maxlength="2" aria-label="AM or PM" value="${ampm}" placeholder="AM" autocomplete="off">
         </div>`;
     }
 
+    function wireEventTimeFields(modal) {
+      const fields = modal.querySelector('#cal-ev-time-fields');
+      if (!fields) return;
+
+      const hourEl = fields.querySelector('#cal-ev-hour');
+      const minuteEl = fields.querySelector('#cal-ev-minute');
+      const ampmEl = fields.querySelector('#cal-ev-ampm');
+      const durationEl = modal.querySelector('#cal-ev-duration');
+
+      const bindNumericField = (el, maxLen, nextEl) => {
+        if (!el) return;
+        el.addEventListener('input', () => {
+          el.value = el.value.replace(/\D/g, '').slice(0, maxLen);
+          if (el.value.length >= maxLen && nextEl) nextEl.focus();
+        });
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowRight' && el.selectionStart === el.value.length && nextEl) {
+            e.preventDefault();
+            nextEl.focus();
+          }
+          if (e.key === 'ArrowLeft' && el.selectionStart === 0) {
+            const prev = el === minuteEl ? hourEl : el === ampmEl ? minuteEl : null;
+            if (prev) {
+              e.preventDefault();
+              prev.focus();
+            }
+          }
+        });
+      };
+
+      bindNumericField(hourEl, 2, minuteEl);
+      bindNumericField(minuteEl, 2, ampmEl || durationEl);
+
+      if (ampmEl) {
+        ampmEl.addEventListener('input', () => {
+          ampmEl.value = ampmEl.value.replace(/[^aApPmM]/g, '').slice(0, 2).toUpperCase();
+        });
+        ampmEl.addEventListener('blur', () => {
+          const norm = normalizeAmpmInput(ampmEl.value);
+          if (norm) ampmEl.value = norm;
+        });
+        ampmEl.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowLeft' && ampmEl.selectionStart === 0 && minuteEl) {
+            e.preventDefault();
+            minuteEl.focus();
+          }
+        });
+      }
+    }
+
     function readEventTimePickerValues(modal, format) {
-      const hour = modal.querySelector('#cal-ev-hour')?.value;
-      const minute = modal.querySelector('#cal-ev-minute')?.value;
+      const hour = modal.querySelector('#cal-ev-hour')?.value?.trim();
+      const minute = modal.querySelector('#cal-ev-minute')?.value?.trim();
       if (format === '24h') {
         return parseEventTimeInput(`${hour}:${minute}`);
       }
@@ -6077,7 +6159,10 @@
           if (ampm) defaults.ampm = ampm;
         }
         const container = modal.querySelector('#cal-ev-time-picker');
-        if (container) container.innerHTML = buildEventTimePickerHtml(calState.timeFormat, defaults);
+        if (container) {
+          container.innerHTML = buildEventTimePickerHtml(calState.timeFormat, defaults);
+          wireEventTimeFields(modal);
+        }
       };
 
       chips.forEach(chip => {
