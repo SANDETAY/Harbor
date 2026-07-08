@@ -81,6 +81,18 @@ def run_tests():
         else:
             fail("smart banner visible", "banner hidden")
 
+        # --- Simulation 2b: Welcome spotlight after onboarding ---
+        spotlight = page.locator("#welcome-spotlight-overlay.is-active")
+        page.wait_for_timeout(400)
+        if spotlight.count():
+            ok("welcome spotlight visible after onboarding")
+            skip_btn = page.locator("button", has_text="Skip for now")
+            if skip_btn.count() and skip_btn.is_visible():
+                skip_btn.click()
+                page.wait_for_timeout(400)
+        else:
+            fail("welcome spotlight visible", "spotlight not active")
+
         # --- Simulation 3: Rhythm Brief launcher ---
         brief = page.locator("#rhythm-brief-launcher")
         page.wait_for_timeout(500)

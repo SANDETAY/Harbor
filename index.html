@@ -11,12 +11,17 @@
   <meta name="theme-color" content="#0F1419">
   <meta name="description" content="Rhythm — your life management app. Energy-based tasks, bills, grocery, streaks, and smart suggestions. Design preview for testers.">
   <meta name="robots" content="noindex, nofollow">
-  <meta property="og:title" content="Rhythm — Life Management Preview">
-  <meta property="og:description" content="Test the Rhythm design: tasks, bills, grocery, streaks, and smart suggestions in one app.">
-  <meta property="og:image" content="rythm-r-mark.png">
+  <meta property="og:title" content="Rhythm — Life Management">
+  <meta property="og:description" content="Rhythm — energy-based tasks, bills, grocery, streaks, and smart suggestions in one app.">
+  <meta property="og:site_name" content="Rhythm">
+  <meta property="og:image" content="https://sandetay.github.io/Rythm/rhythm-icon-512.png">
+  <meta property="og:image:alt" content="Rhythm app logo">
   <meta property="og:type" content="website">
-  <link rel="icon" type="image/png" href="rythm-r-mark.png">
-  <link rel="apple-touch-icon" href="rythm-r-mark.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Rhythm — Life Management">
+  <meta name="twitter:image" content="https://sandetay.github.io/Rythm/rhythm-icon-512.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="rhythm-favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="rhythm-apple-touch.png">
 
   <link rel="manifest" href="manifest.webmanifest">
   <title>Rhythm • One App for the Whole Day</title>
@@ -1223,6 +1228,47 @@
       pointer-events: none;
     }
 
+    .welcome-spotlight-overlay {
+      display: none;
+      pointer-events: none;
+    }
+
+    .welcome-spotlight-overlay.is-active {
+      display: contents;
+      pointer-events: none;
+    }
+
+    .welcome-spotlight-card {
+      position: fixed;
+      left: max(1rem, env(safe-area-inset-left, 0px));
+      right: max(1rem, env(safe-area-inset-right, 0px));
+      max-width: 22rem;
+      margin: 0 auto;
+      background: var(--rhythm-surface);
+      border: 1px solid var(--rhythm-border);
+      border-radius: 1.1rem;
+      padding: 0.85rem 1rem;
+      box-shadow: var(--rhythm-shadow-md);
+      z-index: 187;
+      pointer-events: auto;
+      top: calc(0.75rem + var(--safe-top));
+    }
+
+    #welcome-spotlight-highlight {
+      position: fixed;
+      border-radius: 0.85rem;
+      box-shadow: 0 0 0 9999px rgba(15, 20, 25, 0.82), 0 0 0 2px rgba(91, 184, 168, 0.9), var(--rhythm-glow-primary);
+      transition: top 0.32s var(--rhythm-ease-out), left 0.32s var(--rhythm-ease-out), width 0.32s var(--rhythm-ease-out), height 0.32s var(--rhythm-ease-out);
+      pointer-events: none;
+      z-index: 186;
+    }
+
+    #smart-cta.welcome-spotlight-target {
+      position: relative;
+      z-index: 188 !important;
+      pointer-events: auto !important;
+    }
+
     .tutorial-highlight {
       position: fixed;
       border-radius: 1rem;
@@ -1987,6 +2033,12 @@
         width: 100%;
       }
 
+      #library-filters {
+        overflow-x: visible;
+        flex-wrap: wrap;
+        width: 100%;
+      }
+
       #library-list {
         display: flex;
         flex-wrap: wrap;
@@ -1994,9 +2046,23 @@
         overflow-x: visible;
       }
 
+      #library-list.library-filtered {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      }
+
       .library-column {
         flex: 1 1 220px;
         max-width: none;
+      }
+
+      #library-list.library-filtered .library-column {
+        flex: none;
+        max-width: none;
+      }
+
+      #library-list.library-filtered .library-column-tasks {
+        max-height: none;
       }
 
       .fixed.inset-0.flex.items-end {
@@ -2229,7 +2295,7 @@
                   <div class="flex-1 min-w-0">
                     <div class="font-semibold text-sm">Easy</div>
                     <div class="text-xs text-rhythm-muted leading-snug">A few flexible things I naturally do most days.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1 font-medium">Save · Walk · Read · Bed</div>
+                    <div class="text-[10px] text-rhythm-primary-light mt-1 font-medium">Save · Walk · Read</div>
                   </div>
                   <i class="fa-solid fa-chevron-right text-rhythm-muted/60 text-[10px]"></i>
                 </div>
@@ -2241,7 +2307,7 @@
                   <div class="flex-1 min-w-0">
                     <div class="font-semibold text-sm">Moderate</div>
                     <div class="text-xs text-rhythm-muted leading-snug">A reliable list of my usual daily tasks.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1 font-medium">Save · Walk · Read · Bed</div>
+                    <div class="text-[10px] text-rhythm-primary-light mt-1 font-medium">Save · Walk · Read</div>
                   </div>
                   <i class="fa-solid fa-chevron-right text-rhythm-muted/60 text-[10px]"></i>
                 </div>
@@ -2253,7 +2319,7 @@
                   <div class="flex-1 min-w-0">
                     <div class="font-semibold text-sm">Strict</div>
                     <div class="text-xs text-rhythm-muted leading-snug">Time-boxed schedule to stay on track.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1 font-medium">Save · Walk · Read · Bed</div>
+                    <div class="text-[10px] text-rhythm-primary-light mt-1 font-medium">Save · Walk · Read</div>
                   </div>
                   <i class="fa-solid fa-chevron-right text-rhythm-muted/60 text-[10px]"></i>
                 </div>
@@ -2541,6 +2607,7 @@
               class="input-polish w-full bg-rhythm-raised/90 border border-rhythm-border focus:border-rhythm-primary rounded-2xl py-2.5 pl-8 pr-3 text-xs placeholder:text-rhythm-muted outline-none"
               placeholder="Quick search...">
           </div>
+          <div id="library-filters" class="library-filters library-filters-scroll mb-3 -mx-1 px-1"></div>
         </div>
         
         <div id="library-list" class="pr-1 pb-4"></div>
@@ -2557,6 +2624,15 @@
       </div><!-- /app-content-wrap -->
     </div><!-- /app-frame -->
   </div><!-- /site-root -->
+
+  <!-- Post-onboarding welcome spotlight -->
+  <div id="welcome-spotlight-overlay" class="welcome-spotlight-overlay" aria-hidden="true">
+    <div id="welcome-spotlight-highlight" class="hidden"></div>
+    <div id="welcome-spotlight-card" class="welcome-spotlight-card hidden" role="dialog" aria-modal="true">
+      <div class="text-xs text-rhythm-muted leading-relaxed mb-2.5">Your starter tasks are ready in <strong class="text-rhythm-text">Today</strong>. Tap <strong class="text-rhythm-primary-light">Learn More</strong> below for a quick guided tour.</div>
+      <button type="button" onclick="skipWelcomeSpotlight()" class="w-full py-2 rounded-xl bg-rhythm-raised border border-rhythm-border text-[11px] font-medium text-rhythm-muted">Skip for now</button>
+    </div>
+  </div>
 
   <!-- App tutorial overlay (on body — avoids mobile clipping from nested overflow/transform) -->
   <div id="tutorial-overlay" class="tutorial-overlay" aria-hidden="true">
@@ -3603,6 +3679,47 @@
       const todayLog = getTodaysMetricLog(habit);
       const recent = collectMetricDataPoints(habit).slice(-5).reverse();
       const inputId = `proj-metric-${habit.id}`;
+      const manualId = `proj-manual-${habit.id}`;
+      const syncedToday = hasSyncedToday(habit.id);
+
+      if (isPhysicalActivity(habit)) {
+        return `
+          <div class="mt-4 pt-3 border-t border-rhythm-border">
+            <div class="text-[10px] text-rhythm-muted mb-2 leading-snug">Sync walking, running, swimming, and other workouts from your phone or wearable — projections use real activity data.</div>
+            <button type="button" data-sync-activity="${habit.id}"
+              class="w-full py-3 rounded-2xl bg-sky-600 active:bg-sky-500 text-white text-sm font-semibold flex items-center justify-center gap-2">
+              <i class="fa-solid fa-rotate"></i>
+              ${syncedToday ? 'Re-sync activity' : 'Sync activity'}
+            </button>
+            ${todayLog ? `<div class="text-[10px] text-rhythm-muted mt-2">Today: <strong class="text-rhythm-text">${todayLog.value} ${meta.unitLabel}</strong> <span class="opacity-70">(${todayLog.source || 'logged'})</span></div>` : ''}
+            <details class="mt-3 group">
+              <summary class="text-[10px] text-rhythm-muted cursor-pointer select-none list-none flex items-center gap-1.5">
+                <i class="fa-solid fa-chevron-right text-[8px] transition-transform group-open:rotate-90"></i>
+                Enter value manually
+              </summary>
+              <div class="mt-2 flex gap-2">
+                <input id="${manualId}" type="number" min="0" step="${meta.step}" value="${todayLog?.value ?? ''}" placeholder="${meta.placeholder}"
+                  class="flex-1 bg-rhythm-raised/80 border border-rhythm-border/80 focus:border-rhythm-primary rounded-xl px-3 py-2 text-xs outline-none text-rhythm-text">
+                <button type="button" data-save-metric="${habit.id}" data-metric-input="${manualId}"
+                  class="px-3 py-2 rounded-xl bg-rhythm-raised border border-rhythm-border text-[11px] font-medium text-rhythm-muted">Save</button>
+              </div>
+            </details>
+            ${recent.length ? `
+              <div class="mt-2.5">
+                <div class="text-[10px] text-rhythm-muted mb-1">Recent logs</div>
+                <div class="space-y-1">
+                  ${recent.map(e => `
+                    <div class="flex justify-between text-[10px] bg-rhythm-raised/60 rounded-xl px-2.5 py-1.5">
+                      <span class="text-rhythm-muted">${formatDateShort(e.date)}</span>
+                      <span class="font-semibold text-rhythm-text tabular-nums">${e.value} ${meta.unitLabel}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
 
       return `
         <div class="mt-4 pt-3 border-t border-rhythm-border">
@@ -3640,15 +3757,20 @@
           saveMetricFromStreaks(btn.dataset.saveMetric, input?.value);
         };
       });
-      const input = panel.querySelector(`#proj-metric-${habitId}`);
-      if (input) {
-        input.onkeydown = (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            saveMetricFromStreaks(habitId, input.value);
-          }
-        };
-      }
+      panel.querySelectorAll('[data-sync-activity]').forEach(btn => {
+        btn.onclick = () => showDeviceSyncModal(btn.dataset.syncActivity);
+      });
+      ['proj-metric', 'proj-manual'].forEach(prefix => {
+        const input = panel.querySelector(`#${prefix}-${habitId}`);
+        if (input) {
+          input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              saveMetricFromStreaks(habitId, input.value);
+            }
+          };
+        }
+      });
     }
 
     function getUserProfile() {
@@ -5016,17 +5138,20 @@
       
       // Update UI buttons
       const energyBase = 'energy-btn flex-1 py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-x-2 active:scale-[0.985] transition-all';
-      const energyIcons = { 1: 'fa-battery-quarter text-rhythm-low', 2: 'fa-battery-half text-rhythm-med', 3: 'fa-battery-full text-rhythm-primary-light' };
+      const energyIconTypes = { 1: 'fa-battery-quarter', 2: 'fa-battery-half', 3: 'fa-battery-full' };
+      const energyIconColors = { 1: 'text-rhythm-low', 2: 'text-rhythm-med', 3: 'text-rhythm-primary-light' };
       const energyLabels = { 1: 'Low', 2: 'Medium', 3: 'High' };
       [1, 2, 3].forEach(l => {
         const el = document.getElementById(`energy-${l}`);
         if (!el) return;
-        if (l === level) {
+        const selected = l === level;
+        if (selected) {
           el.className = `${energyBase} ${l === 1 ? 'bg-rhythm-low text-white border border-rhythm-low' : l === 2 ? 'bg-rhythm-med text-white border border-rhythm-med' : 'bg-rhythm-high text-white border border-rhythm-high'}`;
         } else {
           el.className = `${energyBase} bg-rhythm-surface hover:bg-rhythm-raised border border-rhythm-border`;
         }
-        el.innerHTML = `<i class="fa-solid ${energyIcons[l]} text-base"></i><span>${energyLabels[l]}</span>`;
+        const iconColor = selected ? 'text-white' : energyIconColors[l];
+        el.innerHTML = `<i class="fa-solid ${energyIconTypes[l]} ${iconColor} text-base"></i><span>${energyLabels[l]}</span>`;
       });
       
       const labels = {1: 'Low - Small Wins', 2: 'Medium - Balanced', 3: 'High - Go Big'};
@@ -8436,6 +8561,43 @@
       return getNextDueDate(habit) === dateStr;
     }
 
+    function isTrivialBriefTask(habit) {
+      const mins = habit.est_minutes ?? 10;
+      const diff = habit.difficulty ?? 2;
+      const title = (habit.title || '').toLowerCase();
+      if (/\$5|save \$|read 10|10 page|walk 5000|make bed|drink water|take vitamin/i.test(title)) return true;
+      if (isDailyTask(habit) && mins <= 15 && diff <= 2) return true;
+      return false;
+    }
+
+    function isSignificantBriefTask(habit, mode) {
+      if (mode === 'day') return true;
+      if (isTrivialBriefTask(habit)) return false;
+      if ((habit.interval_days || 0) >= 7) return true;
+      if ((habit.est_minutes || 0) >= 30) return true;
+      if ((habit.difficulty || 2) >= 3) return true;
+      if (/maintenance|mow|lawn|yard|gutter|hvac|filter|service|deep clean|organize|declutter/i.test(habit.title || '')) return true;
+      if (/maintenance|home/i.test(habit.category || '')) return true;
+      return false;
+    }
+
+    function getBriefAlsoOnDeck(brief) {
+      const doFirstIds = new Set(brief.doFirst.map(t => t.habit.id));
+      let pool = brief.tasks.filter(t => !doFirstIds.has(t.habit.id));
+
+      if (brief.mode === 'week') {
+        const seen = new Set();
+        pool = pool.filter(t => {
+          if (seen.has(t.habit.id)) return false;
+          seen.add(t.habit.id);
+          return isSignificantBriefTask(t.habit, 'week');
+        });
+        return pool.slice(0, 8);
+      }
+
+      return pool.slice(3, brief.mode === 'day' ? 8 : 12);
+    }
+
     function collectBriefTasks(mode) {
       const today = todayStr();
       const items = [];
@@ -8448,13 +8610,14 @@
         const { start, end } = getWeekBounds(today);
         const cursor = new Date(start + 'T12:00:00');
         const endDate = new Date(end + 'T12:00:00');
+        const seen = new Set();
         while (cursor <= endDate) {
           const ds = dateStrLocal(cursor);
           state.habits.forEach(h => {
-            if (isHabitScheduledOn(h, ds)) {
-              const daysUntil = Math.round((cursor - new Date(today + 'T12:00:00')) / 86400000);
-              items.push({ habit: h, date: ds, daysUntil });
-            }
+            if (!isHabitScheduledOn(h, ds) || seen.has(h.id)) return;
+            seen.add(h.id);
+            const daysUntil = Math.round((cursor - new Date(today + 'T12:00:00')) / 86400000);
+            items.push({ habit: h, date: ds, daysUntil });
           });
           cursor.setDate(cursor.getDate() + 1);
         }
@@ -8644,8 +8807,9 @@
           : '<div class="rhythm-brief-empty">No calendar events loaded — add events in Life → Schedule or import a calendar.</div>';
       }
 
-      const tasksHtml = brief.tasks.length > 3
-        ? brief.tasks.slice(3, mode === 'day' ? 8 : 12).map(item => renderBriefTaskItem(item, null)).join('')
+      const deckTasks = getBriefAlsoOnDeck(brief);
+      const tasksHtml = deckTasks.length
+        ? deckTasks.map(item => renderBriefTaskItem(item, null)).join('')
         : '';
 
       const billsHtml = brief.bills.length
@@ -9363,7 +9527,7 @@
         score: 100,
         type: 'welcome',
         cta: 'Learn more',
-        reason: `Welcome to Rhythm. Your four starter tasks are in <strong>Today</strong> — tap the pulsing <strong>Learn more</strong> button below to start your guided tour.`
+        reason: `Welcome to Rhythm. To start a guided tutorial tap <strong>Learn More</strong> below.`
       };
     }
 
@@ -9579,19 +9743,18 @@
       {
         id: 'complete-task',
         title: 'Complete a task',
-        body: 'Try it now — tap the circle on any of your starter tasks to mark it done.',
+        body: 'Try it Now — Tap to complete a Task. When the task is complete it will show in your <strong>Streaks</strong> tab.',
         target: () => getTutorialTaskCard(),
         waitFor: 'habit-complete',
         interactive: true,
         prepare: () => switchTab('today')
       },
       {
-        id: 'delete-task',
-        title: 'Remove a task',
-        body: 'Tap <strong>×</strong> on any remaining task to remove it from Today. You can always add tasks back from the Library.',
-        target: () => document.querySelector('#task-list .habit-card[data-feed-type="habit"] [title="Remove task"]')?.closest('.habit-card')
-          || getTutorialTaskCard(),
-        interactive: true,
+        id: 'edit-delete-task',
+        title: 'Edit or remove tasks',
+        body: 'You can tap <strong>×</strong> to remove a task or open one to edit details — always add habits back from the Library. Moving on to <strong>Streaks</strong> next…',
+        target: () => getTutorialTaskCard(),
+        autoAdvanceMs: 3200,
         prepare: () => switchTab('today')
       },
       {
@@ -9668,11 +9831,15 @@
         interactive: true,
         prepare: () => {
           switchTab('today');
-          hideTutorialSmartBanner();
           updateRhythmBriefLauncher();
+          requestAnimationFrame(() => requestAnimationFrame(() => hideTutorialSmartBanner()));
         }
       }
     ];
+
+    let welcomeSpotlightActive = false;
+    let welcomeSpotlightSyncBound = false;
+    let tutorialAutoAdvanceTimer = null;
 
     let tutorialTargetEl = null;
     let tutorialWaitSatisfied = false;
@@ -9846,6 +10013,95 @@
       }
     }
 
+    function positionWelcomeSpotlightHighlight() {
+      const highlight = document.getElementById('welcome-spotlight-highlight');
+      const cta = document.getElementById('smart-cta');
+      if (!highlight || !cta || !welcomeSpotlightActive) return;
+
+      const r = normalizeTutorialRect(cta.getBoundingClientRect());
+      const vv = getTutorialViewport();
+      const pad = window.innerWidth < 768 ? 5 : 6;
+      const margin = window.innerWidth < 768 ? 4 : 8;
+
+      let top = r.top - pad;
+      let left = r.left - pad;
+      let width = r.width + pad * 2;
+      let height = r.height + pad * 2;
+
+      top = Math.max(vv.top + margin, top);
+      left = Math.max(vv.left + margin, left);
+      if (left + width > vv.left + vv.width - margin) width = Math.max(24, vv.left + vv.width - margin - left);
+      if (top + height > vv.top + vv.height - margin) height = Math.max(24, vv.top + vv.height - margin - top);
+
+      highlight.classList.remove('hidden');
+      highlight.style.top = `${top}px`;
+      highlight.style.left = `${left}px`;
+      highlight.style.width = `${width}px`;
+      highlight.style.height = `${height}px`;
+      cta.classList.add('welcome-spotlight-target');
+    }
+
+    function hideWelcomeSpotlight() {
+      welcomeSpotlightActive = false;
+      const overlay = document.getElementById('welcome-spotlight-overlay');
+      const highlight = document.getElementById('welcome-spotlight-highlight');
+      const card = document.getElementById('welcome-spotlight-card');
+      if (overlay) {
+        overlay.classList.remove('is-active');
+        overlay.setAttribute('aria-hidden', 'true');
+      }
+      if (highlight) highlight.classList.add('hidden');
+      if (card) card.classList.add('hidden');
+      document.getElementById('smart-cta')?.classList.remove('welcome-spotlight-target');
+    }
+
+    function onWelcomeSpotlightSync() {
+      if (!welcomeSpotlightActive) return;
+      positionWelcomeSpotlightHighlight();
+    }
+
+    function bindWelcomeSpotlightSync() {
+      if (welcomeSpotlightSyncBound) return;
+      welcomeSpotlightSyncBound = true;
+      window.addEventListener('resize', onWelcomeSpotlightSync, { passive: true });
+      window.addEventListener('scroll', onWelcomeSpotlightSync, { passive: true, capture: true });
+      window.visualViewport?.addEventListener('resize', onWelcomeSpotlightSync, { passive: true });
+      window.visualViewport?.addEventListener('scroll', onWelcomeSpotlightSync, { passive: true });
+      document.getElementById('app-scroll')?.addEventListener('scroll', onWelcomeSpotlightSync, { passive: true });
+    }
+
+    function showWelcomeSpotlight() {
+      if (state.settings.tutorialActive || !state.settings.showWelcomeBanner || currentTab !== 'today') {
+        hideWelcomeSpotlight();
+        return;
+      }
+
+      const banner = document.getElementById('smart-banner');
+      const cta = document.getElementById('smart-cta');
+      if (!banner || banner.classList.contains('hidden') || !cta) {
+        hideWelcomeSpotlight();
+        return;
+      }
+
+      welcomeSpotlightActive = true;
+      bindWelcomeSpotlightSync();
+      const overlay = document.getElementById('welcome-spotlight-overlay');
+      const card = document.getElementById('welcome-spotlight-card');
+      if (overlay) {
+        overlay.classList.add('is-active');
+        overlay.setAttribute('aria-hidden', 'false');
+      }
+      if (card) card.classList.remove('hidden');
+      requestAnimationFrame(() => positionWelcomeSpotlightHighlight());
+    }
+
+    function skipWelcomeSpotlight() {
+      hideWelcomeSpotlight();
+      state.settings.showWelcomeBanner = false;
+      saveState();
+      updateSmartBanner();
+    }
+
     function showTutorialSmartBanner() {
       const banner = document.getElementById('smart-banner');
       if (!banner) return;
@@ -9890,6 +10146,11 @@
     function renderTutorialStep(stepIndex) {
       const step = APP_TUTORIAL_STEPS[stepIndex];
       if (!step) return completeAppTutorial();
+
+      if (tutorialAutoAdvanceTimer) {
+        clearTimeout(tutorialAutoAdvanceTimer);
+        tutorialAutoAdvanceTimer = null;
+      }
 
       state.settings.tutorialStep = stepIndex;
       tutorialWaitSatisfied = false;
@@ -9952,13 +10213,26 @@
               ? 'Waiting for you…'
               : (stepIndex === APP_TUTORIAL_STEPS.length - 1 ? 'Finish tour' : 'Next');
           }
+
+          if (step.autoAdvanceMs) {
+            tutorialAutoAdvanceTimer = setTimeout(() => {
+              if (!state.settings.tutorialActive) return;
+              if (APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id !== step.id) return;
+              nextTutorialStep();
+            }, step.autoAdvanceMs);
+          }
         }, scrollTarget ? scrollDelay : 0);
       };
+
+      if (step.id === 'rhythm-brief') {
+        updateRhythmBriefLauncher();
+      }
 
       requestAnimationFrame(() => requestAnimationFrame(layoutStep));
     }
 
     function startAppTutorial() {
+      hideWelcomeSpotlight();
       ensureStarterRoutineTasks();
       state.settings.showWelcomeBanner = false;
       state.settings.tutorialActive = true;
@@ -9972,6 +10246,12 @@
     }
 
     function nextTutorialStep() {
+      const currentId = APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id;
+      if (currentId === 'energy-smart') {
+        updateRhythmBriefLauncher();
+        hideTutorialSmartBanner();
+      }
+
       const next = (state.settings.tutorialStep || 0) + 1;
       if (next >= APP_TUTORIAL_STEPS.length) {
         completeAppTutorial();
@@ -9993,6 +10273,11 @@
       unbindTutorialViewportSync();
       clearTutorialHighlight();
       hideTutorialSmartBanner();
+      hideWelcomeSpotlight();
+      if (tutorialAutoAdvanceTimer) {
+        clearTimeout(tutorialAutoAdvanceTimer);
+        tutorialAutoAdvanceTimer = null;
+      }
       tutorialWaitSatisfied = false;
       const overlay = document.getElementById('tutorial-overlay');
       const card = document.getElementById('tutorial-card');
@@ -10097,11 +10382,17 @@
         banner.dataset.suggestionBill = suggestion.bill ? suggestion.bill.id : '';
         banner.dataset.suggestionTip = suggestion.tipId || '';
         banner.dataset.suggestionAction = suggestion.action || '';
+        if (suggestion.type === 'welcome') {
+          requestAnimationFrame(() => showWelcomeSpotlight());
+        } else {
+          hideWelcomeSpotlight();
+        }
       } else {
         banner.classList.add('hidden');
         banner.classList.remove('smart-banner-welcome-nudge');
         if (ctaEl) ctaEl.classList.remove('welcome-cta-pulse');
         resetSmartBannerDatasets(banner);
+        hideWelcomeSpotlight();
         if (billFootnoteEl) {
           billFootnoteEl.textContent = '';
           billFootnoteEl.classList.add('hidden');
@@ -10261,6 +10552,7 @@
       const type = banner?.dataset.suggestionType;
 
       if (state.settings.showWelcomeBanner) {
+        hideWelcomeSpotlight();
         state.settings.showWelcomeBanner = false;
         saveState();
         updateSmartBanner();
@@ -10614,6 +10906,7 @@
 
     function switchLibraryFilter(filterId) {
       currentLibraryFilter = filterId;
+      renderLibraryFilters();
       renderLibrary();
     }
 
@@ -10853,6 +11146,7 @@
 
       const tasks = getFilteredLibraryTasks();
       container.innerHTML = '';
+      container.classList.toggle('library-filtered', currentLibraryFilter !== 'all');
 
       if (statsEl) {
         const added = state.habits.filter(h => commonTasks.some(t => t.id === h.id)).length;
@@ -11895,8 +12189,7 @@
     const STARTER_ROUTINE_TASKS = [
       { title: "$5 in savings every day", category: "personal", est_minutes: 0, difficulty: 1, target_value: 5, unit: "dollars" },
       { title: "Walk 5000 Steps", category: "health", est_minutes: 15, difficulty: 2, target_value: 5000, unit: "steps" },
-      { title: "Read 10 pages of a book", category: "mind", est_minutes: 15, difficulty: 2, target_value: 10, unit: "pages" },
-      { title: "Make your bed every morning", category: "home", est_minutes: 3, difficulty: 1 }
+      { title: "Read 10 pages of a book", category: "mind", est_minutes: 15, difficulty: 2, target_value: 10, unit: "pages" }
     ];
 
     const ROUTINE_TEMPLATES = {
@@ -11944,6 +12237,7 @@
       renderSchedule();
       renderSubscriptions();
       renderLibrary();
+      renderLibraryFilters();
       renderStreaks();
       updateSmartBanner();
       updateRhythmBriefLauncher();
@@ -12534,7 +12828,7 @@
       hideOnboardingOverlay();
       refreshAppAfterOnboarding();
 
-      showToast('Your four starter tasks are in Today — tap Learn more anytime for the guided tour.');
+      showToast('Your starter tasks are in Today — tap Learn More anytime for the guided tour.');
     }
 
     function hideSplash() {
@@ -12597,6 +12891,7 @@
         renderSchedule();
         renderSubscriptions();
         renderLibrary();
+        renderLibraryFilters();
         renderStreaks();
         updateSmartBanner();
         updateRhythmBriefLauncher();
