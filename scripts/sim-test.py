@@ -25,6 +25,19 @@ def fail(name, detail=""):
     print(f"  FAIL  {name}" + (f" — {detail}" if detail else ""))
 
 
+class ReuseHTTPServer(ThreadingHTTPServer):
+    allow_reuse_address = True
+
+
+def dismiss_welcome_spotlight(page):
+    skip_btn = page.locator("button", has_text="Skip for now")
+    if skip_btn.count() and skip_btn.is_visible():
+        skip_btn.click()
+        page.wait_for_timeout(350)
+        return True
+    return False
+
+
 def start_server():
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -33,7 +46,7 @@ def start_server():
         def log_message(self, *_):
             pass
 
-    httpd = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    httpd = ReuseHTTPServer(("127.0.0.1", PORT), Handler)
     thread = Thread(target=httpd.serve_forever, daemon=True)
     thread.start()
     return httpd
@@ -95,10 +108,7 @@ def run_tests():
         else:
             fail("welcome spotlight visible", "spotlight highlight not shown")
 
-        skip_btn = page.locator("button", has_text="Skip for now")
-        if skip_btn.count() and skip_btn.is_visible():
-            skip_btn.click()
-            page.wait_for_timeout(400)
+        if dismiss_welcome_spotlight(page):
             ok("welcome spotlight dismissible")
 
         # --- Simulation 3: Rhythm Brief launcher ---
@@ -181,6 +191,9 @@ def run_tests():
             fail("life schedule panel")
 
         # --- Simulation 9: Settings calendar connect UI ---
+        page.locator("#tab-today").click()
+        page.wait_for_timeout(400)
+        dismiss_welcome_spotlight(page)
         page.locator("button[aria-label='Settings']").click()
         page.wait_for_timeout(600)
         if page.locator("text=Google Calendar").count() > 0 or page.locator("text=Calendar").count() > 0:

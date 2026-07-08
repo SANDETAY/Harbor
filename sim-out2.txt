@@ -1,0 +1,44 @@
+Rhythm simulation tests
+Serving C:\Users\Taylor\Rythm on :8765
+Traceback (most recent call last):
+  File "C:\Users\Taylor\Rythm\scripts\sim-test.py", line 294, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\Taylor\Rythm\scripts\sim-test.py", line 279, in main
+    run_tests()
+    ~~~~~~~~~^^
+  File "C:\Users\Taylor\Rythm\scripts\sim-test.py", line 65, in run_tests
+    page.reload(wait_until="networkidle", timeout=60000)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Taylor\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\playwright\sync_api\_generated.py", line 9816, in reload
+    self._sync(
+    ~~~~~~~~~~^
+        self._impl_obj.reload(
+        ^^^^^^^^^^^^^^^^^^^^^^
+            timeout=to_milliseconds(timeout), waitUntil=wait_until
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        )
+        ^
+    )
+    ^
+  File "C:\Users\Taylor\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\playwright\_impl\_sync_base.py", line 115, in _sync
+    return task.result()
+           ~~~~~~~~~~~^^
+  File "C:\Users\Taylor\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\playwright\_impl\_page.py", line 568, in reload
+    await self._channel.send(
+    ...<3 lines>...
+    )
+  File "C:\Users\Taylor\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\playwright\_impl\_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\Taylor\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\playwright\_impl\_connection.py", line 563, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.reload: net::ERR_CONNECTION_RESET
+Call log:
+  - waiting for navigation until "networkidle"
+
+
+EXIT:1

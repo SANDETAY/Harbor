@@ -1251,7 +1251,8 @@
       box-shadow: var(--rhythm-shadow-md);
       z-index: 187;
       pointer-events: auto;
-      top: calc(0.75rem + var(--safe-top));
+      top: auto;
+      bottom: auto;
     }
 
     #welcome-spotlight-highlight {
@@ -10039,6 +10040,15 @@
       highlight.style.width = `${width}px`;
       highlight.style.height = `${height}px`;
       cta.classList.add('welcome-spotlight-target');
+
+      const card = document.getElementById('welcome-spotlight-card');
+      const banner = document.getElementById('smart-banner');
+      if (card && banner && !banner.classList.contains('hidden')) {
+        const bannerRect = banner.getBoundingClientRect();
+        const gap = 10;
+        card.style.top = 'auto';
+        card.style.bottom = `${Math.max(12, vv.top + vv.height - bannerRect.top + gap)}px`;
+      }
     }
 
     function hideWelcomeSpotlight() {
@@ -12083,6 +12093,8 @@
       }
       
       currentTab = tab;
+
+      if (tab !== 'today') hideWelcomeSpotlight();
 
       if (tab === 'library') {
         const list = document.getElementById('library-list');
