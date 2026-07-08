@@ -2763,6 +2763,18 @@
       return dateStrLocal();
     }
 
+    function yesterdayStr() {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      return dateStrLocal(d);
+    }
+
+    function tomorrowStr() {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      return dateStrLocal(d);
+    }
+
     function formatDateShort(dateStr) {
       const d = new Date(dateStr);
       return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -4066,14 +4078,49 @@
       return `Starts in ~${daysUntil} days`;
     }
 
+    function isHabitOverdue(habit) {
+      if (!isDueToday(habit)) return false;
+
+      if (isOneOffTask(habit)) {
+        return getHabitAddedDate(habit) < todayStr();
+      }
+
+      if (isDailyTask(habit)) {
+        const y = yesterdayStr();
+        const added = getHabitAddedDate(habit);
+        if (y < added) return false;
+        const comps = getCompletions(habit.id) || [];
+        const skips = getHabitSkips(habit.id) || [];
+        return !comps.includes(y) && !skips.includes(y);
+      }
+
+      if (isNonDailyRecurring(habit) && isHabitActiveThisPeriod(habit)) {
+        const y = yesterdayStr();
+        const prevKey = getHabitPeriodKey(habit, y);
+        const currKey = getHabitPeriodKey(habit);
+        if (prevKey !== currKey) {
+          const comps = getCompletions(habit.id) || [];
+          return !comps.some(d => getHabitPeriodKey(habit, d) === prevKey);
+        }
+      }
+
+      return false;
+    }
+
     function getHabitDueTag(habit) {
-      if (isOneOffTask(habit)) return null;
+      const overdueTag = { text: 'Overdue', cls: 'text-rose-300 bg-rose-900/50' };
+
+      if (isOneOffTask(habit)) {
+        if (!isDueToday(habit)) return null;
+        return isHabitOverdue(habit) ? overdueTag : null;
+      }
       if (isDailyTask(habit)) {
         if (!isDueToday(habit)) return null;
-        return { text: 'Due today', cls: 'text-amber-300 bg-amber-900/35' };
+        return isHabitOverdue(habit) ? overdueTag : { text: 'Due today', cls: 'text-amber-300 bg-amber-900/35' };
       }
       const daysUntil = getDaysUntilHabitDue(habit);
       const active = isHabitActiveThisPeriod(habit);
+      if (active && isHabitOverdue(habit)) return overdueTag;
       const text = formatUpcomingLabel(habit, daysUntil);
       const cls = active
         ? 'text-amber-300 bg-amber-900/35'
@@ -7198,7 +7245,11 @@
         }
       });
 
-      const sortActive = (list) => list.sort((a, b) => getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy));
+      const sortActive = (list) => list.sort((a, b) => {
+        const overdueDiff = (isHabitOverdue(b) ? 1 : 0) - (isHabitOverdue(a) ? 1 : 0);
+        if (overdueDiff !== 0) return overdueDiff;
+        return getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy);
+      });
       const sortUpcoming = (list) => list.sort((a, b) => getDaysUntilHabitDue(a) - getDaysUntilHabitDue(b));
 
       sortActive(active);
@@ -8245,6 +8296,23 @@
           : 'bg-rose-900/30 text-rose-300 border-rose-800';
     }
 
+    function formatWeatherHourLabel(date) {
+      const todayKey = todayStr();
+      const tomorrowKey = tomorrowStr();
+      const dayKey = dateStrLocal(date);
+      const time = date.toLocaleTimeString([], { hour: 'numeric' });
+      if (dayKey === todayKey) return time;
+      if (dayKey === tomorrowKey) return `Tom ${time}`;
+      return `${date.toLocaleDateString([], { weekday: 'short' })} ${time}`;
+    }
+
+    function getWeatherDayLabel(date) {
+      const dayKey = dateStrLocal(date);
+      if (dayKey === todayStr()) return 'Today';
+      if (dayKey === tomorrowStr()) return 'Tomorrow';
+      return date.toLocaleDateString([], { weekday: 'long' });
+    }
+
     function buildHourlyWeatherItems(maxHours = 12) {
       const forecast = state.settings.hourlyForecast;
       if (!forecast || !forecast.time?.length) return [];
@@ -8261,7 +8329,8 @@
       const items = [];
       for (let i = startIdx; i < forecast.time.length && items.length < maxHours; i++) {
         const t = new Date(forecast.time[i]);
-        const hourStr = t.toLocaleTimeString([], { hour: 'numeric' });
+        const dayKey = dateStrLocal(t);
+        const hourStr = formatWeatherHourLabel(t);
         const temp = Math.round(forecast.temp[i]);
         const precip = forecast.precip[i] || 0;
         const code = forecast.weatherCode[i] || 0;
@@ -8272,6 +8341,8 @@
 
         items.push({
           time: hourStr,
+          dayKey,
+          dayLabel: getWeatherDayLabel(t),
           score,
           wDesc,
           condition: formatWeatherCondition(wDesc),
@@ -8304,16 +8375,21 @@
       const maxPrecip = Math.max(...items.map(it => it.precip));
       const avgWind = Math.round(items.slice(0, 6).reduce((sum, it) => sum + it.wind, 0) / Math.min(6, items.length));
 
+      const spansTomorrow = items.some(it => it.dayKey === tomorrowStr());
       let advice = '';
       if (dueOutdoor.length > 0) {
         if (!anyRain) {
-          advice = 'No significant rain expected — outdoor activities viable today';
+          advice = spansTomorrow
+            ? 'No significant rain expected — outdoor activities viable today and tomorrow'
+            : 'No significant rain expected — outdoor activities viable today';
         } else if (bestScore >= 4 && bestTime) {
           advice = `Best window ~${bestTime} for ${taskNames}`;
         } else if (bestScore >= 2) {
           advice = 'Decent outdoor window coming up';
         } else if (items.some(it => it.precip < 20)) {
-          advice = 'Some dry slots today — check the hourly breakdown below';
+          advice = spansTomorrow
+            ? 'Some dry slots ahead — check the hourly breakdown below'
+            : 'Some dry slots today — check the hourly breakdown below';
         } else {
           advice = 'Rain likely — plan indoor alternatives';
         }
@@ -8342,11 +8418,42 @@
       };
     }
 
+    function ensureHourlyForecastSpan(minFutureHours = 12) {
+      const forecast = state.settings.hourlyForecast;
+      if (!forecast?.time?.length) return false;
+      const now = Date.now();
+      const futureCount = forecast.time.filter(t => new Date(t).getTime() >= now - 30 * 60 * 1000).length;
+      if (futureCount >= minFutureHours) return false;
+
+      const desc = state.settings.mockWeather || 'clear';
+      const baseTemp = desc.includes('rainy') ? 64 : desc.includes('sunny') ? 75 : 70;
+      const hours = [];
+      const temps = [];
+      const precips = [];
+      const codes = [];
+      const winds = [];
+      for (let i = 0; i < 36; i++) {
+        const h = new Date(now + i * 3600000);
+        hours.push(h.toISOString());
+        const hourOfDay = h.getHours();
+        const dayOffset = Math.floor(i / 24);
+        temps.push(Math.round(baseTemp + (hourOfDay >= 18 ? -(hourOfDay - 18) * 1.5 : hourOfDay * 0.4) - dayOffset * 3));
+        precips.push(Math.round(desc.includes('rainy') ? 35 + Math.random() * 30 : Math.random() * 15));
+        codes.push(desc.includes('rainy') ? 61 : desc.includes('sunny') ? 0 : 2);
+        winds.push(5 + Math.random() * 8);
+      }
+      state.settings.hourlyForecast = { time: hours, temp: temps, precip: precips, weatherCode: codes, wind: winds };
+      saveState();
+      hourlyForecastCache = null;
+      return true;
+    }
+
     function renderHeaderWeather() {
       const summaryEl = document.getElementById('header-weather-summary');
       const hoursEl = document.getElementById('header-weather-hours');
       if (!summaryEl || !hoursEl) return;
 
+      ensureHourlyForecastSpan();
       hourlyForecastCache = buildHourlyForecastPaneData();
       const items = (hourlyForecastCache?.items || []).slice(0, HEADER_WEATHER_HOURS);
 
@@ -8413,7 +8520,7 @@
 
           ${taskLine}
 
-          <div class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-2 px-0.5">Next ${data.items.length} hours</div>
+          <div class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-2 px-0.5">Next 24 hours</div>
           <div class="space-y-1.5 mb-3" id="weather-pane-hours"></div>
 
           <div class="text-xs text-rhythm-muted leading-relaxed px-0.5">
@@ -8426,7 +8533,7 @@
                   : 'Green-tinted hours are best for yard work, walks, and outdoor chores.')
               : (data.anyRain
                   ? 'Rose-tinted hours have higher rain chance. Plan accordingly.'
-                  : 'Hour-by-hour breakdown for the rest of today.')}
+                  : 'Hour-by-hour breakdown through tomorrow.')}
           </div>
 
           <button onclick="this.closest('.fixed').remove()"
@@ -8435,7 +8542,15 @@
       `;
 
       const hoursEl = modal.querySelector('#weather-pane-hours');
+      let lastDayKey = null;
       data.items.forEach(it => {
+        if (it.dayKey !== lastDayKey) {
+          lastDayKey = it.dayKey;
+          const divider = document.createElement('div');
+          divider.className = 'text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold px-0.5 pt-2 pb-0.5';
+          divider.textContent = it.dayLabel;
+          hoursEl.appendChild(divider);
+        }
         const el = document.createElement('div');
         el.className = `weather-pane-row flex items-center gap-3 px-3 py-2.5 rounded-xl border ${it.chipCls} ${it.isNow ? 'is-now' : ''}`;
         el.innerHTML = `
@@ -8551,7 +8666,7 @@
       { id: 'life-schedule', reason: '<strong>Life → Schedule</strong> holds appointments and events — block time so suggestions can find gaps between meetings.', cta: 'View schedule', action: 'life-schedule' },
       { id: 'calendar-sync', reason: 'Link Google, Outlook, Apple, or Samsung calendars in <strong>Settings</strong>, then import a <strong>.ics</strong> file — Rhythm reads free time and avoids suggesting tasks during busy blocks.', cta: 'Connect calendar', action: 'settings' },
       { id: 'work-schedule', reason: 'Set your work hours during onboarding or in Settings — off-hours and weekends unlock different suggestion windows.', cta: 'Profile settings', action: 'settings' },
-      { id: 'weather-strip', reason: 'The hourly weather strip at the top forecasts the next few hours — tap it for the full outdoor pane when planning yard work or a walk.', cta: 'See forecast', action: 'weather' },
+      { id: 'weather-strip', reason: 'The hourly weather strip at the top forecasts the next 24 hours — tap it for the full pane through tomorrow when planning yard work or a walk.', cta: 'See forecast', action: 'weather' },
       { id: 'outdoor-rain', reason: 'Outdoor tasks get rain warnings when afternoon showers are likely — reschedule before you get caught in the weather.', cta: 'Check weather', action: 'weather' },
       { id: 'streaks-log', reason: '<strong>Streaks</strong> logs completions over time — tap a habit to see history and how consistent you have been.', cta: 'View streaks', action: 'streaks' },
       { id: 'streaks-projections', reason: 'Open a tracked metric in Streaks for a <strong>30-day projection</strong> — useful for savings goals, steps, or anything you log with a number.', cta: 'See projections', action: 'streaks' },
@@ -10444,7 +10559,7 @@
         try {
           const { latitude, longitude } = pos.coords;
           // open-meteo: free, no key
-          const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=weather_code&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&temperature_unit=fahrenheit&timezone=auto&forecast_days=1`;
+          const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=weather_code&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&temperature_unit=fahrenheit&timezone=auto&forecast_days=2`;
           const res = await fetch(url);
           const data = await res.json();
           
@@ -10541,7 +10656,7 @@
       };
       refreshCalendarCache();
       
-      // Generate fake hourly forecast for timeline (next 12 hours)
+      // Generate fake hourly forecast for timeline (next 36 hours — today + tomorrow)
       const now = new Date();
       const hours = [];
       const temps = [];
@@ -10549,15 +10664,18 @@
       const codes = [];
       const winds = [];
       const baseTemp = choice.weather.includes('sunny') ? 75 : choice.weather.includes('rainy') ? 64 : 70;
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < 36; i++) {
         const h = new Date(now.getTime() + i * 3600000);
         hours.push(h.toISOString());
-        const t = baseTemp + (i > 4 ? -(i - 4) * 2.5 : i * 0.9) + (Math.random() - 0.5) * 5;
+        const hourOfDay = h.getHours();
+        const dayOffset = Math.floor(i / 24);
+        const t = baseTemp + (hourOfDay >= 18 ? -(hourOfDay - 18) * 1.5 : hourOfDay * 0.4)
+          - dayOffset * 3 + (Math.random() - 0.5) * 4;
         temps.push(Math.round(t));
-        const p = choice.weather.includes('rainy') ? 40 + Math.random()*30 : Math.random()*15;
+        const p = choice.weather.includes('rainy') ? 35 + Math.random() * 35 : Math.random() * 18;
         precips.push(Math.round(p));
         codes.push(choice.weather.includes('rainy') ? 61 : choice.weather.includes('sunny') ? 0 : 2);
-        winds.push(5 + Math.random()*8);
+        winds.push(5 + Math.random() * 8);
       }
       state.settings.hourlyForecast = {
         time: hours,
