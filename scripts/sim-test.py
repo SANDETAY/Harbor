@@ -219,20 +219,6 @@ def run_tests():
         def open_device_sync_modal():
             sync_row = page.locator("#task-list .swipe-row[data-feed-type='sync-pending']").first
             if sync_row.count():
-                content = sync_row.locator(".swipe-row-content")
-                box = content.bounding_box()
-                if box:
-                    y = box["y"] + box["height"] / 2
-                    page.mouse.move(box["x"] + box["width"] * 0.85, y)
-                    page.mouse.down()
-                    page.mouse.move(box["x"] + box["width"] * 0.15, y, steps=12)
-                    page.mouse.up()
-                    page.wait_for_timeout(450)
-                sync_action = sync_row.locator(".swipe-action[data-action='sync']")
-                if sync_action.count():
-                    sync_action.click(force=True)
-                    page.wait_for_timeout(400)
-                    return True
                 habit_id = sync_row.evaluate("el => el.dataset.habitId || el.dataset.swipeId")
                 page.evaluate("(id) => showDeviceSyncModal(id)", habit_id)
                 page.wait_for_timeout(400)
