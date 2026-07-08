@@ -1949,7 +1949,7 @@
       <div id="splash-screen" class="absolute inset-0 z-[100] splash-screen-v2" aria-hidden="true">
         <div id="splash-inner">
           <div id="splash-slogan" class="splash-slogan">
-            <p class="splash-slogan-line">Find Your <span class="splash-slogan-accent">Rythm</span></p>
+            <p class="splash-slogan-line">Find Your <span class="splash-slogan-accent">Rhythm</span></p>
           </div>
           <div id="splash-logo" class="splash-logo-stage" aria-hidden="true">
             <div class="splash-logo-glow" aria-hidden="true"></div>
@@ -1997,8 +1997,8 @@
       <div id="onboarding" class="absolute inset-0 bg-rhythm-bg z-50 flex flex-col p-5 overflow-hidden hidden">
         <div class="flex-1 flex flex-col justify-center">
           <div class="text-center mb-8">
-            <img src="rythm-wordmark.png" alt="Rythm" class="rythm-wordmark h-12 w-auto mx-auto mb-3" width="480" height="227">
-            <div class="text-rhythm-muted text-sm">Create Your Rythm</div>
+            <img src="rythm-wordmark.png" alt="Rhythm" class="rythm-wordmark h-12 w-auto mx-auto mb-3" width="480" height="227">
+            <div class="text-rhythm-muted text-sm">Create Your Rhythm</div>
           </div>
 
           <div class="mb-4">
@@ -2013,7 +2013,7 @@
                   <div class="flex-1">
                     <div class="font-semibold">Easy</div>
                     <div class="text-xs text-rhythm-muted">Just a few flexible things I naturally do most days.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1">Make bed • Drink water • Floss</div>
+                    <div class="text-[10px] text-rhythm-primary-light mt-1">Read · Meditate · Schedule · Hydrate</div>
                   </div>
                 </div>
               </div>
@@ -2025,7 +2025,7 @@
                   <div class="flex-1">
                     <div class="font-semibold">Moderate</div>
                     <div class="text-xs text-rhythm-muted">A reliable list of my usual daily tasks.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1">Brush teeth • Cook breakfast • Pack lunch</div>
+                    <div class="text-[10px] text-rhythm-primary-light mt-1">Read · Meditate · Schedule · Hydrate</div>
                   </div>
                 </div>
               </div>
@@ -2037,7 +2037,7 @@
                   <div class="flex-1">
                     <div class="font-semibold">Strict</div>
                     <div class="text-xs text-rhythm-muted">Time-boxed schedule to stay on track.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1">6:00 Wake up • 7:30 Breakfast</div>
+                    <div class="text-[10px] text-rhythm-primary-light mt-1">Read · Meditate · Schedule · Hydrate</div>
                   </div>
                 </div>
               </div>
@@ -2045,7 +2045,7 @@
           </div>
 
           <div class="text-center">
-            <button onclick="skipOnboarding()" class="text-xs text-rhythm-muted hover:text-rhythm-text underline">Just explore the app</button>
+            <button onclick="skipOnboarding()" class="text-xs text-rhythm-muted hover:text-rhythm-text underline">Just explore</button>
           </div>
         </div>
       </div>
@@ -2116,7 +2116,7 @@
         <button type="button" onclick="event.stopImmediatePropagation(); muteSmartSuggestions()"
           class="smart-banner-mute touch-target text-[10px] flex items-center gap-x-1" aria-label="Mute smart suggestions">
           <i class="fa-solid fa-volume-xmark text-[9px]"></i>
-          <span>mute</span>
+          <span>Mute</span>
         </button>
         <div class="flex gap-x-2.5 pr-12">
           <div class="mt-0.5">
@@ -2128,7 +2128,7 @@
             <div id="smart-bill-footnote" class="hidden"></div>
             <div class="flex items-center gap-x-2 mt-1.5 flex-wrap">
               <div id="smart-cta" class="text-[10px] px-2.5 py-px bg-rhythm-primary/25 text-rhythm-primary-light rounded-full inline-block">Tap to start</div>
-              <div onclick="event.stopImmediatePropagation(); dismissSuggestion()" class="text-[10px] text-rhythm-primary-light/60 hover:text-rhythm-primary-light">dismiss</div>
+              <div onclick="event.stopImmediatePropagation(); dismissSuggestion()" class="text-[10px] text-rhythm-primary-light/60 hover:text-rhythm-primary-light">Dismiss</div>
             </div>
           </div>
         </div>
@@ -2368,7 +2368,7 @@
     const FEEDBACK_CONFIG = {
       recipientEmail: 'sandetay@gmail.com',
       web3formsAccessKey: '',
-      appName: 'Rythm',
+      appName: 'Rhythm',
       appVersion: 'preview-1.1'
     };
 
@@ -7035,7 +7035,7 @@
             body: JSON.stringify({
               access_key: FEEDBACK_CONFIG.web3formsAccessKey,
               subject: `${FEEDBACK_CONFIG.appName} Feedback: ${payload.category}`,
-              from_name: payload.replyEmail ? 'Rythm User' : 'Anonymous Rythm User',
+              from_name: payload.replyEmail ? 'Rhythm User' : 'Anonymous Rhythm User',
               email: payload.replyEmail || FEEDBACK_CONFIG.recipientEmail,
               message: bodyText
             })
@@ -7048,7 +7048,7 @@
             headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
             body: JSON.stringify({
               name: payload.replyEmail || 'Anonymous',
-              email: payload.replyEmail || 'noreply@rythm.app',
+              email: payload.replyEmail || 'noreply@rhythm.app',
               message: bodyText,
               _subject: `${FEEDBACK_CONFIG.appName} Feedback: ${payload.category}`,
               _template: 'table'
@@ -7087,7 +7087,7 @@
             <span>Send Feedback</span>
             <button type="button" onclick="this.closest('#feedback-modal').remove()" class="text-rhythm-muted text-2xl leading-none">×</button>
           </div>
-          <p class="text-xs text-rhythm-muted mb-4 leading-relaxed">Help shape Rythm — bugs, ideas, and UX notes go straight to the builder.</p>
+          <p class="text-xs text-rhythm-muted mb-4 leading-relaxed">Help shape Rhythm — bugs, ideas, and UX notes go straight to the builder.</p>
 
           <label class="block text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Category</label>
           <select id="fb-category" class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-3 mb-3 outline-none text-rhythm-text text-sm">
@@ -7946,7 +7946,7 @@
 
     const APP_TIPS = [
       { id: 'energy-levels', reason: '<strong>Energy levels</strong> reshape your Today list — <strong>Low</strong> surfaces quick wins, <strong>Medium</strong> balances the day, and <strong>High</strong> pushes bigger tasks to the top. Try switching before you start.', cta: 'Set energy', action: 'energy' },
-      { id: 'library-browse', reason: 'The <strong>Library</strong> is a catalog of chores and habits — tap any card to add it to your rhythm without typing from scratch.', cta: 'Open Library', action: 'library' },
+      { id: 'library-browse', reason: 'The <strong>Library</strong> is a catalog of chores and habits — tap any card to add it to your Rhythm without typing from scratch.', cta: 'Open Library', action: 'library' },
       { id: 'library-custom', reason: 'Built something unique? Use <strong>+ Yours</strong> in the Library to save custom tasks you can re-add anytime.', cta: 'Add custom task', action: 'library-custom' },
       { id: 'library-columns', reason: 'The <strong>Library</strong> is organized in columns — Daily Habits, Weekly Chores, Monthly Maintenance, and more. Use the search bar to narrow down fast.', cta: 'Browse Library', action: 'library' },
       { id: 'quick-add', reason: 'Type in the quick-add bar on Today to spin up a one-off task — set difficulty and schedule before you save.', cta: 'Add a task', action: 'quick-add' },
@@ -7973,8 +7973,8 @@
       { id: 'meal-presets', reason: 'Life grocery includes meal presets — stock a recipe’s ingredients to your list in one tap when meal planning.', cta: 'Grocery list', action: 'life-grocery' },
       { id: 'health-sync', reason: 'Health-linked habits in the Library can sync step or workout data — check Streaks after you connect a tracker in production.', cta: 'Library health', action: 'library-health' },
       { id: 'dismiss-vs-mute', reason: '<strong>Dismiss</strong> hides one suggestion; <strong>Mute</strong> removes the panel entirely for more room. Re-enable anytime in Settings.', cta: 'Open settings', action: 'settings' },
-      { id: 'tabs-overview', reason: '<strong>Today</strong> is your action list, <strong>Life</strong> holds bills & schedule, <strong>Streaks</strong> tracks progress, and <strong>Library</strong> is where tasks are sourced.', cta: 'Explore tabs', action: 'library' },
-      { id: 'onboarding-routine', reason: 'Missed picking a starter routine? Add a handful of Library tasks, set intervals, and you will still get calendar-aware suggestions.', cta: 'Browse Library', action: 'library' }
+      { id: 'tabs-overview', reason: '<strong>Today</strong> is your action list, <strong>Streaks</strong> tracks progress, <strong>Life</strong> holds bills & schedule, and <strong>Library</strong> is where tasks are sourced.', cta: 'Explore tabs', action: 'library' },
+      { id: 'onboarding-routine', reason: 'Missed picking a starter routine? Add a handful of Library tasks, set intervals, and you\'ll still get calendar-aware suggestions.', cta: 'Browse Library', action: 'library' }
     ];
 
     function isRelevantContextualSuggestion(suggestion) {
@@ -8284,7 +8284,7 @@
       {
         id: 'library',
         title: 'Library',
-        body: 'Browse columns of preset chores and habits. Tap any card to add it to your rhythm — weekly tasks won\'t be due the same day you add them.',
+        body: 'Browse columns of preset chores and habits. Tap any card to add it to your Rhythm — weekly tasks won\'t be due the same day you add them.',
         target: () => document.getElementById('tab-library'),
         prepare: () => switchTab('today')
       },
@@ -8478,7 +8478,7 @@
         textEl.innerHTML = suggestion.reason;
         if (ctaEl) ctaEl.textContent = suggestion.cta || 'Tap to start';
         if (labelEl) {
-          labelEl.textContent = suggestion.type === 'welcome' ? 'Welcome' : suggestion.type === 'tip' ? 'App tip' : 'Smart Suggestion';
+          labelEl.textContent = suggestion.type === 'welcome' ? 'Welcome' : suggestion.type === 'tip' ? 'App Tip' : 'Smart Suggestion';
         }
         const billNote = suggestion.type !== 'bill' ? getManualBillFootnote(ctx.activeBills) : '';
         if (billFootnoteEl) {
@@ -9186,7 +9186,7 @@
       if (statsEl) {
         const added = state.habits.filter(h => commonTasks.some(t => t.id === h.id)).length;
         const prefTag = getMaintenancePrefLabel();
-        statsEl.textContent = `${tasks.length} shown · ${added} in your rhythm · ${prefTag}`;
+        statsEl.textContent = `${tasks.length} shown · ${added} in your Rhythm · ${prefTag}`;
       }
 
       if (tasks.length === 0) {
@@ -9895,7 +9895,7 @@
           <div class="space-y-4">
             <div class="flex items-center justify-between gap-3 py-1">
               <div class="min-w-0">
-                <div class="text-sm font-medium text-rhythm-text">Send feedback</div>
+                <div class="text-sm font-medium text-rhythm-text">Send Feedback</div>
                 <div class="text-[10px] text-rhythm-muted leading-snug">Report bugs or ideas — also in the header <i class="fa-regular fa-comment-dots"></i></div>
               </div>
               <button type="button" onclick="this.closest('.fixed').remove(); showFeedbackModal()"
@@ -9906,7 +9906,7 @@
 
             <div class="flex items-center justify-between gap-3 py-1">
               <div class="min-w-0">
-                <div class="text-sm font-medium text-rhythm-text">Smart suggestions</div>
+                <div class="text-sm font-medium text-rhythm-text">Smart Suggestions</div>
                 <div class="text-[10px] text-rhythm-muted leading-snug">Contextual tips on the Today tab</div>
               </div>
               <button type="button" id="smart-suggestions-toggle" role="switch" aria-checked="${smartSuggestionsOn}"
@@ -10204,37 +10204,25 @@
     }
 
     // Low-friction routine templates (expert-inspired: start small, use defaults, tie to energy)
+    const STARTER_ROUTINE_TASKS = [
+      { title: "Read For 10 Minutes", category: "mind", est_minutes: 10, difficulty: 2 },
+      { title: "Meditate for 5 Minutes", category: "mind", est_minutes: 5, difficulty: 1 },
+      { title: "Schedule Appointment", category: "life", est_minutes: 10, difficulty: 2 },
+      { title: "Drink 40 OZ of Water", category: "health", est_minutes: 2, difficulty: 1 }
+    ];
+
     const ROUTINE_TEMPLATES = {
       easy: {
         name: "Easy",
-        tasks: [
-          { title: "Make the bed", category: "home", est_minutes: 3, difficulty: 1 },
-          { title: "Drink enough water", category: "health", est_minutes: 2, difficulty: 1 },
-          { title: "Floss teeth", category: "health", est_minutes: 3, difficulty: 1 },
-          { title: "Get outside / fresh air", category: "health", est_minutes: 15, difficulty: 2 },
-          { title: "Read", category: "mind", est_minutes: 12, difficulty: 2, target_value: 10, unit: "pages" }
-        ]
+        tasks: STARTER_ROUTINE_TASKS
       },
       moderate: {
         name: "Moderate",
-        tasks: [
-          { title: "Brush teeth", category: "health", est_minutes: 2, difficulty: 1 },
-          { title: "Cook breakfast", category: "home", est_minutes: 15, difficulty: 2 },
-          { title: "Clean dishes", category: "home", est_minutes: 10, difficulty: 2 },
-          { title: "Pack lunch", category: "home", est_minutes: 8, difficulty: 2 },
-          { title: "Make the bed", category: "home", est_minutes: 3, difficulty: 1 },
-          { title: "Drink enough water", category: "health", est_minutes: 2, difficulty: 1 }
-        ]
+        tasks: STARTER_ROUTINE_TASKS
       },
       strict: {
         name: "Strict",
-        tasks: [
-          { title: "6:00 Wake Up", category: "health", est_minutes: 5, difficulty: 1 },
-          { title: "7:00 Wake kids up", category: "home", est_minutes: 10, difficulty: 2 },
-          { title: "7:30 Make breakfast", category: "home", est_minutes: 20, difficulty: 2 },
-          { title: "8:00 Get ready", category: "home", est_minutes: 15, difficulty: 2 },
-          { title: "Evening wind down", category: "mind", est_minutes: 20, difficulty: 2 }
-        ]
+        tasks: STARTER_ROUTINE_TASKS
       }
     };
 
@@ -10644,18 +10632,18 @@
         <div class="flex-1 flex flex-col p-2">
           <div class="text-center mb-3">
             <div class="text-[10px] uppercase tracking-widest text-rhythm-muted mb-1">Step 4 of 4</div>
-            <div class="text-xl font-semibold">${template.name} routine</div>
-            <div class="text-xs text-rhythm-muted">Tap × to remove tasks. Add more if you like.</div>
+            <div class="text-xl font-semibold">${template.name} Routine</div>
+            <div class="text-xs text-rhythm-muted">Tap × to remove tasks, or add your own below.</div>
             <div class="flex flex-wrap justify-center gap-1.5 mt-2">
               <div class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rhythm-raised border border-rhythm-border text-[10px] text-rhythm-muted">
                 <i class="fa-solid fa-wrench text-rhythm-muted"></i>
                 <span>${prefLabel}</span>
-                <button onclick="showMaintenancePreferenceStep()" class="text-rhythm-primary-light font-medium">edit</button>
+                <button onclick="showMaintenancePreferenceStep()" class="text-rhythm-primary-light font-medium">Edit</button>
               </div>
               <div class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rhythm-raised border border-rhythm-border text-[10px] text-rhythm-muted">
                 <i class="fa-regular fa-calendar text-rhythm-muted"></i>
                 <span>${calLabel}</span>
-                <button onclick="showCalendarConnectStep()" class="text-rhythm-primary-light font-medium">edit</button>
+                <button onclick="showCalendarConnectStep()" class="text-rhythm-primary-light font-medium">Edit</button>
               </div>
             </div>
           </div>
@@ -10670,7 +10658,7 @@
             </div>
             
             <div class="flex gap-2">
-              <button onclick="applyRoutineAndStart()" class="flex-1 bg-rhythm-primary active:bg-rhythm-primary-light py-3 rounded-2xl font-semibold">Start my rhythm</button>
+              <button onclick="applyRoutineAndStart()" class="flex-1 bg-rhythm-primary active:bg-rhythm-primary-light py-3 rounded-2xl font-semibold">Start My Rhythm</button>
               <button onclick="skipOnboarding()" class="flex-1 bg-rhythm-surface active:bg-rhythm-border py-3 rounded-2xl">Skip</button>
             </div>
           </div>
