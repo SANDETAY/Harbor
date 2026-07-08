@@ -3892,7 +3892,7 @@
       else if (/quarter|every 3 months|90 day/.test(lower)) defaults.interval_days = 90;
       else if (/semi.?annual|twice a year|every 6 months|biannual/.test(lower)) defaults.interval_days = 180;
       else if (/annual|yearly|every year|once a year/.test(lower)) defaults.interval_days = 365;
-      else if (/daily|every day|each day/.test(lower)) defaults.interval_days = null;
+      else if (/daily|every day|each day|\ba day\b|\bper day\b/.test(lower)) defaults.interval_days = null;
       else if (isSchedulingTaskTitle(title)) defaults.interval_days = 0;
       if (/save|saving|money|budget|invest/.test(lower)) {
         defaults.unit = 'dollars';
@@ -3962,7 +3962,9 @@
       if (isSchedulingTaskTitle(title)) return 0;
       if (intervalUserPicked) return selectedInterval;
       const inferred = inferTaskDefaults(title).interval_days;
-      return inferred != null ? inferred : 0;
+      if (inferred === null) return null;
+      if (inferred > 0) return inferred;
+      return 0;
     }
 
     function formatQuickTaskFreqLabel(intervalUserPicked, selectedInterval, title) {
@@ -4176,7 +4178,7 @@
 
       let selectedInterval = undefined;
       let intervalUserPicked = false;
-      let selectedDiff = editTask ? (editTask.difficulty || 2) : inferred.difficulty;
+      let selectedDiff = editSource ? (editSource.difficulty || 2) : inferred.difficulty;
 
       if (isEdit && editSource && editSource.interval_days !== 0) {
         selectedInterval = editSource.interval_days == null ? null : editSource.interval_days;
@@ -4232,6 +4234,15 @@
         if (!isEdit) {
           selectedDiff = inf.difficulty;
           minutesInput.value = inf.est_minutes;
+          if (!intervalUserPicked) {
+            if (inf.interval_days === null && /\b(a day|per day|daily|every day|each day)\b/i.test(title)) {
+              intervalUserPicked = true;
+              selectedInterval = null;
+            } else if (inf.interval_days > 0) {
+              intervalUserPicked = true;
+              selectedInterval = inf.interval_days;
+            }
+          }
         }
         updateRecurrenceVisibility();
         updateIntervalButtons();
