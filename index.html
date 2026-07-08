@@ -3441,11 +3441,15 @@
       return !!(state.healthSyncs?.[habitId] && Object.keys(state.healthSyncs[habitId]).length);
     }
 
+    function isPetWalkingActivity(habit) {
+      return /dog|pet|puppy|kitty|cat walk|walk.*(dog|pet|puppy)/i.test(habit?.title || '');
+    }
+
     function getHabitMetricType(habit) {
       const unit = (habit.unit || '').toLowerCase();
       const title = habit.title.toLowerCase();
-      if (unit === 'steps' || /step|walk/i.test(title)) return 'steps';
-      if (unit === 'miles' || unit === 'mi' || /run|mile|jog|hike/i.test(title)) return 'miles';
+      if (isPetWalkingActivity(habit) || unit === 'miles' || unit === 'mi' || /run|mile|jog|hike/i.test(title)) return 'miles';
+      if (unit === 'steps' || /step/i.test(title) || (/walk/i.test(title) && !/dog|pet|puppy/.test(title))) return 'steps';
       if (unit === 'dollars' || unit === 'usd' || /save|saving|money|budget|invest/i.test(title)) return 'savings';
       if (unit === 'pages' || /read|page/i.test(title)) return 'pages';
       if (habit.target_value != null && habit.unit) return 'custom';
@@ -3677,6 +3681,13 @@
       result.metrics.push({ label: 'Daily average', value: formatVal(dailyAvg) });
       result.metrics.push({ label: '30-day projection', value: formatVal(projected30) });
 
+      if (type === 'miles') {
+        const estSteps30 = Math.round(projected30 * METRICS.stepsPerMile);
+        const estStepsDaily = Math.round(dailyAvg * METRICS.stepsPerMile);
+        result.metrics.push({ label: 'Est. steps (daily avg)', value: estStepsDaily.toLocaleString() + ' steps' });
+        result.metrics.push({ label: 'Est. steps (30-day)', value: estSteps30.toLocaleString() + ' steps' });
+      }
+
       if (type === 'miles' || type === 'steps') {
         const streakCal = getStreakCalorieEstimate(habit, currentStreak, dailyAvg);
         const streakLabel = currentStreak === 1 ? '1 day' : `${currentStreak} days`;
@@ -3703,9 +3714,11 @@
           : `That's roughly ${(projected30 / METRICS.stepsPerMile).toFixed(1)} miles over 30 days.`;
       } else if (type === 'miles') {
         const streakCal = result.streakCalorieDetail;
+        const estSteps30 = Math.round(projected30 * METRICS.stepsPerMile);
+        const stepsNote = ` · ~${estSteps30.toLocaleString()} steps estimated`;
         result.equivalent = streakCal?.totalCal
-          ? `~${streakCal.totalCal.toLocaleString()} kcal burned across your ${currentStreak}-day streak (${streakCal.totalDistance.toFixed(1)} mi total).`
-          : `About ${estimateCaloriesBurned(habit, projected30, (habit.est_minutes || 10) * 30).toLocaleString()} kcal projected over 30 days.`;
+          ? `~${streakCal.totalCal.toLocaleString()} kcal burned across your ${currentStreak}-day streak (${streakCal.totalDistance.toFixed(1)} mi total${stepsNote}).`
+          : `About ${estimateCaloriesBurned(habit, projected30, (habit.est_minutes || 10) * 30).toLocaleString()} kcal projected over 30 days${stepsNote}.`;
       } else {
         result.equivalent = `Based on your logged ${habit.unit || 'values'}, not streak guesses.`;
       }
@@ -3746,6 +3759,119 @@
       return 'longer';
     }
 
+    function getWeekStartDateStr(dateStr) {
+      const d = new Date(dateStr + 'T12:00:00');
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + diff);
+      return dateStrLocal(d);
+    }
+
+    function getHabitPeriodKey(habit, dateStr = todayStr()) {
+      const interval = habit.interval_days;
+      if (!interval || interval <= 1) return dateStr;
+
+      const d = new Date(dateStr + 'T12:00:00');
+
+      if (interval === 7) return `W:${getWeekStartDateStr(dateStr)}`;
+      if (interval === 14) {
+        const anchor = getWeekStartDateStr(getHabitAddedDate(habit));
+        const weeksSince = Math.floor(
+          (new Date(getWeekStartDateStr(dateStr) + 'T12:00:00') - new Date(anchor + 'T12:00:00')) / (7 * 86400000)
+        );
+        return `B:${anchor}:${Math.floor(weeksSince / 2)}`;
+      }
+      if (interval >= 25 && interval <= 35) return `M:${d.getFullYear()}-${d.getMonth()}`;
+      if (interval >= 85 && interval <= 95) return `Q:${d.getFullYear()}-${Math.floor(d.getMonth() / 3)}`;
+      if (interval >= 175 && interval <= 185) return `H:${d.getFullYear()}-${d.getMonth() < 6 ? 0 : 1}`;
+      if (interval >= 360) return `Y:${d.getFullYear()}`;
+
+      const anchor = getHabitAddedDate(habit);
+      const dayOffset = Math.floor((d.getTime() - new Date(anchor + 'T12:00:00').getTime()) / 86400000);
+      return `R:${habit.id}:${Math.floor(dayOffset / interval)}`;
+    }
+
+    function habitCompletedInCurrentPeriod(habit) {
+      const key = getHabitPeriodKey(habit);
+      return (getCompletions(habit.id) || []).some(d => getHabitPeriodKey(habit, d) === key);
+    }
+
+    function isFirstDayOfPeriod(habit, dateStr) {
+      const prev = new Date(dateStr + 'T12:00:00');
+      prev.setDate(prev.getDate() - 1);
+      return getHabitPeriodKey(habit, dateStr) !== getHabitPeriodKey(habit, dateStrLocal(prev));
+    }
+
+    function isHabitActiveThisPeriod(habit) {
+      if (isOneOffTask(habit) || isDailyTask(habit)) return true;
+      const addedDate = getHabitAddedDate(habit);
+      const addedKey = getHabitPeriodKey(habit, addedDate);
+      const currentKey = getHabitPeriodKey(habit);
+      if (addedKey === currentKey && !isFirstDayOfPeriod(habit, addedDate)) return false;
+      return !habitCompletedInCurrentPeriod(habit);
+    }
+
+    function getPeriodActiveLabel(habit) {
+      const d = habit.interval_days;
+      if (d === 7) return 'This week';
+      if (d === 14) return 'This fortnight';
+      if (d >= 25 && d <= 35) return 'This month';
+      if (d >= 85 && d <= 95) return 'This quarter';
+      if (d >= 175 && d <= 185) return 'This half-year';
+      if (d >= 360) return 'This year';
+      return 'This cycle';
+    }
+
+    function getDaysUntilNextPeriodStart(habit) {
+      const interval = habit.interval_days;
+      if (!interval || interval <= 1) return 0;
+
+      const today = new Date(todayStr() + 'T12:00:00');
+
+      if (interval === 7) {
+        const day = today.getDay();
+        if (day === 1) return 7;
+        if (day === 0) return 1;
+        return 8 - day;
+      }
+      if (interval === 14) {
+        if (isHabitActiveThisPeriod(habit)) return 0;
+        const anchor = getWeekStartDateStr(getHabitAddedDate(habit));
+        const weeksSince = Math.floor(
+          (new Date(getWeekStartDateStr(todayStr()) + 'T12:00:00') - new Date(anchor + 'T12:00:00')) / (7 * 86400000)
+        );
+        const weeksIntoBiweek = weeksSince % 2;
+        return weeksIntoBiweek === 0 ? 14 : (2 - weeksIntoBiweek) * 7;
+      }
+      if (interval >= 25 && interval <= 35) {
+        const next = new Date(today.getFullYear(), today.getMonth() + 1, 1, 12, 0, 0);
+        return Math.max(0, Math.round((next - today) / 86400000));
+      }
+      if (interval >= 85 && interval <= 95) {
+        const qStarts = [0, 3, 6, 9];
+        let nextMonth = qStarts.find(m => m > today.getMonth());
+        let year = today.getFullYear();
+        if (nextMonth === undefined) { nextMonth = 0; year++; }
+        const next = new Date(year, nextMonth, 1, 12, 0, 0);
+        return Math.max(0, Math.round((next - today) / 86400000));
+      }
+      if (interval >= 175 && interval <= 185) {
+        const next = today.getMonth() < 6
+          ? new Date(today.getFullYear(), 6, 1, 12, 0, 0)
+          : new Date(today.getFullYear() + 1, 0, 1, 12, 0, 0);
+        return Math.max(0, Math.round((next - today) / 86400000));
+      }
+      if (interval >= 360) {
+        const next = new Date(today.getFullYear() + 1, 0, 1, 12, 0, 0);
+        return Math.max(0, Math.round((next - today) / 86400000));
+      }
+
+      const anchor = getHabitAddedDate(habit);
+      const dayOffset = Math.floor((today.getTime() - new Date(anchor + 'T12:00:00').getTime()) / 86400000);
+      const intoPeriod = dayOffset % interval;
+      return intoPeriod === 0 && !habitCompletedInCurrentPeriod(habit) ? 0 : interval - intoPeriod;
+    }
+
     function isSchedulingTaskTitle(title) {
       return /schedule|book\s+(an?\s+)?|set up\s+(an?\s+)?|make\s+(an?\s+)?appointment|arrange|remind me to/i.test((title || '').toLowerCase());
     }
@@ -3757,10 +3883,9 @@
     function getNextDueDate(habit) {
       const interval = habit?.interval_days;
       if (interval == null || interval <= 1) return todayStr();
-      const last = getHabitLastActivityDate(habit.id);
-      const anchor = last || getHabitAddedDate(habit);
-      const next = new Date(anchor + 'T12:00:00');
-      next.setDate(next.getDate() + interval);
+      const daysUntil = getDaysUntilNextPeriodStart(habit);
+      const next = new Date(todayStr() + 'T12:00:00');
+      next.setDate(next.getDate() + (daysUntil || interval));
       return dateStrLocal(next);
     }
 
@@ -3770,13 +3895,16 @@
     }
 
     function formatUpcomingLabel(habit, daysUntil) {
-      if (daysUntil <= 0) return 'Due today';
-      if (daysUntil === 1) return 'Due tomorrow';
-      if (daysUntil <= 6) return `In ${daysUntil} days`;
+      if (isNonDailyRecurring(habit) && isHabitActiveThisPeriod(habit)) {
+        return getPeriodActiveLabel(habit);
+      }
+      if (daysUntil <= 0) return getPeriodActiveLabel(habit);
+      if (daysUntil === 1) return 'Starts tomorrow';
+      if (daysUntil <= 6) return `Starts in ${daysUntil} days`;
       if (daysUntil <= 13) return 'Next week';
       if (daysUntil <= 21) return 'In ~2 weeks';
       if (daysUntil <= 45) return 'Next month';
-      return `In ~${daysUntil} days`;
+      return `Starts in ~${daysUntil} days`;
     }
 
     function getHabitDueTag(habit) {
@@ -3786,12 +3914,11 @@
         return { text: 'Due today', cls: 'text-amber-300 bg-amber-900/35' };
       }
       const daysUntil = getDaysUntilHabitDue(habit);
+      const active = isHabitActiveThisPeriod(habit);
       const text = formatUpcomingLabel(habit, daysUntil);
-      const urgent = daysUntil <= 0;
-      const soon = daysUntil <= 2;
-      const cls = urgent
+      const cls = active
         ? 'text-amber-300 bg-amber-900/35'
-        : soon
+        : daysUntil <= 2
           ? 'text-sky-300 bg-sky-900/30'
           : 'text-rhythm-muted bg-rhythm-raised/80';
       return { text, cls };
@@ -3813,8 +3940,8 @@
     function getDaysUntilHabitDue(habit) {
       if (isOneOffTask(habit)) return 0;
       if (!habit.interval_days || habit.interval_days <= 1) return 0;
-      const nextDue = getNextDueDate(habit);
-      return Math.round((new Date(nextDue + 'T12:00:00') - new Date(todayStr() + 'T12:00:00')) / 86400000);
+      if (isHabitActiveThisPeriod(habit)) return 0;
+      return getDaysUntilNextPeriodStart(habit);
     }
 
     function getEffectiveDifficulty(habit, energy) {
@@ -3952,6 +4079,16 @@
         defaults.difficulty = 1;
         defaults.est_minutes = 0;
         defaults.target_value = parseTitleAmount(title) || 10;
+      }
+      if ((/walk|walking/.test(lower)) && /dog|pet|puppy/.test(lower)) {
+        const parsedMiles = parseTitleAmount(title);
+        const hasMileHint = /\b(mile|miles|mi)\b/i.test(title);
+        defaults.unit = 'miles';
+        defaults.kind = 'metric';
+        defaults.est_minutes = 20;
+        if (parsedMiles != null) defaults.target_value = parsedMiles;
+        else if (hasMileHint) defaults.target_value = 1;
+        else defaults.target_value = 1;
       }
       if (/run|jog|hike/.test(lower) && !/walk|dog|pet/.test(lower)) {
         const parsedMiles = parseTitleAmount(title);
@@ -4092,24 +4229,55 @@
       return !!(task?.is_personal || task?.librarySection === 'Personal' || task?.librarySection === 'Your Custom Tasks' || (task?.id && String(task.id).startsWith('custom-lib-')));
     }
 
-    function editPersonalLibraryTask(taskId) {
-      showQuickTaskModal({ mode: 'library', editTaskId: taskId });
+    function syncTaskToPersonalLibrary(task) {
+      if (task.is_preset) return;
+      const isRecurring = task.interval_days != null && task.interval_days !== 0;
+      if (!isRecurring && !task.is_personal) return;
+      if (!state.customLibrary) state.customLibrary = [];
+      const payload = {
+        ...task,
+        is_personal: true,
+        librarySection: 'Personal'
+      };
+      const idx = state.customLibrary.findIndex(t => t.id === task.id);
+      if (idx >= 0) state.customLibrary[idx] = { ...state.customLibrary[idx], ...payload };
+      else state.customLibrary.push(payload);
+      loadCommonTasks();
+    }
+
+    function editHabitFromToday(habitId) {
+      showQuickTaskModal({ mode: 'habit', editHabitId: habitId });
+    }
+
+    function editLibraryTask(taskId) {
+      const habit = state.habits.find(h => h.id === taskId);
+      const libTask = (state.customLibrary || []).find(t => t.id === taskId);
+      if (habit) {
+        showQuickTaskModal({ mode: habit.is_personal || libTask ? 'library' : 'habit', editHabitId: habitId, editTaskId: libTask ? taskId : undefined });
+      } else if (libTask) {
+        showQuickTaskModal({ mode: 'library', editTaskId: taskId });
+      } else {
+        showToast('Task not found');
+      }
     }
 
     function showQuickTaskModal(options = {}) {
       closeQuickTaskModal();
       const mode = options.mode || 'habit';
-      const isEdit = !!(options.editTaskId && mode === 'library');
-      const editTask = isEdit ? (state.customLibrary || []).find(t => t.id === options.editTaskId) : null;
-      if (isEdit && !editTask) {
-        showToast('Personal task not found');
+      const editLibTask = options.editTaskId ? (state.customLibrary || []).find(t => t.id === options.editTaskId) : null;
+      const editHabit = options.editHabitId ? state.habits.find(h => h.id === options.editHabitId) : null;
+      const editSource = editLibTask || editHabit;
+      const isEdit = !!editSource;
+      if ((options.editTaskId || options.editHabitId) && !editSource) {
+        showToast('Task not found');
         return;
       }
-      const presetTitle = editTask ? editTask.title : (options.title || '');
-      const inferred = editTask
-        ? { difficulty: editTask.difficulty || 2, est_minutes: editTask.est_minutes ?? 10, interval_days: editTask.interval_days ?? null, target_value: editTask.target_value ?? null, unit: editTask.unit || null, kind: editTask.unit === 'dollars' ? 'metric' : (editTask.unit ? 'metric' : 'routine') }
+      const presetTitle = editSource ? editSource.title : (options.title || '');
+      const inferred = editSource
+        ? { difficulty: editSource.difficulty || 2, est_minutes: editSource.est_minutes ?? 10, interval_days: editSource.interval_days ?? null, target_value: editSource.target_value ?? null, unit: editSource.unit || null, kind: editSource.unit === 'dollars' ? 'metric' : (editSource.unit ? 'metric' : 'routine') }
         : inferTaskDefaults(presetTitle);
-      const isLibrary = mode === 'library';
+      const isLibrary = mode === 'library' && !editHabit;
+      const isHabitEdit = isEdit && !!editHabit;
 
       const modal = document.createElement('div');
       modal.id = 'quick-task-modal';
@@ -4119,7 +4287,7 @@
         <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm max-h-[90vh] overflow-y-auto">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <div class="font-semibold text-lg text-rhythm-text">${isEdit ? 'Edit Personal Task' : isLibrary ? 'Add Personal Task' : 'Add Task'}</div>
+              <div class="font-semibold text-lg text-rhythm-text">${isEdit ? (isHabitEdit && !editLibTask ? 'Edit Task' : 'Edit Personal Task') : isLibrary ? 'Add Personal Task' : 'Add Task'}</div>
               <div class="text-[10px] text-rhythm-muted">${isEdit ? 'Update details and save' : isLibrary ? 'Type a name and save — we handle the rest' : 'Smart defaults — tap Adjust only if needed'}</div>
             </div>
             <button type="button" onclick="closeQuickTaskModal()" class="w-8 h-8 rounded-full bg-rhythm-raised text-rhythm-muted text-xl leading-none">×</button>
@@ -4189,8 +4357,8 @@
       let intervalUserPicked = false;
       let selectedDiff = editTask ? (editTask.difficulty || 2) : inferred.difficulty;
 
-      if (isEdit && editTask && editTask.interval_days !== 0) {
-        selectedInterval = editTask.interval_days == null ? null : editTask.interval_days;
+      if (isEdit && editSource && editSource.interval_days !== 0) {
+        selectedInterval = editSource.interval_days == null ? null : editSource.interval_days;
         intervalUserPicked = true;
       }
 
@@ -4307,11 +4475,11 @@
         if (e.key === 'Enter') { e.preventDefault(); saveTask(); }
       };
 
-      if (editTask) {
-        minutesInput.value = editTask.est_minutes ?? inferred.est_minutes;
-        if (editTask.target_value != null) {
-          goalInputMain.value = editTask.target_value;
-          goalInput.value = editTask.target_value;
+      if (editSource) {
+        minutesInput.value = editSource.est_minutes ?? inferred.est_minutes;
+        if (editSource.target_value != null) {
+          goalInputMain.value = editSource.target_value;
+          goalInput.value = editSource.target_value;
         }
         updateIntervalButtons();
       }
@@ -4352,64 +4520,75 @@
         if (title !== rawTitle) titleInput.value = title;
         const inf = inferTaskDefaults(title);
         const minutes = parseInt(modal.querySelector('#qt-minutes').value, 10) || inf.est_minutes;
+        const interval = resolveQuickTaskInterval(title, intervalUserPicked, selectedInterval);
+        const isRecurring = interval != null && interval !== 0;
+        const editId = options.editHabitId || options.editTaskId;
         const task = {
-          id: isEdit ? options.editTaskId : (mode === 'library' ? 'custom-lib-' : 'custom-') + Date.now(),
+          id: isEdit ? editId : ((mode === 'library' || isRecurring) ? 'custom-lib-' : 'custom-') + Date.now(),
           title,
-          category: mode === 'library' ? 'personal' : 'custom',
-          interval_days: resolveQuickTaskInterval(title, intervalUserPicked, selectedInterval),
+          category: (mode === 'library' || isRecurring) ? 'personal' : 'custom',
+          interval_days: interval,
           est_minutes: minutes,
           difficulty: selectedDiff,
           is_preset: false,
-          is_personal: mode === 'library',
-          librarySection: mode === 'library' ? 'Personal' : undefined
+          is_personal: mode === 'library' || isRecurring,
+          librarySection: (mode === 'library' || isRecurring) ? 'Personal' : undefined
         };
-        if (inf.unit || editTask?.unit) {
+        if (inf.unit || editSource?.unit) {
           const activeGoal = getActiveGoalInput();
-          const unit = inf.unit || editTask?.unit;
-          task.target_value = activeGoal?.value ? parseFloat(activeGoal.value) : (editTask?.target_value ?? inf.target_value);
+          const unit = inf.unit || editSource?.unit;
+          task.target_value = activeGoal?.value ? parseFloat(activeGoal.value) : (editSource?.target_value ?? inf.target_value);
           task.unit = unit;
-        } else if (editTask?.target_value == null) {
+        } else if (editSource?.target_value == null) {
           delete task.target_value;
           delete task.unit;
         }
-        if (isMetricOnlyTask(inf) || (editTask && isMetricOnlyTask({ unit: editTask.unit, kind: 'metric' }))) {
+        if (isMetricOnlyTask(inf) || (editSource && isMetricOnlyTask({ unit: editSource.unit, kind: 'metric' }))) {
           task.difficulty = 1;
           task.est_minutes = 0;
         }
 
-        if (mode === 'library') {
-          if (!state.customLibrary) state.customLibrary = [];
-          if (isEdit) {
-            const idx = state.customLibrary.findIndex(t => t.id === options.editTaskId);
-            if (idx >= 0) state.customLibrary[idx] = { ...state.customLibrary[idx], ...task };
-            const habitIdx = state.habits.findIndex(h => h.id === options.editTaskId);
-            if (habitIdx >= 0) {
-              state.habits[habitIdx] = { ...state.habits[habitIdx], ...task };
+        if (isEdit) {
+          const habitIdx = state.habits.findIndex(h => h.id === editId);
+          if (habitIdx >= 0) {
+            const merged = stampHabitMeta({ ...state.habits[habitIdx], ...task, id: editId });
+            state.habits[habitIdx] = merged;
+            syncTaskToPersonalLibrary(merged);
+          }
+          if (editLibTask || task.is_personal) {
+            if (!state.customLibrary) state.customLibrary = [];
+            const libIdx = state.customLibrary.findIndex(t => t.id === editId);
+            if (libIdx >= 0) {
+              state.customLibrary[libIdx] = { ...state.customLibrary[libIdx], ...task, id: editId };
+            } else if (task.is_personal) {
+              state.customLibrary.push({ ...task, id: editId });
             }
             loadCommonTasks();
-            saveState();
-            renderLibrary();
-            renderTasks();
-            showToast(`"${title}" updated`);
-          } else {
-            state.customLibrary.push(task);
-            loadCommonTasks();
-            saveState();
-            renderLibrary();
-            showToast(`"${title}" saved to Personal`);
           }
+          saveState();
+          renderTasks();
+          renderLibrary();
+          showToast(`"${title}" updated`);
+        } else if (mode === 'library') {
+          if (!state.customLibrary) state.customLibrary = [];
+          state.customLibrary.push(task);
+          loadCommonTasks();
+          saveState();
+          renderLibrary();
+          showToast(`"${title}" saved to Personal`);
         } else {
           if (state.habits.some(h => h.title.toLowerCase() === title.toLowerCase())) {
             showToast('Already in your list');
             closeQuickTaskModal();
             return;
           }
+          if (isRecurring) syncTaskToPersonalLibrary(task);
           state.habits.push(stampHabitMeta(task));
           state.customUsage[task.id] = 1;
           saveState();
           renderTasks();
           renderLibrary();
-          showToast(`Added: ${title}`);
+          showToast(`Added: ${title}${isRecurring ? ' · saved to Personal' : ''}`);
         }
         closeQuickTaskModal();
       };
@@ -6621,7 +6800,7 @@
         }
 
         if (isNonDailyRecurring(h)) {
-          if (isDueToday(h)) {
+          if (isHabitActiveThisPeriod(h)) {
             active.push(h);
             return;
           }
@@ -6665,8 +6844,8 @@
       if (habit.interval_days == null || habit.interval_days <= 1) {
         return true; // daily
       }
-      
-      return getDaysUntilHabitDue(habit) <= 0;
+
+      return isHabitActiveThisPeriod(habit);
     }
 
     function renderHabitCard(habit, container, options = {}) {
@@ -6714,6 +6893,7 @@
           ${isSyncable ? `<button type="button" data-sync-health="${habit.id}" class="text-[10px] text-sky-400 mt-0.5 hover:underline bg-transparent border-0 p-0 cursor-pointer">Sync Garmin</button>` : ''}
           <div class="flex items-center justify-end gap-2 mt-1">
             ${dueToday && !isOneOffTask(habit) ? `<button type="button" onclick="skipRecurringHabit('${habit.id}', event)" class="text-[10px] text-rhythm-muted hover:text-amber-300 px-1" title="Skip this cycle — resets streak">Skip</button>` : ''}
+            <button type="button" onclick="event.stopImmediatePropagation(); editHabitFromToday('${habit.id}')" class="text-[10px] text-rhythm-primary-light font-medium px-1" title="Edit task">Edit</button>
             <button type="button" onclick="event.stopImmediatePropagation(); showHabitDetail('${habit.id}')" class="text-rhythm-primary-light text-xs" title="Details">
               <i class="fa-solid fa-info-circle"></i>
             </button>
@@ -8238,7 +8418,7 @@
       {
         id: 'today-list',
         title: 'Today\'s tasks',
-        body: 'Your action list lives here — tap the circle to complete a task. Daily chores show up every day; weekly and monthly tasks appear when they\'re actually due.',
+        body: 'Your action list lives here — tap the circle to complete a task. Daily chores show up every day; weekly and monthly tasks roll in when a new week or month starts.',
         target: () => document.getElementById('task-list') || document.getElementById('tab-content-today'),
         prepare: () => switchTab('today')
       },
@@ -8284,7 +8464,7 @@
       {
         id: 'library',
         title: 'Library',
-        body: 'Browse columns of preset chores and habits. Tap any card to add it to your Rhythm — weekly tasks won\'t be due the same day you add them.',
+        body: 'Browse columns of preset chores and habits. Tap any card to add it to your Rhythm.',
         target: () => document.getElementById('tab-library'),
         prepare: () => switchTab('today')
       },
@@ -8988,8 +9168,9 @@
 
       const taskToAdd = { ...task };
       if (taskToAdd.target_value || /read|walk|meditat|stretch/i.test(taskToAdd.title)) {
-        const unit = taskToAdd.unit || 'units';
-        const val = prompt(`How many ${unit}?`, taskToAdd.target_value || '10');
+        const metricType = getHabitMetricType(taskToAdd);
+        const unit = taskToAdd.unit || (metricType === 'miles' ? 'miles' : metricType === 'steps' ? 'steps' : 'units');
+        const val = prompt(`How many ${unit}?`, taskToAdd.target_value || (unit === 'miles' ? '1' : '10'));
         if (val) {
           taskToAdd.target_value = parseInt(val, 10);
           taskToAdd.unit = unit;
@@ -9130,7 +9311,10 @@
             ${statusChip}
           </div>`;
       } else if (alreadyAdded) {
-        actionCol = `<span class="text-[10px] px-2.5 py-1.5 rounded-xl bg-rhythm-primary/20 text-rhythm-primary-light font-semibold">✓ Added</span>`;
+        actionCol = `<div class="flex flex-col gap-1 items-end">
+            <button type="button" class="lib-edit-btn text-[10px] text-rhythm-primary-light font-medium px-1">Edit</button>
+            <span class="text-[10px] px-2.5 py-1.5 rounded-xl bg-rhythm-primary/20 text-rhythm-primary-light font-semibold">✓ Added</span>
+          </div>`;
       } else if (proScheduled) {
         actionCol = `<span class="text-[10px] px-2.5 py-1.5 rounded-xl bg-sky-900/40 text-sky-300 font-semibold">📅 Pro set</span>`;
       } else if (pref === 'hire' && task.proOption) {
@@ -9163,7 +9347,7 @@
       `;
 
       const editBtn = div.querySelector('.lib-edit-btn');
-      if (editBtn) editBtn.onclick = (e) => { e.stopPropagation(); editPersonalLibraryTask(task.id); };
+      if (editBtn) editBtn.onclick = (e) => { e.stopPropagation(); editLibraryTask(task.id); };
 
       if (!alreadyAdded && !proScheduled) {
         const addBtn = div.querySelector('.lib-add-btn');
@@ -10208,7 +10392,7 @@
       { title: "Read For 10 Minutes", category: "mind", est_minutes: 10, difficulty: 2 },
       { title: "Meditate for 5 Minutes", category: "mind", est_minutes: 5, difficulty: 1 },
       { title: "Schedule Appointment", category: "life", est_minutes: 10, difficulty: 2 },
-      { title: "Drink 40 OZ of Water", category: "health", est_minutes: 2, difficulty: 1 }
+      { title: "Drink 40 Oz of Water", category: "health", est_minutes: 2, difficulty: 1 }
     ];
 
     const ROUTINE_TEMPLATES = {
