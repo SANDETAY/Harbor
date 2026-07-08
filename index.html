@@ -2304,7 +2304,7 @@
           <div id="schedule-list" class="space-y-2 mb-4"></div>
           <div class="flex gap-2">
             <button type="button" onclick="showScheduleImportModal()"
-              class="flex-1 py-2.5 text-xs bg-rhythm-surface hover:bg-rhythm-border border border-rhythm-border rounded-2xl text-rhythm-text">Import CSV</button>
+              class="flex-1 py-2.5 text-xs bg-rhythm-surface hover:bg-rhythm-border border border-rhythm-border rounded-2xl text-rhythm-text">Import file</button>
             <button type="button" onclick="showAddCalendarEventModal()"
               class="flex-1 py-2.5 text-xs bg-rhythm-primary/90 hover:bg-rhythm-primary border border-rhythm-primary/50 rounded-2xl text-white font-medium">+ Add event</button>
           </div>
@@ -6192,21 +6192,21 @@
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
         <div onclick="event.stopImmediatePropagation()" class="relative w-full max-h-[82vh] bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm overflow-y-auto">
-          <div class="font-semibold text-lg mb-1">Import schedule CSV</div>
+          <div class="font-semibold text-lg mb-1">Import schedule</div>
           <div class="text-xs text-rhythm-muted mb-3 leading-relaxed">
-            Upload or paste a CSV with columns like <span class="text-rhythm-text">title, date, time, duration</span>.
-            Example row: <span class="font-mono text-[10px]">Team standup,2026-07-10,09:30,30</span>
+            Upload an <strong>iCalendar</strong> export (<span class="text-rhythm-text">.ics</span> / <span class="text-rhythm-text">.ical</span>) from Apple, Google, or Outlook — or paste a <strong>CSV</strong> with columns
+            <span class="text-rhythm-text"> title, date, time, duration</span>.
           </div>
           <label class="block w-full mb-3">
-            <input id="schedule-csv-file" type="file" accept=".csv,text/csv" class="hidden">
+            <input id="schedule-csv-file" type="file" accept=".ics,.ical,.ifb,.csv,text/calendar,application/ics,text/csv" class="hidden">
             <span class="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-rhythm-raised border border-dashed border-rhythm-border text-rhythm-primary-light font-medium cursor-pointer">
-              <i class="fa-solid fa-file-arrow-up"></i> Choose CSV file
+              <i class="fa-solid fa-file-arrow-up"></i> Choose iCalendar or CSV file
             </span>
           </label>
-          <textarea id="schedule-csv-paste" rows="6" placeholder="Or paste CSV contents here..."
+          <textarea id="schedule-csv-paste" rows="6" placeholder="Or paste iCalendar / CSV contents here..."
             class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-3 mb-3 outline-none text-rhythm-text text-xs font-mono"></textarea>
           <div class="text-[10px] text-rhythm-muted mb-3 leading-relaxed">
-            Dates: YYYY-MM-DD or MM/DD/YYYY · Times: 14:30 or 2:30 PM · For Google/Outlook calendar exports, use <span class="text-rhythm-primary-light">.ics</span> in Settings instead.
+            iCalendar: export from your calendar app as <span class="text-rhythm-primary-light">iCalendar File</span> · CSV dates: YYYY-MM-DD or MM/DD/YYYY · Times: 14:30 or 2:30 PM
           </div>
           <div class="flex gap-2">
             <button type="button" onclick="this.closest('#schedule-import-modal').remove()"
@@ -6231,12 +6231,19 @@
       modal.querySelector('#schedule-csv-import-btn').onclick = () => {
         const text = pasteEl.value.trim();
         if (!text) {
-          showToast('Upload or paste a CSV first');
+          showToast('Upload or paste a file first');
+          return;
+        }
+        const isIcs = /BEGIN:VCALENDAR/i.test(text);
+        if (isIcs) {
+          const count = importCalendarICSFromText(text, 'iCalendar file');
+          modal.remove();
+          if (!count) showToast('No upcoming events found in that iCalendar file');
           return;
         }
         const events = parseScheduleCsv(text);
         if (!events.length) {
-          showToast('No events found — check your columns');
+          showToast('No events found — use iCalendar export or check CSV columns');
           return;
         }
         const count = importScheduleEvents(events);
@@ -11056,7 +11063,7 @@
 
     // ==================== CALENDAR MOCK + SIMULATOR ====================
     function getMockCalendar() {
-      const imported = (hasAnyCalendarConnected() && state.settings.importedCalendarEvents?.length)
+      const imported = state.settings.importedCalendarEvents?.length
         ? state.settings.importedCalendarEvents
         : [];
 
@@ -11301,10 +11308,10 @@
               </div>
               <button type="button" onclick="triggerCalendarICSImport('google')"
                 class="w-full mt-2 py-2.5 rounded-2xl bg-rhythm-raised border border-rhythm-border text-xs font-medium text-rhythm-text active:bg-rhythm-border">
-                <i class="fa-solid fa-file-import mr-1.5 text-rhythm-primary-light"></i> Import .ics calendar file
+                <i class="fa-solid fa-file-import mr-1.5 text-rhythm-primary-light"></i> Import iCalendar file (.ics / .ical)
               </button>
               <div class="text-[10px] text-rhythm-muted mt-1.5 leading-relaxed">
-                Google, Outlook, Apple &amp; Samsung calendars work via <strong>.ics export</strong> in this web preview. One-tap live OAuth sync ships in the native iOS/Android app.
+                Export from Apple, Google, or Outlook as an <strong>iCalendar File</strong> (.ics / .ical). You can also use <strong>Life → Schedule → Import file</strong>. Live OAuth sync ships in the native app.
               </div>
             </div>
 
@@ -11755,46 +11762,91 @@
       };
     }
 
+    function unfoldICSText(text) {
+      return String(text || '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/\n[ \t]/g, '');
+    }
+
+    function decodeICSText(value) {
+      return String(value || '')
+        .replace(/\\n/gi, '\n')
+        .replace(/\\N/g, '\n')
+        .replace(/\\,/g, ',')
+        .replace(/\\;/g, ';')
+        .replace(/\\\\/g, '\\')
+        .trim();
+    }
+
     function parseICSDate(value) {
       if (!value) return null;
-      const clean = value.replace(/[^0-9TZ]/g, '');
-      if (clean.length >= 8) {
-        const y = clean.slice(0, 4);
-        const mo = clean.slice(4, 6);
-        const d = clean.slice(6, 8);
-        const h = clean.length >= 10 ? clean.slice(9, 11) : '00';
-        const mi = clean.length >= 12 ? clean.slice(11, 13) : '00';
-        return new Date(`${y}-${mo}-${d}T${h}:${mi}:00`);
+      const raw = String(value).trim();
+      const isUtc = /z$/i.test(raw);
+      const digits = raw.replace(/[^0-9]/g, '');
+      if (digits.length < 8) return null;
+
+      const y = digits.slice(0, 4);
+      const mo = digits.slice(4, 6);
+      const d = digits.slice(6, 8);
+      const h = digits.length >= 10 ? digits.slice(8, 10) : '09';
+      const mi = digits.length >= 12 ? digits.slice(10, 12) : '00';
+      const sec = digits.length >= 14 ? digits.slice(12, 14) : '00';
+
+      if (isUtc) {
+        return new Date(Date.UTC(+y, +mo - 1, +d, +h, +mi, +sec));
       }
-      return null;
+      return new Date(`${y}-${mo}-${d}T${h}:${mi}:${sec}`);
+    }
+
+    function parseICSDurationMinutes(value) {
+      if (!value) return null;
+      const match = String(value).trim().match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/i);
+      if (!match) return null;
+      const days = parseInt(match[1] || '0', 10);
+      const hours = parseInt(match[2] || '0', 10);
+      const mins = parseInt(match[3] || '0', 10);
+      const secs = parseInt(match[4] || '0', 10);
+      const total = days * 1440 + hours * 60 + mins + Math.ceil(secs / 60);
+      return total > 0 ? Math.min(480, Math.max(15, total)) : null;
     }
 
     function parseICSContent(text) {
-      const unfolded = text.replace(/\r?\n[ \t]/g, '');
-      const blocks = unfolded.split('BEGIN:VEVENT').slice(1);
-      const weekStart = getWeekStartDateStr(todayStr());
+      const unfolded = unfoldICSText(text);
+      if (!/BEGIN:VCALENDAR/i.test(unfolded)) return [];
+
+      const blocks = unfolded.split(/BEGIN:VEVENT/i).slice(1);
+      const minDate = dateStrLocal(new Date(Date.now() - 14 * 86400000));
       const maxAhead = new Date();
-      maxAhead.setDate(maxAhead.getDate() + 60);
+      maxAhead.setDate(maxAhead.getDate() + 180);
       const maxDate = dateStrLocal(maxAhead);
       const events = [];
+      const stamp = Date.now();
 
       blocks.forEach((block, i) => {
-        const summary = (block.match(/SUMMARY:([^\r\n]+)/) || [])[1]?.trim();
-        const dtstart = (block.match(/DTSTART[^:]*:([^\r\n]+)/) || [])[1];
-        const dtend = (block.match(/DTEND[^:]*:([^\r\n]+)/) || [])[1];
+        const summary = decodeICSText(
+          (block.match(/SUMMARY[^:;\r\n]*:([^\r\n]+)/i) || block.match(/DESCRIPTION[^:;\r\n]*:([^\r\n]+)/i) || [])[1]
+        );
+        const dtstart = (block.match(/DTSTART[^:;\r\n]*:([^\r\n]+)/i) || [])[1]?.trim();
+        const dtend = (block.match(/DTEND[^:;\r\n]*:([^\r\n]+)/i) || [])[1]?.trim();
+        const durationRaw = (block.match(/DURATION[^:;\r\n]*:([^\r\n]+)/i) || [])[1]?.trim();
         if (!summary) return;
 
         const start = parseICSDate(dtstart);
-        const end = parseICSDate(dtend);
-        if (!start) return;
+        if (!start || isNaN(start.getTime())) return;
 
         const eventDate = dateStrLocal(start);
-        if (eventDate < weekStart || eventDate > maxDate) return;
+        if (eventDate < minDate || eventDate > maxDate) return;
 
-        const durationMin = end ? Math.max(15, Math.round((end - start) / 60000)) : 60;
+        const end = dtend ? parseICSDate(dtend) : null;
+        let durationMin = parseICSDurationMinutes(durationRaw);
+        if (!durationMin && end && !isNaN(end.getTime())) {
+          durationMin = Math.max(15, Math.round((end - start) / 60000));
+        }
+        if (!durationMin) durationMin = /VALUE=DATE/i.test(block) ? 1440 : 60;
 
         events.push({
-          id: `ev-ics-${Date.now()}-${i}`,
+          id: `ev-ics-${stamp}-${i}`,
           date: eventDate,
           time: `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`,
           title: summary,
@@ -11802,28 +11854,50 @@
         });
       });
 
-      return events;
+      return events.sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+    }
+
+    function importCalendarICSFromText(text, sourceLabel = 'iCalendar file') {
+      const events = parseICSContent(text);
+      state.settings.importedCalendarEvents = normalizeCalendarEvents(events);
+      if (!state.settings.mockCalendar) {
+        state.settings.mockCalendar = { events: [], freeMinutes: 0, note: '', weekAhead: [] };
+      }
+      state.settings.mockCalendar.note = events.length
+        ? `Imported from ${sourceLabel} — ${events.length} event${events.length === 1 ? '' : 's'}`
+        : '';
+      refreshCalendarCache();
+      saveState();
+      renderSchedule();
+      renderTodayFeed();
+      updateSmartBanner();
+      updateCalendarStatusUI();
+      switchTab('life');
+      switchLifePanel('schedule');
+      if (events.length) {
+        showToast(`Imported ${events.length} event${events.length === 1 ? '' : 's'} from ${sourceLabel}`);
+      }
+      return events.length;
     }
 
     function triggerCalendarICSImport(providerId) {
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = '.ics,text/calendar';
+      input.accept = '.ics,.ical,.ifb,text/calendar,application/ics';
       input.onchange = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
         try {
           const text = await file.text();
-          const events = parseICSContent(text);
-          if (!state.settings.importedCalendarEvents) state.settings.importedCalendarEvents = [];
-          state.settings.importedCalendarEvents = events;
-          applyCalendarSync();
-          saveState();
           const provider = CALENDAR_PROVIDERS.find(p => p.id === providerId);
-          showToast(`✓ Imported ${events.length} event${events.length === 1 ? '' : 's'} from ${provider?.name || 'calendar'}`);
+          const label = provider?.name || 'calendar';
+          const count = importCalendarICSFromText(text, label);
+          applyCalendarSync();
           refreshSettingsModal();
+          if (!count) showToast('No upcoming events found — try exporting a fresh iCalendar file');
         } catch (err) {
-          showToast('Could not read that calendar file — try exporting .ics again');
+          console.error('ICS import failed', err);
+          showToast('Could not read that iCalendar file — try exporting again as .ics or .ical');
         }
       };
       input.click();
@@ -11885,18 +11959,21 @@
     function applyCalendarSync() {
       const conns = getCalendarConnections();
       const sources = CALENDAR_PROVIDERS.filter(p => conns[p.id]?.connected).map(p => p.id);
-
-      if (sources.length === 0) {
-        state.settings.calendarSources = [];
-        return;
-      }
+      const hasImported = !!(state.settings.importedCalendarEvents?.length);
 
       state.settings.calendarSources = sources;
       refreshCalendarCache();
 
+      if (sources.length === 0 && !hasImported) {
+        saveState();
+        return;
+      }
+
       const sourceLabel = getConnectedCalendarsLabel(conns);
       if (state.calendarCache) {
-        state.calendarCache.note = `Live sync from ${sourceLabel} — gap-aware suggestions on`;
+        state.calendarCache.note = sources.length
+          ? `Live sync from ${sourceLabel} — gap-aware suggestions on`
+          : (state.settings.mockCalendar?.note || '');
         state.calendarCache.syncedAt = new Date().toISOString();
       }
 
