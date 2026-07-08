@@ -194,7 +194,9 @@ def run_tests():
         page.locator("#tab-today").click()
         page.wait_for_timeout(400)
         dismiss_welcome_spotlight(page)
-        page.locator("button[aria-label='Settings']").click()
+        page.locator("#app-menu-trigger-mobile").click()
+        page.wait_for_selector("#app-menu-sheet", timeout=5000)
+        page.locator("#app-menu-sheet [data-app-menu-action='settings']").click()
         page.wait_for_timeout(600)
         if page.locator("text=Google Calendar").count() > 0 or page.locator("text=Calendar").count() > 0:
             ok("settings calendar section")

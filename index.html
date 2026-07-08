@@ -969,15 +969,104 @@
       margin-top: 0.35rem;
     }
 
-    .header-feedback-btn {
-      color: var(--rhythm-muted);
-      transition: color 0.15s ease, background 0.15s ease;
+    .app-menu-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
       border-radius: 0.75rem;
+      border: 1px solid var(--rhythm-border);
+      background: var(--rhythm-raised);
+      color: var(--rhythm-muted);
+      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
     }
 
-    .header-feedback-btn:hover {
+    .app-menu-trigger:hover,
+    .app-menu-trigger.is-open {
       color: var(--rhythm-primary-light);
+      background: var(--rhythm-surface);
+      border-color: rgba(91, 184, 168, 0.45);
+    }
+
+    .app-menu-wrap {
+      position: relative;
+    }
+
+    .app-menu-dropdown {
+      position: absolute;
+      top: calc(100% + 0.45rem);
+      right: 0;
+      min-width: 11.5rem;
+      background: var(--rhythm-surface);
+      border: 1px solid var(--rhythm-border);
+      border-radius: 1rem;
+      padding: 0.35rem;
+      box-shadow: var(--rhythm-shadow-md);
+      z-index: 120;
+    }
+
+    .app-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      width: 100%;
+      text-align: left;
+      padding: 0.65rem 0.75rem;
+      border-radius: 0.7rem;
+      font-size: 0.82rem;
+      color: var(--rhythm-text);
+      transition: background 0.15s ease;
+    }
+
+    .app-menu-item:hover,
+    .app-menu-item:active {
       background: var(--rhythm-raised);
+    }
+
+    .app-menu-item i {
+      width: 1rem;
+      text-align: center;
+      color: var(--rhythm-primary-light);
+    }
+
+    .app-menu-wrap--mobile {
+      display: none;
+      flex-shrink: 0;
+    }
+
+    .app-menu-trigger--compact {
+      width: auto;
+      height: auto;
+      padding: 0.3rem 0.55rem;
+      font-size: 0.65rem;
+      gap: 0.35rem;
+    }
+
+    .app-menu-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 155;
+      display: flex;
+      align-items: flex-end;
+      background: rgba(15, 20, 25, 0.72);
+    }
+
+    .app-menu-sheet-panel {
+      width: 100%;
+      background: var(--rhythm-surface);
+      border-top: 1px solid var(--rhythm-border);
+      border-radius: 1.25rem 1.25rem 0 0;
+      padding: 1rem 1.1rem calc(1rem + var(--safe-bottom));
+    }
+
+    .app-menu-sheet-title {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--rhythm-muted);
+      font-weight: 600;
+      margin-bottom: 0.65rem;
     }
 
     /* ── Rhythm Brief launcher (slimmer than smart banner) ── */
@@ -1801,9 +1890,21 @@
 
     /* ── Mobile-first: phone layout (default + small screens) ── */
     @media (max-width: 767px) {
+      .site-header {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+
       .site-header-inner {
         padding: 0.65rem 1rem;
         gap: 0.75rem;
+      }
+
+      .site-header-actions {
+        display: none;
+      }
+
+      .app-menu-wrap--mobile {
+        display: flex;
       }
 
       .header-context-primary {
@@ -1932,6 +2033,10 @@
 
     /* ── Responsive: full website layout (tablet+) ── */
     @media (min-width: 768px) {
+      .app-menu-wrap--mobile {
+        display: none !important;
+      }
+
       body {
         overflow: auto;
       }
@@ -2246,12 +2351,22 @@
             <div id="header-context-secondary" class="header-context-secondary"></div>
           </div>
           <div class="site-header-actions flex items-center gap-1">
-            <button type="button" onclick="showFeedbackModal()" class="header-feedback-btn touch-target p-2" aria-label="Send feedback">
-              <i class="fa-regular fa-comment-dots text-lg"></i>
-            </button>
-            <button type="button" onclick="showSettings()" class="touch-target hover:text-rhythm-text transition-colors rounded-xl" aria-label="Settings">
-              <i class="fa-solid fa-cog text-lg"></i>
-            </button>
+            <div class="app-menu-wrap app-menu-wrap--header">
+              <button type="button" id="app-menu-trigger-header" class="app-menu-trigger touch-target"
+                onclick="toggleAppMenu('header')" aria-label="App menu" aria-expanded="false" aria-haspopup="menu">
+                <i class="fa-solid fa-bars text-base"></i>
+              </button>
+              <div id="app-menu-dropdown-header" class="app-menu-dropdown hidden" role="menu" aria-label="App menu">
+                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="settings" onclick="runAppMenuAction('settings')">
+                  <i class="fa-solid fa-sliders"></i>
+                  <span>Settings</span>
+                </button>
+                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="feedback" onclick="runAppMenuAction('feedback')">
+                  <i class="fa-regular fa-comment-dots"></i>
+                  <span>Send feedback</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -2612,8 +2727,15 @@
 
       <!-- Bottom status / autonomy hint -->
       <div class="status-bar px-5 py-2.5 border-t border-rhythm-border/80 text-xs flex items-center gap-x-2.5 text-rhythm-muted flex-shrink-0">
-        <i class="fa-solid fa-sparkles text-rhythm-primary-light/80"></i>
-        <span id="calendar-status-text" class="flex-1 leading-snug">Task-first • Calendar-aware suggestions</span>
+        <div class="app-menu-wrap app-menu-wrap--mobile">
+          <button type="button" id="app-menu-trigger-mobile" class="app-menu-trigger app-menu-trigger--compact touch-target"
+            onclick="toggleAppMenu('mobile')" aria-label="App menu" aria-expanded="false" aria-haspopup="menu">
+            <i class="fa-solid fa-bars text-[11px]"></i>
+            <span>Menu</span>
+          </button>
+        </div>
+        <i class="fa-solid fa-sparkles text-rhythm-primary-light/80 hidden sm:inline"></i>
+        <span id="calendar-status-text" class="flex-1 leading-snug min-w-0">Task-first • Calendar-aware suggestions</span>
         <button type="button" onclick="simulateContextChange()" class="status-bar-btn">Simulate day</button>
       </div>
       </div><!-- /app-shell -->
@@ -11892,8 +12014,96 @@
       updateSmartBanner();
     }
 
+    // ==================== APP MENU ====================
+    let appMenuOpenSource = null;
+
+    function isMobileAppMenu() {
+      return window.innerWidth < 768;
+    }
+
+    function closeAppMenu() {
+      appMenuOpenSource = null;
+      document.getElementById('app-menu-dropdown-header')?.classList.add('hidden');
+      document.getElementById('app-menu-trigger-header')?.classList.remove('is-open');
+      document.getElementById('app-menu-trigger-header')?.setAttribute('aria-expanded', 'false');
+      document.getElementById('app-menu-trigger-mobile')?.classList.remove('is-open');
+      document.getElementById('app-menu-trigger-mobile')?.setAttribute('aria-expanded', 'false');
+      document.getElementById('app-menu-sheet')?.remove();
+    }
+
+    function runAppMenuAction(action) {
+      closeAppMenu();
+      if (action === 'settings') showSettings();
+      else if (action === 'feedback') showFeedbackModal();
+    }
+
+    function openAppMenuSheet() {
+      closeAppMenu();
+      appMenuOpenSource = 'mobile';
+      const sheet = document.createElement('div');
+      sheet.id = 'app-menu-sheet';
+      sheet.className = 'app-menu-sheet';
+      sheet.innerHTML = `
+        <div class="absolute inset-0" onclick="closeAppMenu()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="app-menu-sheet-panel relative" role="menu" aria-label="App menu">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="app-menu-sheet-title">Menu</div>
+          <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="settings" onclick="runAppMenuAction('settings')">
+            <i class="fa-solid fa-sliders"></i>
+            <span>Settings</span>
+          </button>
+          <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="feedback" onclick="runAppMenuAction('feedback')">
+            <i class="fa-regular fa-comment-dots"></i>
+            <span>Send feedback</span>
+          </button>
+        </div>
+      `;
+      document.body.appendChild(sheet);
+      const trigger = document.getElementById('app-menu-trigger-mobile');
+      trigger?.classList.add('is-open');
+      trigger?.setAttribute('aria-expanded', 'true');
+    }
+
+    function toggleAppMenu(source) {
+      if (isMobileAppMenu()) {
+        const existing = document.getElementById('app-menu-sheet');
+        if (existing) closeAppMenu();
+        else openAppMenuSheet();
+        return;
+      }
+
+      if (source !== 'header') return;
+      const dropdown = document.getElementById('app-menu-dropdown-header');
+      const trigger = document.getElementById('app-menu-trigger-header');
+      if (!dropdown || !trigger) return;
+
+      const willOpen = dropdown.classList.contains('hidden');
+      closeAppMenu();
+      if (willOpen) {
+        appMenuOpenSource = 'header';
+        dropdown.classList.remove('hidden');
+        trigger.classList.add('is-open');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!appMenuOpenSource || appMenuOpenSource !== 'header') return;
+      if (e.target.closest('.app-menu-wrap--header')) return;
+      closeAppMenu();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAppMenu();
+    });
+
+    window.addEventListener('resize', () => {
+      if (appMenuOpenSource === 'header' && isMobileAppMenu()) closeAppMenu();
+    });
+
     // ==================== SETTINGS ====================
     function showSettings() {
+      closeAppMenu();
       settingsWasOpen = true;
       const modal = document.createElement('div');
       modal.className = `fixed inset-0 bg-rhythm-bg/70 modal-overlay-blur flex items-end z-[60]`;
