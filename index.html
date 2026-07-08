@@ -575,27 +575,14 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
       }
-      .splash-logo-stage.is-present,
-      .splash-logo-stage.is-growing,
-      .splash-logo-stage.is-dissolving,
-      .splash-logo-stage.is-present .splash-mark-core,
-      .splash-logo-stage.is-present .splash-mark-wave,
       .splash-slogan.is-visible,
       .splash-slogan.is-exiting,
-      .splash-logo-stage.is-dissolving .splash-logo-scale,
       .splash-screen-v2.is-revealing {
         animation: none !important;
       }
       .splash-slogan.is-visible { opacity: 1; transform: none; }
-      .splash-slogan.is-exiting { opacity: 0; transform: translateY(-20vh); }
-      .splash-logo-stage.is-present { opacity: 1; visibility: visible; }
-      .splash-logo-stage.is-present .splash-logo-scale { transform: scale(0.44); filter: none; }
-      .splash-logo-stage.is-growing .splash-logo-scale { transform: scale(2.95); filter: none; }
-      .splash-logo-stage.is-dissolving { opacity: 0; }
+      .splash-slogan.is-exiting { opacity: 0; transform: none; }
       .splash-screen-v2.is-revealing { opacity: 0; }
-      .splash-mark-core { opacity: 1; transform: none; }
-      .splash-mark-wave { opacity: 1; }
-      .splash-mark-wave-glow { stroke-dashoffset: 0; opacity: 0; }
     }
 
     #library-list::-webkit-scrollbar {
@@ -1291,13 +1278,13 @@
     .rythm-lockup .rythm-title .ltr-h { color: #3D9A8B; -webkit-text-fill-color: #3D9A8B; }
     .rythm-lockup .rythm-title .ltr-m { color: #5B8FD9; -webkit-text-fill-color: #5B8FD9; }
 
-    /* ── Splash: slogan → slide out → logo appear → fullscreen grow → iris reveal ── */
+    /* ── Splash: slogan fade in → brief hold → fade out ── */
     .splash-screen-v2 {
       background:
         radial-gradient(ellipse 70% 55% at 50% 42%, rgba(61, 154, 139, 0.14) 0%, transparent 58%),
         var(--rhythm-bg);
       overflow: hidden;
-      will-change: opacity, clip-path;
+      will-change: opacity;
     }
 
     .splash-screen-v2.is-hidden {
@@ -1306,7 +1293,7 @@
     }
 
     .splash-screen-v2.is-revealing {
-      animation: splashIrisReveal 460ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
+      animation: splashScreenFadeOut 360ms ease forwards;
       pointer-events: none;
     }
 
@@ -1324,25 +1311,18 @@
       padding: 0 1.75rem;
       text-align: center;
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(8px);
       pointer-events: none;
       transform-origin: center center;
-      z-index: 2;
       flex-shrink: 0;
     }
 
     .splash-slogan.is-visible {
-      animation: splashSloganIn 640ms var(--rhythm-ease-out) forwards;
+      animation: splashSloganIn 380ms var(--rhythm-ease-out) forwards;
     }
 
     .splash-slogan.is-exiting {
-      animation: splashSloganSlideOut 580ms cubic-bezier(0.55, 0.06, 0.92, 0.48) forwards;
-    }
-
-    .splash-slogan.is-gone {
-      visibility: hidden;
-      opacity: 0;
-      pointer-events: none;
+      animation: splashSloganFadeOut 320ms ease forwards;
     }
 
     .splash-slogan-line {
@@ -1361,201 +1341,17 @@
       background-clip: text;
     }
 
-    .splash-logo-stage {
-      position: absolute;
-      inset: 0;
-      margin: auto;
-      width: min(72vmin, 420px);
-      height: min(72vmin, 420px);
-      opacity: 0;
-      visibility: hidden;
-      z-index: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .splash-logo-stage.is-present,
-    .splash-logo-stage.is-growing,
-    .splash-logo-stage.is-covered {
-      visibility: visible;
-    }
-
-    .splash-logo-stage.is-present {
-      animation: splashStageIn 380ms var(--rhythm-ease-out) forwards;
-    }
-
-    .splash-logo-stage.is-present .splash-logo-scale {
-      animation: splashLogoAppear 420ms var(--rhythm-ease-spring) forwards;
-    }
-
-    .splash-logo-stage.is-present .splash-mark-core {
-      animation: splashMarkReveal 420ms var(--rhythm-ease-out) 0.08s forwards;
-    }
-
-    .splash-logo-stage.is-present .splash-mark-wave {
-      animation: splashWaveReveal 360ms var(--rhythm-ease-out) 0.18s forwards;
-    }
-
-    .splash-logo-stage.is-growing .splash-logo-scale {
-      animation: splashLogoFullscreen 540ms cubic-bezier(0.42, 0, 0.18, 1) forwards;
-    }
-
-    .splash-logo-stage.is-growing .splash-logo-glow {
-      animation: splashGlowExpand 540ms ease-out forwards;
-    }
-
-    .splash-logo-stage.is-dissolving .splash-logo-scale {
-      animation: splashLogoDissolve 460ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
-    }
-
-    .splash-logo-glow {
-      position: absolute;
-      inset: 6%;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(127, 255, 212, 0.18) 0%, rgba(61, 154, 139, 0.1) 38%, transparent 68%);
-      opacity: 0;
-      transform: scale(0.88);
-      pointer-events: none;
-      z-index: 0;
-      filter: blur(2px);
-    }
-
-    .splash-logo-stage.is-present .splash-logo-glow {
-      opacity: 0.8;
-      transform: scale(0.95);
-      transition: opacity 700ms ease, transform 700ms ease;
-    }
-
-    .splash-logo-scale {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      transform: scale(0.5);
-      transform-origin: center center;
-      will-change: transform;
-      z-index: 1;
-    }
-
-    .splash-logo-wrap {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      transform-origin: 50% 52%;
-    }
-
-    .splash-logo-svg {
-      width: 100%;
-      height: 100%;
-      display: block;
-      overflow: visible;
-    }
-
-    .splash-mark-core {
-      opacity: 0;
-      transform-origin: 100px 100px;
-    }
-
-    .splash-mark-wave {
-      opacity: 0;
-      stroke-dasharray: none;
-      stroke-dashoffset: 0;
-    }
-
-    .splash-mark-wave-glow {
-      opacity: 0;
-      stroke-dasharray: 200;
-      stroke-dashoffset: 200;
-    }
-
     @keyframes splashSloganIn {
-      from { opacity: 0; transform: translateY(10px) scale(0.96); }
+      from { opacity: 0; transform: translateY(8px) scale(0.97); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    @keyframes splashSloganSlideOut {
-      0% { opacity: 1; transform: translateY(0) scale(1); }
-      70% { opacity: 1; transform: translateY(-62vh) scale(0.98); }
-      100% { opacity: 0; transform: translateY(-115vh) scale(0.94); }
+    @keyframes splashSloganFadeOut {
+      to { opacity: 0; transform: translateY(-6px) scale(0.98); }
     }
 
-    @keyframes splashIrisReveal {
-      0% {
-        opacity: 1;
-        clip-path: circle(120% at 50% 48%);
-      }
-      45% {
-        opacity: 1;
-        clip-path: circle(68% at 50% 48%);
-      }
-      100% {
-        opacity: 0;
-        clip-path: circle(0% at 50% 48%);
-      }
-    }
-
-    @keyframes splashStageIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes splashLogoAppear {
-      from { transform: scale(0.34); filter: blur(10px); opacity: 0.5; }
-      to { transform: scale(0.44); filter: blur(0); opacity: 1; }
-    }
-
-    @keyframes splashLogoFullscreen {
-      0% { transform: scale(0.44); }
-      88% { transform: scale(3.05); }
-      100% { transform: scale(2.95); }
-    }
-
-    @keyframes splashGlowExpand {
-      0% { opacity: 0.35; transform: scale(0.82); }
-      100% { opacity: 0.95; transform: scale(1.35); }
-    }
-
-    @keyframes splashLogoDissolve {
-      0% {
-        transform: scale(2.95);
-        filter: blur(0) brightness(1) saturate(1);
-        opacity: 1;
-      }
-      45% {
-        filter: blur(3px) brightness(1.3) saturate(1.15);
-        opacity: 0.9;
-      }
-      100% {
-        transform: scale(3.15);
-        filter: blur(18px) brightness(1.55) saturate(0.5);
-        opacity: 0;
-      }
-    }
-
-    @keyframes splashMarkReveal {
-      from { opacity: 0; transform: scale(0.96); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    @keyframes splashWaveReveal {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes splashGlowTrace {
-      0% { stroke-dashoffset: 200; opacity: 0; }
-      35% { opacity: 0.55; }
-      100% { stroke-dashoffset: 0; opacity: 0; }
-    }
-
-    @keyframes splashWavePulse {
-      0%, 100% { opacity: 1; filter: drop-shadow(0 0 0 transparent); }
-      50% { opacity: 0.92; filter: drop-shadow(0 0 5px rgba(156, 240, 220, 0.65)); }
-    }
-
-    @keyframes splashLogoFadeOut {
-      0% { transform: scale(1); filter: blur(0); }
-      100% { transform: scale(1.05); filter: blur(10px); }
+    @keyframes splashScreenFadeOut {
+      to { opacity: 0; }
     }
 
     .header-context {
@@ -1950,45 +1746,6 @@
         <div id="splash-inner">
           <div id="splash-slogan" class="splash-slogan">
             <p class="splash-slogan-line">Find Your <span class="splash-slogan-accent">Rhythm</span></p>
-          </div>
-          <div id="splash-logo" class="splash-logo-stage" aria-hidden="true">
-            <div class="splash-logo-glow" aria-hidden="true"></div>
-            <div class="splash-logo-scale">
-              <div class="splash-logo-wrap">
-                <svg class="splash-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="splash-ring-grad" x1="100" y1="34" x2="100" y2="166" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stop-color="#6BC4B8"/>
-                      <stop offset="50%" stop-color="#3D9A8B"/>
-                      <stop offset="100%" stop-color="#0A5C50"/>
-                    </linearGradient>
-                    <linearGradient id="splash-ribbon-grad" x1="16" y1="100" x2="184" y2="100" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stop-color="#0A6B5C"/>
-                      <stop offset="30%" stop-color="#2BA88C"/>
-                      <stop offset="50%" stop-color="#9CF0DC"/>
-                      <stop offset="70%" stop-color="#2BA88C"/>
-                      <stop offset="100%" stop-color="#00C4A0"/>
-                    </linearGradient>
-                    <filter id="splash-mark-shadow" x="-30%" y="-30%" width="160%" height="160%">
-                      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000000" flood-opacity="0.32"/>
-                    </filter>
-                    <filter id="splash-wave-glow-filter" x="-40%" y="-80%" width="180%" height="260%">
-                      <feGaussianBlur stdDeviation="1.8" result="blur"/>
-                      <feMerge>
-                        <feMergeNode in="blur"/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                  </defs>
-                  <g class="splash-mark-core" filter="url(#splash-mark-shadow)">
-                    <circle cx="100" cy="100" r="56" fill="none" stroke="url(#splash-ring-grad)" stroke-width="7.5"/>
-                    <path d="M 12 100 H 44 M 156 100 H 188" stroke="url(#splash-ribbon-grad)" stroke-width="5.5" stroke-linecap="round"/>
-                    <path class="splash-mark-wave-glow" pathLength="200" d="M 44 100 H 62 C 65 100 67 96 69 100 C 71 104 73 100 76 100 C 79 100 82 52 86 100 C 90 148 92 100 95 100 C 97 100 99 90 102 100 H 156" fill="none" stroke="#9CF0DC" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#splash-wave-glow-filter)"/>
-                    <path class="splash-mark-wave" d="M 44 100 H 62 C 65 100 67 96 69 100 C 71 104 73 100 76 100 C 79 100 82 52 86 100 C 90 148 92 100 95 100 C 97 100 99 90 102 100 H 156" fill="none" stroke="url(#splash-ribbon-grad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </g>
-                </svg>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -11042,21 +10799,13 @@
     function runSplashSequence(onComplete) {
       const splash = document.getElementById('splash-screen');
       const sloganEl = document.getElementById('splash-slogan');
-      const logoEl = document.getElementById('splash-logo');
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      const SLOGAN_IN_MS = 640;
-      const SLOGAN_HOLD_MS = 1050;
-      const SLOGAN_OUT_MS = 580;
-      const LOGO_APPEAR_MS = 420;
-      const LOGO_GROW_MS = 540;
-      const REVEAL_MS = 460;
+      const SLOGAN_IN_MS = 380;
+      const SLOGAN_HOLD_MS = 600;
+      const FADE_OUT_MS = 360;
 
-      const sloganExitAt = SLOGAN_HOLD_MS + SLOGAN_IN_MS;
-      const logoAppearAt = sloganExitAt + SLOGAN_OUT_MS + 60;
-      const logoGrowAt = logoAppearAt + LOGO_APPEAR_MS;
-      const revealAt = logoGrowAt + LOGO_GROW_MS;
-      const cleanupAt = revealAt + REVEAL_MS;
+      const exitAt = SLOGAN_IN_MS + SLOGAN_HOLD_MS;
 
       if (splash) {
         splash.classList.remove('is-hidden', 'is-revealing');
@@ -11066,7 +10815,6 @@
         splash.style.pointerEvents = 'auto';
       }
 
-      if (logoEl) logoEl.className = 'splash-logo-stage';
       if (sloganEl) sloganEl.className = 'splash-slogan';
 
       let booted = false;
@@ -11076,60 +10824,32 @@
         onComplete?.();
       };
 
-      const startReveal = () => {
-        logoEl?.classList.remove('is-growing');
-        logoEl?.classList.add('is-covered', 'is-dissolving');
-        splash?.classList.add('is-revealing');
-      };
-
       const cleanupSplash = () => {
-        logoEl?.classList.remove('is-present', 'is-growing', 'is-covered', 'is-dissolving');
-        sloganEl?.classList.remove('is-visible', 'is-exiting', 'is-gone');
+        sloganEl?.classList.remove('is-visible', 'is-exiting');
         hideSplash();
       };
 
       if (reducedMotion) {
         requestAnimationFrame(() => sloganEl?.classList.add('is-visible'));
+        setTimeout(finishBoot, 150);
         setTimeout(() => {
-          sloganEl?.classList.remove('is-visible');
-          sloganEl?.classList.add('is-exiting', 'is-gone');
-          logoEl?.classList.add('is-present');
-        }, 380);
-        setTimeout(() => {
-          logoEl?.classList.remove('is-present');
-          logoEl?.classList.add('is-growing');
-          finishBoot();
-        }, 620);
-        setTimeout(startReveal, 820);
-        setTimeout(cleanupSplash, 1020);
+          sloganEl?.classList.add('is-exiting');
+          splash?.classList.add('is-revealing');
+        }, 350);
+        setTimeout(cleanupSplash, 450);
         return;
       }
 
-      // 1) Slogan appears alone
       requestAnimationFrame(() => sloganEl?.classList.add('is-visible'));
 
-      // 2) Slogan slides up and out of the window
       setTimeout(() => {
         sloganEl?.classList.remove('is-visible');
         sloganEl?.classList.add('is-exiting');
-      }, sloganExitAt);
-
-      // 3) Logo appears in center after slogan is gone
-      setTimeout(() => {
-        sloganEl?.classList.add('is-gone');
-        logoEl?.classList.add('is-present');
-      }, logoAppearAt);
-
-      // 4) Logo grows quickly to cover the screen (boot app behind splash)
-      setTimeout(() => {
-        logoEl?.classList.remove('is-present');
-        logoEl?.classList.add('is-growing');
+        splash?.classList.add('is-revealing');
         finishBoot();
-      }, logoGrowAt);
+      }, exitAt);
 
-      // 5) Immediately iris-dissolve into main screen when fullscreen
-      setTimeout(startReveal, revealAt);
-      setTimeout(cleanupSplash, cleanupAt);
+      setTimeout(cleanupSplash, exitAt + FADE_OUT_MS);
     }
 
     function updateHeaderContext() {
