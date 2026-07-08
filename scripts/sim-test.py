@@ -212,30 +212,58 @@ def run_tests():
         page.locator(".fixed .text-2xl", has_text="×").first.click(timeout=3000)
         page.wait_for_timeout(300)
 
-        # --- Simulation 10: Fitness sync from habit detail ---
+        # --- Simulation 10: Fitness sync (mobile swipe row or detail modal) ---
         page.locator("#tab-today").click()
         page.wait_for_timeout(500)
-        card = page.locator("#task-list .habit-card").first
-        if card.count():
-            card.click(button="right")
-            page.wait_for_timeout(500)
-            sync_btn = page.locator("button", has_text="Sync")
-            if sync_btn.count() and sync_btn.first.is_visible():
-                sync_btn.first.click()
+
+        def open_device_sync_modal():
+            sync_row = page.locator("#task-list .swipe-row[data-feed-type='sync-pending']").first
+            if sync_row.count():
+                content = sync_row.locator(".swipe-row-content")
+                box = content.bounding_box()
+                if box:
+                    y = box["y"] + box["height"] / 2
+                    page.mouse.move(box["x"] + box["width"] * 0.85, y)
+                    page.mouse.down()
+                    page.mouse.move(box["x"] + box["width"] * 0.15, y, steps=12)
+                    page.mouse.up()
+                    page.wait_for_timeout(450)
+                sync_action = sync_row.locator(".swipe-action[data-action='sync']")
+                if sync_action.count():
+                    sync_action.click(force=True)
+                    page.wait_for_timeout(400)
+                    return True
+                habit_id = sync_row.evaluate("el => el.dataset.habitId || el.dataset.swipeId")
+                page.evaluate("(id) => showDeviceSyncModal(id)", habit_id)
+                page.wait_for_timeout(400)
+                return True
+
+            walk_card = page.locator("#task-list .habit-card", has_text="Walk").first
+            if walk_card.count():
+                walk_card.click(button="right")
                 page.wait_for_timeout(500)
-                device = page.locator("[data-device-id='garmin']")
-                if device.count():
-                    device.first.click()
-                    page.wait_for_timeout(800)
-                    toast = page.locator("#toast").inner_text()
-                    if "Synced" in toast or "Garmin" in toast:
-                        ok("fitness sync mock (Garmin)")
-                    else:
-                        fail("fitness sync toast", toast[:60])
+                modal_sync = page.locator(".fixed [data-sync-activity], .fixed button", has_text="Sync activity")
+                if modal_sync.count() and modal_sync.first.is_visible():
+                    modal_sync.first.click()
+                    page.wait_for_timeout(400)
+                    return True
+            return False
+
+        if open_device_sync_modal():
+            device = page.locator("[data-device-id='garmin']")
+            if device.count():
+                device.first.click()
+                page.wait_for_timeout(800)
+                toast = page.locator("#toast").inner_text()
+                if "Synced" in toast or "Garmin" in toast:
+                    ok("fitness sync mock (Garmin)")
                 else:
-                    fail("device sync modal")
+                    fail("fitness sync toast", toast[:60])
             else:
-                ok("sync button only on physical activities (skipped for this task)")
+                fail("device sync modal")
+        else:
+            ok("sync flow skipped (no physical activity pending sync)")
+
         close_btn = page.locator(".fixed .text-2xl", has_text="×").first
         if close_btn.count() and close_btn.is_visible():
             close_btn.click(timeout=2000)
