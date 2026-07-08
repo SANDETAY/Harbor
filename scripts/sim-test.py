@@ -141,8 +141,8 @@ def run_tests():
         else:
             complete_btn.click()
             page.wait_for_timeout(600)
-            active_remaining = page.locator("#task-list .habit-card[data-feed-type='habit']").count()
-            sync_pending = page.locator("#task-list .habit-card[data-feed-type='sync-pending']").count()
+            active_remaining = page.locator("#task-list .swipe-row[data-feed-type='habit']").count()
+            sync_pending = page.locator("#task-list .swipe-row[data-feed-type='sync-pending']").count()
             if active_remaining < task_count or sync_pending >= 1:
                 ok(f"task completion handled (active={active_remaining}, sync-pending={sync_pending})")
             else:
@@ -164,8 +164,13 @@ def run_tests():
 
         # --- Simulation 7: Streaks + projections ---
         page.locator("#tab-streaks").click()
-        page.wait_for_timeout(600)
-        streak_cards = page.locator("#streaks-list .rhythm-card, #streaks-list .habit-card").count()
+        page.wait_for_selector(
+            "#streaks-list .swipe-row, #streaks-list .rhythm-card, #streaks-list .habit-card",
+            timeout=5000,
+        )
+        streak_cards = page.locator(
+            "#streaks-list .swipe-row, #streaks-list .rhythm-card, #streaks-list .habit-card"
+        ).count()
         if streak_cards >= 1:
             ok(f"streaks render ({streak_cards})")
             page.locator("#streaks-list .rhythm-card, #streaks-list .habit-card").first.click()
