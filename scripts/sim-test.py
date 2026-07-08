@@ -214,6 +214,38 @@ def run_tests():
         }""")
         ok("state manipulation via RHYTHM API")
 
+        # --- Simulation 13: Tutorial highlights align on mobile ---
+        tutorial_steps = [0, 4, 9]  # today tab, streaks tab, energy+smart
+        page.evaluate("""() => {
+          localStorage.setItem('rhythm_onboarded', '1');
+          if (typeof startAppTutorial === 'function') startAppTutorial();
+        }""")
+        page.wait_for_timeout(900)
+        misaligned = []
+        for step_idx in tutorial_steps:
+            page.evaluate(f"() => renderTutorialStep({step_idx})")
+            page.wait_for_timeout(650)
+            result = page.evaluate("""() => {
+              const step = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
+              const hi = document.getElementById('tutorial-highlight');
+              if (!hi || hi.classList.contains('hidden')) return { ok: false, reason: 'no highlight' };
+              const h = hi.getBoundingClientRect();
+              let target = typeof step.target === 'function' ? step.target() : null;
+              if (!target) return { ok: false, reason: 'no target' };
+              const t = target.getBoundingClientRect();
+              const overlap = !(h.right < t.left || h.left > t.right || h.bottom < t.top || h.top > t.bottom);
+              const covers = h.left <= t.left + 4 && h.top <= t.top + 4
+                && h.right >= t.right - 4 && h.bottom >= t.bottom - 4;
+              return { ok: overlap && (covers || h.width >= t.width * 0.85), step: step.id };
+            }""")
+            if not result.get("ok"):
+                misaligned.append(f"step {step_idx} ({result.get('step', '?')}): {result.get('reason', 'misaligned')}")
+        if not misaligned:
+            ok("tutorial highlights align on mobile")
+        else:
+            fail("tutorial highlights align", "; ".join(misaligned))
+        page.evaluate("() => { if (typeof skipAppTutorial === 'function') skipAppTutorial(); }")
+
         page.close()
         browser.close()
 

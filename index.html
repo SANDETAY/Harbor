@@ -68,6 +68,7 @@
       --rhythm-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 10px 32px rgba(0, 0, 0, 0.28);
       --rhythm-glow-primary: 0 0 0 1px rgba(91, 184, 168, 0.25);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
     }
 
     * {
@@ -1233,9 +1234,8 @@
 
     .tutorial-card {
       position: fixed;
-      left: 1.25rem;
-      right: 1.25rem;
-      bottom: calc(1.25rem + var(--safe-bottom));
+      left: max(1rem, env(safe-area-inset-left, 0px));
+      right: max(1rem, env(safe-area-inset-right, 0px));
       max-width: 28rem;
       margin: 0 auto;
       background: var(--rhythm-surface);
@@ -1247,9 +1247,18 @@
       pointer-events: auto;
     }
 
-    .tutorial-card.tutorial-card-interactive {
-      top: calc(0.65rem + var(--safe-top, 0px));
+    .tutorial-card.tutorial-card-bottom {
+      top: auto;
+      bottom: calc(1.25rem + var(--safe-bottom));
+    }
+
+    .tutorial-card.tutorial-card-top {
+      top: calc(0.65rem + var(--safe-top));
       bottom: auto;
+    }
+
+    .tutorial-card.tutorial-card-interactive {
+      /* placement driven by tutorial-card-top / tutorial-card-bottom */
     }
 
     .tutorial-target-pulse {
@@ -1858,6 +1867,14 @@
       .onboarding-title {
         font-size: 1.35rem;
       }
+
+      .tutorial-card.tutorial-card-bottom {
+        bottom: calc(4.75rem + var(--safe-bottom));
+      }
+
+      .tutorial-highlight {
+        border-radius: 0.85rem;
+      }
     }
 
     @media (max-width: 380px) {
@@ -2265,7 +2282,7 @@
       </div>
 
       <!-- Energy Bar -->
-      <div class="px-5 pt-2.5 pb-2.5 bg-rhythm-bg">
+      <div id="energy-bar-section" class="px-5 pt-2.5 pb-2.5 bg-rhythm-bg">
         <div class="flex items-center justify-between mb-1">
           <div class="text-xs font-medium text-rhythm-muted flex items-center gap-x-1.5">
             <i class="fa-solid fa-battery-half"></i>
@@ -2329,25 +2346,8 @@
         </div>
       </div>
 
-      <!-- App tutorial overlay -->
-      <div id="tutorial-overlay" class="tutorial-overlay" aria-hidden="true">
-        <div id="tutorial-highlight" class="tutorial-highlight hidden"></div>
-        <div id="tutorial-card" class="tutorial-card hidden" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
-          <div class="flex items-center justify-between gap-3 mb-1.5">
-            <div id="tutorial-step-label" class="text-[10px] uppercase tracking-wider text-rhythm-accent font-semibold"></div>
-            <button type="button" onclick="skipAppTutorial()" class="text-[10px] text-rhythm-muted hover:text-rhythm-text">Skip tour</button>
-          </div>
-          <div id="tutorial-title" class="text-sm font-semibold text-rhythm-text mb-1"></div>
-          <div id="tutorial-body" class="text-xs text-rhythm-muted leading-relaxed mb-3"></div>
-          <div class="flex gap-2">
-            <button type="button" id="tutorial-back-btn" onclick="prevTutorialStep()" class="flex-1 py-2.5 rounded-xl bg-rhythm-raised border border-rhythm-border text-xs font-medium text-rhythm-muted">Back</button>
-            <button type="button" id="tutorial-next-btn" onclick="nextTutorialStep()" class="flex-[2] py-2.5 rounded-xl bg-rhythm-primary text-white text-xs font-semibold">Next</button>
-          </div>
-        </div>
-      </div>
-
       <!-- Tab Navigation -->
-      <div class="main-nav px-5 pt-2 flex border-b border-rhythm-border bg-rhythm-bg" role="tablist" aria-label="Main navigation">
+      <div id="main-nav-bar" class="main-nav px-5 pt-2 flex border-b border-rhythm-border bg-rhythm-bg" role="tablist" aria-label="Main navigation">
         <button type="button" role="tab" aria-selected="true" onclick="switchTab('today')" id="tab-today"
           class="main-nav-tab nav-active">Today</button>
         <button type="button" role="tab" aria-selected="false" onclick="switchTab('streaks')" id="tab-streaks"
@@ -2557,6 +2557,23 @@
       </div><!-- /app-content-wrap -->
     </div><!-- /app-frame -->
   </div><!-- /site-root -->
+
+  <!-- App tutorial overlay (on body — avoids mobile clipping from nested overflow/transform) -->
+  <div id="tutorial-overlay" class="tutorial-overlay" aria-hidden="true">
+    <div id="tutorial-highlight" class="tutorial-highlight hidden"></div>
+    <div id="tutorial-card" class="tutorial-card tutorial-card-bottom hidden" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+      <div class="flex items-center justify-between gap-3 mb-1.5">
+        <div id="tutorial-step-label" class="text-[10px] uppercase tracking-wider text-rhythm-accent font-semibold"></div>
+        <button type="button" onclick="skipAppTutorial()" class="text-[10px] text-rhythm-muted hover:text-rhythm-text">Skip tour</button>
+      </div>
+      <div id="tutorial-title" class="text-sm font-semibold text-rhythm-text mb-1"></div>
+      <div id="tutorial-body" class="text-xs text-rhythm-muted leading-relaxed mb-3"></div>
+      <div class="flex gap-2">
+        <button type="button" id="tutorial-back-btn" onclick="prevTutorialStep()" class="flex-1 py-2.5 rounded-xl bg-rhythm-raised border border-rhythm-border text-xs font-medium text-rhythm-muted">Back</button>
+        <button type="button" id="tutorial-next-btn" onclick="nextTutorialStep()" class="flex-[2] py-2.5 rounded-xl bg-rhythm-primary text-white text-xs font-semibold">Next</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Toast -->
   <div id="toast" class="hidden fixed left-1/2 -translate-x-1/2 bg-rhythm-surface/95 text-sm border border-rhythm-border px-4 py-2.5 rounded-2xl flex items-center gap-x-2.5 z-[200]" role="status" aria-live="polite">
@@ -9535,6 +9552,22 @@
       return pickBestContextualSuggestion(candidates);
     }
 
+    function getTutorialTaskCard() {
+      return document.querySelector('#task-list .habit-card[data-feed-type="habit"]')
+        || document.querySelector('#task-list [onclick*="completeHabit"]')?.closest('.habit-card')
+        || document.querySelector('#task-list .habit-card')
+        || document.getElementById('task-list');
+    }
+
+    function getTutorialQuantStreakCard() {
+      const cards = [...document.querySelectorAll('#streaks-list .rhythm-card[data-habit-id]')];
+      const quant = cards.find(card => {
+        const habit = state.habits.find(h => h.id === card.dataset.habitId);
+        return habit && isQuantitativeHabit(habit);
+      });
+      return quant || cards[0] || document.getElementById('streaks-list');
+    }
+
     const APP_TUTORIAL_STEPS = [
       {
         id: 'today-intro',
@@ -9547,7 +9580,7 @@
         id: 'complete-task',
         title: 'Complete a task',
         body: 'Try it now — tap the circle on any of your starter tasks to mark it done.',
-        target: () => document.querySelector('#task-list .habit-card') || document.getElementById('task-list'),
+        target: () => getTutorialTaskCard(),
         waitFor: 'habit-complete',
         interactive: true,
         prepare: () => switchTab('today')
@@ -9556,7 +9589,8 @@
         id: 'delete-task',
         title: 'Remove a task',
         body: 'Tap <strong>×</strong> on any remaining task to remove it from Today. You can always add tasks back from the Library.',
-        target: () => document.querySelector('#task-list .habit-card [title="Remove task"]')?.closest('.habit-card') || document.querySelector('#task-list .habit-card') || document.getElementById('task-list'),
+        target: () => document.querySelector('#task-list .habit-card[data-feed-type="habit"] [title="Remove task"]')?.closest('.habit-card')
+          || getTutorialTaskCard(),
         interactive: true,
         prepare: () => switchTab('today')
       },
@@ -9571,7 +9605,7 @@
         id: 'projections-tap',
         title: 'Open Projected Wins',
         body: 'Tap a streak with a measurable goal (steps, savings, pages) to open your forecast below.',
-        target: () => document.querySelector('#streaks-list .rhythm-card') || document.getElementById('streaks-list'),
+        target: () => getTutorialQuantStreakCard(),
         waitFor: 'projection-open',
         interactive: true,
         prepare: () => {
@@ -9585,21 +9619,10 @@
         title: 'Projected Wins',
         body: 'This panel forecasts where your habit is headed — daily pace, 30-day projection, and equivalents. Take your time reading it, then tap <strong>Next</strong> when you\'re ready.',
         target: () => document.getElementById('projection-panel'),
-        highlightUnion: () => {
-          const section = document.querySelector('#tab-content-streaks > .mt-6');
-          if (section) return section.getBoundingClientRect();
-          const panel = document.getElementById('projection-panel');
-          return panel ? panel.getBoundingClientRect() : null;
-        },
         cardAtTop: true,
         prepare: () => {
           switchTab('streaks');
           renderStreaks();
-          requestAnimationFrame(() => {
-            const section = document.querySelector('#tab-content-streaks > .mt-6') || document.getElementById('projection-panel');
-            section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            refreshTutorialHighlight();
-          });
         }
       },
       {
@@ -9620,19 +9643,16 @@
         id: 'energy-smart',
         title: 'Energy & Smart Suggestions',
         body: 'Set your energy level — Rhythm re-sorts Today\'s list. <strong>Smart Suggestions</strong> uses energy, calendar, and weather to nudge what to do next.',
-        target: () => document.querySelector('#energy-1')?.closest('.px-5'),
+        target: () => document.getElementById('energy-bar-section'),
         highlightUnion: () => {
-          const energyEl = document.querySelector('#energy-1')?.closest('.px-5');
+          const energyEl = document.getElementById('energy-bar-section');
           const banner = document.getElementById('smart-banner');
-          if (!energyEl || !banner || banner.classList.contains('hidden')) return null;
-          const r1 = energyEl.getBoundingClientRect();
-          const r2 = banner.getBoundingClientRect();
-          return {
-            top: Math.min(r1.top, r2.top),
-            left: Math.min(r1.left, r2.left),
-            width: Math.max(r1.right, r2.right) - Math.min(r1.left, r2.left),
-            height: Math.max(r1.bottom, r2.bottom) - Math.min(r1.top, r2.top)
-          };
+          if (!energyEl) return null;
+          const rects = [energyEl.getBoundingClientRect()];
+          if (banner && !banner.classList.contains('hidden')) {
+            rects.push(banner.getBoundingClientRect());
+          }
+          return unionTutorialRects(rects);
         },
         prepare: () => {
           switchTab('today');
@@ -9656,17 +9676,108 @@
 
     let tutorialTargetEl = null;
     let tutorialWaitSatisfied = false;
+    let tutorialViewportSyncBound = false;
+    let tutorialLastTargetRect = null;
 
     function isTutorialInteractiveStep(step) {
       return !!(step?.waitFor || step?.interactive);
     }
 
+    function getTutorialViewport() {
+      const vv = window.visualViewport;
+      if (!vv) {
+        return { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
+      }
+      return { top: vv.offsetTop, left: vv.offsetLeft, width: vv.width, height: vv.height };
+    }
+
+    function normalizeTutorialRect(rect) {
+      if (!rect) return null;
+      const top = rect.top ?? 0;
+      const left = rect.left ?? 0;
+      const width = rect.width ?? Math.max(0, (rect.right ?? left) - left);
+      const height = rect.height ?? Math.max(0, (rect.bottom ?? top) - top);
+      return { top, left, width, height, right: left + width, bottom: top + height };
+    }
+
+    function unionTutorialRects(rects) {
+      const normalized = (rects || []).map(normalizeTutorialRect).filter(r => r && r.width > 0 && r.height > 0);
+      if (!normalized.length) return null;
+      const top = Math.min(...normalized.map(r => r.top));
+      const left = Math.min(...normalized.map(r => r.left));
+      const right = Math.max(...normalized.map(r => r.right));
+      const bottom = Math.max(...normalized.map(r => r.bottom));
+      return { top, left, width: right - left, height: bottom - top, right, bottom };
+    }
+
+    function getTutorialTargetRect(target) {
+      if (!target) return null;
+      if (target === document.getElementById('task-list') || target === document.getElementById('streaks-list')) {
+        const firstCard = target.querySelector('.habit-card, .rhythm-card');
+        if (firstCard) return normalizeTutorialRect(firstCard.getBoundingClientRect());
+      }
+      return normalizeTutorialRect(target.getBoundingClientRect());
+    }
+
+    function positionTutorialCard(targetRect, step) {
+      const card = document.getElementById('tutorial-card');
+      if (!card || card.classList.contains('hidden') || !targetRect) return;
+
+      const vv = getTutorialViewport();
+      const targetMid = targetRect.top + targetRect.height / 2;
+      const viewportMid = vv.top + vv.height / 2;
+      const interactive = isTutorialInteractiveStep(step);
+      const placeTop = !!(step?.cardAtTop || (interactive && targetMid > viewportMid - 40));
+
+      card.classList.toggle('tutorial-card-top', placeTop);
+      card.classList.toggle('tutorial-card-bottom', !placeTop);
+      card.classList.toggle('tutorial-card-interactive', interactive);
+    }
+
+    function positionTutorialHighlightRect(rect, step) {
+      const highlight = document.getElementById('tutorial-highlight');
+      if (!highlight || !rect) return;
+
+      const r = normalizeTutorialRect(rect);
+      const vv = getTutorialViewport();
+      const isMobile = window.innerWidth < 768;
+      const pad = isMobile ? 4 : 6;
+      const margin = isMobile ? 4 : 8;
+
+      let top = r.top - pad;
+      let left = r.left - pad;
+      let width = r.width + pad * 2;
+      let height = r.height + pad * 2;
+
+      const minLeft = vv.left + margin;
+      const minTop = vv.top + margin;
+      const maxRight = vv.left + vv.width - margin;
+      const maxBottom = vv.top + vv.height - margin;
+
+      top = Math.max(minTop, top);
+      left = Math.max(minLeft, left);
+      if (left + width > maxRight) width = Math.max(24, maxRight - left);
+      if (top + height > maxBottom) height = Math.max(24, maxBottom - top);
+
+      highlight.classList.remove('hidden');
+      highlight.style.top = `${top}px`;
+      highlight.style.left = `${left}px`;
+      highlight.style.width = `${width}px`;
+      highlight.style.height = `${height}px`;
+
+      tutorialLastTargetRect = r;
+      positionTutorialCard(r, step || APP_TUTORIAL_STEPS[state.settings.tutorialStep]);
+    }
+
+    function positionTutorialHighlight(el, step) {
+      positionTutorialHighlightRect(getTutorialTargetRect(el), step);
+    }
+
     function applyTutorialInteractivity(step, target, overlay, card) {
       const interactive = isTutorialInteractiveStep(step);
-      const cardAtTop = !!(step?.cardAtTop || interactive);
       if (overlay) overlay.classList.toggle('is-interactive-step', interactive);
-      if (card) card.classList.toggle('tutorial-card-interactive', cardAtTop);
       if (target && interactive) target.classList.add('tutorial-interactive-target');
+      if (card) card.classList.toggle('tutorial-card-interactive', interactive);
     }
 
     function clearTutorialHighlight() {
@@ -9674,28 +9785,65 @@
         el.classList.remove('tutorial-target-pulse', 'tutorial-interactive-target');
       });
       tutorialTargetEl = null;
+      tutorialLastTargetRect = null;
       const overlay = document.getElementById('tutorial-overlay');
       const card = document.getElementById('tutorial-card');
       if (overlay) overlay.classList.remove('is-interactive-step');
-      if (card) card.classList.remove('tutorial-card-interactive');
+      if (card) {
+        card.classList.remove('tutorial-card-interactive', 'tutorial-card-top');
+        card.classList.add('tutorial-card-bottom');
+      }
     }
 
-    function positionTutorialHighlight(el) {
-      const highlight = document.getElementById('tutorial-highlight');
-      if (!highlight || !el) return;
-      const rect = el.getBoundingClientRect();
-      positionTutorialHighlightRect(rect);
+    function onTutorialViewportSync() {
+      if (!state.settings.tutorialActive) return;
+      refreshTutorialHighlight();
     }
 
-    function positionTutorialHighlightRect(rect) {
-      const highlight = document.getElementById('tutorial-highlight');
-      if (!highlight || !rect) return;
-      const pad = 6;
-      highlight.classList.remove('hidden');
-      highlight.style.top = `${Math.max(8, rect.top - pad)}px`;
-      highlight.style.left = `${Math.max(8, rect.left - pad)}px`;
-      highlight.style.width = `${rect.width + pad * 2}px`;
-      highlight.style.height = `${rect.height + pad * 2}px`;
+    function bindTutorialViewportSync() {
+      if (tutorialViewportSyncBound) return;
+      tutorialViewportSyncBound = true;
+      window.addEventListener('resize', onTutorialViewportSync, { passive: true });
+      window.addEventListener('scroll', onTutorialViewportSync, { passive: true, capture: true });
+      window.visualViewport?.addEventListener('resize', onTutorialViewportSync, { passive: true });
+      window.visualViewport?.addEventListener('scroll', onTutorialViewportSync, { passive: true });
+      document.getElementById('app-scroll')?.addEventListener('scroll', onTutorialViewportSync, { passive: true });
+      document.querySelectorAll('.tab-content').forEach(el => el.addEventListener('scroll', onTutorialViewportSync, { passive: true }));
+    }
+
+    function unbindTutorialViewportSync() {
+      if (!tutorialViewportSyncBound) return;
+      tutorialViewportSyncBound = false;
+      window.removeEventListener('resize', onTutorialViewportSync);
+      window.removeEventListener('scroll', onTutorialViewportSync, { capture: true });
+      window.visualViewport?.removeEventListener('resize', onTutorialViewportSync);
+      window.visualViewport?.removeEventListener('scroll', onTutorialViewportSync);
+      document.getElementById('app-scroll')?.removeEventListener('scroll', onTutorialViewportSync);
+      document.querySelectorAll('.tab-content').forEach(el => el.removeEventListener('scroll', onTutorialViewportSync));
+    }
+
+    function applyTutorialStepHighlight(step) {
+      const overlay = document.getElementById('tutorial-overlay');
+      const card = document.getElementById('tutorial-card');
+      clearTutorialHighlight();
+
+      const unionRect = step.highlightUnion?.();
+      let target = typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
+      const rect = unionRect || (target ? getTutorialTargetRect(target) : null);
+
+      if (rect) positionTutorialHighlightRect(rect, step);
+
+      if (target) {
+        tutorialTargetEl = target;
+        target.classList.add('tutorial-target-pulse');
+        applyTutorialInteractivity(step, target, overlay, card);
+      }
+
+      const banner = document.getElementById('smart-banner');
+      if (step.id === 'energy-smart' && banner && !banner.classList.contains('hidden')) {
+        banner.classList.add('tutorial-target-pulse');
+        if (isTutorialInteractiveStep(step)) banner.classList.add('tutorial-interactive-target');
+      }
     }
 
     function showTutorialSmartBanner() {
@@ -9723,26 +9871,7 @@
       if (!state.settings.tutorialActive) return;
       const step = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
       if (!step) return;
-      clearTutorialHighlight();
-      const overlay = document.getElementById('tutorial-overlay');
-      const card = document.getElementById('tutorial-card');
-      const unionRect = step.highlightUnion?.();
-      const target = typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
-      if (unionRect) {
-        positionTutorialHighlightRect(unionRect);
-        if (target) {
-          tutorialTargetEl = target;
-          target.classList.add('tutorial-target-pulse');
-          applyTutorialInteractivity(step, target, overlay, card);
-        }
-        return;
-      }
-      if (target) {
-        tutorialTargetEl = target;
-        target.classList.add('tutorial-target-pulse');
-        applyTutorialInteractivity(step, target, overlay, card);
-        positionTutorialHighlight(target);
-      }
+      applyTutorialStepHighlight(step);
     }
 
     function maybeAdvanceTutorial(trigger) {
@@ -9776,45 +9905,40 @@
 
       if (step.prepare) step.prepare();
 
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          clearTutorialHighlight();
-          const unionRect = step.highlightUnion?.();
-          let target = typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
-          if (unionRect) {
-            positionTutorialHighlightRect(unionRect);
-            if (target) {
-              tutorialTargetEl = target;
-              target.classList.add('tutorial-target-pulse');
-              applyTutorialInteractivity(step, target, overlay, card);
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const scrollDelay = reducedMotion ? 0 : (window.innerWidth < 768 ? 420 : 300);
+
+      const layoutStep = () => {
+        let target = typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
+        const scrollTarget = (target && target.id !== 'task-list' && target.id !== 'streaks-list') ? target : null;
+
+        if (scrollTarget?.scrollIntoView) {
+          const tabScroller = scrollTarget.closest('.tab-content');
+          if (tabScroller) {
+            const tabRect = tabScroller.getBoundingClientRect();
+            const targetRect = scrollTarget.getBoundingClientRect();
+            const card = document.getElementById('tutorial-card');
+            const cardH = card?.offsetHeight || 200;
+            const offset = isTutorialInteractiveStep(step) ? cardH + 24 : 16;
+            if (targetRect.top < tabRect.top + offset || targetRect.bottom > tabRect.bottom - 16) {
+              tabScroller.scrollTop += targetRect.top - tabRect.top - offset;
             }
-            const banner = document.getElementById('smart-banner');
-            if (banner && !banner.classList.contains('hidden')) {
-              banner.classList.add('tutorial-target-pulse');
-              if (isTutorialInteractiveStep(step)) banner.classList.add('tutorial-interactive-target');
-              tutorialTargetEl = banner;
-            }
-          } else if (target) {
-            tutorialTargetEl = target;
-            target.classList.add('tutorial-target-pulse');
-            applyTutorialInteractivity(step, target, overlay, card);
-            if (!unionRect) {
-              target.scrollIntoView({
-                block: (isTutorialInteractiveStep(step) || step.cardAtTop) ? 'center' : 'nearest',
-                behavior: 'smooth'
-              });
-              positionTutorialHighlight(target);
-            }
+          } else {
+            scrollTarget.scrollIntoView({
+              block: (isTutorialInteractiveStep(step) || step.cardAtTop) ? 'center' : 'nearest',
+              behavior: reducedMotion ? 'auto' : 'smooth'
+            });
           }
+        }
+
+        setTimeout(() => {
+          applyTutorialStepHighlight(step);
 
           if (overlay) {
             overlay.classList.add('is-active');
             overlay.setAttribute('aria-hidden', 'false');
           }
-          if (card) {
-            card.classList.remove('hidden');
-            if (!target && !step.cardAtTop) card.classList.remove('tutorial-card-interactive');
-          }
+          if (card) card.classList.remove('hidden');
           if (stepLabel) stepLabel.textContent = `Step ${stepIndex + 1} of ${APP_TUTORIAL_STEPS.length}`;
           if (titleEl) titleEl.textContent = step.title;
           if (bodyEl) bodyEl.innerHTML = step.body;
@@ -9828,8 +9952,10 @@
               ? 'Waiting for you…'
               : (stepIndex === APP_TUTORIAL_STEPS.length - 1 ? 'Finish tour' : 'Next');
           }
-        });
-      });
+        }, scrollTarget ? scrollDelay : 0);
+      };
+
+      requestAnimationFrame(() => requestAnimationFrame(layoutStep));
     }
 
     function startAppTutorial() {
@@ -9841,6 +9967,7 @@
       saveState();
       renderTasks();
       updateSmartBanner();
+      bindTutorialViewportSync();
       renderTutorialStep(0);
     }
 
@@ -9863,6 +9990,7 @@
     }
 
     function completeAppTutorial(skipped = false) {
+      unbindTutorialViewportSync();
       clearTutorialHighlight();
       hideTutorialSmartBanner();
       tutorialWaitSatisfied = false;
@@ -11080,6 +11208,7 @@
         const progressHtml = renderStreakBadgeProgress(streak);
         const card = document.createElement('div');
         card.className = `rhythm-card bg-rhythm-surface border rounded-3xl px-4 py-3.5 cursor-pointer active:bg-rhythm-border ${isSelected ? 'border-rhythm-primary/60 shadow-[var(--rhythm-glow-primary)]' : 'border-rhythm-border'}`;
+        card.dataset.habitId = habit.id;
         card.onclick = () => showProjections(habit.id);
         card.innerHTML = `
           <div class="flex justify-between items-start gap-2">
