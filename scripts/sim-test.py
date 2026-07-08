@@ -57,15 +57,21 @@ def run_tests():
 
         # --- Simulation 1: Fresh user onboarding skip ---
         page = context.new_page()
-        page.goto(base, wait_until="networkidle", timeout=60000)
-        page.wait_for_timeout(2500)
+        page.goto(base, wait_until="domcontentloaded", timeout=60000)
+        page.evaluate("""() => {
+          localStorage.removeItem('rhythm_onboarded');
+          localStorage.removeItem('rhythm_state_v1');
+        }""")
+        page.reload(wait_until="networkidle", timeout=60000)
+        page.wait_for_timeout(3200)
 
-        if page.locator("#onboarding").is_visible():
+        onboarding = page.locator("#onboarding")
+        if onboarding.is_visible():
             page.locator("text=Just explore").click()
             page.wait_for_timeout(800)
             ok("onboarding skip")
         else:
-            fail("onboarding skip", "onboarding not visible")
+            fail("onboarding skip", "onboarding not visible after fresh load")
 
         page.wait_for_selector("#task-list .habit-card", timeout=10000)
         task_count = page.locator("#task-list .habit-card").count()
@@ -82,16 +88,18 @@ def run_tests():
             fail("smart banner visible", "banner hidden")
 
         # --- Simulation 2b: Welcome spotlight after onboarding ---
-        spotlight = page.locator("#welcome-spotlight-overlay.is-active")
         page.wait_for_timeout(400)
-        if spotlight.count():
+        spotlight_active = page.locator("#welcome-spotlight-highlight:not(.hidden)")
+        if spotlight_active.count():
             ok("welcome spotlight visible after onboarding")
-            skip_btn = page.locator("button", has_text="Skip for now")
-            if skip_btn.count() and skip_btn.is_visible():
-                skip_btn.click()
-                page.wait_for_timeout(400)
         else:
-            fail("welcome spotlight visible", "spotlight not active")
+            fail("welcome spotlight visible", "spotlight highlight not shown")
+
+        skip_btn = page.locator("button", has_text="Skip for now")
+        if skip_btn.count() and skip_btn.is_visible():
+            skip_btn.click()
+            page.wait_for_timeout(400)
+            ok("welcome spotlight dismissible")
 
         # --- Simulation 3: Rhythm Brief launcher ---
         brief = page.locator("#rhythm-brief-launcher")
