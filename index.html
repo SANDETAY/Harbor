@@ -1292,20 +1292,15 @@
       box-shadow: var(--rhythm-shadow-md);
       z-index: 193;
       pointer-events: auto;
-    }
-
-    .tutorial-card.tutorial-card-bottom {
       top: auto;
-      bottom: calc(1.25rem + var(--safe-bottom));
-    }
-
-    .tutorial-card.tutorial-card-top {
-      top: calc(0.65rem + var(--safe-top));
       bottom: auto;
+      transition: top 0.42s var(--rhythm-ease-out), left 0.42s var(--rhythm-ease-out);
     }
 
-    .tutorial-card.tutorial-card-interactive {
-      /* placement driven by tutorial-card-top / tutorial-card-bottom */
+    @media (prefers-reduced-motion: reduce) {
+      .tutorial-card {
+        transition: none;
+      }
     }
 
     .tutorial-target-pulse {
@@ -9739,6 +9734,7 @@
         title: 'Today tab',
         body: 'Your action list lives here. Daily tasks show up every morning — tap the circle to log a win.',
         target: () => document.getElementById('tab-today'),
+        cardPlacement: 'above',
         prepare: () => switchTab('today')
       },
       {
@@ -9760,8 +9756,9 @@
       {
         id: 'streaks-intro',
         title: 'Streaks tab',
-        body: 'Completed habits build streaks here. Track progress and unlock <strong>Projected Wins</strong> for measurable goals.',
+        body: 'Completed tasks build streaks here. Track progress and unlock <strong>Projected Wins</strong> for measurable goals.',
         target: () => document.getElementById('tab-streaks'),
+        cardPlacement: 'above',
         prepare: () => switchTab('streaks')
       },
       {
@@ -9771,6 +9768,7 @@
         target: () => getTutorialQuantStreakCard(),
         waitFor: 'projection-open',
         interactive: true,
+        cardPlacement: 'above',
         prepare: () => {
           switchTab('streaks');
           currentProjectionHabit = null;
@@ -9780,9 +9778,9 @@
       {
         id: 'projections-read',
         title: 'Projected Wins',
-        body: 'This panel forecasts where your habit is headed — daily pace, 30-day projection, and equivalents. Take your time reading it, then tap <strong>Next</strong> when you\'re ready.',
+        body: 'This panel forecasts where your task is headed — daily pace, 30-day projection, and equivalents. Take your time reading it, then tap <strong>Next</strong> when you\'re ready.',
         target: () => document.getElementById('projection-panel'),
-        cardAtTop: true,
+        cardPlacement: 'above',
         prepare: () => {
           switchTab('streaks');
           renderStreaks();
@@ -9793,6 +9791,7 @@
         title: 'Life tab',
         body: '<strong>Schedule</strong> for events, <strong>Grocery</strong> for lists, <strong>Bills</strong> for due dates, and <strong>Subscriptions</strong> for recurring costs.',
         target: () => document.getElementById('tab-life'),
+        cardPlacement: 'above',
         prepare: () => switchTab('life')
       },
       {
@@ -9800,6 +9799,7 @@
         title: 'Library tab',
         body: 'Browse preset chores and habits. Tap any card to add it to your Rhythm, or create your own under Personal.',
         target: () => document.getElementById('tab-library'),
+        cardPlacement: 'above',
         prepare: () => switchTab('library')
       },
       {
@@ -9807,6 +9807,7 @@
         title: 'Energy & Smart Suggestions',
         body: 'Set your energy level — Rhythm re-sorts Today\'s list. <strong>Smart Suggestions</strong> uses energy, calendar, and weather to nudge what to do next.',
         target: () => document.getElementById('energy-bar-section'),
+        cardPlacement: 'below',
         highlightUnion: () => {
           const energyEl = document.getElementById('energy-bar-section');
           const banner = document.getElementById('smart-banner');
@@ -9829,6 +9830,7 @@
         target: () => document.getElementById('rhythm-brief-launcher'),
         waitFor: 'rhythm-brief-open',
         interactive: true,
+        cardPlacement: 'below',
         prepare: () => {
           switchTab('today');
           updateRhythmBriefLauncher();
@@ -9845,6 +9847,7 @@
     let tutorialWaitSatisfied = false;
     let tutorialViewportSyncBound = false;
     let tutorialLastTargetRect = null;
+    let tutorialLastCardPlacement = 'below';
 
     function isTutorialInteractiveStep(step) {
       return !!(step?.waitFor || step?.interactive);
@@ -9891,14 +9894,36 @@
       if (!card || card.classList.contains('hidden') || !targetRect) return;
 
       const vv = getTutorialViewport();
-      const targetMid = targetRect.top + targetRect.height / 2;
-      const viewportMid = vv.top + vv.height / 2;
-      const interactive = isTutorialInteractiveStep(step);
-      const placeTop = !!(step?.cardAtTop || (interactive && targetMid > viewportMid - 40));
+      const isMobile = window.innerWidth < 768;
+      const margin = isMobile ? 8 : 12;
+      const gap = isMobile ? 10 : 12;
+      const cardH = card.offsetHeight || 168;
+      const highlightBottom = targetRect.top + targetRect.height;
+      const spaceAbove = targetRect.top - vv.top - margin;
+      const spaceBelow = (vv.top + vv.height) - highlightBottom - margin;
+      const fitsBelow = spaceBelow >= cardH + gap;
+      const fitsAbove = spaceAbove >= cardH + gap;
 
-      card.classList.toggle('tutorial-card-top', placeTop);
-      card.classList.toggle('tutorial-card-bottom', !placeTop);
-      card.classList.toggle('tutorial-card-interactive', interactive);
+      let placeBelow;
+      if (step?.cardPlacement === 'above') placeBelow = false;
+      else if (step?.cardPlacement === 'below') placeBelow = true;
+      else if (fitsBelow && fitsAbove) {
+        placeBelow = tutorialLastCardPlacement !== 'above';
+      } else if (fitsBelow) placeBelow = true;
+      else if (fitsAbove) placeBelow = false;
+      else placeBelow = spaceBelow >= spaceAbove;
+
+      tutorialLastCardPlacement = placeBelow ? 'below' : 'above';
+
+      let top = placeBelow
+        ? highlightBottom + gap
+        : targetRect.top - gap - cardH;
+      top = Math.max(vv.top + margin, Math.min(top, vv.top + vv.height - cardH - margin));
+
+      card.classList.remove('tutorial-card-top', 'tutorial-card-bottom', 'tutorial-card-interactive');
+      card.classList.toggle('tutorial-card-interactive', isTutorialInteractiveStep(step));
+      card.style.top = `${top}px`;
+      card.style.bottom = 'auto';
     }
 
     function positionTutorialHighlightRect(rect, step) {
@@ -9957,8 +9982,9 @@
       const card = document.getElementById('tutorial-card');
       if (overlay) overlay.classList.remove('is-interactive-step');
       if (card) {
-        card.classList.remove('tutorial-card-interactive', 'tutorial-card-top');
-        card.classList.add('tutorial-card-bottom');
+        card.classList.remove('tutorial-card-interactive', 'tutorial-card-top', 'tutorial-card-bottom');
+        card.style.top = '';
+        card.style.bottom = '';
       }
     }
 
@@ -10189,13 +10215,18 @@
             const targetRect = scrollTarget.getBoundingClientRect();
             const card = document.getElementById('tutorial-card');
             const cardH = card?.offsetHeight || 200;
-            const offset = isTutorialInteractiveStep(step) ? cardH + 24 : 16;
+            const offset = cardH + 36;
+            const targetMid = targetRect.top + targetRect.height / 2;
+            const idealMid = tabRect.top + tabRect.height * 0.42;
+            if (Math.abs(targetMid - idealMid) > cardH * 0.35) {
+              tabScroller.scrollTop += targetMid - idealMid;
+            }
             if (targetRect.top < tabRect.top + offset || targetRect.bottom > tabRect.bottom - 16) {
               tabScroller.scrollTop += targetRect.top - tabRect.top - offset;
             }
           } else {
             scrollTarget.scrollIntoView({
-              block: (isTutorialInteractiveStep(step) || step.cardAtTop) ? 'center' : 'nearest',
+              block: 'center',
               behavior: reducedMotion ? 'auto' : 'smooth'
             });
           }
@@ -10230,6 +10261,13 @@
               nextTutorialStep();
             }, step.autoAdvanceMs);
           }
+
+          requestAnimationFrame(() => {
+            const current = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
+            if (tutorialLastTargetRect && current) {
+              positionTutorialCard(tutorialLastTargetRect, current);
+            }
+          });
         }, scrollTarget ? scrollDelay : 0);
       };
 
@@ -10242,6 +10280,7 @@
 
     function startAppTutorial() {
       hideWelcomeSpotlight();
+      tutorialLastCardPlacement = 'below';
       ensureStarterRoutineTasks();
       state.settings.showWelcomeBanner = false;
       state.settings.tutorialActive = true;
