@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -89,9 +89,22 @@
       touch-action: manipulation;
     }
     
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      touch-action: manipulation;
+    }
+
+    /* Prevent iOS focus-zoom on form fields (needs ≥16px) */
+    input, select, textarea {
+      font-size: 16px;
+    }
+
     html, body {
       min-height: 100%;
       height: 100%;
+      overflow-x: hidden;
+      overscroll-behavior-x: none;
     }
 
     body {
@@ -160,7 +173,8 @@
     .swipe-row-content {
       position: relative;
       z-index: 1;
-      background: inherit;
+      /* Solid fill so Edit/Delete actions never peek through before swipe */
+      background: var(--rhythm-surface);
       will-change: transform;
     }
 
@@ -645,6 +659,27 @@
       border-color: var(--rhythm-primary);
       background: rgba(61, 154, 139, 0.15);
       color: var(--rhythm-text);
+    }
+
+    .qt-kind-chip {
+      padding: 0.55rem 0.4rem;
+      border-radius: 0.9rem;
+      border: 1px solid var(--rhythm-border);
+      background: var(--rhythm-raised);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .qt-kind-chip.is-active {
+      border-color: var(--rhythm-primary);
+      background: rgba(61, 154, 139, 0.14);
+      box-shadow: 0 0 0 1px rgba(61, 154, 139, 0.2);
+    }
+
+    .qt-kind-chip:active {
+      transform: scale(0.98);
     }
 
     .modal-sheet {
@@ -1613,6 +1648,40 @@
       text-transform: uppercase;
     }
 
+    .cal-ampm-toggle {
+      display: flex;
+      flex-shrink: 0;
+      gap: 0.3rem;
+      margin-left: 0.15rem;
+    }
+
+    .cal-ampm-btn {
+      min-width: 2.65rem;
+      padding: 0.55rem 0.7rem;
+      border-radius: 0.85rem;
+      border: 1px solid var(--rhythm-border);
+      background: var(--rhythm-raised);
+      color: var(--rhythm-muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .cal-ampm-btn:active {
+      transform: scale(0.97);
+    }
+
+    .cal-ampm-btn.is-active {
+      border-color: var(--rhythm-primary);
+      background: rgba(61, 154, 139, 0.18);
+      color: var(--rhythm-primary-light);
+      box-shadow: 0 0 0 1px rgba(61, 154, 139, 0.25);
+    }
+
     .cal-format-chip {
       padding: 0.35rem 0.85rem;
       border-radius: 999px;
@@ -1632,6 +1701,41 @@
       color: var(--rhythm-primary-light);
     }
 
+    .cal-duration-other-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin: 0 0 0.65rem;
+      padding: 0.35rem 0.15rem;
+      border: none;
+      background: transparent;
+      color: var(--rhythm-primary-light);
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .cal-duration-other-btn.is-open {
+      color: var(--rhythm-text);
+    }
+
+    .cal-duration-custom-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .cal-duration-custom-wrap.hidden {
+      display: none;
+    }
+
+    .cal-duration-custom-wrap input {
+      flex: 1;
+      min-width: 0;
+    }
+
     .empty-state {
       background: radial-gradient(ellipse at 50% 0%, rgba(61, 154, 139, 0.08) 0%, transparent 65%), var(--rhythm-surface);
     }
@@ -1643,9 +1747,26 @@
       transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
+    .cheat-fund-jar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .cheat-fund-jar-icon {
+      font-size: 2rem;
+      line-height: 1;
+      filter: drop-shadow(0 2px 6px rgba(251, 191, 36, 0.35));
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .cheat-fund-jar.is-earning .cheat-fund-jar-icon {
+      transform: scale(1.12) rotate(-6deg);
+    }
     .cheat-fund-track {
       position: relative;
-      height: 0.5rem;
+      flex: 1;
+      height: 0.55rem;
       background: var(--rhythm-raised);
       border-radius: 9999px;
       overflow: visible;
@@ -1653,8 +1774,65 @@
     .cheat-fund-fill {
       height: 100%;
       border-radius: 9999px;
-      background: linear-gradient(to right, #d97706, #fbbf24);
-      transition: width 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      background: linear-gradient(to right, #d97706, #fbbf24, #fde68a);
+      transition: width 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 0 12px rgba(251, 191, 36, 0.35);
+    }
+    .cheat-fund-earn-pop {
+      animation: cheatFundPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes cheatFundPop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+    .cheat-fund-reward-chip {
+      flex-shrink: 0;
+      padding: 0.45rem 0.65rem;
+      border-radius: 1rem;
+      border: 1px solid var(--rhythm-border);
+      background: var(--rhythm-raised);
+      text-align: center;
+      min-width: 4.5rem;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    }
+    .cheat-fund-reward-chip.is-ready {
+      border-color: rgba(251, 191, 36, 0.55);
+      background: rgba(251, 191, 36, 0.1);
+    }
+    .cheat-fund-reward-chip:active { transform: scale(0.97); }
+    .cheat-fund-rewards-row {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+      scrollbar-width: none;
+    }
+    .cheat-fund-rewards-row::-webkit-scrollbar { display: none; }
+    .cheat-confetti-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 80;
+      overflow: hidden;
+    }
+    .cheat-confetti-piece {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      animation: cheatConfettiFall 2.4s ease-in forwards;
+    }
+    @keyframes cheatConfettiFall {
+      0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+    .cheat-day-today-banner {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(217, 119, 6, 0.08));
+      border: 1px solid rgba(251, 191, 36, 0.35);
+    }
+    html[data-fun-theme] .cheat-fund-fill {
+      background: linear-gradient(to right, var(--rhythm-primary), var(--rhythm-primary-light), #fde68a);
     }
     .cheat-fund-milestone {
       position: absolute;
@@ -2270,12 +2448,17 @@
         font-size: 1.35rem;
       }
 
+      /* Bottom placement is driven by JS top; avoid fixed bottom that collides with tabs */
       .tutorial-card.tutorial-card-bottom {
-        bottom: calc(4.75rem + var(--safe-bottom));
+        bottom: auto;
       }
 
       .tutorial-highlight {
         border-radius: 0.85rem;
+      }
+
+      #tutorial-card {
+        max-width: calc(100vw - 1.5rem);
       }
     }
 
@@ -2803,12 +2986,15 @@
       <div id="app-scroll">
       <!-- TODAY TAB -->
       <div id="tab-content-today" class="tab-content px-5 pt-3 bg-rhythm-bg">
-        <div class="flex items-center justify-between mb-3">
-          <div class="section-header font-semibold text-rhythm-text">Today's Tasks</div>
-          <div onclick="reprioritizeTasks()" class="text-xs flex items-center gap-x-1 text-rhythm-primary-light active:text-rhythm-primary-light cursor-pointer">
-            <i class="fa-solid fa-sort-amount-down text-xs"></i>
-            <span class="font-medium">Sort</span>
+        <div class="flex items-center justify-between mb-3 gap-2">
+          <div class="min-w-0">
+            <div class="section-header font-semibold text-rhythm-text">Today's Tasks</div>
+            <div class="text-[10px] text-rhythm-muted mt-0.5">Due today only · weekly chores live in Rhythm Brief</div>
           </div>
+          <button type="button" onclick="showQuickTaskModal({ mode: 'habit' })"
+            class="flex-shrink-0 text-[11px] font-semibold px-3 py-1.5 rounded-xl bg-rhythm-primary text-white active:opacity-90">
+            <i class="fa-solid fa-plus mr-1"></i>Add
+          </button>
         </div>
 
         <div id="task-swipe-hint" class="swipe-row-hint">Swipe a task left for Edit or Delete</div>
@@ -2821,7 +3007,7 @@
             <div class="quick-add-field flex-1 relative">
               <input id="quick-add-input" type="text" spellcheck="true" autocapitalize="words"
                 class="quick-add-input input-polish w-full bg-rhythm-surface border border-rhythm-border focus:border-rhythm-primary placeholder:text-rhythm-muted outline-none"
-                placeholder="Add new task...">
+                placeholder="Quick add a task or habit…">
               <button type="button" onclick="addHabitFromInput()"
                 class="quick-add-submit absolute bg-rhythm-primary hover:bg-rhythm-primary-light active:opacity-90 transition-colors text-white flex items-center justify-center"
                 aria-label="Add task">
@@ -2835,7 +3021,7 @@
             </button>
           </div>
           <div class="text-center min-w-0">
-            <span class="quick-add-hint text-rhythm-muted">Say “add milk to grocery” or “add task walk the dog”</span>
+            <span class="quick-add-hint text-rhythm-muted">Opens type picker · or say “add task walk the dog”</span>
           </div>
         </div>
       </div>
@@ -2945,7 +3131,8 @@
 
       <!-- STREAKS TAB -->
       <div id="tab-content-streaks" class="tab-content px-5 pt-3 pb-6 bg-rhythm-bg hidden">
-        <div class="section-header font-semibold text-rhythm-text mb-2">Your streaks</div>
+        <div class="section-header font-semibold text-rhythm-text mb-1">Your streaks</div>
+        <div class="text-[10px] text-rhythm-muted mb-2">Daily habits only — chores and one-time tasks don’t build streaks</div>
         <div id="streak-badge-legend"></div>
 
         <div class="streaks-body">
@@ -2992,14 +3179,7 @@
 
       <!-- Bottom status / autonomy hint -->
       <div class="status-bar px-5 py-2.5 border-t border-rhythm-border/80 text-xs flex items-center gap-x-2.5 text-rhythm-muted flex-shrink-0">
-        <div class="app-menu-wrap app-menu-wrap--mobile">
-          <button type="button" id="app-menu-trigger-mobile" class="app-menu-trigger app-menu-trigger--compact touch-target"
-            onclick="toggleAppMenu('mobile')" aria-label="App menu" aria-expanded="false" aria-haspopup="menu">
-            <i class="fa-solid fa-bars text-[11px]"></i>
-            <span>Menu</span>
-          </button>
-        </div>
-        <i class="fa-solid fa-sparkles text-rhythm-primary-light/80 hidden sm:inline"></i>
+        <i class="fa-solid fa-sparkles text-rhythm-primary-light/80"></i>
         <span id="calendar-status-text" class="flex-1 leading-snug min-w-0">Task-first • Calendar-aware suggestions</span>
         <button type="button" onclick="simulateContextChange()" class="status-bar-btn">Simulate day</button>
       </div>
@@ -3093,7 +3273,8 @@
         tutorialStep: 0,
         smartSuggestionsMuted: false,
         tipIndex: 0,
-        weatherUnit: 'fahrenheit'
+        weatherUnit: 'fahrenheit',
+        cheatDayFundEnabled: true
       }
     };
 
@@ -3120,14 +3301,18 @@
     let currentProjectionHabit = null;
     let commonTasks = [];
 
-    const CHEAT_DOWN_COOLDOWN_DAYS = 3;
+    const CHEAT_DAY_COOLDOWN_DAYS = 2;
+    const CHEAT_DAY_COST_MIN = 500;
+    const CHEAT_DAY_COST_MAX = 800;
 
-    const CHEAT_FUND_MILESTONES = [
-      { pct: 25, emoji: '☕', label: 'Coffee fund' },
-      { pct: 50, emoji: '🍕', label: 'Halfway treat' },
-      { pct: 75, emoji: '🎮', label: 'Almost there' },
-      { pct: 100, emoji: '🎉', label: 'Cheat Day ready' }
+    const CHEAT_FUND_SMALL_REWARDS = [
+      { id: 'badge', cost: 50, emoji: '🏅', label: 'Fun badge', desc: 'Flair on your streaks' },
+      { id: 'boost', cost: 100, emoji: '✨', label: 'Motivation boost', desc: 'Brighter projections' },
+      { id: 'skip', cost: 150, emoji: '⏭️', label: 'Skip easy task', desc: 'Tap Token on Today' },
+      { id: 'theme', cost: 200, emoji: '🎨', label: 'Fun theme', desc: 'Applies instantly · 3 days' }
     ];
+
+    const STREAK_MILESTONE_BONUSES = { 7: 25, 30: 75, 100: 200 };
 
     const CHEAT_DAY_TREATS = [
       { id: 'coffee', emoji: '☕', label: 'Fancy coffee' },
@@ -3135,7 +3320,22 @@
       { id: 'dessert', emoji: '🍰', label: 'Dessert splurge' },
       { id: 'lazy', emoji: '🛋️', label: 'Lazy evening' },
       { id: 'screen', emoji: '📺', label: 'Binge watch' },
-      { id: 'skip', emoji: '⏭️', label: 'Skip a chore' }
+      { id: 'nap', emoji: '😴', label: 'Guilt-free nap' }
+    ];
+
+    const CHEAT_DAY_RELAX_IDEAS = [
+      'Take a walk with no step goal',
+      'Read for pleasure — no page count',
+      'Call someone you enjoy talking to',
+      'Watch something funny',
+      'Cook or order comfort food',
+      'Stretch, nap, or do nothing at all'
+    ];
+
+    const FUN_THEMES = [
+      { id: 'sunset', label: 'Sunset', accent: '#f97316' },
+      { id: 'ocean', label: 'Ocean', accent: '#38bdf8' },
+      { id: 'lavender', label: 'Lavender', accent: '#a78bfa' }
     ];
 
     const LIBRARY_FILTERS = [
@@ -3469,7 +3669,8 @@
           tipIndex: 0,
           weatherUnit: 'fahrenheit',
           calendarSources: [],
-          routineLevel: null
+          routineLevel: null,
+          cheatDayFundEnabled: true
         }
       };
     }
@@ -3622,10 +3823,23 @@
       if (!state.subscriptions) state.subscriptions = [];
       if (!state.metricLogs) state.metricLogs = {};
       if (!state.rewardBank) state.rewardBank = { points: 0, totalEarned: 0, cheatDownsUsed: 0, lastCheatDate: null };
+      if (!state.rewardBank.streakMilestones) state.rewardBank.streakMilestones = {};
+      if (!state.rewardBank.cheatDayDates) state.rewardBank.cheatDayDates = [];
+      if (!state.rewardBank.badges) state.rewardBank.badges = 0;
+      if (state.rewardBank.skipToken == null) state.rewardBank.skipToken = 0;
       if (!state.feedbackLog) state.feedbackLog = [];
       if (state.rewardBank.cheatDaysUsed != null && state.rewardBank.cheatDownsUsed == null) {
         state.rewardBank.cheatDownsUsed = state.rewardBank.cheatDaysUsed;
       }
+      if (state.settings.cheatDayFundEnabled === undefined) {
+        state.settings.cheatDayFundEnabled = true;
+      }
+      // Migrate existing items: weekly+ chores no longer build streaks by default
+      (state.habits || []).forEach(h => {
+        if (h.trackStreak === undefined) {
+          h.trackStreak = defaultTrackStreakForInterval(h.interval_days);
+        }
+      });
       if (state.customLibrary) {
         state.customLibrary.forEach(t => {
           if (t.librarySection === 'Your Custom Tasks' || !t.librarySection) {
@@ -3952,6 +4166,7 @@
 
     function computeCurrentStreak(habitId) {
       const habit = state.habits.find(h => h.id === habitId);
+      if (habit && !shouldTrackStreak(habit)) return 0;
       if (habit && !isRecurringHabit(habit)) return 0;
 
       const dates = [...getCompletions(habitId)].sort().reverse();
@@ -3970,6 +4185,8 @@
         if (dateSet.has(ds)) {
           streak++;
           checkDate.setDate(checkDate.getDate() - 1);
+        } else if (typeof isCheatGraceDay === 'function' && isCheatGraceDay(ds)) {
+          checkDate.setDate(checkDate.getDate() - 1);
         } else {
           break;
         }
@@ -3979,6 +4196,7 @@
 
     function getLongestStreak(habitId) {
       const habit = state.habits.find(h => h.id === habitId);
+      if (habit && !shouldTrackStreak(habit)) return 0;
       if (habit && !isRecurringHabit(habit)) return 0;
 
       const dates = [...getCompletions(habitId)].sort();
@@ -4066,27 +4284,19 @@
       const syncedToday = hasSyncedToday(habit.id);
 
       if (isPhysicalActivity(habit)) {
+        // Device sync lives on Today after you complete an activity — not in Projected Wins.
         return `
           <div class="mt-4 pt-3 border-t border-rhythm-border">
-            <div class="text-[10px] text-rhythm-muted mb-2 leading-snug">Sync walking, running, swimming, and other workouts from your phone or wearable — projections use real activity data.</div>
-            <button type="button" data-sync-activity="${habit.id}"
-              class="w-full py-3 rounded-2xl bg-sky-600 active:bg-sky-500 text-white text-sm font-semibold flex items-center justify-center gap-2">
-              <i class="fa-solid fa-rotate"></i>
-              ${syncedToday ? 'Re-sync activity' : 'Sync activity'}
-            </button>
-            ${todayLog ? `<div class="text-[10px] text-rhythm-muted mt-2">Today: <strong class="text-rhythm-text">${todayLog.value} ${meta.unitLabel}</strong> <span class="opacity-70">(${todayLog.source || 'logged'})</span></div>` : ''}
-            <details class="mt-3 group">
-              <summary class="text-[10px] text-rhythm-muted cursor-pointer select-none list-none flex items-center gap-1.5">
-                <i class="fa-solid fa-chevron-right text-[8px] transition-transform group-open:rotate-90"></i>
-                Enter value manually
-              </summary>
-              <div class="mt-2 flex gap-2">
-                <input id="${manualId}" type="number" min="0" step="${meta.step}" value="${todayLog?.value ?? ''}" placeholder="${meta.placeholder}"
-                  class="flex-1 bg-rhythm-raised/80 border border-rhythm-border/80 focus:border-rhythm-primary rounded-xl px-3 py-2 text-xs outline-none text-rhythm-text">
-                <button type="button" data-save-metric="${habit.id}" data-metric-input="${manualId}"
-                  class="px-3 py-2 rounded-xl bg-rhythm-raised border border-rhythm-border text-[11px] font-medium text-rhythm-muted">Save</button>
-              </div>
-            </details>
+            <label class="block text-xs font-medium text-rhythm-text mb-1">Log activity</label>
+            <div class="text-[10px] text-rhythm-muted mb-2 leading-snug">Enter what you did for projections. After you complete an activity on Today, use <strong>Sync</strong> there to pull from a wearable.</div>
+            <div class="flex gap-2">
+              <input id="${manualId}" type="number" min="0" step="${meta.step}" value="${todayLog?.value ?? ''}" placeholder="${meta.placeholder}"
+                class="flex-1 bg-rhythm-raised border border-rhythm-border focus:border-rhythm-primary rounded-2xl px-3 py-2.5 text-sm outline-none text-rhythm-text">
+              <button type="button" data-save-metric="${habit.id}" data-metric-input="${manualId}"
+                class="px-4 py-2.5 rounded-2xl bg-rhythm-primary text-white text-xs font-semibold active:opacity-90">Save</button>
+            </div>
+            ${todayLog ? `<div class="text-[10px] text-rhythm-muted mt-1.5">Today: <strong class="text-rhythm-text">${todayLog.value} ${meta.unitLabel}</strong> <span class="opacity-70">(${todayLog.source || 'logged'})</span></div>` : ''}
+            ${syncedToday ? `<div class="text-[10px] text-sky-300 mt-1">Device synced today</div>` : ''}
             ${recent.length ? `
               <div class="mt-2.5">
                 <div class="text-[10px] text-rhythm-muted mb-1">Recent logs</div>
@@ -4237,6 +4447,7 @@
       return !!(state.healthSyncs?.[habitId]?.[todayStr()]);
     }
 
+    /** Sync only after a physical activity is completed today (Today list “Done — sync” row). */
     function canShowActivitySync(habit) {
       return isPhysicalActivity(habit) && isCompletedToday(habit.id) && !hasSyncedToday(habit.id);
     }
@@ -4615,6 +4826,20 @@
       return d != null && d > 1;
     }
 
+    /** Daily habits track streaks by default; one-time + weekly+ chores do not. */
+    function shouldTrackStreak(habit) {
+      if (!habit || isOneOffTask(habit)) return false;
+      if (habit.trackStreak === true) return true;
+      if (habit.trackStreak === false) return false;
+      return isDailyTask(habit);
+    }
+
+    function defaultTrackStreakForInterval(intervalDays) {
+      if (intervalDays === 0) return false;
+      if (intervalDays == null || intervalDays === 1) return true;
+      return false;
+    }
+
     function getNonDailySectionKey(habit) {
       const d = habit.interval_days;
       if (d === 7) return 'weekly';
@@ -4755,6 +4980,9 @@
 
     function stampHabitMeta(habit) {
       if (!habit.added_at) habit.added_at = todayStr();
+      if (habit.trackStreak === undefined) {
+        habit.trackStreak = defaultTrackStreakForInterval(habit.interval_days);
+      }
       return habit;
     }
 
@@ -5195,8 +5423,27 @@
           </div>
 
           <label class="block text-xs text-rhythm-muted mb-1">What is it?</label>
-          <input id="qt-title" type="text" spellcheck="true" autocapitalize="words" value="${presetTitle.replace(/"/g, '&quot;')}" placeholder="e.g. Call mom, Save $20"
-            class="w-full bg-rhythm-raised border border-rhythm-border focus:border-rhythm-primary rounded-2xl px-4 py-3 mb-2 outline-none text-rhythm-text">
+          <input id="qt-title" type="text" spellcheck="true" autocapitalize="words" value="${presetTitle.replace(/"/g, '&quot;')}" placeholder="e.g. Call mom, Water the yard, Walk"
+            class="w-full bg-rhythm-raised border border-rhythm-border focus:border-rhythm-primary rounded-2xl px-4 py-3 mb-3 outline-none text-rhythm-text">
+
+          <div id="qt-kind-section" class="mb-3">
+            <label class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5 block">Type</label>
+            <div class="grid grid-cols-3 gap-1.5" role="group" aria-label="Task type">
+              <button type="button" class="qt-kind-chip" data-kind="task" aria-pressed="false">
+                <div class="text-sm font-semibold text-rhythm-text">Task</div>
+                <div class="text-[9px] text-rhythm-muted leading-snug mt-0.5">Once · Today</div>
+              </button>
+              <button type="button" class="qt-kind-chip" data-kind="habit" aria-pressed="false">
+                <div class="text-sm font-semibold text-rhythm-text">Habit</div>
+                <div class="text-[9px] text-rhythm-muted leading-snug mt-0.5">Daily · streaks</div>
+              </button>
+              <button type="button" class="qt-kind-chip" data-kind="chore" aria-pressed="false">
+                <div class="text-sm font-semibold text-rhythm-text">Chore</div>
+                <div class="text-[9px] text-rhythm-muted leading-snug mt-0.5">Repeats · no streak</div>
+              </button>
+            </div>
+            <div id="qt-kind-hint" class="text-[10px] text-rhythm-primary-light mt-1.5 leading-snug"></div>
+          </div>
 
           <div id="qt-goal-prominent" class="hidden mb-3">
             <label class="block text-xs text-rhythm-muted mb-1">Goal amount <span id="qt-goal-unit-main" class="text-rhythm-primary-light"></span></label>
@@ -5208,11 +5455,11 @@
 
           <div id="qt-recurrence-section" class="mb-3">
             <div class="flex items-center justify-between mb-1.5">
-              <label class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold">Repeat</label>
-              <span class="text-[9px] text-rhythm-muted/80">optional · swipe for more</span>
+              <label class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold">How often</label>
+              <span class="text-[9px] text-rhythm-muted/80">chores only</span>
             </div>
             <div class="qt-recurrence-row" role="group" aria-label="Task recurrence">
-              ${TASK_RECURRENCE_OPTIONS.map(opt => `
+              ${TASK_RECURRENCE_OPTIONS.filter(o => o.key !== 'daily').map(opt => `
                 <button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>
               `).join('')}
             </div>
@@ -5257,10 +5504,37 @@
       let selectedInterval = undefined;
       let intervalUserPicked = false;
       let selectedDiff = editSource ? (editSource.difficulty || 2) : inferred.difficulty;
+      let selectedKind = 'task'; // task | habit | chore
 
-      if (isEdit && editSource && editSource.interval_days !== 0) {
-        selectedInterval = editSource.interval_days == null ? null : editSource.interval_days;
-        intervalUserPicked = true;
+      if (isEdit && editSource) {
+        if (isOneOffTask(editSource)) selectedKind = 'task';
+        else if (isNonDailyRecurring(editSource) || editSource.trackStreak === false) selectedKind = isDailyTask(editSource) && editSource.trackStreak === false ? 'chore' : (isNonDailyRecurring(editSource) ? 'chore' : 'habit');
+        else selectedKind = 'habit';
+        if (editSource.interval_days !== 0) {
+          selectedInterval = editSource.interval_days == null ? null : editSource.interval_days;
+          intervalUserPicked = true;
+        }
+        if (selectedKind === 'chore' && (selectedInterval == null || selectedInterval <= 1)) {
+          selectedInterval = 7;
+          intervalUserPicked = true;
+        }
+        if (selectedKind === 'habit') {
+          selectedInterval = null;
+          intervalUserPicked = true;
+        }
+        if (selectedKind === 'task') {
+          selectedInterval = 0;
+          intervalUserPicked = true;
+        }
+      } else if (!isEdit) {
+        // Infer kind from title defaults
+        if (inferred.interval_days == null || inferred.interval_days === 1) {
+          selectedKind = /\b(habit|every day|daily|streak)\b/i.test(presetTitle) ? 'habit' : 'task';
+        } else if (inferred.interval_days > 1) {
+          selectedKind = 'chore';
+          selectedInterval = inferred.interval_days;
+          intervalUserPicked = true;
+        }
       }
 
       const titleInput = modal.querySelector('#qt-title');
@@ -5276,6 +5550,7 @@
       const minutesSection = modal.querySelector('#qt-minutes-section');
       const optionsLabel = modal.querySelector('#qt-options-label');
       const recurrenceSection = modal.querySelector('#qt-recurrence-section');
+      const kindHint = modal.querySelector('#qt-kind-hint');
 
       function recurrenceOptionMatches(opt) {
         if (!intervalUserPicked) return false;
@@ -5292,14 +5567,51 @@
         });
       }
 
+      function updateKindButtons() {
+        modal.querySelectorAll('.qt-kind-chip').forEach(btn => {
+          const on = btn.dataset.kind === selectedKind;
+          btn.classList.toggle('is-active', on);
+          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        if (kindHint) {
+          if (selectedKind === 'task') {
+            kindHint.textContent = 'Appears on Today until you finish it. No streak.';
+          } else if (selectedKind === 'habit') {
+            kindHint.textContent = 'Shows every day on Today and builds a streak when you complete it.';
+          } else {
+            kindHint.textContent = 'Repeating chores show on Today only when due. Plan ahead in Rhythm Brief · This week. No streak pressure.';
+          }
+        }
+        const showRecurrence = selectedKind === 'chore';
+        recurrenceSection?.classList.toggle('hidden', !showRecurrence);
+      }
+
+      function applyKind(kind) {
+        selectedKind = kind;
+        if (kind === 'task') {
+          intervalUserPicked = true;
+          selectedInterval = 0;
+        } else if (kind === 'habit') {
+          intervalUserPicked = true;
+          selectedInterval = null;
+        } else if (kind === 'chore') {
+          intervalUserPicked = true;
+          if (selectedInterval == null || selectedInterval <= 1) selectedInterval = 7;
+        }
+        updateKindButtons();
+        updateIntervalButtons();
+        refreshSummary();
+      }
+
       function updateRecurrenceVisibility() {
         const scheduling = isSchedulingTaskTitle(titleInput.value.trim());
-        recurrenceSection?.classList.toggle('hidden', scheduling);
         if (scheduling) {
-          intervalUserPicked = false;
-          selectedInterval = undefined;
-          updateIntervalButtons();
+          selectedKind = 'task';
+          intervalUserPicked = true;
+          selectedInterval = 0;
         }
+        updateKindButtons();
+        updateIntervalButtons();
       }
 
       function getActiveGoalInput() {
@@ -5335,19 +5647,23 @@
         const inf = inferTaskDefaults(title);
         const metricOnly = isMetricOnlyTask(inf);
         const mins = parseInt(minutesInput.value, 10);
-        const freq = formatQuickTaskFreqLabel(intervalUserPicked, selectedInterval, title);
+        let freq = 'One-time task';
+        if (selectedKind === 'habit') freq = 'Daily habit';
+        else if (selectedKind === 'chore') freq = formatIntervalLabel(selectedInterval || 7) + ' chore';
+        else if (isSchedulingTaskTitle(title)) freq = 'One-time';
         const tag = isLibrary ? ' · tagged Personal' : '';
+        const streakNote = selectedKind === 'habit' ? ' · tracks streak' : ' · no streak';
         const activeGoal = getActiveGoalInput();
         const goalVal = activeGoal?.value || inf.target_value || '';
         if (metricOnly) {
           const goalLabel = inf.unit === 'dollars' ? `$${goalVal}` : `${goalVal} ${inf.unit || ''}`.trim();
-          summaryEl.textContent = `${freq} · ${goalLabel} goal · no time or energy needed${tag}`;
+          summaryEl.textContent = `${freq} · ${goalLabel} goal · no time or energy needed${streakNote}${tag}`;
           return;
         }
         const energy = getDifficultyLabel(selectedDiff);
         const goal = inf.unit && goalVal ? ` · goal ${goalVal} ${inf.unit}` : '';
         const minLabel = mins > 0 ? `~${mins} min` : 'quick task';
-        summaryEl.textContent = `${freq} · ${energy} energy · ${minLabel}${goal}${tag}`;
+        summaryEl.textContent = `${freq} · ${energy} energy · ${minLabel}${goal}${streakNote}${tag}`;
       }
 
       function refreshGoalField() {
@@ -5391,22 +5707,23 @@
           goalInputMain.value = editSource.target_value;
           goalInput.value = editSource.target_value;
         }
-        updateIntervalButtons();
       }
+      updateKindButtons();
+      updateIntervalButtons();
       refreshGoalField();
+
+      modal.querySelectorAll('.qt-kind-chip').forEach(btn => {
+        btn.onclick = () => applyKind(btn.dataset.kind);
+      });
 
       modal.querySelectorAll('.qt-recur-chip').forEach(btn => {
         btn.onclick = () => {
           const opt = TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
           if (!opt) return;
-          const already = recurrenceOptionMatches(opt);
-          if (already) {
-            intervalUserPicked = false;
-            selectedInterval = undefined;
-          } else {
-            intervalUserPicked = true;
-            selectedInterval = opt.days;
-          }
+          selectedKind = 'chore';
+          intervalUserPicked = true;
+          selectedInterval = opt.days;
+          updateKindButtons();
           updateIntervalButtons();
           refreshSummary();
         };
@@ -5430,7 +5747,15 @@
         if (title !== rawTitle) titleInput.value = title;
         const inf = inferTaskDefaults(title);
         const minutes = parseInt(modal.querySelector('#qt-minutes').value, 10) || inf.est_minutes;
-        const interval = resolveQuickTaskInterval(title, intervalUserPicked, selectedInterval);
+        let interval;
+        if (selectedKind === 'task' || isSchedulingTaskTitle(title)) interval = 0;
+        else if (selectedKind === 'habit') interval = null;
+        else {
+          interval = (intervalUserPicked && selectedInterval != null && selectedInterval > 1)
+            ? selectedInterval
+            : (inf.interval_days > 1 ? inf.interval_days : 7);
+        }
+        const trackStreak = selectedKind === 'habit';
         const isRecurring = interval != null && interval !== 0;
         const editId = options.editHabitId || options.editTaskId;
         const task = {
@@ -5442,7 +5767,8 @@
           difficulty: selectedDiff,
           is_preset: false,
           is_personal: mode === 'library' || isRecurring,
-          librarySection: (mode === 'library' || isRecurring) ? 'Personal' : undefined
+          librarySection: (mode === 'library' || isRecurring) ? 'Personal' : undefined,
+          trackStreak
         };
         if (inf.unit || editSource?.unit) {
           const activeGoal = getActiveGoalInput();
@@ -5498,7 +5824,12 @@
           saveState();
           renderTasks();
           renderLibrary();
-          showToast(`Added: ${title}${isRecurring ? ' · saved to Personal' : ''}`);
+          renderStreaks();
+          const kindLabel = selectedKind === 'habit' ? 'habit' : selectedKind === 'chore' ? 'chore' : 'task';
+          const where = selectedKind === 'chore' && !isDueToday(task)
+            ? ' · due later in Rhythm Brief'
+            : selectedKind === 'habit' ? ' · streaks on' : '';
+          showToast(`Added ${kindLabel}: ${title}${where}`);
         }
         closeQuickTaskModal();
       };
@@ -5507,14 +5838,8 @@
       setTimeout(() => titleInput.focus(), 80);
     }
 
-    function reprioritizeTasks() {
-      renderTodayFeed();
-      updateHeaderContext();
-      const energy = currentEnergy;
-      showToast(`Tasks sorted for ${energy === 1 ? 'low' : energy === 3 ? 'high' : 'medium'} energy`);
-    }
-
     function setEnergy(level) {
+      const prev = currentEnergy;
       currentEnergy = level;
       state.settings.energyToday = level;
       saveState();
@@ -5538,14 +5863,21 @@
       });
       
       const labels = {1: 'Low - Small Wins', 2: 'Medium - Balanced', 3: 'High - Go Big'};
-      document.getElementById('energy-label').textContent = labels[level];
+      const labelEl = document.getElementById('energy-label');
+      if (labelEl) labelEl.textContent = labels[level];
       
+      // Always re-sort Today's list for the selected energy (Sort button removed).
       renderTasks();
       updateHeaderContext();
       updateSmartBanner();
+      updateRhythmBriefLauncher();
       if (state.settings.tutorialActive) refreshTutorialHighlight();
       if (currentTab === 'life' && currentLifePanel === 'grocery') renderGrocery();
       if (currentTab === 'streaks') renderRewardBank();
+      if (prev !== level && currentTab === 'today') {
+        const word = level === 1 ? 'low' : level === 3 ? 'high' : 'medium';
+        showToast(`Tasks reordered for ${word} energy`);
+      }
     }
 
     // ==================== LIFE: BILLS, GROCERY, SCHEDULE ====================
@@ -6990,7 +7322,7 @@
     function buildEventTimePickerHtml(format, defaults) {
       const hour = defaults.hour || '';
       const minute = defaults.minute || '';
-      const ampm = defaults.ampm || 'AM';
+      const ampm = normalizeAmpmInput(defaults.ampm) || 'AM';
 
       if (format === '24h') {
         return `
@@ -7010,9 +7342,18 @@
           <span class="cal-time-sep" aria-hidden="true">:</span>
           <input id="cal-ev-minute" class="cal-time-input" type="text" inputmode="numeric" pattern="[0-9]*"
             maxlength="2" aria-label="Minute" value="${minute}" placeholder="mm" autocomplete="off">
-          <input id="cal-ev-ampm" class="cal-time-input cal-time-ampm" type="text"
-            maxlength="2" aria-label="AM or PM" value="${ampm}" placeholder="AM" autocomplete="off">
+          <div class="cal-ampm-toggle" role="group" aria-label="AM or PM">
+            <button type="button" class="cal-ampm-btn${ampm === 'AM' ? ' is-active' : ''}" data-ampm="AM" aria-pressed="${ampm === 'AM'}">AM</button>
+            <button type="button" class="cal-ampm-btn${ampm === 'PM' ? ' is-active' : ''}" data-ampm="PM" aria-pressed="${ampm === 'PM'}">PM</button>
+          </div>
+          <input type="hidden" id="cal-ev-ampm" value="${ampm}">
         </div>`;
+    }
+
+    function readSelectedEventAmpm(modal) {
+      const active = modal.querySelector('.cal-ampm-btn.is-active')?.dataset?.ampm;
+      if (active) return normalizeAmpmInput(active) || active;
+      return normalizeAmpmInput(modal.querySelector('#cal-ev-ampm')?.value) || 'AM';
     }
 
     function wireEventTimeFields(modal) {
@@ -7021,8 +7362,8 @@
 
       const hourEl = fields.querySelector('#cal-ev-hour');
       const minuteEl = fields.querySelector('#cal-ev-minute');
-      const ampmEl = fields.querySelector('#cal-ev-ampm');
-      const durationEl = modal.querySelector('#cal-ev-duration');
+      const ampmHidden = fields.querySelector('#cal-ev-ampm');
+      const ampmBtns = fields.querySelectorAll('.cal-ampm-btn');
 
       const bindNumericField = (el, maxLen, nextEl) => {
         if (!el) return;
@@ -7036,7 +7377,7 @@
             nextEl.focus();
           }
           if (e.key === 'ArrowLeft' && el.selectionStart === 0) {
-            const prev = el === minuteEl ? hourEl : el === ampmEl ? minuteEl : null;
+            const prev = el === minuteEl ? hourEl : null;
             if (prev) {
               e.preventDefault();
               prev.focus();
@@ -7046,21 +7387,19 @@
       };
 
       bindNumericField(hourEl, 2, minuteEl);
-      bindNumericField(minuteEl, 2, ampmEl || durationEl);
+      bindNumericField(minuteEl, 2, null);
 
-      if (ampmEl) {
-        ampmEl.addEventListener('input', () => {
-          ampmEl.value = ampmEl.value.replace(/[^aApPmM]/g, '').slice(0, 2).toUpperCase();
-        });
-        ampmEl.addEventListener('blur', () => {
-          const norm = normalizeAmpmInput(ampmEl.value);
-          if (norm) ampmEl.value = norm;
-        });
-        ampmEl.addEventListener('keydown', (e) => {
-          if (e.key === 'ArrowLeft' && ampmEl.selectionStart === 0 && minuteEl) {
-            e.preventDefault();
-            minuteEl.focus();
-          }
+      if (ampmBtns.length) {
+        ampmBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const value = btn.dataset.ampm === 'PM' ? 'PM' : 'AM';
+            ampmBtns.forEach(b => {
+              const on = b.dataset.ampm === value;
+              b.classList.toggle('is-active', on);
+              b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+            if (ampmHidden) ampmHidden.value = value;
+          });
         });
       }
     }
@@ -7071,8 +7410,7 @@
       if (format === '24h') {
         return parseEventTimeInput(`${hour}:${minute}`);
       }
-      const ampm = modal.querySelector('#cal-ev-ampm')?.value;
-      return parseEventTimeFromPicker(hour, minute, ampm);
+      return parseEventTimeFromPicker(hour, minute, readSelectedEventAmpm(modal));
     }
 
     function parseStoredTimeParts(time24, format = getEventTimeFormat()) {
@@ -7113,7 +7451,7 @@
         if (fields) {
           const hour = fields.querySelector('#cal-ev-hour')?.value;
           const minute = fields.querySelector('#cal-ev-minute')?.value;
-          const ampm = fields.querySelector('#cal-ev-ampm')?.value;
+          const ampm = readSelectedEventAmpm(modal);
           if (hour) defaults.hour = calState.timeFormat === '24h' ? hour.padStart(2, '0') : hour;
           if (minute) defaults.minute = minute;
           if (ampm) defaults.ampm = ampm;
@@ -7215,8 +7553,10 @@
         editingId: editEvent?.id || null,
         initialTimeParts: editEvent ? parseStoredTimeParts(editEvent.time, timeFormat) : null
       };
+      const DURATION_PRESETS = [15, 30, 45, 60, 90, 120];
       const initialDuration = editEvent?.durationMin || 30;
-      const durationChipActive = (mins) => mins === initialDuration
+      const initialIsCustom = !DURATION_PRESETS.includes(initialDuration);
+      const durationChipActive = (mins) => (!initialIsCustom && mins === initialDuration)
         ? 'border-rhythm-primary text-rhythm-text bg-rhythm-primary/15'
         : 'border-rhythm-border bg-rhythm-raised text-rhythm-muted';
 
@@ -7246,18 +7586,25 @@
           <div id="cal-ev-time-picker" class="mb-3"></div>
 
           <div class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold mb-1.5">Duration</div>
-          <div class="flex flex-wrap gap-1.5 mb-2" id="cal-ev-duration-chips">
-            ${[15, 30, 45, 60, 90, 120].map(mins => `
+          <div class="flex flex-wrap gap-1.5 mb-1.5" id="cal-ev-duration-chips">
+            ${DURATION_PRESETS.map(mins => `
               <button type="button" data-duration="${mins}"
                 class="cal-duration-chip px-3 py-1.5 rounded-full border text-xs font-semibold ${durationChipActive(mins)}">
                 ${formatDurationShort(mins)}
               </button>
             `).join('')}
           </div>
-          <input id="cal-ev-duration" type="number" min="5" max="480" step="5" value="${initialDuration}" placeholder="Custom minutes"
-            class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-3 mb-4 outline-none text-rhythm-text">
+          <button type="button" id="cal-ev-duration-other-btn" class="cal-duration-other-btn${initialIsCustom ? ' is-open' : ''}" aria-expanded="${initialIsCustom ? 'true' : 'false'}">
+            <i class="fa-solid fa-sliders text-[10px]"></i>
+            <span id="cal-ev-duration-other-label">${initialIsCustom ? `Custom · ${formatDurationShort(initialDuration)}` : 'Set a different duration'}</span>
+          </button>
+          <div id="cal-ev-duration-custom-wrap" class="cal-duration-custom-wrap${initialIsCustom ? '' : ' hidden'}">
+            <input id="cal-ev-duration" type="number" min="5" max="480" step="5" value="${initialDuration}" placeholder="Minutes"
+              class="bg-rhythm-raised border border-rhythm-border rounded-2xl px-4 py-2.5 outline-none text-rhythm-text" aria-label="Custom duration in minutes">
+            <span class="text-xs text-rhythm-muted flex-shrink-0">min</span>
+          </div>
 
-          <div class="flex gap-2">
+          <div class="flex gap-2 mt-2">
             <button type="button" onclick="this.closest('#add-calendar-event-modal').remove()"
               class="flex-1 py-3 rounded-2xl bg-rhythm-raised border border-rhythm-border text-rhythm-muted font-semibold">Cancel</button>
             <button type="button" id="cal-ev-save-btn"
@@ -7271,14 +7618,54 @@
       wireEventTimeFormatToggle(modal, calState);
 
       const durationInput = modal.querySelector('#cal-ev-duration');
+      const durationCustomWrap = modal.querySelector('#cal-ev-duration-custom-wrap');
+      const durationOtherBtn = modal.querySelector('#cal-ev-duration-other-btn');
+      const durationOtherLabel = modal.querySelector('#cal-ev-duration-other-label');
+      let durationIsCustom = initialIsCustom;
+
+      const inactiveChipClass = 'cal-duration-chip px-3 py-1.5 rounded-full border text-xs font-semibold border-rhythm-border bg-rhythm-raised text-rhythm-muted';
+      const activeChipClass = 'cal-duration-chip px-3 py-1.5 rounded-full border text-xs font-semibold border-rhythm-primary text-rhythm-text bg-rhythm-primary/15';
+
+      const setDurationChipSelection = (mins, custom) => {
+        durationIsCustom = !!custom;
+        modal.querySelectorAll('.cal-duration-chip').forEach(c => {
+          const match = !custom && String(c.dataset.duration) === String(mins);
+          c.className = match ? activeChipClass : inactiveChipClass;
+        });
+        durationCustomWrap?.classList.toggle('hidden', !custom);
+        durationOtherBtn?.classList.toggle('is-open', custom);
+        durationOtherBtn?.setAttribute('aria-expanded', custom ? 'true' : 'false');
+        if (durationOtherLabel) {
+          durationOtherLabel.textContent = custom
+            ? `Custom · ${formatDurationShort(Math.min(480, Math.max(5, parseInt(durationInput?.value, 10) || mins || 30)))}`
+            : 'Set a different duration';
+        }
+      };
+
       modal.querySelectorAll('.cal-duration-chip').forEach(chip => {
         chip.onclick = () => {
-          modal.querySelectorAll('.cal-duration-chip').forEach(c => {
-            c.className = 'cal-duration-chip px-3 py-1.5 rounded-full border text-xs font-semibold border-rhythm-border bg-rhythm-raised text-rhythm-muted';
-          });
-          chip.className = 'cal-duration-chip px-3 py-1.5 rounded-full border text-xs font-semibold border-rhythm-primary text-rhythm-text bg-rhythm-primary/15';
-          durationInput.value = chip.dataset.duration;
+          const mins = parseInt(chip.dataset.duration, 10);
+          durationInput.value = mins;
+          setDurationChipSelection(mins, false);
         };
+      });
+
+      durationOtherBtn?.addEventListener('click', () => {
+        if (durationIsCustom) {
+          durationInput?.focus();
+          return;
+        }
+        setDurationChipSelection(parseInt(durationInput?.value, 10) || initialDuration, true);
+        durationInput?.focus();
+        durationInput?.select?.();
+      });
+
+      durationInput?.addEventListener('input', () => {
+        if (!durationIsCustom) setDurationChipSelection(parseInt(durationInput.value, 10) || 30, true);
+        else if (durationOtherLabel) {
+          const mins = Math.min(480, Math.max(5, parseInt(durationInput.value, 10) || 30));
+          durationOtherLabel.textContent = `Custom · ${formatDurationShort(mins)}`;
+        }
       });
 
       const saveCalendarEvent = () => {
@@ -7362,9 +7749,19 @@
 
     function renderScheduleEventRow(ev, options = {}) {
       const { showDate = false } = options;
+      const eventId = ev.id || getStableCalendarEventId(ev);
       const row = document.createElement('div');
-      row.className = 'rhythm-card bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-x-3 active:bg-rhythm-border/40';
-      row.innerHTML = `
+      row.className = 'swipe-row';
+      row.dataset.swipeId = eventId;
+      row.dataset.swipeType = 'event';
+      row.dataset.feedType = 'schedule';
+      row.style.setProperty('--swipe-reveal', '8.75rem');
+
+      const actionsHtml = `
+        <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit event"><i class="fa-solid fa-pen"></i> Edit</button>
+        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete event"><i class="fa-solid fa-trash-can"></i> Delete</button>
+      `;
+      const contentHtml = `
         <div class="cal-event-body flex items-center gap-x-3 flex-1 min-w-0 cursor-pointer">
           <div class="text-sm font-semibold text-rhythm-primary-light tabular-nums w-16 flex-shrink-0">${formatScheduleEventTime(ev.time)}</div>
           <div class="flex-1 min-w-0">
@@ -7373,19 +7770,28 @@
             ${ev.durationMin ? `<div class="text-xs text-rhythm-muted">${ev.durationMin} min</div>` : ''}
           </div>
         </div>
-        <button type="button" class="cal-edit-btn text-[10px] text-rhythm-primary-light font-medium px-1" title="Edit event">Edit</button>
-        <button type="button" class="cal-delete-btn text-rhythm-muted hover:text-rose-400 text-sm px-1" title="Delete event">×</button>
+        <div class="row-inline-actions flex items-center gap-1 flex-shrink-0">
+          <button type="button" class="cal-edit-btn text-[10px] text-rhythm-primary-light font-medium px-1" title="Edit event">Edit</button>
+          <button type="button" class="cal-delete-btn text-rhythm-muted hover:text-rose-400 text-sm px-1" title="Delete event">×</button>
+        </div>
       `;
-      const openEdit = () => showAddCalendarEventModal(getCalendarEventById(ev.id) || ev);
-      row.querySelector('.cal-event-body').onclick = openEdit;
-      row.querySelector('.cal-edit-btn').onclick = (e) => {
+
+      row.innerHTML = buildSwipeRowHtml(
+        actionsHtml,
+        contentHtml,
+        'rhythm-card bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-x-3 active:bg-rhythm-border/40'
+      );
+
+      const openEdit = () => showAddCalendarEventModal(getCalendarEventById(eventId) || ev);
+      row.querySelector('.cal-event-body')?.addEventListener('click', openEdit);
+      row.querySelector('.cal-edit-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
         openEdit();
-      };
-      row.querySelector('.cal-delete-btn').onclick = (e) => {
+      });
+      row.querySelector('.cal-delete-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        deleteCalendarEvent(ev.id);
-      };
+        deleteCalendarEvent(eventId);
+      });
       return row;
     }
 
@@ -7454,6 +7860,8 @@
         note.textContent = cache.note;
         container.appendChild(note);
       }
+
+      bindSwipeRows(container);
     }
 
     function getSubscriptionsMonthlyTotal() {
@@ -8338,53 +8746,24 @@
     }
 
     function buildTodayFeed() {
+      // Today tab stays focused on what is actionable *today*.
+      // Weekly+ chores that are not due yet live in Rhythm Brief (This week).
       const today = todayStr();
       const active = [];
-      const weekly = [];
-      const biweekly = [];
-      const monthly = [];
-      const longer = [];
 
       state.habits.forEach(h => {
         const comps = getCompletions(h.id) || [];
         if (comps.includes(today)) return;
         if (getHabitSkips(h.id).includes(today)) return;
-
-        if (isOneOffTask(h)) {
-          if (comps.length === 0) active.push(h);
-          return;
-        }
-
-        if (isDailyTask(h)) {
-          active.push(h);
-          return;
-        }
-
-        if (isNonDailyRecurring(h)) {
-          if (isHabitActiveThisPeriod(h)) {
-            active.push(h);
-            return;
-          }
-          const key = getNonDailySectionKey(h);
-          if (key === 'weekly') weekly.push(h);
-          else if (key === 'biweekly') biweekly.push(h);
-          else if (key === 'monthly') monthly.push(h);
-          else longer.push(h);
-        }
+        if (!isDueToday(h)) return;
+        active.push(h);
       });
 
-      const sortActive = (list) => list.sort((a, b) => {
+      active.sort((a, b) => {
         const overdueDiff = (isHabitOverdue(b) ? 1 : 0) - (isHabitOverdue(a) ? 1 : 0);
         if (overdueDiff !== 0) return overdueDiff;
         return getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy);
       });
-      const sortUpcoming = (list) => list.sort((a, b) => getDaysUntilHabitDue(a) - getDaysUntilHabitDue(b));
-
-      sortActive(active);
-      sortUpcoming(weekly);
-      sortUpcoming(biweekly);
-      sortUpcoming(monthly);
-      sortUpcoming(longer);
 
       const syncPending = state.habits.filter(h => canShowActivitySync(h));
 
@@ -8393,10 +8772,6 @@
         sections.push({ type: 'sync-pending', label: 'Done today — sync activity', items: syncPending, variant: 'completed' });
       }
       sections.push({ type: 'habits', label: "Today's Tasks", items: active, variant: 'active' });
-      if (weekly.length) sections.push({ type: 'habits', label: 'Weekly — coming up', items: weekly, variant: 'upcoming' });
-      if (biweekly.length) sections.push({ type: 'habits', label: 'Biweekly — coming up', items: biweekly, variant: 'upcoming' });
-      if (monthly.length) sections.push({ type: 'habits', label: 'Monthly — coming up', items: monthly, variant: 'upcoming' });
-      if (longer.length) sections.push({ type: 'habits', label: 'Scheduled — coming up', items: longer, variant: 'upcoming' });
       return sections;
     }
 
@@ -8454,6 +8829,14 @@
         else if (action === 'delete') deleteStreak(id, null);
       } else if (type === 'sync') {
         if (action === 'sync') showDeviceSyncModal(id);
+      } else if (type === 'event') {
+        if (action === 'edit') {
+          const ev = getCalendarEventById(id);
+          if (ev) showAddCalendarEventModal(ev);
+          else showToast('Event not found');
+        } else if (action === 'delete') {
+          deleteCalendarEvent(id);
+        }
       }
     }
 
@@ -8467,8 +8850,9 @@
     function isSwipePassthroughTarget(e) {
       const t = e.target;
       if (!(t instanceof Element)) return false;
+      // Allow swipe from the whole card (including complete targets). Only block real controls.
       return !!t.closest(
-        '[onclick*="completeHabit"], button, a, input, textarea, select, [data-sync-health], .row-inline-actions'
+        'button, a, input, textarea, select, [data-sync-health], .row-inline-actions, .swipe-action'
       );
     }
 
@@ -8497,8 +8881,19 @@
         let startOffset = 0;
         let dragging = false;
         let axisLock = null;
+        let didHorizontalDrag = false;
+        let suppressClickUntil = 0;
 
         const getOffset = () => (row.classList.contains('is-open') ? revealPx : 0);
+
+        const armClickSuppress = () => {
+          // Block the synthetic click that follows a swipe (was completing tasks / awarding pts).
+          suppressClickUntil = Date.now() + 450;
+          row.dataset.swipeSuppressClick = '1';
+          setTimeout(() => {
+            if (Date.now() >= suppressClickUntil) delete row.dataset.swipeSuppressClick;
+          }, 480);
+        };
 
         const setOffset = (px, animate) => {
           const clamped = Math.max(0, Math.min(revealPx, px));
@@ -8520,6 +8915,7 @@
           startOffset = getOffset();
           dragging = true;
           axisLock = null;
+          didHorizontalDrag = false;
         };
 
         const onMove = (clientX, clientY, e) => {
@@ -8535,6 +8931,7 @@
             content.classList.remove('is-dragging');
             return;
           }
+          if (Math.abs(dx) > 8) didHorizontalDrag = true;
           if (e?.cancelable) e.preventDefault();
           setOffset(startOffset - dx, false);
         };
@@ -8546,6 +8943,7 @@
           const dx = clientX - startX;
           const projected = startOffset - dx;
           const shouldOpen = projected > revealPx * 0.38 || (startOffset < revealPx * 0.5 && dx < -28);
+          if (didHorizontalDrag || Math.abs(dx) > 10) armClickSuppress();
           if (shouldOpen) {
             row.classList.add('is-open');
             content.style.transform = '';
@@ -8555,6 +8953,15 @@
             content.style.transform = '';
           }
         };
+
+        // Capture-phase: kill ghost clicks after swipe / while actions are open
+        content.addEventListener('click', (e) => {
+          if (row.classList.contains('is-open') || row.dataset.swipeSuppressClick === '1' || Date.now() < suppressClickUntil) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+          }
+        }, true);
 
         content.addEventListener('touchstart', (e) => {
           if (e.touches.length !== 1 || isSwipePassthroughTarget(e)) return;
@@ -8651,6 +9058,7 @@
           ${syncedStats ? `<div class="text-[9px] text-sky-300 mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
           <div class="row-inline-actions flex items-center justify-end gap-2 mt-1">
             ${dueToday && !isOneOffTask(habit) ? `<button type="button" onclick="skipRecurringHabit('${habit.id}', event)" class="text-[10px] text-rhythm-muted hover:text-amber-300 px-1" title="Skip this cycle — resets streak">Skip</button>` : ''}
+            ${dueToday && (habit.difficulty || 2) <= 1 && (ensureRewardBank().skipToken || 0) > 0 ? `<button type="button" onclick="useSkipToken('${habit.id}', event)" class="text-[10px] text-amber-300 hover:text-amber-200 px-1" title="Use skip token">Token</button>` : ''}
             <button type="button" onclick="event.stopImmediatePropagation(); editHabitFromToday('${habit.id}')" class="text-[10px] text-rhythm-primary-light font-medium px-1" title="Edit task">Edit</button>
             <button type="button" onclick="event.stopImmediatePropagation(); showHabitDetail('${habit.id}')" class="text-rhythm-primary-light text-xs" title="Details">
               <i class="fa-solid fa-info-circle"></i>
@@ -8764,6 +9172,25 @@
       if (!container) return;
       container.innerHTML = '';
 
+      if (typeof isCheatDayActive === 'function' && isCheatDayActive()) {
+        const bank = ensureRewardBank();
+        const ideas = CHEAT_DAY_RELAX_IDEAS.slice(0, 4).map(i => `<li class="text-xs text-rhythm-muted">${i}</li>`).join('');
+        container.innerHTML = `
+          <div class="cheat-day-today-banner rhythm-card rounded-3xl px-4 py-4 mb-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-2xl">${bank.lastTreatEmoji || '🎉'}</span>
+              <div>
+                <div class="font-semibold text-rhythm-text">Cheat Day — tasks paused</div>
+                <div class="text-[10px] text-rhythm-muted">Streaks protected · ${bank.lastTreatLabel || 'enjoy your treat'}</div>
+              </div>
+            </div>
+            <div class="text-xs text-rhythm-text mb-2">Ideas for today:</div>
+            <ul class="space-y-1 list-disc list-inside">${ideas}</ul>
+            <div class="text-[10px] text-rhythm-muted mt-3">Back to normal tomorrow. You can still complete tasks if you want — no pressure.</div>
+          </div>`;
+        return;
+      }
+
       const sections = buildTodayFeed();
       const hasAny = sections.some(s => s.items.length > 0);
 
@@ -8845,7 +9272,11 @@
 
     function completeHabit(habitId, e) {
       if (e) e.stopImmediatePropagation();
-      
+      // Guard: swipe-to-delete must never count as a completion (was awarding fund points).
+      const swipeRow = (e?.target instanceof Element ? e.target.closest('.swipe-row') : null)
+        || document.querySelector(`.swipe-row[data-habit-id="${habitId}"], .swipe-row[data-swipe-id="${habitId}"]`);
+      if (swipeRow?.classList.contains('is-open') || swipeRow?.dataset.swipeSuppressClick === '1') return;
+
       const habit = state.habits.find(h => h.id === habitId);
       if (!habit) return;
       
@@ -8866,7 +9297,9 @@
       comps.sort();
 
       logMetricOnComplete(habit);
-      const pointsEarned = awardRewardPoints(habit);
+      const pointsEarned = (typeof isCheatDayFundEnabled === 'function' && isCheatDayFundEnabled())
+        ? awardRewardPoints(habit)
+        : 0;
       
       // If recurring, we don't add it again until next due — handled by isDueToday
       saveState();
@@ -8886,7 +9319,8 @@
       }
       if (currentTab === 'streaks') renderRewardBank();
       
-      showToast(`Great job! ${habit.title} logged · +${pointsEarned} pts`);
+      const ptsMsg = pointsEarned ? ` · +${pointsEarned} pts` : '';
+      showToast(`Great job! ${habit.title} logged${ptsMsg}`);
       maybeAdvanceTutorial('habit-complete');
       
       // Gentle autonomous follow-up
@@ -9197,10 +9631,12 @@
       const items = [];
 
       if (mode === 'day') {
+        // Day brief: only what is due today (matches Today tab focus)
         state.habits.forEach(h => {
           if (isDueToday(h)) items.push({ habit: h, date: today, daysUntil: 0 });
         });
       } else {
+        // Week brief: full week of scheduled tasks + upcoming weekly/monthly chores
         const { start, end } = getWeekBounds(today);
         const cursor = new Date(start + 'T12:00:00');
         const endDate = new Date(end + 'T12:00:00');
@@ -9215,11 +9651,26 @@
           });
           cursor.setDate(cursor.getDate() + 1);
         }
+        // Include non-daily chores whose next due falls this week even if period logic differs
+        state.habits.forEach(h => {
+          if (seen.has(h.id) || !isNonDailyRecurring(h)) return;
+          const daysUntil = getDaysUntilHabitDue(h);
+          if (daysUntil < 0 || daysUntil > 6) return;
+          const d = new Date(today + 'T12:00:00');
+          d.setDate(d.getDate() + daysUntil);
+          const ds = dateStrLocal(d);
+          if (ds < start || ds > end) return;
+          seen.add(h.id);
+          items.push({ habit: h, date: ds, daysUntil });
+        });
       }
 
       return items.sort((a, b) => {
-        const scoreA = (a.daysUntil <= 0 ? 0 : a.daysUntil <= 2 ? 1 : 2) * 100 + getEffectiveDifficulty(a.habit, currentEnergy);
-        const scoreB = (b.daysUntil <= 0 ? 0 : b.daysUntil <= 2 ? 1 : 2) * 100 + getEffectiveDifficulty(b.habit, currentEnergy);
+        // Prefer chores/upcoming on week view slightly after true due-today items
+        const choreBoostA = mode === 'week' && isNonDailyRecurring(a.habit) ? 5 : 0;
+        const choreBoostB = mode === 'week' && isNonDailyRecurring(b.habit) ? 5 : 0;
+        const scoreA = (a.daysUntil <= 0 ? 0 : a.daysUntil <= 2 ? 1 : 2) * 100 + getEffectiveDifficulty(a.habit, currentEnergy) + choreBoostA;
+        const scoreB = (b.daysUntil <= 0 ? 0 : b.daysUntil <= 2 ? 1 : 2) * 100 + getEffectiveDifficulty(b.habit, currentEnergy) + choreBoostB;
         if (scoreA !== scoreB) return scoreA - scoreB;
         return a.date.localeCompare(b.date);
       });
@@ -9444,7 +9895,7 @@
           <div class="rhythm-brief-hero-insight">${escapeBriefHtml(brief.insight)}</div>
         </div>
         <div class="rhythm-brief-section">
-          <div class="rhythm-brief-section-hdr"><i class="fa-solid fa-bolt text-rhythm-accent"></i> Do first</div>
+          <div class="rhythm-brief-section-hdr"><i class="fa-solid fa-bolt text-rhythm-accent"></i> ${mode === 'week' ? 'Priority this week' : 'Do first'}</div>
           ${doFirstHtml}
         </div>
         <div class="rhythm-brief-section">
@@ -9453,7 +9904,7 @@
           <div class="rhythm-brief-jump" onclick="closeRhythmBriefModal(); switchTab('life'); switchLifePanel('schedule')">Open full schedule →</div>
         </div>
         ${tasksHtml ? `<div class="rhythm-brief-section">
-          <div class="rhythm-brief-section-hdr"><i class="fa-solid fa-list-check text-rhythm-primary-light"></i> Also on deck</div>
+          <div class="rhythm-brief-section-hdr"><i class="fa-solid fa-list-check text-rhythm-primary-light"></i> ${mode === 'week' ? 'Chores & repeats this week' : 'Also on deck'}</div>
           ${tasksHtml}
         </div>` : ''}
         <div class="rhythm-brief-section">
@@ -9532,21 +9983,26 @@
       el.classList.toggle('hidden', !showOnToday || !allowBrief);
 
       const brief = buildRhythmBrief('day');
+      const weekBrief = buildRhythmBrief('week');
       const taskN = brief.tasks.length;
       const billN = brief.bills.length;
       const evN = brief.events.length;
       const groceryN = brief.groceryTotal;
+      const weekChoreN = weekBrief.tasks.filter(t => isNonDailyRecurring(t.habit)).length;
 
-      if (taskN === 0 && billN === 0 && evN === 0) {
+      if (taskN === 0 && billN === 0 && evN === 0 && weekChoreN === 0) {
         lineEl.textContent = 'Tap for your smart day brief';
       } else if (brief.doFirst[0]) {
-        lineEl.textContent = `Start with ${brief.doFirst[0].habit.title}${taskN > 1 ? ` · ${taskN} tasks today` : ''}`;
+        lineEl.textContent = `Start with ${brief.doFirst[0].habit.title}${taskN > 1 ? ` · ${taskN} due today` : ''}`;
+      } else if (weekChoreN) {
+        lineEl.textContent = `${weekChoreN} chore${weekChoreN === 1 ? '' : 's'} coming this week — open Brief`;
       } else {
         lineEl.textContent = `${taskN} task${taskN === 1 ? '' : 's'} prioritized for today`;
       }
 
       const chips = [];
-      if (taskN) chips.push(`<span class="rhythm-brief-stat">${taskN} task${taskN === 1 ? '' : 's'}</span>`);
+      if (taskN) chips.push(`<span class="rhythm-brief-stat">${taskN} today</span>`);
+      if (weekChoreN) chips.push(`<span class="rhythm-brief-stat">${weekChoreN} this week</span>`);
       if (evN) chips.push(`<span class="rhythm-brief-stat">${evN} event${evN === 1 ? '' : 's'}</span>`);
       if (billN) chips.push(`<span class="rhythm-brief-stat${billN ? ' is-urgent' : ''}">${billN} bill${billN === 1 ? '' : 's'}</span>`);
       if (groceryN) chips.push(`<span class="rhythm-brief-stat">${groceryN} grocery</span>`);
@@ -10366,17 +10822,15 @@
       {
         id: 'today-intro',
         title: 'Today tab',
-        body: () => isSwipeMobile()
-          ? 'Your action list lives here. Daily tasks show up every morning — tap the circle to log a win. You can also swipe a task left for quick actions.'
-          : 'Your action list lives here. Daily tasks show up every morning — tap the circle to log a win.',
+        body: 'Your action list lives here. Things due today show up every morning — tap the circle to log a win.',
         target: () => document.getElementById('tab-today'),
-        cardPlacement: 'above',
+        cardPlacement: 'below',
         prepare: () => switchTab('today')
       },
       {
         id: 'complete-task',
         title: 'Complete a task',
-        body: 'Try it Now — Tap to complete a Task. When the task is complete it will show in your <strong>Streaks</strong> tab.',
+        body: 'Try it now — tap the circle on a task. Completing daily <strong>habits</strong> feeds your <strong>Streaks</strong> tab.',
         target: () => getTutorialTaskCard(),
         waitFor: 'habit-complete',
         interactive: true,
@@ -10384,20 +10838,19 @@
       },
       {
         id: 'edit-delete-task',
-        title: 'Swipe for quick actions',
+        title: 'Swipe to edit',
         mobileOnly: true,
-        body: 'On phone, <strong>swipe left</strong> on a row to reveal actions — no need to try it now.<br><br><strong>Today:</strong> Edit or Delete tasks.<br><strong>Streaks:</strong> View projections or Delete.<br><strong>Life → Grocery:</strong> Remove items.<br><strong>Sync cards:</strong> Sync activity from your tracker.<br><br>Tap <strong>Next</strong> when you\'re ready for <strong>Streaks</strong>.',
+        body: 'On phone, <strong>swipe a Today task left</strong> to reveal <strong>Edit</strong> and <strong>Delete</strong>. That same swipe pattern shows up elsewhere once you know it.<br><br>Tap <strong>Next</strong> when you\'re ready.',
         target: () => getTutorialTaskCard(),
+        cardPlacement: 'below',
         prepare: () => switchTab('today')
       },
       {
         id: 'streaks-intro',
         title: 'Streaks tab',
-        body: () => isSwipeMobile()
-          ? 'Completed <strong>tasks</strong> build streaks here. Swipe a streak left for <strong>View</strong> or <strong>Delete</strong>, or tap it to open <strong>Projected Wins</strong> for measurable goals.'
-          : 'Completed <strong>tasks</strong> build streaks here. Track progress and unlock <strong>Projected Wins</strong> for measurable goals.',
+        body: 'Daily <strong>habits</strong> build streaks here. Tap a streak to open <strong>Projected Wins</strong> for measurable goals.',
         target: () => document.getElementById('tab-streaks'),
-        cardPlacement: 'above',
+        cardPlacement: 'below',
         prepare: () => switchTab('streaks')
       },
       {
@@ -10417,7 +10870,7 @@
       {
         id: 'projections-read',
         title: 'Projected Wins',
-        body: 'This panel forecasts where your task is headed — daily pace, 30-day projection, and equivalents. Take your time reading it, then tap <strong>Next</strong> when you\'re ready.',
+        body: 'This panel forecasts where your habit is headed — daily pace, 30-day projection, and equivalents. Take your time reading it, then tap <strong>Next</strong> when you\'re ready.',
         target: () => document.getElementById('projection-panel'),
         cardPlacement: 'above',
         prepare: () => {
@@ -10430,7 +10883,7 @@
         title: 'Life tab',
         body: '<strong>Schedule</strong> for events, <strong>Grocery</strong> for lists, <strong>Bills</strong> for due dates, and <strong>Subscriptions</strong> for recurring costs.',
         target: () => document.getElementById('tab-life'),
-        cardPlacement: 'above',
+        cardPlacement: 'below',
         prepare: () => switchTab('life')
       },
       {
@@ -10438,7 +10891,7 @@
         title: 'Library tab',
         body: 'Browse preset chores and habits. Tap any card to add it to your Rhythm, or create your own under Personal.',
         target: () => document.getElementById('tab-library'),
-        cardPlacement: 'above',
+        cardPlacement: 'below',
         prepare: () => switchTab('library')
       },
       {
@@ -10535,16 +10988,22 @@
       const vv = getTutorialViewport();
       const isMobile = window.innerWidth < 768;
       const margin = isMobile ? 8 : 12;
-      const gap = isMobile ? 10 : 12;
-      const cardH = card.offsetHeight || 168;
+      const gap = isMobile ? 12 : 14;
+      // Measure after content is visible so height is accurate
+      const cardH = Math.max(card.offsetHeight || 0, card.scrollHeight || 0, 140);
       const highlightBottom = targetRect.top + targetRect.height;
       const spaceAbove = targetRect.top - vv.top - margin;
       const spaceBelow = (vv.top + vv.height) - highlightBottom - margin;
       const fitsBelow = spaceBelow >= cardH + gap;
       const fitsAbove = spaceAbove >= cardH + gap;
 
+      // Main tab bar lives mid-chrome on mobile — prefer placing the coachmark
+      // into the content area (below) so it never collides with Today/Streaks tabs.
+      const targetIsMainTab = !!(step?.id && /^(today|streaks|life|library)-intro$/.test(step.id));
+
       let placeBelow;
-      if (step?.cardPlacement === 'above') placeBelow = false;
+      if (targetIsMainTab) placeBelow = true;
+      else if (step?.cardPlacement === 'above') placeBelow = false;
       else if (step?.cardPlacement === 'below') placeBelow = true;
       else if (fitsBelow && fitsAbove) {
         placeBelow = tutorialLastCardPlacement !== 'above';
@@ -10552,15 +11011,33 @@
       else if (fitsAbove) placeBelow = false;
       else placeBelow = spaceBelow >= spaceAbove;
 
+      // If preferred side doesn't fit, flip when the other side has more room
+      if (placeBelow && !fitsBelow && fitsAbove) placeBelow = false;
+      if (!placeBelow && !fitsAbove && fitsBelow) placeBelow = true;
+
       tutorialLastCardPlacement = placeBelow ? 'below' : 'above';
 
       let top = placeBelow
         ? highlightBottom + gap
         : targetRect.top - gap - cardH;
-      top = Math.max(vv.top + margin, Math.min(top, vv.top + vv.height - cardH - margin));
+
+      // Keep fully inside viewport
+      const minTop = vv.top + margin;
+      const maxTop = vv.top + vv.height - cardH - margin;
+      top = Math.max(minTop, Math.min(top, maxTop));
+
+      // Hard no-overlap: if we still intersect the highlight, push clear of it
+      const cardBottom = top + cardH;
+      if (placeBelow && top < highlightBottom + gap) {
+        top = Math.min(maxTop, highlightBottom + gap);
+      } else if (!placeBelow && cardBottom > targetRect.top - gap) {
+        top = Math.max(minTop, targetRect.top - gap - cardH);
+      }
 
       card.classList.remove('tutorial-card-top', 'tutorial-card-bottom', 'tutorial-card-interactive');
       card.classList.toggle('tutorial-card-interactive', isTutorialInteractiveStep(step));
+      card.classList.toggle('tutorial-card-bottom', placeBelow);
+      card.classList.toggle('tutorial-card-top', !placeBelow);
       card.style.top = `${top}px`;
       card.style.bottom = 'auto';
     }
@@ -10877,13 +11354,7 @@
         }
 
         setTimeout(() => {
-          applyTutorialStepHighlight(step);
-
-          if (overlay) {
-            overlay.classList.add('is-active');
-            overlay.setAttribute('aria-hidden', 'false');
-          }
-          if (card) card.classList.remove('hidden');
+          // Fill card content first so height measurement is accurate (avoids collision with tabs)
           if (stepLabel) {
             stepLabel.textContent = `Step ${getVisibleTutorialStepNumber(stepIndex)} of ${getVisibleTutorialStepCount()}`;
           }
@@ -10899,6 +11370,13 @@
               ? 'Waiting for you…'
               : (stepIndex === APP_TUTORIAL_STEPS.length - 1 ? 'Finish tour' : 'Next');
           }
+          if (card) card.classList.remove('hidden');
+          if (overlay) {
+            overlay.classList.add('is-active');
+            overlay.setAttribute('aria-hidden', 'false');
+          }
+
+          applyTutorialStepHighlight(step);
 
           if (step.autoAdvanceMs) {
             tutorialAutoAdvanceTimer = setTimeout(() => {
@@ -10913,6 +11391,11 @@
             if (tutorialLastTargetRect && current) {
               positionTutorialCard(tutorialLastTargetRect, current);
             }
+            // Second pass after fonts/layout settle
+            requestAnimationFrame(() => {
+              const cur = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
+              if (tutorialLastTargetRect && cur) positionTutorialCard(tutorialLastTargetRect, cur);
+            });
           });
         }, scrollTarget ? scrollDelay : 0);
       };
@@ -11435,16 +11918,18 @@
       }
 
       const inf = inferTaskDefaults(title);
+      const interval = inf.interval_days;
       const newHabit = {
         id: 'custom-' + Date.now(),
         title,
         category: 'custom',
-        interval_days: inf.interval_days,
+        interval_days: interval,
         est_minutes: inf.est_minutes,
         difficulty: inf.difficulty,
         is_preset: false,
         target_value: inf.target_value,
-        unit: inf.unit
+        unit: inf.unit,
+        trackStreak: defaultTrackStreakForInterval(interval)
       };
 
       state.habits.push(stampHabitMeta(newHabit));
@@ -11656,8 +12141,15 @@
       }
       renderLibrary();
       renderTasks();
+      renderStreaks();
       updateSmartBanner();
-      showToast(`✓ ${taskToAdd.title} added`);
+      updateRhythmBriefLauncher();
+      const kindNote = shouldTrackStreak(taskToAdd)
+        ? ' · daily habit (streaks)'
+        : isNonDailyRecurring(taskToAdd)
+          ? ' · chore (Rhythm Brief when due)'
+          : '';
+      showToast(`✓ ${taskToAdd.title} added${kindNote}`);
     }
 
     function scheduleProForTask(task) {
@@ -11905,68 +12397,294 @@
       showQuickTaskModal({ mode: 'library' });
     }
 
-    // ==================== REWARD BANK (Cheat Down — ~weekly treat) ====================
+    // ==================== REWARD BANK (Cheat Day Fund) ====================
     function ensureRewardBank() {
       if (!state.rewardBank) state.rewardBank = { points: 0, totalEarned: 0, cheatDownsUsed: 0, lastCheatDate: null };
+      if (!state.rewardBank.streakMilestones) state.rewardBank.streakMilestones = {};
+      if (!state.rewardBank.cheatDayDates) state.rewardBank.cheatDayDates = [];
+      if (!state.rewardBank.badges) state.rewardBank.badges = 0;
+      if (state.rewardBank.skipToken == null) state.rewardBank.skipToken = 0;
       return state.rewardBank;
     }
 
-    function getTodayWorkload() {
-      return Math.max(0, getTodayVisibleTaskCount());
+    function isCheatDayFundEnabled() {
+      return state.settings.cheatDayFundEnabled !== false;
     }
 
-    function getTaskLoadPointBonus() {
-      const load = getTodayWorkload();
-      if (load <= 4) return 0;
-      if (load <= 8) return 3;
-      if (load <= 11) return 5;
-      return 8;
+    function isCheatGraceDay(dateStr) {
+      const bank = ensureRewardBank();
+      return (bank.cheatDayDates || []).includes(dateStr);
     }
 
-    function getCheatDownCost() {
-      const load = Math.max(1, getTodayWorkload());
-      const base = 60;
-      const cost = Math.round(base + Math.max(0, 11 - load) * 12);
-      return Math.max(80, Math.min(180, cost));
+    function isCheatDayActive() {
+      const bank = ensureRewardBank();
+      return bank.cheatDayDate === todayStr();
     }
 
-    function getCheatFundMilestone(pct) {
-      let current = { pct: 0, emoji: '🌱', label: 'Building momentum' };
-      CHEAT_FUND_MILESTONES.forEach(m => {
-        if (pct >= m.pct) current = m;
-      });
-      return current;
+    function getCheatDayCost() {
+      const habitCount = Math.max(1, (state.habits || []).length);
+      const scaled = 500 + Math.min(300, habitCount * 8);
+      return Math.min(CHEAT_DAY_COST_MAX, Math.max(CHEAT_DAY_COST_MIN, scaled));
     }
 
-    function getCheatDownCooldownDays() {
+    function getCheatDayCooldownDays() {
       const bank = ensureRewardBank();
       if (!bank.lastCheatDate) return 0;
       const elapsed = Math.floor((new Date(todayStr()) - new Date(bank.lastCheatDate)) / 86400000);
-      return Math.max(0, CHEAT_DOWN_COOLDOWN_DAYS - elapsed);
+      return Math.max(0, CHEAT_DAY_COOLDOWN_DAYS - elapsed);
     }
 
-    function canRedeemCheatDown() {
+    function canRedeemCheatDay() {
       const bank = ensureRewardBank();
-      return getCheatDownCooldownDays() === 0 && bank.points >= getCheatDownCost();
+      return getCheatDayCooldownDays() === 0 && bank.points >= getCheatDayCost();
+    }
+
+    function getStreakBonusPct(streak) {
+      if (streak >= 7) return 0.5;
+      if (streak >= 4) return 0.3;
+      if (streak >= 2) return 0.15;
+      return 0;
+    }
+
+    function getChorePointBonus(habit) {
+      const interval = habit.interval_days;
+      if (interval >= 30) return 25;
+      if (interval >= 7) return 12;
+      return 0;
+    }
+
+    function getStreakMilestoneBonus(habit) {
+      const streak = computeCurrentStreak(habit.id);
+      const bank = ensureRewardBank();
+      if (!bank.streakMilestones[habit.id]) bank.streakMilestones[habit.id] = [];
+      let bonus = 0;
+      Object.entries(STREAK_MILESTONE_BONUSES).forEach(([days, pts]) => {
+        const d = parseInt(days, 10);
+        if (streak === d && !bank.streakMilestones[habit.id].includes(d)) {
+          bank.streakMilestones[habit.id].push(d);
+          bonus += pts;
+        }
+      });
+      return bonus;
     }
 
     function getStreakPointsForCompletion(habit) {
       const streak = computeCurrentStreak(habit.id);
       const diff = habit.difficulty || 2;
-      const base = diff * 10;
-      const streakMult = 1 + Math.min(Math.max(streak, 1), 14) * 0.2;
-      const metricBonus = isQuantitativeHabit(habit) ? 8 : 0;
-      const intervalBonus = habit.interval_days >= 7 ? 5 : 0;
-      const loadBonus = getTaskLoadPointBonus();
-      return Math.round(base * streakMult + metricBonus + intervalBonus + loadBonus);
+      const mins = Math.max(1, habit.est_minutes ?? 10);
+      const base = diff * mins;
+      const streakBonus = Math.round(base * getStreakBonusPct(streak));
+      const choreBonus = getChorePointBonus(habit);
+      const energyBonus = currentEnergy === 3 ? Math.round(base * 0.2) : 0;
+      return base + streakBonus + choreBonus + energyBonus;
     }
 
     function awardRewardPoints(habit) {
       const bank = ensureRewardBank();
       const earned = getStreakPointsForCompletion(habit);
-      bank.points += earned;
-      bank.totalEarned += earned;
-      return earned;
+      const milestoneBonus = getStreakMilestoneBonus(habit);
+      const total = earned + milestoneBonus;
+      bank.points += total;
+      bank.totalEarned += total;
+      bank.lastEarned = total;
+      bank.lastEarnedAt = Date.now();
+      triggerCheatFundEarnAnimation();
+      return total;
+    }
+
+    function triggerCheatFundEarnAnimation() {
+      const panel = document.getElementById('reward-bank-panel');
+      if (!panel) return;
+      panel.classList.remove('cheat-fund-earn-pop');
+      void panel.offsetWidth;
+      panel.classList.add('cheat-fund-earn-pop');
+      const jar = panel.querySelector('.cheat-fund-jar');
+      if (jar) {
+        jar.classList.add('is-earning');
+        setTimeout(() => jar.classList.remove('is-earning'), 550);
+      }
+    }
+
+    function getNextSmallReward() {
+      const bank = ensureRewardBank();
+      return CHEAT_FUND_SMALL_REWARDS.find(r => bank.points < r.cost) || null;
+    }
+
+    function lightenHexColor(hex, amount = 0.28) {
+      const raw = String(hex || '').replace('#', '');
+      if (raw.length !== 6) return hex;
+      const r = parseInt(raw.slice(0, 2), 16);
+      const g = parseInt(raw.slice(2, 4), 16);
+      const b = parseInt(raw.slice(4, 6), 16);
+      const mix = (c) => Math.min(255, Math.round(c + (255 - c) * amount));
+      return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+    }
+
+    function applyFunTheme() {
+      const theme = FUN_THEMES[Math.floor(Math.random() * FUN_THEMES.length)];
+      state.settings.funTheme = theme.id;
+      const until = new Date();
+      until.setDate(until.getDate() + 3);
+      state.settings.funThemeUntil = dateStrLocal(until);
+      document.documentElement.setAttribute('data-fun-theme', theme.id);
+      document.documentElement.style.setProperty('--rhythm-primary', theme.accent);
+      document.documentElement.style.setProperty('--rhythm-primary-light', lightenHexColor(theme.accent));
+      document.documentElement.style.setProperty('--rhythm-high', theme.accent);
+      document.documentElement.style.setProperty('--rhythm-glow-primary', `0 0 0 1px ${theme.accent}44`);
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute('content', theme.accent);
+      return theme;
+    }
+
+    function clearFunTheme() {
+      state.settings.funTheme = null;
+      state.settings.funThemeUntil = null;
+      document.documentElement.removeAttribute('data-fun-theme');
+      ['--rhythm-primary', '--rhythm-primary-light', '--rhythm-high', '--rhythm-glow-primary'].forEach(prop => {
+        document.documentElement.style.removeProperty(prop);
+      });
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute('content', '#0F1419');
+    }
+
+    function refreshFunTheme() {
+      const until = state.settings.funThemeUntil;
+      if (!until || until < todayStr()) {
+        if (state.settings.funTheme) {
+          clearFunTheme();
+          saveState();
+        }
+        return;
+      }
+      const theme = FUN_THEMES.find(t => t.id === state.settings.funTheme);
+      if (theme) {
+        document.documentElement.setAttribute('data-fun-theme', theme.id);
+        document.documentElement.style.setProperty('--rhythm-primary', theme.accent);
+        document.documentElement.style.setProperty('--rhythm-primary-light', lightenHexColor(theme.accent));
+        document.documentElement.style.setProperty('--rhythm-high', theme.accent);
+        document.documentElement.style.setProperty('--rhythm-glow-primary', `0 0 0 1px ${theme.accent}44`);
+      }
+    }
+
+    function getActiveRewardGuides() {
+      const bank = ensureRewardBank();
+      const guides = [];
+      if (bank.badges) {
+        guides.push({ emoji: '🏅', label: 'Badge flair', text: 'Shows on Streaks cards automatically — no action needed.' });
+      }
+      if (bank.motivationBoostUntil && bank.motivationBoostUntil >= todayStr()) {
+        guides.push({ emoji: '✨', label: 'Motivation boost', text: 'Open Streaks → tap a measurable habit → read Projected Wins.' });
+      }
+      if (bank.skipToken) {
+        guides.push({ emoji: '⏭️', label: `${bank.skipToken} skip token${bank.skipToken === 1 ? '' : 's'}`, text: 'On Today, tap Token on an easy (Low energy) task to pass it.' });
+      }
+      if (state.settings.funThemeUntil && state.settings.funThemeUntil >= todayStr()) {
+        const theme = FUN_THEMES.find(t => t.id === state.settings.funTheme);
+        guides.push({
+          emoji: '🎨',
+          label: `${theme?.label || 'Fun'} theme`,
+          text: `Active now — buttons & accents use your reward color until ${formatBriefDateLabel(state.settings.funThemeUntil)}.`
+        });
+      }
+      if (isCheatDayActive()) {
+        guides.push({ emoji: '🎉', label: 'Cheat Day', text: 'Today tab is paused — enjoy the relax ideas; streaks stay protected.' });
+      }
+      return guides;
+    }
+
+    function getRewardRedeemToast(reward, theme) {
+      switch (reward.id) {
+        case 'badge': return '🏅 Badge on! Check Streaks — your cards now show Fund flair.';
+        case 'boost': return '✨ Boost on for 3 days — open Projected Wins on Streaks.';
+        case 'skip': return '⏭️ Skip token ready — on Today, tap Token on an easy task.';
+        case 'theme': return `🎨 ${theme?.label || 'Fun'} theme on for 3 days — look at tabs & buttons!`;
+        default: return `${reward.emoji} ${reward.label} claimed!`;
+      }
+    }
+
+    function redeemSmallReward(rewardId) {
+      const reward = CHEAT_FUND_SMALL_REWARDS.find(r => r.id === rewardId);
+      if (!reward) return;
+      const bank = ensureRewardBank();
+      if (bank.points < reward.cost) {
+        showToast(`Need ${reward.cost - bank.points} more pts`);
+        return;
+      }
+      bank.points -= reward.cost;
+      if (reward.id === 'badge') bank.badges = (bank.badges || 0) + 1;
+      if (reward.id === 'boost') bank.motivationBoostUntil = dateStrLocal(new Date(Date.now() + 3 * 86400000));
+      if (reward.id === 'skip') bank.skipToken = (bank.skipToken || 0) + 1;
+      let themeApplied = null;
+      if (reward.id === 'theme') themeApplied = applyFunTheme();
+      saveState();
+      renderRewardBank();
+      renderStreaks();
+      showToast(getRewardRedeemToast(reward, themeApplied));
+    }
+
+    function useSkipToken(habitId, event) {
+      if (event) event.stopImmediatePropagation();
+      const bank = ensureRewardBank();
+      if (!bank.skipToken) {
+        showToast('No skip tokens — earn one at 150 pts in Cheat Day Fund');
+        return;
+      }
+      const habit = state.habits.find(h => h.id === habitId);
+      if (!habit || (habit.difficulty || 2) > 1) {
+        showToast('Skip tokens work on easy tasks only');
+        return;
+      }
+      if (!isDueToday(habit)) {
+        showToast('This task isn\'t due today');
+        return;
+      }
+      bank.skipToken -= 1;
+      if (!state.habitSkips) state.habitSkips = {};
+      if (!state.habitSkips[habitId]) state.habitSkips[habitId] = [];
+      const today = todayStr();
+      if (!state.habitSkips[habitId].includes(today)) state.habitSkips[habitId].push(today);
+      saveState();
+      renderTasks();
+      renderStreaks();
+      renderRewardBank();
+      showToast(`⏭️ Skipped ${habit.title} — token used`);
+    }
+
+    function showConfetti() {
+      const layer = document.createElement('div');
+      layer.className = 'cheat-confetti-layer';
+      const colors = ['#fbbf24', '#f97316', '#34d399', '#38bdf8', '#a78bfa', '#fb7185'];
+      for (let i = 0; i < 48; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'cheat-confetti-piece';
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.background = colors[i % colors.length];
+        piece.style.animationDelay = `${Math.random() * 0.6}s`;
+        piece.style.animationDuration = `${1.8 + Math.random() * 1.2}s`;
+        layer.appendChild(piece);
+      }
+      document.body.appendChild(layer);
+      setTimeout(() => layer.remove(), 3200);
+    }
+
+    function activateCheatDay(treat) {
+      const bank = ensureRewardBank();
+      const cost = getCheatDayCost();
+      const today = todayStr();
+      bank.points -= cost;
+      bank.cheatDownsUsed = (bank.cheatDownsUsed || 0) + 1;
+      bank.lastCheatDate = today;
+      bank.cheatDayDate = today;
+      bank.lastTreatLabel = treat.label;
+      bank.lastTreatEmoji = treat.emoji;
+      if (!bank.cheatDayDates.includes(today)) bank.cheatDayDates.push(today);
+      saveState();
+      showConfetti();
+      renderTasks();
+      renderRewardBank();
+      renderStreaks();
+      updateSmartBanner();
+      showToast(`${treat.emoji} Cheat Day! Tasks paused — streaks protected. Enjoy!`);
     }
 
     function getRecentDailyPointAverage(days) {
@@ -11994,28 +12712,39 @@
       return Math.round(total / activeDays);
     }
 
-    function getCheatDownEstimate() {
+    function getCheatDayPaceEstimate() {
       const bank = ensureRewardBank();
-      const cost = getCheatDownCost();
-      const cooldown = getCheatDownCooldownDays();
-      const pct = Math.min(100, Math.round((bank.points / cost) * 100));
-      const milestone = getCheatFundMilestone(pct);
+      const cost = getCheatDayCost();
+      const remaining = Math.max(0, cost - bank.points);
+      if (remaining === 0) return null;
+      const avg = Math.max(15, getRecentDailyPointAverage(7));
+      const days = Math.max(1, Math.ceil(remaining / avg));
+      return { remaining, days, avg };
+    }
+
+    function getCheatDayEstimate() {
+      const bank = ensureRewardBank();
+      const cost = getCheatDayCost();
+      const cooldown = getCheatDayCooldownDays();
+      const nextSmall = getNextSmallReward();
 
       if (cooldown > 0) {
         const lastTreat = bank.lastTreatLabel ? ` Last treat: ${bank.lastTreatEmoji || ''} ${bank.lastTreatLabel}.` : '';
-        return `Recharge ${cooldown} more day${cooldown === 1 ? '' : 's'}, then start filling the jar again.${lastTreat}`;
+        return `Recharge ${cooldown} more day${cooldown === 1 ? '' : 's'} before the next Cheat Day.${lastTreat}`;
       }
       const remaining = Math.max(0, cost - bank.points);
-      if (remaining === 0) return `${milestone.emoji} Jar full — pick your treat!`;
-      const avg = Math.max(8, getRecentDailyPointAverage(5));
-      const days = Math.max(1, Math.ceil(remaining / avg));
-      return `${milestone.emoji} ${milestone.label} · ${remaining} pts to go (~${days} day${days === 1 ? '' : 's'})`;
+      if (remaining === 0) return '🎉 Jar full — claim your Cheat Day!';
+      const pace = getCheatDayPaceEstimate();
+      const nextLine = nextSmall
+        ? `Next reward: ${nextSmall.emoji} ${nextSmall.label} (${nextSmall.cost} pts)`
+        : 'All small rewards unlocked — saving for Cheat Day';
+      return `${nextLine} · ${remaining} pts to Cheat Day (~${pace.days} day${pace.days === 1 ? '' : 's'} at your pace)`;
     }
 
     function showCheatDayRedeemModal() {
       const bank = ensureRewardBank();
-      const cost = getCheatDownCost();
-      const cooldown = getCheatDownCooldownDays();
+      const cost = getCheatDayCost();
+      const cooldown = getCheatDayCooldownDays();
 
       if (cooldown > 0) {
         showToast(`Cheat Day unlocks in ${cooldown} day${cooldown === 1 ? '' : 's'}`);
@@ -12034,8 +12763,8 @@
         <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm">
           <div class="text-center mb-4">
             <div class="text-4xl mb-2">🎉</div>
-            <div class="font-semibold text-lg text-rhythm-text">Jar full!</div>
-            <div class="text-xs text-rhythm-muted mt-1">You earned ${bank.points} pts — what are you treating yourself to?</div>
+            <div class="font-semibold text-lg text-rhythm-text">You earned a Cheat Day!</div>
+            <div class="text-xs text-rhythm-muted mt-1">Tasks pause today — streaks stay protected. Pick your treat:</div>
           </div>
           <div class="grid grid-cols-2 gap-2 mb-4" id="cheat-treat-grid">
             ${CHEAT_DAY_TREATS.map(t => `
@@ -12047,7 +12776,7 @@
           </div>
           <button type="button" id="cheat-redeem-confirm" disabled
             class="w-full py-3 rounded-2xl bg-amber-600/90 text-white font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
-            Claim Cheat Day
+            Claim Cheat Day (${cost} pts)
           </button>
         </div>
       `;
@@ -12067,61 +12796,103 @@
 
       confirmBtn.onclick = () => {
         if (!selectedTreat) return;
-        bank.points = 0;
-        bank.cheatDownsUsed = (bank.cheatDownsUsed || 0) + 1;
-        bank.lastCheatDate = todayStr();
-        bank.lastTreatLabel = selectedTreat.label;
-        bank.lastTreatEmoji = selectedTreat.emoji;
-        saveState();
         modal.remove();
-        renderRewardBank();
-        showToast(`${selectedTreat.emoji} Cheat Day claimed — enjoy your ${selectedTreat.label.toLowerCase()}!`);
+        activateCheatDay(selectedTreat);
       };
     }
 
-    function redeemCheatDown() {
+    function redeemCheatDay() {
       showCheatDayRedeemModal();
     }
 
     function renderRewardBank() {
       const panel = document.getElementById('reward-bank-panel');
       if (!panel) return;
+
+      if (!isCheatDayFundEnabled()) {
+        panel.innerHTML = `
+          <div class="bg-rhythm-surface/60 border border-rhythm-border/60 rounded-3xl p-4 text-center">
+            <div class="text-xs text-rhythm-muted">Cheat Day Fund is off — enable in Settings if you want streak points & rewards.</div>
+          </div>`;
+        return;
+      }
+
       const bank = ensureRewardBank();
-      const cost = getCheatDownCost();
-      const cooldown = getCheatDownCooldownDays();
+      const cost = getCheatDayCost();
+      const cooldown = getCheatDayCooldownDays();
       const pct = Math.min(100, Math.round((bank.points / cost) * 100));
-      const canRedeem = canRedeemCheatDown();
-      const milestone = getCheatFundMilestone(pct);
-      const milestoneMarkers = CHEAT_FUND_MILESTONES.filter(m => m.pct < 100).map(m => `
-        <span class="cheat-fund-milestone ${pct >= m.pct ? 'is-passed' : ''}" style="left:${m.pct}%"></span>
-      `).join('');
+      const canRedeem = canRedeemCheatDay();
+      const milestoneMarkers = CHEAT_FUND_SMALL_REWARDS.map(r => {
+        const mPct = Math.min(99, Math.round((r.cost / cost) * 100));
+        return `<span class="cheat-fund-milestone ${bank.points >= r.cost ? 'is-passed' : ''}" style="left:${mPct}%" title="${r.label}"></span>`;
+      }).join('');
+
+      const smallRewardsHtml = CHEAT_FUND_SMALL_REWARDS.map(r => {
+        const ready = bank.points >= r.cost;
+        return `
+          <button type="button" onclick="redeemSmallReward('${r.id}')"
+            class="cheat-fund-reward-chip ${ready ? 'is-ready' : ''}" title="${r.desc}">
+            <div class="text-base leading-none mb-0.5">${r.emoji}</div>
+            <div class="text-[9px] font-semibold text-rhythm-text">${r.label}</div>
+            <div class="text-[8px] text-rhythm-muted">${r.cost} pts</div>
+          </button>`;
+      }).join('');
+
+      const activeGuides = getActiveRewardGuides();
+      const activeGuidesHtml = activeGuides.length
+        ? `<div class="mb-3 rounded-2xl bg-rhythm-raised/80 border border-rhythm-border/80 p-3">
+            <div class="text-[10px] uppercase tracking-wider text-amber-300/90 font-semibold mb-2">Active rewards — how to use</div>
+            <div class="space-y-2">
+              ${activeGuides.map(g => `
+                <div class="flex gap-2 items-start">
+                  <span class="text-sm leading-none mt-0.5">${g.emoji}</span>
+                  <div class="min-w-0">
+                    <div class="text-[10px] font-semibold text-rhythm-text">${g.label}</div>
+                    <div class="text-[9px] text-rhythm-muted leading-snug">${g.text}</div>
+                  </div>
+                </div>`).join('')}
+            </div>
+          </div>`
+        : '';
 
       panel.innerHTML = `
-        <div class="bg-rhythm-surface border border-rhythm-border rounded-3xl p-4">
-          <div class="flex items-center justify-between mb-3">
+        <div class="bg-rhythm-surface border border-rhythm-border rounded-3xl p-4 mt-3">
+          <div class="flex items-center justify-between mb-2">
             <div class="section-header font-semibold text-rhythm-text text-sm">Cheat Day Fund</div>
             <div class="text-xs text-amber-300 font-semibold tabular-nums">${bank.points} pts</div>
           </div>
-          <div class="cheat-fund-track mb-2">
-            <div class="cheat-fund-fill" style="width:${pct}%"></div>
-            ${milestoneMarkers}
+          <div class="cheat-fund-jar">
+            <div class="cheat-fund-jar-icon" aria-hidden="true">🪙</div>
+            <div class="cheat-fund-track">
+              <div class="cheat-fund-fill" style="width:${pct}%"></div>
+              ${milestoneMarkers}
+            </div>
           </div>
           <div class="flex justify-between text-[10px] text-rhythm-muted mb-1">
-            <span>${milestone.emoji} ${milestone.label}</span>
+            <span>🎯 Cheat Day at ${cost} pts</span>
             <span>${bank.points} / ${cost}</span>
           </div>
-          <div class="text-[10px] text-rhythm-primary-light mb-3">${getCheatDownEstimate()}</div>
-          <button type="button" onclick="redeemCheatDown()"
+          <div class="text-[10px] text-rhythm-primary-light mb-2 leading-snug">${getCheatDayEstimate()}</div>
+          ${activeGuidesHtml}
+          <div class="cheat-fund-rewards-row mb-3">${smallRewardsHtml}</div>
+          <button type="button" onclick="redeemCheatDay()"
             class="w-full py-2.5 rounded-2xl text-xs font-semibold ${canRedeem ? 'bg-amber-600/90 text-white active:opacity-90' : 'bg-rhythm-raised text-rhythm-muted border border-rhythm-border'}">
             ${cooldown > 0
               ? `Recharging · ${cooldown}d left`
               : canRedeem
-                ? `🎉 Pick your treat`
-                : `${cost - bank.points} pts to go`}
+                ? `🎉 Claim Cheat Day (${cost} pts)`
+                : `${Math.max(0, cost - bank.points)} pts to Cheat Day`}
           </button>
-          ${bank.cheatDownsUsed ? `<div class="text-[10px] text-rhythm-muted text-center mt-2">${bank.cheatDownsUsed} cheat day${bank.cheatDownsUsed === 1 ? '' : 's'} claimed</div>` : ''}
+          ${bank.cheatDownsUsed ? `<div class="text-[10px] text-rhythm-muted text-center mt-2">${bank.cheatDownsUsed} cheat day${bank.cheatDownsUsed === 1 ? '' : 's'} claimed · ${bank.totalEarned || 0} lifetime pts</div>` : `<div class="text-[10px] text-rhythm-muted text-center mt-2">Complete tasks to earn points · difficulty × minutes + streak bonus</div>`}
         </div>
       `;
+    }
+
+    function getCheatDayFundProjectionLine() {
+      if (!isCheatDayFundEnabled()) return '';
+      const pace = getCheatDayPaceEstimate();
+      if (!pace) return '🎉 Cheat Day Fund is full — claim it on Streaks!';
+      return `At your pace (~${pace.avg} pts/day), you'll earn a Cheat Day in about ${pace.days} day${pace.days === 1 ? '' : 's'}.`;
     }
 
     function updateProjectionHint() {
@@ -12148,23 +12919,32 @@
       const streak = computeCurrentStreak(habitId);
       const longest = getLongestStreak(habitId);
       const confirmed = confirm(
-        `Delete the streak for "${habit.title}" permanently?\n\n` +
-        `This erases all completion history (${streak} day${streak === 1 ? '' : 's'} current · ${longest} day longest). ` +
-        `The task stays on your list, but this streak cannot be recovered.`
+        `Stop tracking a streak for "${habit.title}"?\n\n` +
+        `This clears streak history (${streak} day${streak === 1 ? '' : 's'} current · ${longest} day longest) and removes it from Streaks.\n\n` +
+        `Chores stay available when due (Today or Rhythm Brief) without streak pressure.`
       );
       if (!confirmed) return;
 
+      habit.trackStreak = false;
+      // Weekly+ chores keep existing schedule; daily items without streak become plain tasks when not a habit.
+      if (isDailyTask(habit) && habit.trackStreak === false) {
+        // Keep as daily checklist item, not a streak habit.
+      }
       delete state.completions[habitId];
       if (state.habitSkips) delete state.habitSkips[habitId];
       if (state.metricLogs) delete state.metricLogs[habitId];
       if (state.healthSyncs) delete state.healthSyncs[habitId];
+      if (state.rewardBank?.streakMilestones?.[habitId]) {
+        delete state.rewardBank.streakMilestones[habitId];
+      }
 
       if (currentProjectionHabit === habitId) currentProjectionHabit = null;
       saveState();
       renderStreaks();
       renderTasks();
       updateSmartBanner();
-      showToast(`Streak deleted for ${habit.title}`);
+      updateRhythmBriefLauncher();
+      showToast(`No longer tracking streak: ${habit.title}`);
     }
 
     function renderStreakCards() {
@@ -12174,18 +12954,18 @@
 
       if (currentProjectionHabit) {
         const projected = state.habits.find(h => h.id === currentProjectionHabit);
-        if (!projected || !isRecurringHabit(projected)) currentProjectionHabit = null;
+        if (!projected || !shouldTrackStreak(projected)) currentProjectionHabit = null;
       }
 
       const active = state.habits
-        .filter(h => isRecurringHabit(h))
+        .filter(h => shouldTrackStreak(h))
         .map(h => ({ habit: h, streak: computeCurrentStreak(h.id) }))
         .filter(x => x.streak > 0)
         .sort((a, b) => b.streak - a.streak);
 
       if (active.length === 0) {
         currentProjectionHabit = null;
-        container.innerHTML = rhythmEmptyHtml('🔥', 'No streaks yet', 'Complete a few tasks to view your streaks and projected wins.');
+        container.innerHTML = rhythmEmptyHtml('🔥', 'No streaks yet', 'Add a daily Habit from Today — chores and one-time tasks do not build streaks.');
         return;
       }
 
@@ -12505,7 +13285,7 @@
             <button onclick="removeHabit('${habitId}', this)" 
               class="flex-1 py-3 bg-rhythm-surface active:bg-rose-900/70 text-rose-300 rounded-2xl font-semibold">Remove habit</button>
             
-            ${ isPhysicalActivity(habit) ? `<button onclick="showDeviceSyncModal('${habitId}'); this.closest('.fixed').remove()" class="flex-1 py-3 bg-sky-600 active:bg-sky-500 rounded-2xl font-semibold text-sm">${hasSyncedToday(habitId) ? 'Re-sync' : 'Sync'}</button>` : '' }
+            ${ isPhysicalActivity(habit) && isCompletedToday(habitId) ? `<button onclick="showDeviceSyncModal('${habitId}'); this.closest('.fixed').remove()" class="flex-1 py-3 bg-sky-600 active:bg-sky-500 rounded-2xl font-semibold text-sm">${hasSyncedToday(habitId) ? 'Re-sync' : 'Sync'}</button>` : '' }
           </div>
           
           <div class="text-[10px] text-center mt-3 text-rhythm-muted">Voice command also works: “complete ${habit.title.toLowerCase()}”</div>
@@ -12647,6 +13427,7 @@
       const maintPref = getMaintenancePreference();
       const conns = getCalendarConnections();
       const smartSuggestionsOn = !state.settings.smartSuggestionsMuted;
+      const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
       const genderOptions = [
         { id: '', label: 'Prefer not to say' },
         { id: 'female', label: 'Female' },
@@ -12683,6 +13464,17 @@
               <button type="button" id="smart-suggestions-toggle" role="switch" aria-checked="${smartSuggestionsOn}"
                 class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${smartSuggestionsOn ? 'bg-rhythm-primary' : 'bg-rhythm-border'}">
                 <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${smartSuggestionsOn ? 'translate-x-5' : 'translate-x-0'}"></span>
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 py-1">
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-rhythm-text">Cheat Day Fund</div>
+                <div class="text-[10px] text-rhythm-muted leading-snug">Earn points from streaks on the Streaks tab — optional</div>
+              </div>
+              <button type="button" id="cheat-fund-toggle" role="switch" aria-checked="${cheatFundOn}"
+                class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${cheatFundOn ? 'bg-rhythm-primary' : 'bg-rhythm-border'}">
+                <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${cheatFundOn ? 'translate-x-5' : 'translate-x-0'}"></span>
               </button>
             </div>
 
@@ -12781,16 +13573,18 @@
       
       document.body.appendChild(modal);
 
-      const smartToggle = modal.querySelector('#smart-suggestions-toggle');
-      if (smartToggle) {
-        smartToggle.onclick = () => {
-          const on = smartToggle.getAttribute('aria-checked') !== 'true';
-          smartToggle.setAttribute('aria-checked', on ? 'true' : 'false');
-          smartToggle.className = `smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${on ? 'bg-rhythm-primary' : 'bg-rhythm-border'}`;
-          const knob = smartToggle.querySelector('span');
+      const wireSwitchToggle = (el) => {
+        if (!el) return;
+        el.onclick = () => {
+          const on = el.getAttribute('aria-checked') !== 'true';
+          el.setAttribute('aria-checked', on ? 'true' : 'false');
+          el.className = `smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${on ? 'bg-rhythm-primary' : 'bg-rhythm-border'}`;
+          const knob = el.querySelector('span');
           if (knob) knob.className = `absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : 'translate-x-0'}`;
         };
-      }
+      };
+      wireSwitchToggle(modal.querySelector('#smart-suggestions-toggle'));
+      wireSwitchToggle(modal.querySelector('#cheat-fund-toggle'));
 
       modal.querySelectorAll('.maint-pref-btn').forEach(btn => {
         btn.onclick = () => {
@@ -12831,10 +13625,15 @@
         reenabledSmartSuggestions = state.settings.smartSuggestionsMuted && enabling;
         state.settings.smartSuggestionsMuted = !enabling;
       }
+      const cheatFundToggle = modal.querySelector('#cheat-fund-toggle');
+      if (cheatFundToggle) {
+        state.settings.cheatDayFundEnabled = cheatFundToggle.getAttribute('aria-checked') === 'true';
+      }
       saveState();
       settingsWasOpen = false;
       modal.remove();
       renderLibrary();
+      renderStreaks();
       updateCalendarStatusUI();
       updateSmartBanner();
       if (reenabledSmartSuggestions) {
@@ -13692,6 +14491,7 @@
         updateRhythmBriefLauncher();
         renderHeaderWeather();
         initHorizontalScrollRows();
+        if (typeof refreshFunTheme === 'function') refreshFunTheme();
 
         setTimeout(fetchRealWeather, 600);
         
