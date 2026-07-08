@@ -954,22 +954,6 @@
       50% { box-shadow: 0 0 0 5px rgba(91, 184, 168, 0); transform: scale(1.05); }
     }
 
-    .smart-banner-mute {
-      position: absolute;
-      top: 0;
-      right: 0;
-      z-index: 2;
-      padding: 0.15rem 0.35rem;
-      border-radius: 0.5rem;
-      color: var(--rhythm-muted);
-      transition: color 0.15s ease, background 0.15s ease;
-    }
-
-    .smart-banner-mute:hover {
-      color: var(--rhythm-text);
-      background: var(--rhythm-raised);
-    }
-
     #smart-bill-footnote {
       color: #5B8FD9;
       font-size: 0.62rem;
@@ -2156,12 +2140,7 @@
       <!-- Smart Suggestion Banner -->
       <div id="smart-banner" onclick="handleSmartSuggestion()"
         class="mx-5 mt-2 mb-1 px-3 py-2.5 rounded-2xl suggestion-card border border-rhythm-primary/40 cursor-pointer active:opacity-90 hidden relative">
-        <button type="button" onclick="event.stopImmediatePropagation(); muteSmartSuggestions()"
-          class="smart-banner-mute touch-target text-[10px] flex items-center gap-x-1" aria-label="Mute smart suggestions">
-          <i class="fa-solid fa-volume-xmark text-[9px]"></i>
-          <span>Mute</span>
-        </button>
-        <div class="flex gap-x-2.5 pr-12">
+        <div class="flex gap-x-2.5">
           <div class="mt-0.5">
             <i class="fa-solid fa-lightbulb text-rhythm-accent text-base"></i>
           </div>
