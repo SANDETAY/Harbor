@@ -1476,11 +1476,11 @@
     .rythm-lockup .rythm-title .ltr-h { color: #3D9A8B; -webkit-text-fill-color: #3D9A8B; }
     .rythm-lockup .rythm-title .ltr-m { color: #5B8FD9; -webkit-text-fill-color: #5B8FD9; }
 
-    /* ── Splash: ambient bloom → staggered slogan → iris reveal ── */
+    /* ── Splash: ambient bloom → staggered slogan → fade reveal ── */
     .splash-screen-v2 {
       background: var(--rhythm-bg);
       overflow: hidden;
-      will-change: opacity, clip-path;
+      will-change: opacity;
     }
 
     .splash-screen-v2.is-hidden {
@@ -1489,7 +1489,7 @@
     }
 
     .splash-screen-v2.is-revealing {
-      animation: splashIrisReveal 620ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
+      animation: splashFadeOut 520ms ease forwards;
       pointer-events: none;
     }
 
@@ -1581,11 +1581,11 @@
     }
 
     .splash-slogan.is-exiting {
-      animation: splashSloganLiftOut 500ms cubic-bezier(0.55, 0.06, 0.92, 0.48) forwards;
+      animation: splashSloganFadeOut 480ms ease forwards;
     }
 
     .app-content-wrap.splash-app-reveal {
-      animation: splashAppReveal 620ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
+      animation: splashFadeIn 520ms ease forwards;
     }
 
     @keyframes splashAmbientIn {
@@ -1618,20 +1618,19 @@
       100% { opacity: 0; transform: translateX(260%); }
     }
 
-    @keyframes splashSloganLiftOut {
-      0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-      100% { opacity: 0; transform: translateY(-32px) scale(0.96); filter: blur(10px); }
+    @keyframes splashSloganFadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
     }
 
-    @keyframes splashIrisReveal {
-      0% { opacity: 1; clip-path: circle(92% at 50% 46%); }
-      55% { opacity: 1; clip-path: circle(42% at 50% 46%); }
-      100% { opacity: 0; clip-path: circle(0% at 50% 46%); }
+    @keyframes splashFadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
     }
 
-    @keyframes splashAppReveal {
-      from { opacity: 0.4; transform: scale(0.978); }
-      to { opacity: 1; transform: scale(1); }
+    @keyframes splashFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .header-context {
@@ -6208,10 +6207,11 @@
         };
       });
 
-      modal.querySelector('#cal-ev-save-btn').onclick = () => {
+      const saveCalendarEvent = () => {
         const title = normalizeUserText(modal.querySelector('#cal-ev-title').value);
         if (!title) {
           showToast('Enter an event title');
+          modal.querySelector('#cal-ev-title')?.focus();
           return;
         }
         const time = readEventTimePickerValues(modal, calState.timeFormat);
@@ -6243,6 +6243,18 @@
           showToast(`Event added: ${title} · ${when} ${time}`);
         }
       };
+
+      modal.querySelector('#cal-ev-save-btn').onclick = saveCalendarEvent;
+
+      modal.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        if (e.target.closest('#cal-ev-time-wrap')) return;
+        if (e.target.classList?.contains('cal-format-chip')) return;
+        e.preventDefault();
+        saveCalendarEvent();
+      });
+
+      modal.querySelector('#cal-ev-title')?.focus();
     }
 
     function deleteCalendarEvent(eventId) {
@@ -11777,7 +11789,7 @@
 
       const SLOGAN_IN_MS = 720;
       const SLOGAN_HOLD_MS = 680;
-      const REVEAL_MS = 620;
+      const REVEAL_MS = 520;
 
       const exitAt = SLOGAN_IN_MS + SLOGAN_HOLD_MS;
 
