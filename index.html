@@ -3078,6 +3078,9 @@
     }
 
     function computeCurrentStreak(habitId) {
+      const habit = state.habits.find(h => h.id === habitId);
+      if (habit && !isRecurringHabit(habit)) return 0;
+
       const dates = [...getCompletions(habitId)].sort().reverse();
       if (dates.length === 0) return 0;
 
@@ -3102,6 +3105,9 @@
     }
 
     function getLongestStreak(habitId) {
+      const habit = state.habits.find(h => h.id === habitId);
+      if (habit && !isRecurringHabit(habit)) return 0;
+
       const dates = [...getCompletions(habitId)].sort();
       if (dates.length === 0) return 0;
       
@@ -3654,6 +3660,10 @@
 
     function isOneOffTask(habit) {
       return habit?.interval_days === 0;
+    }
+
+    function isRecurringHabit(habit) {
+      return habit != null && habit.interval_days !== 0;
     }
 
     function isDailyTask(habit) {
@@ -9621,7 +9631,13 @@
       if (!container) return;
       container.innerHTML = '';
 
+      if (currentProjectionHabit) {
+        const projected = state.habits.find(h => h.id === currentProjectionHabit);
+        if (!projected || !isRecurringHabit(projected)) currentProjectionHabit = null;
+      }
+
       const active = state.habits
+        .filter(h => isRecurringHabit(h))
         .map(h => ({ habit: h, streak: computeCurrentStreak(h.id) }))
         .filter(x => x.streak > 0)
         .sort((a, b) => b.streak - a.streak);
