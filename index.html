@@ -155,9 +155,25 @@
     html[data-theme="dark"] .life-nav-tab.life-panel-active,
     html[data-theme="dark"] .main-nav-tab.nav-active {
       color: #070707;
+      background: transparent;
+      box-shadow: none;
+      font-weight: 750;
+    }
+
+    html[data-theme="dark"] .life-chip-indicator {
       background: linear-gradient(180deg, #FFFFFF 0%, #DCDCDC 100%);
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-      font-weight: 750;
+    }
+
+    html[data-theme="dark"] .main-nav-indicator {
+      background: linear-gradient(180deg, #FFFFFF 0%, #E8E8E8 100%);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    }
+
+    html[data-theme="dark"] .main-nav-tab.nav-active {
+      color: #070707;
+      text-shadow: none;
+      border-bottom-color: transparent;
     }
 
     html[data-theme="dark"] .summary-toggle-btn.is-active {
@@ -411,6 +427,27 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* Floating horizontal tab transitions */
+    @keyframes tabFloatInNext {
+      from { opacity: 0; transform: translate3d(36px, 0, 0) scale(0.985); filter: blur(1px); }
+      to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+    }
+
+    @keyframes tabFloatInPrev {
+      from { opacity: 0; transform: translate3d(-36px, 0, 0) scale(0.985); filter: blur(1px); }
+      to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+    }
+
+    @keyframes panelFloatInNext {
+      from { opacity: 0; transform: translate3d(28px, 0, 0); }
+      to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+
+    @keyframes panelFloatInPrev {
+      from { opacity: 0; transform: translate3d(-28px, 0, 0); }
+      to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+
     @keyframes bannerSlide {
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
@@ -468,9 +505,33 @@
       position: relative;
       gap: 0.35rem;
       padding-bottom: 0.15rem;
+      touch-action: pan-y;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Sliding active chip on main tabs */
+    .main-nav-indicator {
+      position: absolute;
+      top: 0.2rem;
+      bottom: 0.35rem;
+      left: 0;
+      width: 0;
+      border-radius: 0.75rem 0.75rem 0.35rem 0.35rem;
+      background: linear-gradient(180deg, rgba(47, 155, 140, 0.28) 0%, rgba(47, 155, 140, 0.1) 100%);
+      box-shadow: inset 0 -3px 0 rgb(var(--harbor-primary));
+      pointer-events: none;
+      z-index: 0;
+      transition:
+        transform 0.4s var(--harbor-ease-out),
+        width 0.4s var(--harbor-ease-out),
+        opacity 0.2s ease;
+      will-change: transform, width;
     }
 
     .main-nav-tab {
+      position: relative;
+      z-index: 1;
       flex: 1;
       padding: 0.7rem 0.3rem 0.65rem;
       border: none;
@@ -482,12 +543,11 @@
       cursor: pointer;
       border-radius: 0.75rem 0.75rem 0 0;
       border-bottom: 3px solid transparent;
-      transition: color 0.2s ease, border-color 0.25s var(--harbor-ease-out), background 0.2s ease, transform 0.12s ease;
+      transition: color 0.25s ease, transform 0.15s var(--harbor-ease-out);
     }
 
     .main-nav-tab:hover {
       color: rgb(var(--harbor-text));
-      background: rgba(47, 155, 140, 0.06);
     }
 
     .main-nav-tab:active {
@@ -496,13 +556,14 @@
 
     .main-nav-tab.nav-active {
       color: #dff7f1;
-      border-bottom-color: rgb(var(--harbor-primary));
-      background: linear-gradient(180deg, rgba(47, 155, 140, 0.16) 0%, rgba(47, 155, 140, 0.04) 100%);
+      border-bottom-color: transparent;
+      background: transparent;
       font-weight: 750;
       text-shadow: 0 0 18px rgba(107, 191, 176, 0.25);
     }
 
     .life-subnav {
+      position: relative;
       display: flex;
       gap: 0.3rem;
       padding: 0.3rem;
@@ -511,9 +572,32 @@
       border: 1px solid rgb(var(--harbor-border));
       background: rgba(22, 32, 38, 0.85);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      touch-action: pan-y;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Sliding pill behind active Life chip */
+    .life-chip-indicator {
+      position: absolute;
+      top: 0.3rem;
+      bottom: 0.3rem;
+      left: 0;
+      width: 0;
+      border-radius: 0.75rem;
+      background: linear-gradient(180deg, rgba(47, 155, 140, 0.42) 0%, rgba(47, 155, 140, 0.22) 100%);
+      box-shadow: 0 1px 0 rgba(107, 191, 176, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      pointer-events: none;
+      z-index: 0;
+      transition:
+        transform 0.4s var(--harbor-ease-out),
+        width 0.4s var(--harbor-ease-out);
+      will-change: transform, width;
     }
 
     .life-nav-tab {
+      position: relative;
+      z-index: 1;
       flex: 1;
       min-width: 0;
       padding: 0.55rem 0.22rem;
@@ -529,12 +613,11 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+      transition: color 0.25s ease, transform 0.15s var(--harbor-ease-out);
     }
 
     .life-nav-tab:hover {
       color: rgb(var(--harbor-text));
-      background: rgba(47, 155, 140, 0.08);
     }
 
     .life-nav-tab:active {
@@ -543,8 +626,8 @@
 
     .life-nav-tab.life-panel-active {
       color: #e8faf5;
-      background: linear-gradient(180deg, rgba(47, 155, 140, 0.38) 0%, rgba(47, 155, 140, 0.2) 100%);
-      box-shadow: 0 1px 0 rgba(107, 191, 176, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      background: transparent;
+      box-shadow: none;
       font-weight: 750;
       border-bottom: none;
     }
@@ -611,7 +694,42 @@
     }
 
     .tab-content.tab-enter {
-      animation: tabFadeIn 0.22s var(--harbor-ease-out) forwards;
+      animation: tabFadeIn 0.28s var(--harbor-ease-out) forwards;
+    }
+
+    .tab-content.tab-enter-next {
+      animation: tabFloatInNext 0.4s var(--harbor-ease-out) forwards;
+    }
+
+    .tab-content.tab-enter-prev {
+      animation: tabFloatInPrev 0.4s var(--harbor-ease-out) forwards;
+    }
+
+    .life-panel.panel-enter-next {
+      animation: panelFloatInNext 0.36s var(--harbor-ease-out) forwards;
+    }
+
+    .life-panel.panel-enter-prev {
+      animation: panelFloatInPrev 0.36s var(--harbor-ease-out) forwards;
+    }
+
+    .life-panel.panel-enter {
+      animation: tabFadeIn 0.28s var(--harbor-ease-out) forwards;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tab-content.tab-enter,
+      .tab-content.tab-enter-next,
+      .tab-content.tab-enter-prev,
+      .life-panel.panel-enter,
+      .life-panel.panel-enter-next,
+      .life-panel.panel-enter-prev {
+        animation-duration: 0.01ms !important;
+      }
+      .main-nav-indicator,
+      .life-chip-indicator {
+        transition: none !important;
+      }
     }
 
     .nav-active {
@@ -4394,7 +4512,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v95';
+    const HARBOR_BUILD = 'v96';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -4480,6 +4598,8 @@
 
     let currentTab = 'today';
     let currentLifePanel = 'schedule';
+    const MAIN_TAB_ORDER = ['today', 'life', 'streaks', 'library'];
+    const LIFE_PANEL_ORDER = ['schedule', 'grocery', 'bills', 'subscriptions'];
     let currentLibraryFilter = 'all';
     let librarySearchQuery = '';
     let subscriptionSearchQuery = '';
@@ -10500,16 +10620,36 @@
       });
     }
 
-    function switchLifePanel(panel) {
+    function switchLifePanel(panel, options = {}) {
+      const prev = currentLifePanel;
+      const prevIdx = LIFE_PANEL_ORDER.indexOf(prev);
+      const nextIdx = LIFE_PANEL_ORDER.indexOf(panel);
+      let dir = options.dir || null;
+      if (!dir && prevIdx >= 0 && nextIdx >= 0 && prevIdx !== nextIdx) {
+        dir = nextIdx > prevIdx ? 'next' : 'prev';
+      }
+
       currentLifePanel = panel;
-      ['schedule', 'grocery', 'bills', 'subscriptions'].forEach(name => {
-        document.getElementById(`life-panel-${name}`)?.classList.toggle('hidden', name !== panel);
+      LIFE_PANEL_ORDER.forEach(name => {
+        const el = document.getElementById(`life-panel-${name}`);
+        const isActive = name === panel;
+        if (el) {
+          el.classList.toggle('hidden', !isActive);
+          el.classList.remove('panel-enter', 'panel-enter-next', 'panel-enter-prev');
+          if (isActive) {
+            void el.offsetWidth;
+            if (dir === 'next') el.classList.add('panel-enter-next');
+            else if (dir === 'prev') el.classList.add('panel-enter-prev');
+            else el.classList.add('panel-enter');
+          }
+        }
         const tab = document.getElementById(`life-panel-tab-${name}`);
         if (tab) {
-          tab.classList.toggle('life-panel-active', name === panel);
-          tab.setAttribute('aria-selected', name === panel ? 'true' : 'false');
+          tab.classList.toggle('life-panel-active', isActive);
+          tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
         }
       });
+      updateLifeNavIndicator();
       if (panel === 'bills') renderBills();
       if (panel === 'grocery') renderGrocery();
       if (panel === 'schedule') renderSchedule();
@@ -16389,12 +16529,61 @@
     }
 
     // ==================== TABS ====================
-    function switchTab(tab) {
+    let tabSwipeCooldownUntil = 0;
+    let tabSwipeClickSuppressUntil = 0;
+
+    function ensureNavIndicator(navEl, className) {
+      if (!navEl) return null;
+      let ind = navEl.querySelector(`.${className}`);
+      if (!ind) {
+        ind = document.createElement('div');
+        ind.className = className;
+        ind.setAttribute('aria-hidden', 'true');
+        navEl.insertBefore(ind, navEl.firstChild);
+      }
+      return ind;
+    }
+
+    function slideNavIndicator(navEl, activeSel, indicatorClass) {
+      if (!navEl) return;
+      const ind = ensureNavIndicator(navEl, indicatorClass);
+      const active = navEl.querySelector(activeSel);
+      if (!ind || !active) return;
+      ind.style.width = `${active.offsetWidth}px`;
+      ind.style.transform = `translate3d(${active.offsetLeft}px, 0, 0)`;
+      ind.style.opacity = '1';
+    }
+
+    function updateMainNavIndicator() {
+      slideNavIndicator(
+        document.getElementById('main-nav-bar'),
+        '.main-nav-tab.nav-active',
+        'main-nav-indicator'
+      );
+    }
+
+    function updateLifeNavIndicator() {
+      slideNavIndicator(
+        document.querySelector('.life-subnav'),
+        '.life-nav-tab.life-panel-active',
+        'life-chip-indicator'
+      );
+    }
+
+    function switchTab(tab, options = {}) {
+      const prev = currentTab;
+      const prevIdx = MAIN_TAB_ORDER.indexOf(prev);
+      const nextIdx = MAIN_TAB_ORDER.indexOf(tab);
+      let dir = options.dir || null;
+      if (!dir && prevIdx >= 0 && nextIdx >= 0 && prevIdx !== nextIdx) {
+        dir = nextIdx > prevIdx ? 'next' : 'prev';
+      }
+
       document.querySelectorAll('.tab-content').forEach(el => {
         el.classList.add('hidden');
-        el.classList.remove('tab-enter');
+        el.classList.remove('tab-enter', 'tab-enter-next', 'tab-enter-prev');
       });
-      ['today', 'life', 'streaks', 'library'].forEach(name => {
+      MAIN_TAB_ORDER.forEach(name => {
         const el = document.getElementById(`tab-${name}`);
         if (el) {
           el.classList.remove('nav-active');
@@ -16406,15 +16595,18 @@
       if (content) {
         content.classList.remove('hidden');
         void content.offsetWidth;
-        content.classList.add('tab-enter');
+        if (dir === 'next') content.classList.add('tab-enter-next');
+        else if (dir === 'prev') content.classList.add('tab-enter-prev');
+        else content.classList.add('tab-enter');
       }
       const activeTab = document.getElementById(`tab-${tab}`);
       if (activeTab) {
         activeTab.classList.add('nav-active');
         activeTab.setAttribute('aria-selected', 'true');
       }
-      
+
       currentTab = tab;
+      requestAnimationFrame(() => updateMainNavIndicator());
 
       if (tab !== 'today') hideWelcomeSpotlight();
 
@@ -16426,9 +16618,9 @@
         const scroll = document.getElementById(`tab-content-${tab}`);
         if (scroll) scroll.scrollTop = 0;
       }
-      
+
       if (tab === 'life') {
-        switchLifePanel(currentLifePanel);
+        switchLifePanel(currentLifePanel, { dir: null });
       }
       if (tab === 'today') {
         updateSummaryLauncher();
@@ -16448,121 +16640,22 @@
       }
     }
 
-    const MAIN_TAB_ORDER = ['today', 'life', 'streaks', 'library'];
-    const LIFE_PANEL_ORDER = ['schedule', 'grocery', 'bills', 'subscriptions'];
-    let tabSwipeCooldownUntil = 0;
-    let tabSwipeClickSuppressUntil = 0;
-
-    function isTabSwipeBlockedTarget(target) {
-      if (!(target instanceof Element)) return true;
-      // Don't start tab-swipe on text fields, carousels, menus, or the summary orb
-      if (target.closest([
-        'input', 'textarea', 'select', 'option',
-        '[contenteditable="true"]',
-        '.library-filters-scroll',
-        '#header-weather-hours',
-        '.weather-hour-chip',
-        '.summary-orb',
-        '#summary-modal',
-        '#app-menu-sheet',
-        '.modal-sheet',
-        '.app-menu-dropdown',
-        '.swipe-action',
-        '[role="dialog"]',
-        '[role="slider"]'
-      ].join(','))) return true;
-
-      // Nested horizontal scrollers (don't steal their pan)
-      let node = target;
-      const shell = document.getElementById('app-shell');
-      while (node && node !== shell) {
-        if (node instanceof HTMLElement) {
-          const ox = getComputedStyle(node).overflowX;
-          if ((ox === 'auto' || ox === 'scroll') && node.scrollWidth > node.clientWidth + 6) {
-            return true;
-          }
-        }
-        node = node.parentElement;
-      }
-      return false;
-    }
-
-    function isOverlayBlockingTabSwipe() {
-      return !!(
-        document.getElementById('summary-modal') ||
-        document.getElementById('app-menu-sheet') ||
-        document.querySelector('.modal-overlay-blur') ||
-        document.body.classList.contains('is-splash-active')
-      );
-    }
-
-    /** dir: 'next' (swipe left) | 'prev' (swipe right) */
-    function navigateTabSwipe(dir) {
-      if (Date.now() < tabSwipeCooldownUntil) return;
-      if (isOverlayBlockingTabSwipe()) return;
-
-      // Don't fight an in-progress task/row swipe
-      if (document.querySelector('.swipe-row.is-swiping')) return;
-
-      const goMain = (fromTab, d) => {
-        const i = MAIN_TAB_ORDER.indexOf(fromTab);
-        if (i < 0) return false;
-        const next = d === 'next' ? i + 1 : i - 1;
-        if (next < 0 || next >= MAIN_TAB_ORDER.length) return false;
-        switchTab(MAIN_TAB_ORDER[next]);
-        return true;
-      };
-
-      // Life: prefer sub-tabs; at edges continue to main tabs
-      if (currentTab === 'life') {
-        const pi = LIFE_PANEL_ORDER.indexOf(currentLifePanel);
-        if (dir === 'next') {
-          if (pi >= 0 && pi < LIFE_PANEL_ORDER.length - 1) {
-            switchLifePanel(LIFE_PANEL_ORDER[pi + 1]);
-            tabSwipeCooldownUntil = Date.now() + 320;
-            return;
-          }
-          if (goMain('life', 'next')) tabSwipeCooldownUntil = Date.now() + 320;
-          return;
-        }
-        // prev
-        if (pi > 0) {
-          switchLifePanel(LIFE_PANEL_ORDER[pi - 1]);
-          tabSwipeCooldownUntil = Date.now() + 320;
-          return;
-        }
-        if (goMain('life', 'prev')) tabSwipeCooldownUntil = Date.now() + 320;
-        return;
-      }
-
-      if (goMain(currentTab, dir)) tabSwipeCooldownUntil = Date.now() + 320;
-    }
-
-    function initTabSwipeNav() {
-      // Shell covers chrome + content so swipes work on energy bar / padding too
-      const root = document.getElementById('app-shell') || document.getElementById('app-scroll');
-      if (!root || root.dataset.tabSwipeInit === '1') return;
-      root.dataset.tabSwipeInit = '1';
+    function bindChipStripSwipe(stripEl, onSwipe) {
+      if (!stripEl || stripEl.dataset.chipSwipeBound === '1') return;
+      stripEl.dataset.chipSwipeBound = '1';
 
       let tracking = false;
       let startX = 0;
       let startY = 0;
-      let axis = null; // null | 'x' | 'y'
-      let startedOnSwipeRow = false;
+      let axis = null;
+      const THRESH = 36;
+      const AXIS_MIN = 10;
 
-      const THRESH = 64;
-      const AXIS_RATIO = 1.35;
-      const AXIS_MIN = 14;
-
-      const begin = (x, y, target) => {
-        if (isOverlayBlockingTabSwipe()) return;
-        if (isTabSwipeBlockedTarget(target)) return;
+      const begin = (x, y) => {
         tracking = true;
         startX = x;
         startY = y;
         axis = null;
-        // Task/grocery/event rows own their own left-swipe; never steal that gesture
-        startedOnSwipeRow = !!(target instanceof Element && target.closest('.swipe-row'));
       };
 
       const move = (x, y) => {
@@ -16571,7 +16664,7 @@
         const dy = y - startY;
         if (!axis) {
           if (Math.abs(dx) < AXIS_MIN && Math.abs(dy) < AXIS_MIN) return;
-          if (Math.abs(dx) > Math.abs(dy) * AXIS_RATIO && Math.abs(dx) > AXIS_MIN) {
+          if (Math.abs(dx) > Math.abs(dy) * 1.15 && Math.abs(dx) > AXIS_MIN) {
             axis = 'x';
           } else {
             axis = 'y';
@@ -16589,16 +16682,11 @@
         const wasX = axis === 'x';
         tracking = false;
         axis = null;
-
         if (!wasX || Math.abs(dx) < THRESH) return;
-        // Entire gesture began on a swipe-row → leave it to Edit/Delete / close
-        if (startedOnSwipeRow) return;
-        if (document.querySelector('.swipe-row.is-swiping')) return;
-
-        // Kill the synthetic click that would fire on buttons under the finger
+        if (Date.now() < tabSwipeCooldownUntil) return;
         tabSwipeClickSuppressUntil = Date.now() + 420;
-        if (dx < 0) navigateTabSwipe('next');
-        else navigateTabSwipe('prev');
+        tabSwipeCooldownUntil = Date.now() + 280;
+        onSwipe(dx < 0 ? 'next' : 'prev');
       };
 
       const cancel = () => {
@@ -16606,32 +16694,88 @@
         axis = null;
       };
 
-      // Touch-only path avoids double-firing with pointer events on mobile browsers
-      root.addEventListener('touchstart', (e) => {
+      stripEl.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 1) return;
-        begin(e.touches[0].clientX, e.touches[0].clientY, e.target);
+        begin(e.touches[0].clientX, e.touches[0].clientY);
       }, { passive: true });
 
-      root.addEventListener('touchmove', (e) => {
+      stripEl.addEventListener('touchmove', (e) => {
         if (!tracking || e.touches.length !== 1) return;
         move(e.touches[0].clientX, e.touches[0].clientY);
-      }, { passive: true });
+        if (axis === 'x' && e.cancelable) e.preventDefault();
+      }, { passive: false });
 
-      root.addEventListener('touchend', (e) => {
+      stripEl.addEventListener('touchend', (e) => {
         const t = e.changedTouches[0];
         if (t) end(t.clientX);
         else cancel();
       }, { passive: true });
 
-      root.addEventListener('touchcancel', cancel, { passive: true });
+      stripEl.addEventListener('touchcancel', cancel, { passive: true });
 
-      // After a tab swipe, swallow the ghost click on whatever was under the finger
-      document.addEventListener('click', (e) => {
-        if (Date.now() >= tabSwipeClickSuppressUntil) return;
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }, true);
+      let mouseDown = false;
+      stripEl.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        mouseDown = true;
+        begin(e.clientX, e.clientY);
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!mouseDown) return;
+        move(e.clientX, e.clientY);
+      });
+      window.addEventListener('mouseup', (e) => {
+        if (!mouseDown) return;
+        mouseDown = false;
+        end(e.clientX);
+      });
+    }
+
+    function initTabSwipeNav() {
+      const mainNav = document.getElementById('main-nav-bar');
+      const lifeNav = document.querySelector('.life-subnav');
+
+      ensureNavIndicator(mainNav, 'main-nav-indicator');
+      ensureNavIndicator(lifeNav, 'life-chip-indicator');
+
+      // Swipe only on main tab chips → Today / Life / Streaks / Library
+      bindChipStripSwipe(mainNav, (dir) => {
+        const i = MAIN_TAB_ORDER.indexOf(currentTab);
+        if (i < 0) return;
+        const n = dir === 'next' ? i + 1 : i - 1;
+        if (n < 0 || n >= MAIN_TAB_ORDER.length) return;
+        switchTab(MAIN_TAB_ORDER[n], { dir });
+      });
+
+      // Swipe only on Life sub-tab chips → Schedule / Grocery / Bills / Subscriptions
+      bindChipStripSwipe(lifeNav, (dir) => {
+        if (currentTab !== 'life') return;
+        const i = LIFE_PANEL_ORDER.indexOf(currentLifePanel);
+        if (i < 0) return;
+        const n = dir === 'next' ? i + 1 : i - 1;
+        if (n < 0 || n >= LIFE_PANEL_ORDER.length) return;
+        switchLifePanel(LIFE_PANEL_ORDER[n], { dir });
+      });
+
+      if (!window.__harborChipClickGuard) {
+        window.__harborChipClickGuard = true;
+        document.addEventListener('click', (e) => {
+          if (Date.now() >= tabSwipeClickSuppressUntil) return;
+          if (!(e.target instanceof Element)) return;
+          if (!e.target.closest('#main-nav-bar, .life-subnav')) return;
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }, true);
+      }
+
+      const placeIndicators = () => {
+        updateMainNavIndicator();
+        updateLifeNavIndicator();
+      };
+      requestAnimationFrame(placeIndicators);
+      window.addEventListener('resize', () => requestAnimationFrame(placeIndicators));
+      setTimeout(placeIndicators, 120);
+      setTimeout(placeIndicators, 400);
     }
 
     // ==================== INIT & HELPERS ====================
