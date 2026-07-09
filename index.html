@@ -16236,7 +16236,7 @@
 
     function mergeSyncPacket(packet) {
       ensureChallengesState();
-      if (!packet || packet.k !== 'sync') throw new Error('That code is not a tide update (sync)');
+      if (!packet || packet.k !== 'sync') throw new Error('That code is not a Tide update (sync)');
       const me = getCaptainId();
       let ch = getChallengeById(packet.id);
       if (!ch) {
@@ -16410,7 +16410,7 @@
       return (
         `🌊 Tide update — ${ch.name}\n` +
         `${getCaptainName()}: ${me?.streak || 0}-day streak\n` +
-        `\nPaste this in Harbor → Streaks → Streak-Offs → Radio a tide:\n${code}`
+        `\nPaste this in Harbor → Streaks → Streak-Offs → Radio a Tide:\n${code}`
       );
     }
 
@@ -16485,7 +16485,7 @@
             ${ch.stakeNote ? `<div class="relative z-[1] text-[10px] text-harbor-accent mt-2 px-0.5">Stake: ${escapeBriefHtml(ch.stakeNote)}</div>` : ''}
             <div class="streak-off-actions relative z-[1]">
               <button type="button" class="streak-off-btn primary" onclick="shareChallengeInvite('${ch.id}')"><i class="fa-solid fa-scroll mr-1"></i>Invite</button>
-              <button type="button" class="streak-off-btn" onclick="shareChallengeSync('${ch.id}')"><i class="fa-solid fa-tower-broadcast mr-1"></i>Radio tide</button>
+              <button type="button" class="streak-off-btn" onclick="shareChallengeSync('${ch.id}')"><i class="fa-solid fa-tower-broadcast mr-1"></i>Radio Tide</button>
               <button type="button" class="streak-off-btn" onclick="showChallengeDetail('${ch.id}')">Board</button>
             </div>
           </div>`;
