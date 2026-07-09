@@ -3776,9 +3776,13 @@
             <div class="flex-1 relative">
               <input id="grocery-add-input" type="text"
                 class="w-full bg-rhythm-surface border border-rhythm-border focus:border-rhythm-primary rounded-2xl py-3 px-4 text-sm placeholder:text-rhythm-muted outline-none"
-                placeholder="Add item...">
-              <button onclick="addGroceryFromInput()"
-                class="absolute right-1.5 top-1.5 bg-rhythm-primary hover:bg-rhythm-primary-light active:opacity-90 transition-colors text-white w-8 h-8 rounded-2xl flex items-center justify-center">
+                placeholder="Add item..."
+                enterkeyhint="done"
+                autocomplete="off"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();addGroceryFromInput();}">
+              <button type="button" onclick="addGroceryFromInput()"
+                class="absolute right-1.5 top-1.5 bg-rhythm-primary hover:bg-rhythm-primary-light active:opacity-90 transition-colors text-white w-8 h-8 rounded-2xl flex items-center justify-center"
+                aria-label="Add grocery item">
                 <i class="fa-solid fa-plus text-sm"></i>
               </button>
             </div>
@@ -3939,7 +3943,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v67';
+    const RHYTHM_BUILD = 'v68';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
