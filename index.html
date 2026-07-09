@@ -4042,7 +4042,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v76';
+    const HARBOR_BUILD = 'v77';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -4736,6 +4736,10 @@
       state.habits.forEach(h => {
         if (!h.added_at) h.added_at = today;
       });
+      // Old pro booking reminders used long intervals and vanished from Today mid-cycle
+      if (repairProRemindersInState()) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { /* ignore */ }
+      }
       if (!state.settings.profile) {
         state.settings.profile = {
           displayName: '', age: null, gender: null, heightIn: null,
@@ -10254,12 +10258,16 @@
         <div class="flex-1 min-w-0" onclick="completeHabit('${habit.id}', event)">
           <div class="font-medium leading-tight${showMuted ? ' text-harbor-muted' : ''}">${habit.title} ${weatherIcon ? `<span class="ml-1 text-base" title="Current weather: ${state.settings.mockWeather || 'unknown'}">${weatherIcon}</span>` : ''}</div>
           <div class="flex items-center gap-x-2 mt-0.5 flex-wrap">
+            ${habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))
+              ? `<span class="text-sky-300 text-xs px-1.5 rounded bg-sky-900/40 font-semibold">Pro booking</span>`
+              : ''}
             ${isRecurring ? `<span class="text-harbor-primary-light/80 text-xs px-1.5 rounded bg-harbor-primary/15">${formatIntervalLabel(habit.interval_days)}</span>` : ''}
-            ${isOneOffTask(habit) ? `<span class="text-harbor-muted text-xs px-1.5 rounded bg-harbor-raised">One-time</span>` : ''}
+            ${isOneOffTask(habit) && !(habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))) ? `<span class="text-harbor-muted text-xs px-1.5 rounded bg-harbor-raised">One-time</span>` : ''}
             ${dueNote}
             <span class="text-xs text-harbor-muted">${habit.est_minutes} min • ${difficultyLabel} energy</span>
             ${streak > 0 ? `<span class="text-amber-300 text-xs flex items-center gap-x-0.5"><i class="fa-solid fa-fire text-amber-400"></i> ${streak}</span>` : ''}
           </div>
+          ${habit.is_pro_reminder && habit.note ? `<div class="text-[10px] text-harbor-muted mt-0.5 leading-snug">${habit.note}</div>` : ''}
         </div>
         <div class="text-right">
           ${habit.target_value ? `<div class="text-xs text-harbor-primary-light font-semibold tabular-nums">${habit.target_value} ${habit.unit}</div>` : ''}
@@ -13582,6 +13590,31 @@
       showToast(`✓ ${taskToAdd.title} added${kindNote}`);
     }
 
+    function ensureProReminderVisible(habit) {
+      // Pro booking reminders must stay on Today until checked off (not buried in a future cycle).
+      if (!habit || !habit.is_pro_reminder) return habit;
+      if (habit.interval_days !== 0) habit.interval_days = 0;
+      habit.trackStreak = false;
+      return habit;
+    }
+
+    function repairProRemindersInState() {
+      let changed = false;
+      (state.habits || []).forEach(h => {
+        if (!h?.is_pro_reminder && !(h?.id && String(h.id).startsWith('pro-schedule-'))) return;
+        h.is_pro_reminder = true;
+        if (h.interval_days !== 0) {
+          h.interval_days = 0;
+          changed = true;
+        }
+        if (h.trackStreak !== false) {
+          h.trackStreak = false;
+          changed = true;
+        }
+      });
+      return changed;
+    }
+
     function scheduleProForTask(task) {
       const pro = getTaskProOption(task);
       if (!pro) return;
@@ -13600,13 +13633,14 @@
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
         <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 max-h-[80vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="flex justify-between items-start mb-3">
             <div>
               <div class="text-[10px] uppercase tracking-wider text-sky-400 font-semibold">Don't DIY?</div>
               <div class="text-lg font-semibold text-harbor-text mt-0.5">${task.title}</div>
-              <div class="text-xs text-harbor-muted mt-1">Book a <strong class="text-harbor-text">${pro.label}</strong> instead — we'll remind you when it's due.</div>
+              <div class="text-xs text-harbor-muted mt-1">We'll add a <strong class="text-harbor-text">Today</strong> task to book a <strong class="text-harbor-text">${pro.label}</strong>. Check it off once the visit is scheduled.</div>
             </div>
-            <button onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+            <button onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none" aria-label="Close">×</button>
           </div>
 
           <div class="bg-harbor-raised/60 rounded-2xl p-3 mb-4">
@@ -13616,7 +13650,7 @@
 
           <div class="space-y-2">
             <button id="pro-add-reminder" class="w-full py-3.5 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 rounded-2xl font-semibold text-sm text-white">
-              <i class="fa-regular fa-calendar-plus mr-1.5"></i> Schedule Professional reminder
+              <i class="fa-regular fa-calendar-plus mr-1.5"></i> Add booking task to Today
             </button>
             <button id="pro-add-diy-too" class="w-full py-3 bg-harbor-surface active:bg-harbor-border rounded-2xl font-medium text-sm text-harbor-text">
               I'll DIY — add task to my list
@@ -13625,7 +13659,7 @@
           </div>
 
           <div class="text-[10px] text-harbor-muted text-center mt-3 leading-relaxed">
-            Prototype: full app will link to calendar + preferred vendors
+            Looks for it on the <strong class="text-harbor-text">Today</strong> tab after you add it
           </div>
         </div>
       `;
@@ -13634,27 +13668,37 @@
 
       modal.querySelector('#pro-add-reminder').onclick = () => {
         const reminderId = 'pro-schedule-' + task.id;
-        if (!state.habits.some(h => h.id === reminderId)) {
-          state.habits.push(stampHabitMeta({
+        let habit = state.habits.find(h => h.id === reminderId);
+        if (!habit) {
+          habit = stampHabitMeta(ensureProReminderVisible({
             id: reminderId,
-            title: `Schedule: ${pro.short || task.title}`,
+            title: `Book pro: ${pro.short || task.title}`,
             librarySection: task.librarySection,
             category: 'pro',
-            interval_days: task.interval_days,
-            est_minutes: 5,
+            interval_days: 0, // one-off → stays on Today until completed
+            est_minutes: 10,
             difficulty: 1,
             is_preset: false,
             proLinkedTask: task.id,
-            note: `Book ${pro.label}`,
-            is_pro_reminder: true
+            proLabel: pro.label,
+            note: `Book a ${pro.label}. Check off after you schedule the visit.`,
+            is_pro_reminder: true,
+            trackStreak: false
           }));
-          saveState();
-          renderTasks();
-          updateSmartBanner();
+          state.habits.push(habit);
+        } else {
+          ensureProReminderVisible(habit);
+          if (!habit.proLabel) habit.proLabel = pro.label;
         }
+        saveState();
+        renderTasks();
+        updateSmartBanner();
+        updateSummaryLauncher();
         modal.remove();
         renderLibrary();
-        showToast(`📅 Reminder set — schedule your ${pro.label.toLowerCase()}`);
+        // Take the user where the task actually lives
+        switchTab('today');
+        showToast(`On Today · Book your ${pro.label.toLowerCase()}`);
       };
 
       modal.querySelector('#pro-add-diy-too').onclick = () => {
@@ -13715,17 +13759,17 @@
           </div>`;
       } else if (proScheduled) {
         actionCol = `<div class="flex flex-col gap-1 items-end">
-            <span class="text-[10px] px-2.5 py-1.5 rounded-xl bg-sky-900/40 text-sky-300 font-semibold">Pro set</span>
-            <button class="lib-add-btn text-[9px] text-harbor-muted hover:text-harbor-text">+ Add DIY</button>
+            <button type="button" class="lib-goto-pro-btn text-[10px] px-2.5 py-1.5 rounded-xl bg-sky-900/40 text-sky-300 font-semibold whitespace-nowrap">On Today →</button>
+            <button type="button" class="lib-add-btn text-[9px] text-harbor-muted hover:text-harbor-text">+ Add DIY</button>
           </div>`;
       } else if (proOpt) {
         // Hard / hire-friendly chores: pro path first, DIY still available
         actionCol = `<div class="flex flex-col gap-1 items-end">
-            <button class="lib-pro-btn px-2.5 py-1.5 text-[10px] font-semibold rounded-xl bg-sky-600 hover:bg-sky-500 text-white whitespace-nowrap">Schedule Pro</button>
-            <button class="lib-add-btn text-[9px] text-harbor-muted hover:text-harbor-text">+ Add DIY</button>
+            <button type="button" class="lib-pro-btn px-2.5 py-1.5 text-[10px] font-semibold rounded-xl bg-sky-600 hover:bg-sky-500 text-white whitespace-nowrap">Schedule Pro</button>
+            <button type="button" class="lib-add-btn text-[9px] text-harbor-muted hover:text-harbor-text">+ Add DIY</button>
           </div>`;
       } else {
-        actionCol = `<button class="lib-add-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl bg-harbor-primary hover:bg-harbor-primary-light text-white">+ Add</button>`;
+        actionCol = `<button type="button" class="lib-add-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl bg-harbor-primary hover:bg-harbor-primary-light text-white">+ Add</button>`;
       }
 
       div.innerHTML = `
@@ -13739,6 +13783,7 @@
               <span class="text-[9px] px-1.5 py-px rounded bg-harbor-surface/80 text-harbor-primary-light/90">${intervalLabel}</span>
             </div>
             ${task.note ? `<div class="text-[9px] text-harbor-muted mt-1 leading-snug line-clamp-2">${task.note}</div>` : ''}
+            ${proScheduled ? `<div class="text-[9px] text-sky-300/90 mt-1">Booking reminder is on <strong>Today</strong></div>` : ''}
           </div>
           ${actionCol}
         </div>
@@ -13747,11 +13792,19 @@
       const editBtn = div.querySelector('.lib-edit-btn');
       if (editBtn) editBtn.onclick = (e) => { e.stopPropagation(); editLibraryTask(task.id); };
 
-      if (!alreadyAdded && !proScheduled) {
-        const addBtn = div.querySelector('.lib-add-btn');
-        if (addBtn) addBtn.onclick = (e) => { e.stopPropagation(); addLibraryTaskToHabits(task, div); };
-        const proBtn = div.querySelector('.lib-pro-btn');
-        if (proBtn) proBtn.onclick = (e) => { e.stopPropagation(); scheduleProForTask(task); };
+      const addBtn = div.querySelector('.lib-add-btn');
+      if (addBtn && !alreadyAdded) {
+        addBtn.onclick = (e) => { e.stopPropagation(); addLibraryTaskToHabits(task, div); };
+      }
+      const proBtn = div.querySelector('.lib-pro-btn');
+      if (proBtn) proBtn.onclick = (e) => { e.stopPropagation(); scheduleProForTask(task); };
+      const gotoProBtn = div.querySelector('.lib-goto-pro-btn');
+      if (gotoProBtn) {
+        gotoProBtn.onclick = (e) => {
+          e.stopPropagation();
+          switchTab('today');
+          showToast('Your pro booking task is on Today');
+        };
       }
 
       container.appendChild(div);
