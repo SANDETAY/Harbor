@@ -5043,7 +5043,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v111';
+    const HARBOR_BUILD = 'v112';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -15211,9 +15211,11 @@
       {
         id: 'summary',
         title: 'Summary',
-        body: 'Tap the glowing <strong>Summary</strong> button at the <strong>bottom right</strong> for your day, week, and month at a glance. Weekly, monthly, and longer tasks show up here — along with schedule, bills, and grocery — so Today stays focused on what matters now.',
+        body: 'Tap the glowing <strong>Summary</strong> button at the <strong>bottom right</strong> for your day, week, and month at a glance. Weekly, monthly, and longer tasks show up here — along with schedule, bills, and grocery — so Today stays focused on what matters now.<br><br><span class="text-harbor-primary-light">Browse the report as long as you like</span>, then tap <strong>Next</strong> when you’re ready.',
         target: () => document.getElementById('summary-launcher'),
         waitFor: 'summary-open',
+        // Unlock Next after open — do NOT auto-advance so users can explore Summary first
+        unlockNextOnly: true,
         interactive: true,
         cardPlacement: 'above',
         prepare: () => {
@@ -15695,11 +15697,36 @@
       applyTutorialStepHighlight(step);
     }
 
+    function unlockTutorialNextButton(label) {
+      const nextBtn = document.getElementById('tutorial-next-btn');
+      if (!nextBtn) return;
+      nextBtn.disabled = false;
+      nextBtn.classList.remove('opacity-50', 'pointer-events-none');
+      nextBtn.textContent = label || 'Next';
+    }
+
     function maybeAdvanceTutorial(trigger) {
       if (!state.settings.tutorialActive) return;
       const step = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
       if (!step?.waitFor || step.waitFor !== trigger || tutorialWaitSatisfied) return;
       tutorialWaitSatisfied = true;
+
+      // Some steps only unlock Next (e.g. Summary) so the user can explore before continuing
+      if (step.unlockNextOnly) {
+        const nextLabel = step.id === 'summary' ? 'Next — continue tour' : 'Next';
+        unlockTutorialNextButton(nextLabel);
+        const bodyEl = document.getElementById('tutorial-body');
+        if (bodyEl && step.id === 'summary') {
+          bodyEl.innerHTML = 'Nice — <strong>Summary</strong> is open. Look around day / week / month, then tap <strong>Next</strong> when you’re ready to continue.';
+        }
+        // Keep the coachmark usable above the summary sheet
+        const card = document.getElementById('tutorial-card');
+        if (card) {
+          card.style.zIndex = '300';
+        }
+        return;
+      }
+
       const delay = trigger === 'projection-open' ? 450 : 700;
       setTimeout(() => {
         if (!state.settings.tutorialActive) return;
