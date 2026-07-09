@@ -195,6 +195,8 @@
       border-radius: 1.5rem;
       margin-bottom: 0.5rem;
       --swipe-reveal: 8.75rem;
+      /* Contain paints so action colors don't flash during scroll */
+      contain: paint;
     }
 
     .swipe-row-actions {
@@ -203,6 +205,11 @@
       width: var(--swipe-reveal);
       display: none;
       align-items: stretch;
+      z-index: 0;
+      /* Hidden until a real horizontal swipe — prevents flash while scrolling */
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.1s ease;
     }
 
     .swipe-action {
@@ -237,7 +244,11 @@
       z-index: 1;
       /* Solid fill so Edit/Delete actions never peek through before swipe */
       background: var(--harbor-surface);
-      will-change: transform;
+      border-radius: inherit;
+      isolation: isolate;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      transform: translateZ(0);
     }
 
     .swipe-row-content.is-dragging {
@@ -247,6 +258,12 @@
     @media (max-width: 767px) {
       .swipe-row-actions {
         display: flex;
+      }
+
+      .swipe-row.is-open .swipe-row-actions,
+      .swipe-row.is-swiping .swipe-row-actions {
+        opacity: 1;
+        pointer-events: auto;
       }
 
       .row-inline-actions {
@@ -4292,7 +4309,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v89';
+    const HARBOR_BUILD = 'v90';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -10474,9 +10491,9 @@
     }
 
     function closeAllSwipeRows(except) {
-      document.querySelectorAll('.swipe-row.is-open').forEach(row => {
+      document.querySelectorAll('.swipe-row.is-open, .swipe-row.is-swiping').forEach(row => {
         if (except && row === except) return;
-        row.classList.remove('is-open');
+        row.classList.remove('is-open', 'is-swiping');
         const content = row.querySelector('.swipe-row-content');
         if (content) {
           content.style.transform = '';
@@ -10557,6 +10574,15 @@
 
         const getOffset = () => (row.classList.contains('is-open') ? revealPx : 0);
 
+        const resetSwipeVisual = () => {
+          content.classList.remove('is-dragging');
+          content.style.transform = '';
+          row.classList.remove('is-swiping');
+          if (!row.classList.contains('is-open')) {
+            // keep closed
+          }
+        };
+
         const armClickSuppress = () => {
           // Block the synthetic click that follows a swipe (was completing tasks / awarding pts).
           suppressClickUntil = Date.now() + 450;
@@ -10569,9 +10595,13 @@
         const setOffset = (px, animate) => {
           const clamped = Math.max(0, Math.min(revealPx, px));
           content.classList.toggle('is-dragging', !animate);
+          // Only show action buttons once we've clearly started a swipe
+          if (clamped > 8) row.classList.add('is-swiping');
+          else if (!row.classList.contains('is-open')) row.classList.remove('is-swiping');
           if (animate) {
             content.style.transform = '';
             row.classList.toggle('is-open', clamped >= revealPx * 0.45);
+            if (!row.classList.contains('is-open')) row.classList.remove('is-swiping');
           } else {
             row.classList.remove('is-open');
             content.style.transform = `translateX(${-clamped}px)`;
@@ -10580,49 +10610,82 @@
 
         const onStart = (clientX, clientY) => {
           if (!isSwipeMobile()) return;
-          closeAllSwipeRows(row);
           startX = clientX;
           startY = clientY;
           startOffset = getOffset();
           dragging = true;
           axisLock = null;
           didHorizontalDrag = false;
+          // Don't close others / show actions until horizontal intent is confirmed
         };
 
         const onMove = (clientX, clientY, e) => {
           if (!dragging) return;
           const dx = clientX - startX;
           const dy = clientY - startY;
+
           if (!axisLock) {
-            if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-            axisLock = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+            // Wait until movement is unambiguous — prevents scroll jitter from opening swipe
+            if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+            const clearlyHorizontal = Math.abs(dx) > Math.abs(dy) * 1.65 && Math.abs(dx) > 14;
+            const clearlyVertical = Math.abs(dy) >= Math.abs(dx) * 1.05 || Math.abs(dy) > 12;
+            if (clearlyHorizontal) {
+              axisLock = 'x';
+              closeAllSwipeRows(row);
+            } else if (clearlyVertical) {
+              axisLock = 'y';
+              dragging = false;
+              resetSwipeVisual();
+              return;
+            } else {
+              return; // still ambiguous — let the list scroll
+            }
           }
+
           if (axisLock === 'y') {
             dragging = false;
-            content.classList.remove('is-dragging');
+            resetSwipeVisual();
             return;
           }
+
           if (Math.abs(dx) > 8) didHorizontalDrag = true;
           if (e?.cancelable) e.preventDefault();
           setOffset(startOffset - dx, false);
         };
 
         const onEnd = (clientX) => {
-          if (!dragging) return;
+          if (!dragging) {
+            // If we aborted for vertical scroll mid-gesture, ensure clean state
+            if (axisLock === 'y' || !axisLock) resetSwipeVisual();
+            return;
+          }
           dragging = false;
           content.classList.remove('is-dragging');
           const dx = clientX - startX;
+          // Never open if we never confirmed horizontal swipe
+          if (axisLock !== 'x') {
+            row.classList.remove('is-open', 'is-swiping');
+            content.style.transform = '';
+            return;
+          }
           const projected = startOffset - dx;
-          const shouldOpen = projected > revealPx * 0.38 || (startOffset < revealPx * 0.5 && dx < -28);
-          if (didHorizontalDrag || Math.abs(dx) > 10) armClickSuppress();
+          const shouldOpen = projected > revealPx * 0.38 || (startOffset < revealPx * 0.5 && dx < -32);
+          if (didHorizontalDrag || Math.abs(dx) > 12) armClickSuppress();
           if (shouldOpen) {
-            row.classList.add('is-open');
+            row.classList.add('is-open', 'is-swiping');
             content.style.transform = '';
             closeAllSwipeRows(row);
           } else {
-            row.classList.remove('is-open');
+            row.classList.remove('is-open', 'is-swiping');
             content.style.transform = '';
           }
+        };
+
+        const onCancel = () => {
+          dragging = false;
+          axisLock = null;
+          row.classList.remove('is-open', 'is-swiping');
+          resetSwipeVisual();
         };
 
         // Capture-phase: kill ghost clicks after swipe / while actions are open
@@ -10647,6 +10710,11 @@
         content.addEventListener('touchend', (e) => {
           const touch = e.changedTouches[0];
           if (touch) onEnd(touch.clientX);
+          else onCancel();
+        });
+
+        content.addEventListener('touchcancel', () => {
+          onCancel();
         });
 
         content.addEventListener('pointerdown', (e) => {
@@ -10664,6 +10732,11 @@
           if (e.pointerType === 'touch') return;
           onEnd(e.clientX);
         });
+
+        content.addEventListener('pointercancel', (e) => {
+          if (e.pointerType === 'touch') return;
+          onCancel();
+        });
       });
 
       if (!swipeRowDocListenerBound) {
@@ -10676,6 +10749,22 @@
         window.addEventListener('resize', () => {
           if (!isSwipeMobile()) closeAllSwipeRows();
         });
+        // Fast list scroll must never leave half-open swipe rows flashing actions
+        const onScrollClose = () => {
+          if (!isSwipeMobile()) return;
+          closeAllSwipeRows();
+          document.querySelectorAll('.swipe-row.is-swiping').forEach(row => {
+            row.classList.remove('is-swiping', 'is-open');
+            const content = row.querySelector('.swipe-row-content');
+            if (content) {
+              content.classList.remove('is-dragging');
+              content.style.transform = '';
+            }
+          });
+        };
+        document.getElementById('task-list')?.addEventListener('scroll', onScrollClose, { passive: true });
+        document.getElementById('app-scroll')?.addEventListener('scroll', onScrollClose, { passive: true });
+        window.addEventListener('scroll', onScrollClose, { passive: true, capture: true });
       }
     }
 
