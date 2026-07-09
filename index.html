@@ -2927,62 +2927,47 @@
       }
 
       #energy-bar-section {
-        padding-top: 0.3rem !important;
+        padding-top: 0.35rem !important;
         padding-bottom: 0.3rem !important;
       }
 
-      #energy-bar-section > .flex.items-center.justify-between.mb-1 {
-        margin-bottom: 0.2rem !important;
-      }
-
-      #energy-bar-section .text-xs.font-medium span {
-        display: none;
-      }
-
-      #energy-bar-section .text-xs.font-medium {
-        font-size: 0.58rem !important;
-      }
-
-      #energy-label {
-        font-size: 0.55rem !important;
-        padding: 0.08rem 0.35rem !important;
-      }
-
       #smart-banner {
-        padding: 0.4rem 0.55rem !important;
-        margin-top: 0.3rem !important;
-        margin-bottom: 0.2rem !important;
-        border-radius: 0.75rem !important;
+        padding: 0.65rem 0.75rem !important;
+        margin-top: 0.35rem !important;
+        margin-bottom: 0.3rem !important;
+        border-radius: 0.85rem !important;
       }
 
       #smart-banner .fa-lightbulb {
-        font-size: 0.72rem !important;
+        font-size: 1rem !important;
       }
 
       #smart-banner-label {
-        font-size: 0.52rem !important;
-        margin-bottom: 0 !important;
+        font-size: 0.65rem !important;
+        margin-bottom: 0.15rem !important;
       }
 
       #smart-text {
-        font-size: 0.62rem !important;
-        line-height: 1.25 !important;
+        font-size: 0.88rem !important;
+        line-height: 1.35 !important;
         display: -webkit-box;
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
 
+      #smart-banner .mt-2,
       #smart-banner .mt-1\.5 {
-        margin-top: 0.25rem !important;
+        margin-top: 0.4rem !important;
       }
 
       #smart-cta {
-        font-size: 0.52rem !important;
+        font-size: 0.68rem !important;
       }
 
+      #smart-banner .text-\[11px\].text-rhythm-primary-light\/70,
       #smart-banner .text-\[10px\].text-rhythm-primary-light\/60 {
-        font-size: 0.52rem !important;
+        font-size: 0.68rem !important;
       }
 
       .main-nav {
@@ -3470,15 +3455,7 @@
       </div>
 
       <!-- Energy Bar -->
-      <div id="energy-bar-section" class="px-5 pt-2.5 pb-2.5 bg-rhythm-bg">
-        <div class="flex items-center justify-between mb-1">
-          <div class="text-xs font-medium text-rhythm-muted flex items-center gap-x-1.5">
-            <i class="fa-solid fa-battery-half"></i>
-            <span>Energy Level</span>
-          </div>
-          <div id="energy-label" class="text-[10px] px-2 py-0.5 rounded-full bg-rhythm-surface text-rhythm-primary-light font-medium"></div>
-        </div>
-        
+      <div id="energy-bar-section" class="px-5 pt-2 pb-2 bg-rhythm-bg" aria-label="Energy level">
         <div class="flex gap-x-2">
           <button onclick="setEnergy(1)" id="energy-1"
             class="energy-btn flex-1 py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-x-2 active:scale-[0.985] transition-all bg-rhythm-surface hover:bg-rhythm-raised border border-rhythm-border">
@@ -3500,18 +3477,18 @@
 
       <!-- Smart Suggestion Banner -->
       <div id="smart-banner" onclick="handleSmartSuggestion()"
-        class="mx-5 mt-2 mb-1 px-3 py-2.5 rounded-2xl suggestion-card border border-rhythm-primary/40 cursor-pointer active:opacity-90 hidden relative">
+        class="mx-5 mt-2 mb-1 px-3.5 py-3 rounded-2xl suggestion-card border border-rhythm-primary/40 cursor-pointer active:opacity-90 hidden relative">
         <div class="flex gap-x-2.5">
           <div class="mt-0.5">
-            <i class="fa-solid fa-lightbulb text-rhythm-accent text-base"></i>
+            <i class="fa-solid fa-lightbulb text-rhythm-accent text-lg"></i>
           </div>
           <div class="flex-1 min-w-0">
-            <div id="smart-banner-label" class="text-[10px] uppercase tracking-wider text-rhythm-accent font-semibold mb-px">Smart Suggestion</div>
-            <div id="smart-text" class="text-xs leading-snug text-rhythm-text font-medium"></div>
+            <div id="smart-banner-label" class="text-[11px] uppercase tracking-wider text-rhythm-accent font-semibold mb-0.5">Smart Suggestion</div>
+            <div id="smart-text" class="text-sm leading-snug text-rhythm-text font-medium"></div>
             <div id="smart-bill-footnote" class="hidden"></div>
-            <div class="flex items-center gap-x-2 mt-1.5 flex-wrap">
-              <div id="smart-cta" class="text-[10px] px-2.5 py-px bg-rhythm-primary/25 text-rhythm-primary-light rounded-full inline-block">Tap to start</div>
-              <div onclick="event.stopImmediatePropagation(); dismissSuggestion()" class="text-[10px] text-rhythm-primary-light/60 hover:text-rhythm-primary-light">Dismiss</div>
+            <div class="flex items-center gap-x-2 mt-2 flex-wrap">
+              <div id="smart-cta" class="text-[11px] px-2.5 py-0.5 bg-rhythm-primary/25 text-rhythm-primary-light rounded-full inline-block font-medium">Tap to start</div>
+              <div onclick="event.stopImmediatePropagation(); dismissSuggestion()" class="text-[11px] text-rhythm-primary-light/70 hover:text-rhythm-primary-light">Dismiss</div>
             </div>
           </div>
         </div>
@@ -3769,7 +3746,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v58';
+    const RHYTHM_BUILD = 'v59';
 
     // Fitness / wearable sync (Today “Done — sync”, device modal, etc.) — off until productized.
     const FEATURE_ACTIVITY_SYNC = false;
@@ -5684,6 +5661,8 @@
     function formatIntervalLabel(days) {
       if (days === 0) return 'One-time';
       if (!days) return 'Daily';
+      if (days === 2) return '3× / week';
+      if (days === 3) return '2× / week';
       if (days === 7) return 'Weekly';
       if (days === 14) return 'Biweekly';
       if (days >= 28 && days <= 31) return 'Monthly';
@@ -5886,6 +5865,32 @@
 
     const TASK_RECURRENCE_OPTIONS = [
       { key: 'daily', label: 'Daily', days: null },
+      { key: '2', label: '3× / week', days: 2 },
+      { key: '3', label: '2× / week', days: 3 },
+      { key: '7', label: 'Weekly', days: 7 },
+      { key: '14', label: 'Biweekly', days: 14 },
+      { key: '30', label: 'Monthly', days: 30 },
+      { key: '90', label: 'Quarterly', days: 90 },
+      { key: '180', label: 'Semi-Annual', days: 180 },
+      { key: '365', label: 'Annual', days: 365 }
+    ];
+
+    const HABIT_RECURRENCE_OPTIONS = [
+      { key: 'daily', label: 'Daily', days: null },
+      { key: '2', label: '3× / week', days: 2 },
+      { key: '3', label: '2× / week', days: 3 },
+      { key: '7', label: 'Weekly', days: 7 }
+    ];
+
+    const CHORE_RECURRENCE_OPTIONS = TASK_RECURRENCE_OPTIONS.filter(o => o.key !== 'daily' && o.key !== '2' && o.key !== '3')
+      .concat([
+        { key: '2', label: '3× / week', days: 2 },
+        { key: '3', label: '2× / week', days: 3 }
+      ]);
+    // Chores: keep common intervals + 2×/3× week near the front
+    const CHORE_RECURRENCE_ORDERED = [
+      { key: '3', label: '2× / week', days: 3 },
+      { key: '2', label: '3× / week', days: 2 },
       { key: '7', label: 'Weekly', days: 7 },
       { key: '14', label: 'Biweekly', days: 14 },
       { key: '30', label: 'Monthly', days: 30 },
@@ -6047,13 +6052,13 @@
           <div class="flex items-center justify-between mb-3">
             <div>
               <div class="font-semibold text-lg text-rhythm-text">${isEdit ? (isHabitEdit && !editLibTask ? 'Edit Task' : 'Edit Personal Task') : isLibrary ? 'Add Personal Task' : 'Add Task'}</div>
-              <div class="text-[10px] text-rhythm-muted">${isEdit ? 'Update details and save' : isLibrary ? 'Type a name and save — we handle the rest' : 'Smart defaults — tap Adjust only if needed'}</div>
+              <div class="text-[10px] text-rhythm-muted">${isEdit ? 'Update details and save' : isLibrary ? 'Type a name and save to your library' : 'Name it, pick type & how often'}</div>
             </div>
             <button type="button" onclick="closeQuickTaskModal()" class="w-8 h-8 rounded-full bg-rhythm-raised text-rhythm-muted text-xl leading-none">×</button>
           </div>
 
           <label class="block text-xs text-rhythm-muted mb-1">What is it?</label>
-          <input id="qt-title" type="text" spellcheck="true" autocapitalize="words" value="${presetTitle.replace(/"/g, '&quot;')}" placeholder="e.g. Call mom, Water the yard, Walk"
+          <input id="qt-title" type="text" spellcheck="true" autocapitalize="words" value="${presetTitle.replace(/"/g, '&quot;')}" placeholder="e.g. Swim, Call mom, Water the yard"
             class="w-full bg-rhythm-raised border border-rhythm-border focus:border-rhythm-primary rounded-2xl px-4 py-3 mb-3 outline-none text-rhythm-text">
 
           <div id="qt-kind-section" class="mb-3">
@@ -6065,7 +6070,7 @@
               </button>
               <button type="button" class="qt-kind-chip" data-kind="habit" aria-pressed="false">
                 <div class="text-sm font-semibold text-rhythm-text">Habit</div>
-                <div class="text-[9px] text-rhythm-muted leading-snug mt-0.5">Daily · streaks</div>
+                <div class="text-[9px] text-rhythm-muted leading-snug mt-0.5">Repeats · streaks</div>
               </button>
               <button type="button" class="qt-kind-chip" data-kind="chore" aria-pressed="false">
                 <div class="text-sm font-semibold text-rhythm-text">Chore</div>
@@ -6081,47 +6086,36 @@
               class="w-full bg-rhythm-raised border border-rhythm-border focus:border-rhythm-primary rounded-2xl px-4 py-2.5 outline-none text-rhythm-text">
           </div>
 
-          <div id="qt-summary" class="text-[10px] text-rhythm-muted mb-3 px-1"></div>
-
-          <div id="qt-recurrence-section" class="mb-3">
+          <div id="qt-recurrence-section" class="mb-3 hidden">
             <div class="flex items-center justify-between mb-1.5">
               <label class="text-[10px] uppercase tracking-wider text-rhythm-muted font-semibold">How often</label>
-              <span class="text-[9px] text-rhythm-muted/80">chores only</span>
+              <span id="qt-recur-caption" class="text-[9px] text-rhythm-muted/80"></span>
             </div>
-            <div class="qt-recurrence-row" role="group" aria-label="Task recurrence">
-              ${TASK_RECURRENCE_OPTIONS.filter(o => o.key !== 'daily').map(opt => `
-                <button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>
-              `).join('')}
+            <div id="qt-recurrence-row" class="qt-recurrence-row" role="group" aria-label="How often"></div>
+          </div>
+
+          <div id="qt-energy-section" class="mb-3">
+            <label class="block text-xs text-rhythm-muted mb-1.5">Energy needed</label>
+            <div class="flex gap-1.5">
+              <button type="button" data-diff="1" class="qt-diff flex-1 py-2.5 rounded-xl text-xs font-semibold border border-rhythm-border bg-rhythm-raised text-rhythm-muted">Low</button>
+              <button type="button" data-diff="2" class="qt-diff flex-1 py-2.5 rounded-xl text-xs font-semibold border border-rhythm-primary bg-rhythm-primary/15 text-rhythm-text">Med</button>
+              <button type="button" data-diff="3" class="qt-diff flex-1 py-2.5 rounded-xl text-xs font-semibold border border-rhythm-border bg-rhythm-raised text-rhythm-muted">High</button>
             </div>
           </div>
 
-          <details id="qt-options" class="mb-4 text-xs text-rhythm-muted group">
-            <summary class="cursor-pointer text-rhythm-primary-light font-medium mb-3 list-none flex items-center gap-1.5">
-              <i class="fa-solid fa-sliders text-[10px]"></i>
-              <span id="qt-options-label">More options</span>
-            </summary>
+          <div id="qt-goal-wrap" class="hidden mb-3">
+            <label class="block text-xs text-rhythm-muted mb-1">Goal amount <span id="qt-goal-unit" class="text-rhythm-primary-light"></span></label>
+            <input id="qt-goal" type="number" min="0" step="any"
+              class="w-full bg-rhythm-raised border border-rhythm-border focus:border-rhythm-primary rounded-2xl px-4 py-2.5 outline-none text-rhythm-text">
+          </div>
 
-            <div id="qt-energy-section">
-              <label class="block text-xs text-rhythm-muted mb-1.5">Energy needed</label>
-              <div class="flex gap-1.5 mb-3">
-                <button type="button" data-diff="1" class="qt-diff flex-1 py-2 rounded-xl text-xs font-semibold border border-rhythm-border bg-rhythm-raised text-rhythm-muted">Low</button>
-                <button type="button" data-diff="2" class="qt-diff flex-1 py-2 rounded-xl text-xs font-semibold border border-rhythm-primary bg-rhythm-primary/15 text-rhythm-text">Med</button>
-                <button type="button" data-diff="3" class="qt-diff flex-1 py-2 rounded-xl text-xs font-semibold border border-rhythm-border bg-rhythm-raised text-rhythm-muted">High</button>
-              </div>
-            </div>
+          <div id="qt-minutes-section" class="mb-3">
+            <label class="block text-xs text-rhythm-muted mb-1">Estimated minutes</label>
+            <input id="qt-minutes" type="number" min="0" value="${inferred.est_minutes}"
+              class="w-full bg-rhythm-raised border border-rhythm-border focus:border-rhythm-primary rounded-2xl px-4 py-2.5 outline-none text-rhythm-text">
+          </div>
 
-            <div id="qt-goal-wrap" class="hidden mb-3">
-              <label class="block text-xs text-rhythm-muted mb-1">Goal amount <span id="qt-goal-unit" class="text-rhythm-primary-light"></span></label>
-              <input id="qt-goal" type="number" min="0" step="any"
-                class="w-full bg-rhythm-raised border border-rhythm-border focus:border-rhythm-primary rounded-2xl px-4 py-2.5 outline-none text-rhythm-text">
-            </div>
-
-            <div id="qt-minutes-section">
-              <label class="block mb-1">Estimated minutes</label>
-              <input id="qt-minutes" type="number" min="0" value="${inferred.est_minutes}"
-                class="w-full bg-rhythm-raised border border-rhythm-border rounded-xl px-3 py-2 outline-none text-rhythm-text">
-            </div>
-          </details>
+          <div id="qt-summary" class="text-[10px] text-rhythm-muted mb-3 px-1"></div>
 
           <button type="button" id="qt-save"
             class="w-full py-3.5 rounded-2xl bg-rhythm-primary text-white font-semibold active:opacity-90">
@@ -6148,17 +6142,28 @@
           selectedInterval = 7;
           intervalUserPicked = true;
         }
-        if (selectedKind === 'habit') {
-          selectedInterval = null;
-          intervalUserPicked = true;
-        }
         if (selectedKind === 'task') {
           selectedInterval = 0;
           intervalUserPicked = true;
         }
       } else if (!isEdit) {
         // Infer kind from title defaults
-        if (inferred.interval_days == null || inferred.interval_days === 1) {
+        if (/\b(\d+\s*x|\d+\s*times|twice|2x|3x)\b/i.test(presetTitle) || /\bper week|a week|weekly\b/i.test(presetTitle)) {
+          selectedKind = /\b(chore|clean|mow|laundry)\b/i.test(presetTitle) ? 'chore' : 'habit';
+          if (/twice|2\s*x|2\s*times/i.test(presetTitle)) {
+            selectedInterval = 3;
+            intervalUserPicked = true;
+          } else if (/3\s*x|3\s*times/i.test(presetTitle)) {
+            selectedInterval = 2;
+            intervalUserPicked = true;
+          } else if (inferred.interval_days > 1) {
+            selectedInterval = inferred.interval_days;
+            intervalUserPicked = true;
+          } else {
+            selectedInterval = 3;
+            intervalUserPicked = true;
+          }
+        } else if (inferred.interval_days == null || inferred.interval_days === 1) {
           selectedKind = /\b(habit|every day|daily|streak)\b/i.test(presetTitle) ? 'habit' : 'task';
         } else if (inferred.interval_days > 1) {
           selectedKind = 'chore';
@@ -6178,9 +6183,16 @@
       const minutesInput = modal.querySelector('#qt-minutes');
       const energySection = modal.querySelector('#qt-energy-section');
       const minutesSection = modal.querySelector('#qt-minutes-section');
-      const optionsLabel = modal.querySelector('#qt-options-label');
       const recurrenceSection = modal.querySelector('#qt-recurrence-section');
+      const recurrenceRow = modal.querySelector('#qt-recurrence-row');
+      const recurCaption = modal.querySelector('#qt-recur-caption');
       const kindHint = modal.querySelector('#qt-kind-hint');
+
+      function recurrenceOptionsForKind() {
+        if (selectedKind === 'habit') return HABIT_RECURRENCE_OPTIONS;
+        if (selectedKind === 'chore') return CHORE_RECURRENCE_ORDERED;
+        return [];
+      }
 
       function recurrenceOptionMatches(opt) {
         if (!intervalUserPicked) return false;
@@ -6188,9 +6200,33 @@
         return opt.days === selectedInterval;
       }
 
+      function renderRecurrenceChips() {
+        if (!recurrenceRow) return;
+        const opts = recurrenceOptionsForKind();
+        recurrenceRow.innerHTML = opts.map(opt =>
+          `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
+        ).join('');
+        recurrenceRow.querySelectorAll('.qt-recur-chip').forEach(btn => {
+          btn.onclick = () => {
+            const list = recurrenceOptionsForKind();
+            const opt = list.find(o => o.key === btn.dataset.intervalKey)
+              || TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
+            if (!opt) return;
+            intervalUserPicked = true;
+            selectedInterval = opt.days;
+            // Keep current kind (habit or chore) — don't force chore
+            updateIntervalButtons();
+            refreshSummary();
+          };
+        });
+        updateIntervalButtons();
+      }
+
       function updateIntervalButtons() {
+        const opts = recurrenceOptionsForKind();
         modal.querySelectorAll('.qt-recur-chip').forEach(btn => {
-          const opt = TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
+          const opt = opts.find(o => o.key === btn.dataset.intervalKey)
+            || TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
           const active = opt && recurrenceOptionMatches(opt);
           btn.classList.toggle('is-active', active);
           btn.setAttribute('aria-pressed', active ? 'true' : 'false');
@@ -6207,13 +6243,17 @@
           if (selectedKind === 'task') {
             kindHint.textContent = 'Appears on Today until you finish it. No streak.';
           } else if (selectedKind === 'habit') {
-            kindHint.textContent = 'Shows every day on Today and builds a streak when you complete it.';
+            kindHint.textContent = 'Repeats on your schedule and builds a streak when you complete it. Example: swim 2× / week.';
           } else {
-            kindHint.textContent = 'Repeating chores show on Today only when due. Plan ahead in Rhythm Brief · This week. No streak pressure.';
+            kindHint.textContent = 'Repeating chores show on Today when due. Plan ahead in Rhythm Brief · This week. No streak pressure.';
           }
         }
-        const showRecurrence = selectedKind === 'chore';
+        const showRecurrence = selectedKind === 'habit' || selectedKind === 'chore';
         recurrenceSection?.classList.toggle('hidden', !showRecurrence);
+        if (recurCaption) {
+          recurCaption.textContent = selectedKind === 'habit' ? 'habits & streaks' : selectedKind === 'chore' ? 'chores' : '';
+        }
+        if (showRecurrence) renderRecurrenceChips();
       }
 
       function applyKind(kind) {
@@ -6223,10 +6263,11 @@
           selectedInterval = 0;
         } else if (kind === 'habit') {
           intervalUserPicked = true;
-          selectedInterval = null;
+          // Keep a non-daily interval if user already picked one; default daily
+          if (selectedInterval === 0 || selectedInterval === undefined) selectedInterval = null;
         } else if (kind === 'chore') {
           intervalUserPicked = true;
-          if (selectedInterval == null || selectedInterval <= 1) selectedInterval = 7;
+          if (selectedInterval == null || selectedInterval === 0 || selectedInterval === 1) selectedInterval = 7;
         }
         updateKindButtons();
         updateIntervalButtons();
@@ -6272,15 +6313,26 @@
         });
       }
 
+      function formatHabitFreqLabel(interval) {
+        if (interval == null || interval === 1) return 'Daily habit';
+        if (interval === 2) return '3× / week habit';
+        if (interval === 3) return '2× / week habit';
+        if (interval === 7) return 'Weekly habit';
+        return formatIntervalLabel(interval) + ' habit';
+      }
+
       function refreshSummary() {
         const title = titleInput.value.trim();
         const inf = inferTaskDefaults(title);
         const metricOnly = isMetricOnlyTask(inf);
         const mins = parseInt(minutesInput.value, 10);
         let freq = 'One-time task';
-        if (selectedKind === 'habit') freq = 'Daily habit';
-        else if (selectedKind === 'chore') freq = formatIntervalLabel(selectedInterval || 7) + ' chore';
-        else if (isSchedulingTaskTitle(title)) freq = 'One-time';
+        if (selectedKind === 'habit') freq = formatHabitFreqLabel(selectedInterval);
+        else if (selectedKind === 'chore') {
+          if (selectedInterval === 2) freq = '3× / week chore';
+          else if (selectedInterval === 3) freq = '2× / week chore';
+          else freq = formatIntervalLabel(selectedInterval || 7) + ' chore';
+        } else if (isSchedulingTaskTitle(title)) freq = 'One-time';
         const tag = isLibrary ? ' · tagged Personal' : '';
         const streakNote = selectedKind === 'habit' ? ' · tracks streak' : ' · no streak';
         const activeGoal = getActiveGoalInput();
@@ -6299,9 +6351,8 @@
       function refreshGoalField() {
         const inf = inferTaskDefaults(titleInput.value.trim());
         const metricOnly = isMetricOnlyTask(inf);
-        energySection.classList.toggle('hidden', metricOnly);
-        minutesSection.classList.toggle('hidden', metricOnly);
-        optionsLabel.textContent = 'More options';
+        energySection?.classList.toggle('hidden', metricOnly);
+        minutesSection?.classList.toggle('hidden', metricOnly);
 
         if (inf.unit) {
           if (metricOnly) {
@@ -6319,7 +6370,7 @@
           goalProminent.classList.add('hidden');
           goalWrap.classList.add('hidden');
         }
-        if (!isEdit && !modal.querySelector('#qt-options').open) applyInferredDefaults();
+        if (!isEdit) applyInferredDefaults();
         else updateRecurrenceVisibility();
         refreshSummary();
       }
@@ -6346,19 +6397,6 @@
         btn.onclick = () => applyKind(btn.dataset.kind);
       });
 
-      modal.querySelectorAll('.qt-recur-chip').forEach(btn => {
-        btn.onclick = () => {
-          const opt = TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
-          if (!opt) return;
-          selectedKind = 'chore';
-          intervalUserPicked = true;
-          selectedInterval = opt.days;
-          updateKindButtons();
-          updateIntervalButtons();
-          refreshSummary();
-        };
-      });
-
       modal.querySelectorAll('.qt-diff').forEach(btn => {
         btn.onclick = () => {
           modal.querySelectorAll('.qt-diff').forEach(b => {
@@ -6378,9 +6416,16 @@
         const inf = inferTaskDefaults(title);
         const minutes = parseInt(modal.querySelector('#qt-minutes').value, 10) || inf.est_minutes;
         let interval;
-        if (selectedKind === 'task' || isSchedulingTaskTitle(title)) interval = 0;
-        else if (selectedKind === 'habit') interval = null;
-        else {
+        if (selectedKind === 'task' || isSchedulingTaskTitle(title)) {
+          interval = 0;
+        } else if (selectedKind === 'habit') {
+          // Daily (null) or multi-day cadence (2×/week, weekly, …) while still tracking streaks
+          if (intervalUserPicked) {
+            interval = selectedInterval === 0 ? null : selectedInterval;
+          } else {
+            interval = null;
+          }
+        } else {
           interval = (intervalUserPicked && selectedInterval != null && selectedInterval > 1)
             ? selectedInterval
             : (inf.interval_days > 1 ? inf.interval_days : 7);
@@ -6492,11 +6537,7 @@
         el.innerHTML = `<i class="fa-solid ${energyIconTypes[l]} ${iconColor} text-base"></i><span>${energyLabels[l]}</span>`;
       });
       
-      const labels = {1: 'Low - Small Wins', 2: 'Medium - Balanced', 3: 'High - Go Big'};
-      const labelEl = document.getElementById('energy-label');
-      if (labelEl) labelEl.textContent = labels[level];
-      
-      // Always re-sort Today's list for the selected energy (Sort button removed).
+      // Always re-sort Today's list for the selected energy.
       renderTasks();
       updateHeaderContext();
       updateSmartBanner();
@@ -14715,8 +14756,7 @@
     }
 
     function seedIfNeeded() {
-      const labels = {1: 'Low - Small Wins', 2: 'Medium - Balanced', 3: 'High - Go Big'};
-      document.getElementById('energy-label').textContent = labels[currentEnergy];
+      // Energy labels removed from chrome — buttons alone are enough.
     }
 
     function initQuickAddInput() {
