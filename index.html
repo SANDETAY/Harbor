@@ -1344,6 +1344,70 @@
       border-radius: 999px;
       background: rgb(var(--harbor-border));
       margin: 0 auto 0.75rem;
+      flex-shrink: 0;
+      touch-action: none;
+    }
+
+    /* Stylish small close control (replaces × on sheets) */
+    .modal-close-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      padding: 0.28rem 0.72rem;
+      min-height: 1.55rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgba(200, 214, 210, 0.78);
+      background: rgba(18, 28, 34, 0.55);
+      border: 1px solid rgba(143, 184, 176, 0.22);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+      line-height: 1;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .modal-close-chip:hover,
+    .modal-close-chip:focus-visible {
+      color: #f0f5f3;
+      border-color: rgba(107, 191, 176, 0.45);
+      background: rgba(47, 155, 140, 0.16);
+      outline: none;
+    }
+
+    .modal-close-chip:active {
+      transform: scale(0.97);
+      background: rgba(47, 155, 140, 0.22);
+    }
+
+    html[data-theme="dark"] .modal-close-chip {
+      color: rgba(220, 220, 220, 0.78);
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Sheet swipe-to-dismiss */
+    .sheet-swipe-target {
+      will-change: transform;
+      touch-action: pan-y;
+    }
+
+    .sheet-swipe-target.is-sheet-dragging {
+      transition: none !important;
+      user-select: none;
+    }
+
+    .sheet-swipe-target.is-sheet-dismissing {
+      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.28s ease !important;
+      pointer-events: none;
+    }
+
+    .sheet-backdrop-dim {
+      transition: opacity 0.2s ease;
     }
 
     .touch-target {
@@ -2556,6 +2620,13 @@
       background: rgba(18, 40, 38, 0.45);
       border: 1px solid transparent;
       line-height: 1;
+      width: 100%;
+      padding: 0;
+      margin: 0;
+      font-family: inherit;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: default;
     }
 
     .summary-month-cal-day.is-pad {
@@ -2568,15 +2639,9 @@
       background: transparent;
     }
 
-    .summary-month-cal-day.is-week {
-      background: rgba(47, 155, 140, 0.1);
-      border-color: rgba(47, 155, 140, 0.18);
-      color: rgba(232, 237, 232, 0.72);
-    }
-
-    .summary-month-cal-day.is-later {
-      background: rgba(26, 60, 57, 0.55);
-      border-color: rgba(47, 155, 140, 0.22);
+    .summary-month-cal-day.is-week:not(.is-past):not(.is-today) {
+      background: rgba(47, 155, 140, 0.08);
+      border-color: rgba(47, 155, 140, 0.14);
     }
 
     .summary-month-cal-day.is-today {
@@ -2584,14 +2649,29 @@
       box-shadow: 0 0 0 1px rgba(107, 191, 176, 0.35);
       color: #fff;
       font-weight: 750;
+      background: rgba(47, 155, 140, 0.16);
     }
 
     .summary-month-cal-day.has-event {
-      border-color: rgba(91, 184, 168, 0.55);
+      border-color: rgba(91, 184, 168, 0.5);
+      cursor: pointer;
     }
 
-    .summary-month-cal-day.has-event.is-later {
-      background: linear-gradient(160deg, rgba(47, 155, 140, 0.28), rgba(22, 48, 46, 0.75));
+    .summary-month-cal-day.has-event:hover,
+    .summary-month-cal-day.has-event:focus-visible {
+      border-color: rgb(var(--harbor-primary-light));
+      background: rgba(47, 155, 140, 0.18);
+      outline: none;
+    }
+
+    .summary-month-cal-day.is-interactive {
+      cursor: pointer;
+    }
+
+    .summary-month-cal-day.is-interactive:hover,
+    .summary-month-cal-day.is-interactive:focus-visible {
+      border-color: rgba(91, 184, 168, 0.4);
+      outline: none;
     }
 
     .summary-month-cal-dot {
@@ -2607,61 +2687,117 @@
       box-shadow: none;
     }
 
+    /* Quiet, clear key — sits under the grid without competing with it */
     .summary-month-cal-legend {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.45rem 0.75rem;
-      margin-top: 0.65rem;
-      font-size: 0.58rem;
-      color: rgb(var(--harbor-muted));
-      font-weight: 550;
+      align-items: center;
+      gap: 0.35rem 0.85rem;
+      margin-top: 0.55rem;
+      padding-top: 0.45rem;
+      border-top: 1px solid rgba(143, 184, 176, 0.1);
+      font-size: 0.56rem;
+      line-height: 1.25;
+      color: rgba(143, 168, 163, 0.72);
+      font-weight: 500;
+      letter-spacing: 0.01em;
     }
 
-    .summary-month-cal-legend span {
+    .summary-month-cal-legend-item {
       display: inline-flex;
       align-items: center;
-      gap: 0.28rem;
+      gap: 0.3rem;
+    }
+
+    .summary-month-cal-legend-item strong {
+      font-weight: 650;
+      color: rgba(200, 214, 210, 0.78);
     }
 
     .summary-month-cal-swatch {
-      width: 0.55rem;
-      height: 0.55rem;
-      border-radius: 0.2rem;
+      width: 0.58rem;
+      height: 0.58rem;
+      border-radius: 0.18rem;
       border: 1px solid transparent;
       flex-shrink: 0;
+      display: inline-block;
+      position: relative;
+      opacity: 0.9;
     }
 
     .summary-month-cal-swatch.is-today {
       border-color: rgb(var(--harbor-primary-light));
-      background: rgba(47, 155, 140, 0.25);
+      background: rgba(47, 155, 140, 0.2);
+      box-shadow: 0 0 0 1px rgba(107, 191, 176, 0.2);
     }
 
     .summary-month-cal-swatch.is-week {
-      background: rgba(47, 155, 140, 0.12);
-      border-color: rgba(47, 155, 140, 0.2);
-    }
-
-    .summary-month-cal-swatch.is-later {
-      background: rgba(26, 60, 57, 0.7);
-      border-color: rgba(47, 155, 140, 0.25);
+      background: rgba(47, 155, 140, 0.1);
+      border-color: rgba(47, 155, 140, 0.22);
     }
 
     .summary-month-cal-swatch.is-event {
-      background: linear-gradient(160deg, rgba(47, 155, 140, 0.45), rgba(22, 48, 46, 0.9));
+      background: rgba(18, 40, 38, 0.65);
       border-color: rgba(91, 184, 168, 0.55);
-      position: relative;
     }
 
     .summary-month-cal-swatch.is-event::after {
       content: '';
-      width: 0.18rem;
-      height: 0.18rem;
+      width: 0.16rem;
+      height: 0.16rem;
       border-radius: 999px;
       background: rgb(var(--harbor-primary-light));
       position: absolute;
       left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
+      bottom: 0.08rem;
+      transform: translateX(-50%);
+    }
+
+    .summary-day-events-sheet {
+      max-height: 72vh;
+      overflow-y: auto;
+    }
+
+    .summary-day-event-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: 0.9rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      margin-bottom: 0.45rem;
+    }
+
+    .summary-day-event-row--person {
+      border-left: 3px solid var(--person-color, rgb(var(--harbor-primary)));
+    }
+
+    .summary-day-event-time {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: rgb(var(--harbor-primary-light));
+      font-variant-numeric: tabular-nums;
+      min-width: 3.4rem;
+      flex-shrink: 0;
+      padding-top: 0.1rem;
+    }
+
+    .summary-day-event-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: rgb(var(--harbor-text));
+      line-height: 1.25;
+    }
+
+    .summary-day-event-meta {
+      font-size: 0.65rem;
+      color: rgb(var(--harbor-muted));
+      margin-top: 0.2rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem;
     }
 
     /* KPI metric tiles — glanceable dashboard strip */
@@ -4455,7 +4591,7 @@
             </div>
             <div class="splash-wordmark">Harbor</div>
           </div>
-          <p id="splash-slogan" class="splash-slogan">Create your harbor.</p>
+          <p id="splash-slogan" class="splash-slogan">Create Your Harbor.</p>
         </div>
       </div>
 
@@ -4799,7 +4935,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v101';
+    const HARBOR_BUILD = 'v104';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -4864,8 +5000,9 @@
         tipIndex: 0,
         weatherUnit: 'fahrenheit',
         cheatDayFundEnabled: true,
-        // Privacy: never send calendar feed URLs through third-party CORS proxies unless user opts in
-        calendarAllowCorsHelper: false,
+        // Browser can't read most Google/Outlook ICS feeds directly (CORS). Helper is ON by default;
+        // user can turn it off in Settings for max privacy (file import still works).
+        calendarAllowCorsHelper: true,
         mealPresetsVersion: MEAL_PRESETS_VERSION,
         // Household members for color-coded schedule events (spouse, kids, etc.)
         householdProfiles: [
@@ -5372,7 +5509,7 @@
           calendarSources: [],
           routineLevel: null,
           cheatDayFundEnabled: true,
-          calendarAllowCorsHelper: false,
+          calendarAllowCorsHelper: true,
           mealPresetsVersion: MEAL_PRESETS_VERSION,
           householdProfiles: [
             { id: 'me', name: 'Me', role: 'me', color: '#2F9B8C' }
@@ -5576,8 +5713,13 @@
       if (!Array.isArray(state.settings.calendarFeeds)) {
         state.settings.calendarFeeds = [];
       }
-      if (state.settings.calendarAllowCorsHelper !== true) {
-        state.settings.calendarAllowCorsHelper = false;
+      // v104: Google/Outlook ICS almost always needs a CORS helper in the browser.
+      // Migrate once so existing installs stop failing with "Direct fetch blocked".
+      if (state.settings.calendarCorsHelperDefaultV2 !== true) {
+        state.settings.calendarAllowCorsHelper = true;
+        state.settings.calendarCorsHelperDefaultV2 = true;
+      } else if (state.settings.calendarAllowCorsHelper !== true && state.settings.calendarAllowCorsHelper !== false) {
+        state.settings.calendarAllowCorsHelper = true;
       }
       persistCalendarEventIds();
       if (!state.healthSyncs) state.healthSyncs = {};
@@ -6416,7 +6558,7 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1 flex items-center justify-between">
             <span>Household</span>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-4 leading-snug">
             Add a spouse, partner, or child and pick a color. Tag events so Summary and Schedule show who each plan is for.
@@ -6692,7 +6834,7 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1 flex items-center justify-between">
             <span>Import profile</span>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-3 leading-snug">
             Share schedule with a spouse so both apps line up. Import stays on this device only.
@@ -6757,7 +6899,7 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1 flex items-center justify-between">
             <span>Privacy</span>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-4 leading-snug">How Harbor uses your information — short version.</div>
 
@@ -6769,7 +6911,7 @@
             <div class="privacy-block">
               <h4><i class="fa-solid fa-cloud text-harbor-primary-light mr-1.5"></i>What may leave your device</h4>
               <p><strong class="text-harbor-text">Weather:</strong> if you enable real location/weather, approximate location is sent to Open-Meteo (or similar) to fetch a forecast. City name in your profile is optional and only used on-device unless you use weather features that need it.</p>
-              <p><strong class="text-harbor-text">Calendar feeds:</strong> if you add an iCal URL, Harbor fetches that URL from this device. By default it does not route through public proxies. Turning on “Allow network helper” may send the feed URL through a third-party CORS helper — leave it off for maximum privacy, or use file import instead.</p>
+              <p><strong class="text-harbor-text">Calendar feeds:</strong> if you add an iCal (ICS) URL, Harbor first tries to download it directly from the calendar host (Google, Outlook, etc.). Most hosts block that in the browser for security (CORS), so <strong>by default</strong> Harbor may retry through a <strong>third-party network helper</strong> (CORS proxy) so your schedule can load. That helper can see the full feed URL — including secret Google calendar tokens — only for the fetch. Feed URLs and events are still stored only on this device afterward. Turn off <strong>Allow network helper</strong> in Settings if you prefer never to use a proxy, then use <strong>Import file</strong> (.ics) instead. You can remove a feed anytime.</p>
               <p><strong class="text-harbor-text">Feedback:</strong> if you send feedback, the message and optional contact details go to the feedback provider you submit to (configured by the app). Do not include secrets you don’t want shared.</p>
             </div>
             <div class="privacy-block">
@@ -7905,7 +8047,7 @@
               <div class="font-semibold text-lg text-harbor-text">${isEdit ? (isHabitEdit && !editLibTask ? 'Edit Task' : 'Edit Personal Task') : isLibrary ? 'Add Personal Task' : 'Add Task'}</div>
               <div class="text-[10px] text-harbor-muted">${isEdit ? 'Update details and save' : isLibrary ? 'Type a name and save to your library' : 'Name it, pick type & how often'}</div>
             </div>
-            <button type="button" onclick="closeQuickTaskModal()" class="w-8 h-8 rounded-full bg-harbor-raised text-harbor-muted text-xl leading-none">×</button>
+            <button type="button" onclick="closeQuickTaskModal()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
 
           <label class="block text-xs text-harbor-muted mb-1">What is it?</label>
@@ -8608,7 +8750,7 @@
               <div class="font-semibold text-lg text-harbor-text">Add Bill</div>
               <div class="text-[10px] text-harbor-muted mt-0.5">Track monthly due dates</div>
             </div>
-            <button type="button" onclick="closeAddBillModal()" class="w-8 h-8 rounded-full bg-harbor-raised text-harbor-muted hover:text-harbor-text text-xl leading-none">×</button>
+            <button type="button" onclick="closeAddBillModal()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
 
           <label class="block text-xs text-harbor-muted mb-1">Bill name</label>
@@ -8946,7 +9088,7 @@
               <div class="font-semibold text-lg text-harbor-text">Your Recipes</div>
               <div class="text-[10px] text-harbor-muted">${presets.length} / ${MAX_MEAL_PRESETS} slots used</div>
             </div>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div id="mp-manage-list" class="space-y-2 mb-4"></div>
           <button type="button" id="mp-manage-add-btn"
@@ -9096,7 +9238,7 @@
               <div class="font-semibold text-lg text-harbor-text">Add grocery item</div>
               <div class="text-[10px] text-harbor-muted mt-0.5">Or use the mic for hands-free adds</div>
             </div>
-            <button type="button" onclick="document.getElementById('grocery-add-modal')?.remove()" class="w-8 h-8 rounded-full bg-harbor-raised text-harbor-muted text-xl leading-none" aria-label="Close">×</button>
+            <button type="button" onclick="document.getElementById('grocery-add-modal')?.remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <label class="block text-xs text-harbor-muted mb-1" for="grocery-add-modal-input">Item</label>
           <input id="grocery-add-modal-input" type="text"
@@ -9450,7 +9592,7 @@
               <div class="font-semibold text-lg text-harbor-text">When do you usually work?</div>
               <div class="text-[11px] text-harbor-muted mt-0.5 leading-snug">Harbor uses this to estimate free time and time smart suggestions — skip if your day is flexible.</div>
             </div>
-            <button type="button" onclick="closeWorkScheduleModal()" class="w-8 h-8 rounded-full bg-harbor-raised text-harbor-muted text-xl leading-none">×</button>
+            <button type="button" onclick="closeWorkScheduleModal()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div class="space-y-2 mb-4">
             ${WORK_SCHEDULE_PRESETS.map(p => `
@@ -10248,11 +10390,12 @@
     }
 
     function showAddCalendarEventModal(editEvent = null) {
-      const isEdit = !!editEvent;
+      // Prefill-only objects (e.g. { date }) are not edits — only real stored events have ids.
+      const isEdit = !!(editEvent && editEvent.id);
       const now = new Date();
       const timeFormat = getEventTimeFormat();
       const eventDate = editEvent ? getEventDate(editEvent) : todayStr();
-      const eventEnd = editEvent ? getEventEndDate(editEvent) : eventDate;
+      const eventEnd = editEvent && editEvent.id ? getEventEndDate(editEvent) : eventDate;
       const [viewYear, viewMonth] = eventDate.split('-').map(Number);
       const calState = {
         selectedDate: eventDate,
@@ -12429,7 +12572,7 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1 flex items-center justify-between">
             <span>Send Feedback</span>
-            <button type="button" onclick="this.closest('#feedback-modal').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+            <button type="button" onclick="this.closest('#feedback-modal').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <p class="text-xs text-harbor-muted mb-4 leading-relaxed">Help shape Harbor — bugs, ideas, and UX notes go straight to the builder.</p>
 
@@ -12565,9 +12708,24 @@
       return `After this week · ${formatBriefDateLabel(bounds.start)} – ${formatBriefDateLabel(bounds.end)}`;
     }
 
+    /** Remaining days in the calendar month from today through month-end (includes this week). */
+    function getRemainingMonthBounds(refDateStr) {
+      const today = refDateStr || todayStr();
+      const { start: monthStart, end: monthEnd } = getMonthBounds(today);
+      if (today > monthEnd) {
+        return { start: monthEnd, end: monthEnd, empty: true, monthStart, monthEnd };
+      }
+      return { start: today, end: monthEnd, empty: false, monthStart, monthEnd };
+    }
+
+    function formatFullMonthPeriodLabel(refDateStr) {
+      const bounds = getMonthBounds(refDateStr || todayStr());
+      return formatMonthPeriodLabel(bounds);
+    }
+
     function summaryFocusEyebrow(mode) {
       if (mode === 'week') return 'Do first this week';
-      if (mode === 'month') return 'Do first later this month';
+      if (mode === 'month') return 'Do first this month';
       return 'Do this next';
     }
 
@@ -12635,8 +12793,8 @@
           if (isDueToday(h)) items.push({ habit: h, date: today, daysUntil: 0 });
         });
       } else if (mode === 'month') {
-        // Month brief: AFTER this week ends → month end (no overlap with Today / This week)
-        const bounds = getBeyondWeekMonthBounds(today);
+        // Month brief: full remaining month (today → month-end), including this week
+        const bounds = getRemainingMonthBounds(today);
         if (!bounds.empty) {
           const cursor = new Date(bounds.start + 'T12:00:00');
           const endDate = new Date(bounds.end + 'T12:00:00');
@@ -12713,8 +12871,7 @@
     }
 
     function collectBriefBills(mode) {
-      const monthBounds = getBeyondWeekMonthBounds();
-      const monthStartDays = monthBounds.empty ? Infinity : daysUntilDateStr(monthBounds.start);
+      const monthBounds = getRemainingMonthBounds();
       const monthEndDays = monthBounds.empty ? -1 : daysUntilDateStr(monthBounds.end);
       return state.bills
         .filter(b => {
@@ -12722,14 +12879,24 @@
           if (status === 'paid' || status === 'autopay') return false;
           const days = getDaysUntilBillDue(b);
           if (mode === 'day') return days <= 0 || status === 'due_today' || status === 'overdue';
-          // Month: only bills due AFTER this week (not already covered by week view)
+          // Month: bills due anytime from today through month-end
           if (mode === 'month') {
             if (monthBounds.empty) return false;
-            return days >= monthStartDays && days <= monthEndDays;
+            return days >= 0 && days <= monthEndDays;
           }
           return days <= 6;
         })
         .sort((a, b) => getBillUrgency(a) - getBillUrgency(b));
+    }
+
+    function mapBriefEventLite(e) {
+      return {
+        time: e.time || '—',
+        title: e.title,
+        durationMin: e.durationMin || 30,
+        personId: e.personId || null,
+        id: e.id || null
+      };
     }
 
     function collectBriefEvents(mode) {
@@ -12745,22 +12912,19 @@
       }
 
       if (mode === 'month') {
-        const bounds = getBeyondWeekMonthBounds();
-        if (bounds.empty) return [];
+        // Full calendar month (past + remaining) so the month visual is complete
+        const bounds = getMonthBounds();
         const monthEvents = allEvents.filter(e => {
           const s = getEventDate(e);
           const en = getEventEndDate(e);
           return s <= bounds.end && en >= bounds.start;
         });
-        const byDate = groupEventsByDate(monthEvents).filter(({ date }) => date >= bounds.start && date <= bounds.end);
+        const byDate = groupEventsByDate(monthEvents)
+          .filter(({ date }) => date >= bounds.start && date <= bounds.end);
         return byDate.map(({ date, events }) => ({
           date,
           label: formatBriefDateLabel(date),
-          events: events.map(e => ({
-            time: e.time || '—',
-            title: e.title,
-            durationMin: e.durationMin || 30
-          }))
+          events: events.map(mapBriefEventLite)
         }));
       }
 
@@ -12769,11 +12933,7 @@
       return groupEventsByDate(weekEvents).map(({ date, events }) => ({
         date,
         label: formatBriefDateLabel(date),
-        events: events.map(e => ({
-          time: e.time || '—',
-          title: e.title,
-          durationMin: e.durationMin || 30
-        }))
+        events: events.map(mapBriefEventLite)
       }));
     }
 
@@ -12867,14 +13027,14 @@
       const eventDays = Array.isArray(events) ? events.length : 0;
 
       if (mode === 'month') {
-        const bounds = getBeyondWeekMonthBounds();
+        const bounds = getRemainingMonthBounds();
         if (bounds.empty || (taskCount === 0 && !bills.length && !eventDays)) {
-          return `Nothing after this week for the rest of ${formatMonthPeriodLabel(getMonthBounds())} — use This week for what's coming soon.`;
+          return `${formatMonthPeriodLabel(getMonthBounds())} looks clear — add events or tasks as plans come up.`;
         }
         if (busiest && busiest[1] >= 3) {
-          return `Heaviest day later this month: ${formatBriefDateLabel(busiest[0])} (${busiest[1]} items). Spread work across quieter days.`;
+          return `Heaviest day this month: ${formatBriefDateLabel(busiest[0])} (${busiest[1]} items). Spread work across quieter days.`;
         }
-        return `${taskCount} priority item${taskCount === 1 ? '' : 's'} after this week · ${formatBriefDateLabel(bounds.start)} – ${formatBriefDateLabel(bounds.end)}.`;
+        return `${taskCount} priority item${taskCount === 1 ? '' : 's'} through ${formatBriefDateLabel(bounds.end)} · ${eventDays} day${eventDays === 1 ? '' : 's'} with events.`;
       }
 
       // week
@@ -12901,9 +13061,9 @@
       if (mode === 'month') {
         const monthlyChores = tasks.filter(t => isNonDailyRecurring(t.habit) && (t.habit.interval_days || 0) >= 25).length;
         if (monthlyChores) {
-          parts.push(`${monthlyChores} monthly+ chore${monthlyChores > 1 ? 's' : ''} due after this week.`);
+          parts.push(`${monthlyChores} monthly+ chore${monthlyChores > 1 ? 's' : ''} still due this month.`);
         }
-        parts.push('This week’s items stay under Today / This week — not repeated here.');
+        parts.push('Tap a day with a dot on the calendar to see that day’s events.');
       }
 
       if (bills.length) {
@@ -12919,7 +13079,7 @@
 
       if (!parts.length) {
         if (mode === 'day') return 'No urgent life-admin flags — focus on your task stack below.';
-        if (mode === 'month') return 'Clear after this week — use Today and This week for near-term prioritization.';
+        if (mode === 'month') return 'Month looks open — tap calendar days with a dot for event details.';
         return 'Week looks steady — use daily Summary for day-of prioritization.';
       }
       return parts.join(' ');
@@ -12933,7 +13093,7 @@
       const events = collectBriefEvents(mode);
       const doFirst = tasks.slice(0, 3);
       const week = getWeekBounds(todayStr());
-      const month = getBeyondWeekMonthBounds(todayStr());
+      const month = getRemainingMonthBounds(todayStr());
 
       return {
         mode,
@@ -13009,7 +13169,6 @@
       const today = todayStr();
       const monthBounds = getMonthBounds(today);
       const week = getWeekBounds(today);
-      const later = getBeyondWeekMonthBounds(today);
       const monthStart = new Date(monthBounds.start + 'T12:00:00');
       const year = monthStart.getFullYear();
       const month = monthStart.getMonth();
@@ -13017,7 +13176,7 @@
       const startDow = new Date(year, month, 1).getDay();
       const monthTitle = monthStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 
-      // Event counts for each day this month (real calendar store)
+      // Event counts for each day this month (full month, including this week)
       const eventCountByDate = {};
       getAllCalendarEvents().forEach(e => {
         const s = getEventDate(e);
@@ -13033,7 +13192,6 @@
         }
       });
 
-      // Task/chore markers for later-this-month (from brief tasks)
       const taskDates = new Set((brief.tasks || []).map(t => t.date).filter(Boolean));
 
       const dows = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -13044,55 +13202,166 @@
       }
 
       let eventDays = 0;
+      let eventCount = 0;
       for (let day = 1; day <= daysInMonth; day++) {
         const ds = dateStrLocal(new Date(year, month, day));
         const isToday = ds === today;
         const isPast = ds < today;
         const inWeek = ds >= week.start && ds <= week.end;
-        const isLater = !later.empty && ds >= later.start && ds <= later.end;
-        const hasEvent = (eventCountByDate[ds] || 0) > 0;
+        const nEvents = eventCountByDate[ds] || 0;
+        const hasEvent = nEvents > 0;
         const hasTask = taskDates.has(ds);
-        if (hasEvent) eventDays += 1;
+        if (hasEvent) {
+          eventDays += 1;
+          eventCount += nEvents;
+        }
 
         const classes = [
           'summary-month-cal-day',
           isPast ? 'is-past' : '',
           isToday ? 'is-today' : '',
-          !isPast && inWeek ? 'is-week' : '',
-          isLater ? 'is-later' : '',
-          (hasEvent || hasTask) ? 'has-event' : ''
+          !isPast && inWeek && !isToday ? 'is-week' : '',
+          hasEvent ? 'has-event is-interactive' : 'is-interactive'
         ].filter(Boolean).join(' ');
 
         const titleBits = [];
         if (isToday) titleBits.push('Today');
-        if (inWeek && !isToday) titleBits.push('This week');
-        if (isLater) titleBits.push('Later this month');
-        if (hasEvent) titleBits.push(`${eventCountByDate[ds]} event${eventCountByDate[ds] === 1 ? '' : 's'}`);
+        else if (inWeek && !isPast) titleBits.push('This week');
+        if (hasEvent) titleBits.push(`${nEvents} event${nEvents === 1 ? '' : 's'} · tap to view`);
+        else titleBits.push('Tap to view day');
         if (hasTask) titleBits.push('Task due');
 
-        cells += `<div class="${classes}" title="${escapeBriefHtml(titleBits.join(' · ') || ds)}">
+        const ariaLabel = `${formatBriefDateLabel(ds)}${hasEvent ? `, ${nEvents} event${nEvents === 1 ? '' : 's'}` : ', no events'}`;
+
+        cells += `<button type="button" class="${classes}" data-summary-day="${ds}" data-event-count="${nEvents}"
+          title="${escapeBriefHtml(titleBits.join(' · '))}" aria-label="${escapeBriefHtml(ariaLabel)}">
           <span>${day}</span>
-          ${(hasEvent || hasTask) ? '<span class="summary-month-cal-dot" aria-hidden="true"></span>' : ''}
-        </div>`;
+          ${hasEvent ? '<span class="summary-month-cal-dot" aria-hidden="true"></span>' : ''}
+        </button>`;
       }
+
+      const countLabel = eventDays
+        ? `${eventCount} event${eventCount === 1 ? '' : 's'} · ${eventDays} day${eventDays === 1 ? '' : 's'}`
+        : '';
 
       return `
         <div class="summary-panel summary-panel-calendar">
           <div class="summary-panel-hdr">
             <div class="summary-panel-title"><i class="fa-regular fa-calendar text-sky-400"></i> ${escapeBriefHtml(monthTitle)}</div>
-            ${eventDays ? `<span class="summary-panel-count">${eventDays} day${eventDays === 1 ? '' : 's'}</span>` : ''}
+            ${countLabel ? `<span class="summary-panel-count">${escapeBriefHtml(countLabel)}</span>` : ''}
           </div>
-          <div class="summary-month-cal" role="img" aria-label="Calendar for ${escapeBriefHtml(monthTitle)}">
+          <div class="summary-month-cal" role="grid" aria-label="Calendar for ${escapeBriefHtml(monthTitle)}. Tap a day to see events.">
             ${cells}
           </div>
-          <div class="summary-month-cal-legend" aria-hidden="true">
-            <span><i class="summary-month-cal-swatch is-today"></i> Today</span>
-            <span><i class="summary-month-cal-swatch is-week"></i> This week</span>
-            <span><i class="summary-month-cal-swatch is-later"></i> Later</span>
-            <span><i class="summary-month-cal-swatch is-event"></i> Has plans</span>
+          <div class="summary-month-cal-legend">
+            <span class="summary-month-cal-legend-item">
+              <i class="summary-month-cal-swatch is-today" aria-hidden="true"></i>
+              <span><strong>Today</strong> — outlined</span>
+            </span>
+            <span class="summary-month-cal-legend-item">
+              <i class="summary-month-cal-swatch is-week" aria-hidden="true"></i>
+              <span><strong>This week</strong> — soft teal</span>
+            </span>
+            <span class="summary-month-cal-legend-item">
+              <i class="summary-month-cal-swatch is-event" aria-hidden="true"></i>
+              <span><strong>Event day</strong> — dot · tap for details</span>
+            </span>
           </div>
-          <div class="summary-jump" onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('schedule'); setScheduleView('month')">Open schedule <i class="fa-solid fa-arrow-right text-[9px]"></i></div>
+          <div class="summary-jump" onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('schedule'); setScheduleView('week')">Open full schedule <i class="fa-solid fa-arrow-right text-[9px]"></i></div>
         </div>`;
+    }
+
+    function closeSummaryDayEventsModal() {
+      document.getElementById('summary-day-events-modal')?.remove();
+    }
+
+    function showSummaryDayEvents(dateStr) {
+      if (!dateStr) return;
+      closeSummaryDayEventsModal();
+      const events = getAllCalendarEvents()
+        .filter(e => eventOccursOnDate(e, dateStr))
+        .slice()
+        .sort((a, b) => parseTimeMins(a.time) - parseTimeMins(b.time));
+      const label = formatEventDateLabel(dateStr);
+      const longLabel = new Date(dateStr + 'T12:00:00').toLocaleDateString(undefined, {
+        weekday: 'long', month: 'long', day: 'numeric'
+      });
+
+      let bodyHtml = '';
+      if (!events.length) {
+        bodyHtml = `
+          <div class="summary-empty py-4 text-center">
+            No events scheduled for ${escapeBriefHtml(label)}.
+          </div>
+          <button type="button" id="summary-day-add-event"
+            class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold active:opacity-90">
+            <i class="fa-solid fa-plus mr-1.5"></i>Add event
+          </button>`;
+      } else {
+        bodyHtml = events.map(e => {
+          const person = getHouseholdPerson(e.personId);
+          const style = person ? ` style="--person-color:${escapeBriefHtml(person.color)}"` : '';
+          const cls = person
+            ? 'summary-day-event-row summary-day-event-row--person'
+            : 'summary-day-event-row';
+          return `
+            <div class="${cls}"${style} data-event-id="${escapeBriefHtml(e.id || '')}">
+              <div class="summary-day-event-time">${escapeBriefHtml(formatScheduleEventTime(e.time))}</div>
+              <div class="min-w-0 flex-1">
+                <div class="summary-day-event-title flex items-center gap-1.5">
+                  ${person ? `<span class="person-swatch" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
+                  <span>${escapeBriefHtml(e.title)}</span>
+                </div>
+                <div class="summary-day-event-meta">
+                  ${person ? renderPersonChipHtml(person.id) : ''}
+                  <span>${e.durationMin || 30} min</span>
+                  ${getEventEndDate(e) !== getEventDate(e) ? '<span>Multi-day</span>' : ''}
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+        bodyHtml += `
+          <button type="button" id="summary-day-add-event"
+            class="w-full mt-2 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-semibold text-harbor-primary-light active:bg-harbor-border">
+            <i class="fa-solid fa-plus mr-1.5"></i>Add another event
+          </button>`;
+      }
+
+      const modal = document.createElement('div');
+      modal.id = 'summary-day-events-modal';
+      modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[72]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="closeSummaryDayEventsModal()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="summary-day-events-sheet modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-lg mb-0.5 flex items-center justify-between gap-2">
+            <span>${escapeBriefHtml(label)}</span>
+            <button type="button" onclick="closeSummaryDayEventsModal()" class="modal-close-chip" aria-label="Close">Close</button>
+          </div>
+          <div class="text-[11px] text-harbor-muted mb-3">${escapeBriefHtml(longLabel)}
+            ${events.length ? ` · ${events.length} event${events.length === 1 ? '' : 's'}` : ''}
+          </div>
+          ${bodyHtml}
+        </div>`;
+      document.body.appendChild(modal);
+
+      modal.querySelector('#summary-day-add-event')?.addEventListener('click', () => {
+        closeSummaryDayEventsModal();
+        closeSummaryModal();
+        showAddCalendarEventModal({ date: dateStr, time: '09:00', title: '', durationMin: 30 });
+      });
+
+      modal.querySelectorAll('[data-event-id]').forEach(row => {
+        const id = row.getAttribute('data-event-id');
+        if (!id) return;
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => {
+          const ev = getCalendarEventById(id);
+          if (!ev) return;
+          closeSummaryDayEventsModal();
+          showAddCalendarEventModal(ev);
+        });
+      });
     }
 
     function renderBriefSchedulePanel(brief) {
@@ -13244,7 +13513,7 @@
       if (mode === 'day') {
         periodLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
       } else if (mode === 'month') {
-        periodLabel = formatBeyondWeekMonthRangeLabel(brief.month || getBeyondWeekMonthBounds());
+        periodLabel = formatFullMonthPeriodLabel();
       } else {
         periodLabel = `${formatBriefDateLabel(brief.week.start)} – ${formatBriefDateLabel(brief.week.end)}`;
       }
@@ -13300,6 +13569,271 @@
       document.getElementById('summary-modal')?.remove();
     }
 
+    // ==================== SHEET SWIPE-TO-DISMISS ====================
+    function findSheetPanel(overlay) {
+      if (!overlay) return null;
+      return overlay.querySelector(
+        '.summary-sheet, .summary-day-events-sheet, .modal-sheet, .app-menu-sheet-panel, [data-weather-sheet], [data-sheet-panel]'
+      ) || Array.from(overlay.children).find(el =>
+        el.classList && !el.classList.contains('absolute') && el !== overlay
+      ) || null;
+    }
+
+    function dismissBottomSheet(overlay) {
+      if (!overlay || !overlay.isConnected) return;
+      const id = overlay.id || '';
+
+      if (id === 'summary-modal' || overlay.querySelector?.('#summary-body')) {
+        closeSummaryModal();
+        return;
+      }
+      if (id === 'summary-day-events-modal') {
+        closeSummaryDayEventsModal();
+        return;
+      }
+      if (id === 'app-menu-sheet' || overlay.classList.contains('app-menu-sheet')) {
+        if (typeof closeAppMenu === 'function') closeAppMenu();
+        else overlay.remove();
+        return;
+      }
+      if (id === 'weather-forecast-modal' || id === 'weather-access-modal' || overlay.classList.contains('weather-access-modal')) {
+        if (typeof closeWeatherModal === 'function') closeWeatherModal();
+        else overlay.remove();
+        return;
+      }
+      if (id === 'add-calendar-event-modal' || id === 'grocery-add-modal' || id === 'feedback-modal' ||
+          id === 'device-sync-modal' || id === 'schedule-import-modal' || id === 'household-profiles-modal') {
+        overlay.remove();
+        return;
+      }
+      if (typeof settingsWasOpen !== 'undefined' && overlay.querySelector?.('#dark-mode-toggle, #cheat-fund-toggle, #smart-suggestions-toggle')) {
+        settingsWasOpen = false;
+      }
+      if (typeof closeQuickTaskModal === 'function' && overlay.id === 'quick-task-modal') {
+        closeQuickTaskModal();
+        return;
+      }
+      if (typeof closeAddBillModal === 'function' && overlay.id === 'add-bill-modal') {
+        try { closeAddBillModal(); return; } catch (_) { /* fall through */ }
+      }
+      if (typeof closeWorkScheduleModal === 'function' && overlay.id === 'work-schedule-modal') {
+        try { closeWorkScheduleModal(); return; } catch (_) { /* fall through */ }
+      }
+
+      const backdrop = overlay.querySelector(':scope > .absolute.inset-0, :scope > [data-weather-dismiss]');
+      if (backdrop) {
+        const handler = backdrop.getAttribute('onclick');
+        if (handler) {
+          try {
+            new Function(handler).call(backdrop);
+            if (!overlay.isConnected) return;
+          } catch (_) { /* ignore */ }
+        }
+        backdrop.click();
+        if (!overlay.isConnected) return;
+      }
+
+      const chip = overlay.querySelector('.modal-close-chip');
+      if (chip) {
+        chip.click();
+        if (!overlay.isConnected) return;
+      }
+
+      overlay.remove();
+    }
+
+    function animateSheetDismiss(overlay, sheet, onDone) {
+      if (!sheet) {
+        onDone();
+        return;
+      }
+      sheet.classList.add('is-sheet-dismissing');
+      sheet.style.transform = `translate3d(0, ${Math.max(sheet.offsetHeight || 400, 400)}px, 0)`;
+      sheet.style.opacity = '0.85';
+      const backdrop = overlay.querySelector(':scope > .absolute.inset-0, :scope > [data-weather-dismiss="1"]');
+      if (backdrop) {
+        backdrop.classList.add('sheet-backdrop-dim');
+        backdrop.style.opacity = '0';
+      }
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        sheet.removeEventListener('transitionend', finish);
+        onDone();
+      };
+      sheet.addEventListener('transitionend', finish);
+      setTimeout(finish, 320);
+    }
+
+    function wireSheetSwipeToDismiss(overlay) {
+      if (!overlay || overlay.nodeType !== 1) return;
+      if (overlay.dataset.sheetSwipeBound === '1') return;
+      if (!overlay.classList.contains('fixed')) return;
+
+      const sheet = findSheetPanel(overlay);
+      if (!sheet) return;
+
+      const looksLikeSheet =
+        sheet.classList.contains('summary-sheet') ||
+        sheet.classList.contains('modal-sheet') ||
+        sheet.classList.contains('summary-day-events-sheet') ||
+        sheet.classList.contains('app-menu-sheet-panel') ||
+        sheet.hasAttribute('data-weather-sheet') ||
+        sheet.hasAttribute('data-sheet-panel') ||
+        /rounded-t-3xl|border-t/.test(sheet.className || '');
+      if (!looksLikeSheet) return;
+
+      overlay.dataset.sheetSwipeBound = '1';
+      sheet.classList.add('sheet-swipe-target');
+
+      let startY = 0;
+      let startX = 0;
+      let dragging = false;
+      let decided = false;
+      let dy = 0;
+      let pointerId = null;
+
+      const getScrollTop = () => {
+        if (sheet.scrollTop > 0) return sheet.scrollTop;
+        const scroller = sheet.querySelector('.overflow-y-auto');
+        return scroller ? scroller.scrollTop : 0;
+      };
+
+      const resetSheet = () => {
+        sheet.classList.remove('is-sheet-dragging');
+        sheet.style.transition = 'transform 0.22s cubic-bezier(0.32, 0.72, 0, 1)';
+        sheet.style.transform = '';
+        sheet.style.opacity = '';
+        const backdrop = overlay.querySelector(':scope > .absolute.inset-0, :scope > [data-weather-dismiss="1"]');
+        if (backdrop) backdrop.style.opacity = '';
+        setTimeout(() => {
+          if (sheet.isConnected) sheet.style.transition = '';
+        }, 240);
+      };
+
+      const cleanup = () => {
+        sheet.removeEventListener('pointermove', onPointerMove);
+        sheet.removeEventListener('pointerup', onPointerUp);
+        sheet.removeEventListener('pointercancel', onPointerUp);
+        pointerId = null;
+        dragging = false;
+        decided = false;
+      };
+
+      const onPointerMove = (e) => {
+        if (pointerId != null && e.pointerId !== pointerId) return;
+        const rawDy = e.clientY - startY;
+        const rawDx = e.clientX - startX;
+
+        if (!decided) {
+          if (Math.abs(rawDy) < 8 && Math.abs(rawDx) < 8) return;
+          decided = true;
+          if (Math.abs(rawDx) > Math.abs(rawDy) * 1.15) {
+            cleanup();
+            return;
+          }
+          if (rawDy < 0) {
+            cleanup();
+            return;
+          }
+          if (getScrollTop() > 2 && !e.target.closest('.modal-grab-pill')) {
+            cleanup();
+            return;
+          }
+          dragging = true;
+          sheet.classList.add('is-sheet-dragging');
+        }
+
+        if (!dragging) return;
+        e.preventDefault();
+        dy = Math.max(0, rawDy);
+        const resisted = dy < 120 ? dy : 120 + (dy - 120) * 0.35;
+        sheet.style.transform = `translate3d(0, ${resisted}px, 0)`;
+        const backdrop = overlay.querySelector(':scope > .absolute.inset-0, :scope > [data-weather-dismiss="1"]');
+        if (backdrop) {
+          backdrop.style.opacity = String(Math.max(0.25, 1 - resisted / 420));
+        }
+      };
+
+      const onPointerUp = (e) => {
+        if (pointerId != null && e.pointerId !== pointerId) return;
+        const wasDragging = dragging;
+        const finalDy = dy;
+        cleanup();
+        sheet.classList.remove('is-sheet-dragging');
+        if (!wasDragging) {
+          resetSheet();
+          return;
+        }
+        const threshold = Math.min(140, Math.max(88, (sheet.offsetHeight || 300) * 0.18));
+        if (finalDy >= threshold) {
+          animateSheetDismiss(overlay, sheet, () => dismissBottomSheet(overlay));
+        } else {
+          resetSheet();
+        }
+        dy = 0;
+      };
+
+      const onPointerDown = (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (e.target.closest('input, textarea, select, button, a, [role="switch"], [role="tab"], .person-pick-btn')) {
+          return;
+        }
+        const grab = e.target.closest('.modal-grab-pill, .summary-dash-head, .app-menu-sheet-title');
+        const scrollTop = getScrollTop();
+        if (!grab && scrollTop > 2) return;
+
+        startY = e.clientY;
+        startX = e.clientX;
+        dragging = false;
+        decided = false;
+        dy = 0;
+        pointerId = e.pointerId;
+        try { sheet.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+        sheet.addEventListener('pointermove', onPointerMove);
+        sheet.addEventListener('pointerup', onPointerUp);
+        sheet.addEventListener('pointercancel', onPointerUp);
+      };
+
+      sheet.addEventListener('pointerdown', onPointerDown);
+    }
+
+    function enhanceNewOverlays(root) {
+      if (!root || root.nodeType !== 1) return;
+      if (root.classList?.contains('fixed')) wireSheetSwipeToDismiss(root);
+      root.querySelectorAll?.('.fixed').forEach(wireSheetSwipeToDismiss);
+    }
+
+    function installSheetSwipeObserver() {
+      if (window.__harborSheetSwipeObserver) return;
+      const scan = () => {
+        document.querySelectorAll('.fixed').forEach(el => {
+          if (/inset-0/.test(el.className) || el.classList.contains('app-menu-sheet') || el.classList.contains('weather-access-modal')) {
+            wireSheetSwipeToDismiss(el);
+          }
+        });
+      };
+      window.__harborSheetSwipeObserver = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          m.addedNodes.forEach(node => {
+            if (node.nodeType !== 1) return;
+            enhanceNewOverlays(node);
+          });
+        }
+      });
+      window.__harborSheetSwipeObserver.observe(document.body, { childList: true, subtree: false });
+      scan();
+      setTimeout(scan, 0);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', installSheetSwipeObserver);
+    } else {
+      installSheetSwipeObserver();
+    }
+
+
     function refreshSummaryModal(mode) {
       summaryMode = mode;
       const body = document.getElementById('summary-body');
@@ -13312,6 +13846,14 @@
     function wireSummaryModal(container) {
       container.querySelectorAll('[data-brief-mode]').forEach(btn => {
         btn.onclick = () => refreshSummaryModal(btn.dataset.briefMode);
+      });
+      container.querySelectorAll('[data-summary-day]').forEach(dayEl => {
+        dayEl.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const ds = dayEl.getAttribute('data-summary-day');
+          if (ds) showSummaryDayEvents(ds);
+        });
       });
     }
 
@@ -13336,7 +13878,7 @@
                 <div class="summary-dash-title">Summary</div>
               </div>
             </div>
-            <button type="button" onclick="closeSummaryModal()" class="text-harbor-muted text-2xl leading-none px-1" aria-label="Close">×</button>
+            <button type="button" onclick="closeSummaryModal()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div id="summary-body">${renderSummaryModalContent(brief)}</div>
         </div>
@@ -13707,12 +14249,13 @@
         <div class="absolute inset-0" data-weather-dismiss="1"></div>
         <div class="relative w-full sm:max-w-md bg-harbor-surface border border-harbor-border sm:rounded-3xl rounded-t-3xl p-5 shadow-xl"
           data-weather-sheet="1">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="flex items-start justify-between gap-3 mb-3">
             <div>
               <div class="text-xs uppercase tracking-wider text-harbor-muted font-semibold">Weather</div>
               <div class="text-base font-semibold text-harbor-text mt-1">See your local forecast</div>
             </div>
-            <button type="button" data-weather-dismiss="1" class="text-harbor-muted text-2xl leading-none px-1" aria-label="Close">×</button>
+            <button type="button" data-weather-dismiss="1" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <p class="text-xs text-harbor-muted leading-relaxed mb-4">
             Connect location for live hourly weather that helps Harbor time outdoor tasks.
@@ -13790,12 +14333,13 @@
         <div class="absolute inset-0" data-weather-dismiss="1"></div>
         <div class="relative w-full max-h-[85vh] bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 overflow-y-auto"
           data-weather-sheet="1">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="flex items-start justify-between mb-4 gap-3">
             <div class="min-w-0">
               <div class="text-xs uppercase tracking-wider text-harbor-muted font-semibold">${paneTitle}</div>
               <div class="text-sm text-harbor-primary-light mt-1 leading-snug">${data.advice}</div>
             </div>
-            <button type="button" data-weather-dismiss="1" class="flex-shrink-0 text-harbor-muted text-2xl leading-none px-2 py-1 rounded-lg active:bg-harbor-raised" aria-label="Close weather">×</button>
+            <button type="button" data-weather-dismiss="1" class="modal-close-chip flex-shrink-0" aria-label="Close weather">Close</button>
           </div>
 
           <div class="rounded-2xl bg-harbor-raised/70 border border-harbor-border p-4 mb-4">
@@ -15559,7 +16103,7 @@
               <div class="font-semibold text-base text-harbor-text mt-0.5">${habit.title}</div>
               <div class="text-xs text-harbor-muted mt-1">Choose a source — full OAuth linking ships in a future update.</div>
             </div>
-            <button type="button" onclick="this.closest('#device-sync-modal').remove()" class="text-harbor-muted text-2xl leading-none px-1">×</button>
+            <button type="button" onclick="this.closest('#device-sync-modal').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div class="space-y-2">
             ${DEVICE_SYNC_OPTIONS.map(d => `
@@ -15761,7 +16305,7 @@
               <div class="text-lg font-semibold text-harbor-text mt-0.5">${task.title}</div>
               <div class="text-xs text-harbor-muted mt-1">We'll add a <strong class="text-harbor-text">Today</strong> task to book a <strong class="text-harbor-text">${pro.label}</strong>. Check it off once the visit is scheduled.</div>
             </div>
-            <button onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none" aria-label="Close">×</button>
+            <button onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
 
           <div class="bg-harbor-raised/60 rounded-2xl p-3 mb-4">
@@ -17348,7 +17892,7 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1 flex items-center justify-between">
             <span>New Streak-Off</span>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-4 leading-relaxed">
             Time-boxed duel (or crew war). Longest unbroken streak when the window ends wins. Invite-only — no public leaderboard.
@@ -17445,7 +17989,7 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1 flex items-center justify-between">
             <span>Join / Radio My Crew</span>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-3 leading-relaxed">
             Paste an <strong class="text-harbor-text">invite</strong> code to join a Streak-Off, or a <strong class="text-harbor-text">crew</strong> code to merge a friend’s progress onto your board.
@@ -17533,7 +18077,7 @@
               <div class="font-semibold text-lg truncate">${escapeBriefHtml(ch.name)}</div>
               <div class="text-[11px] text-harbor-muted mt-0.5">${escapeBriefHtml(challengeRuleLabel(ch))} · ${formatDateShort(ch.startsAt)} → ${formatDateShort(ch.endsAt)}</div>
             </div>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div class="mb-2">${challengeStatusChip(ch)}</div>
           ${finishBlurb}
@@ -17842,7 +18386,7 @@
         <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5">
           <div class="flex justify-between mb-4">
             <div class="font-semibold text-xl">${habit.title}</div>
-            <button onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-xl px-2">×</button>
+            <button onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           
           <div class="grid grid-cols-3 gap-2 text-center mb-5">
@@ -18066,7 +18610,7 @@
       const smartSuggestionsOn = !state.settings.smartSuggestionsMuted;
       const darkModeOn = getAppTheme() === 'dark';
       const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
-      const corsHelperOn = state.settings.calendarAllowCorsHelper === true;
+      const corsHelperOn = state.settings.calendarAllowCorsHelper !== false;
       
       modal.innerHTML = `
         <div onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="absolute inset-0"></div>
@@ -18074,7 +18618,7 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-4 flex items-center justify-between">
             <span>Settings</span>
-            <button onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+            <button onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           
           <div class="space-y-4">
@@ -18173,7 +18717,7 @@
             <div>
               <label class="block text-xs mb-2 text-harbor-muted">Calendar (ICS)</label>
               <div class="text-[10px] text-harbor-muted mb-2 leading-relaxed">
-                Paste a <strong>secret iCal URL</strong> (ends with <strong>basic.ics</strong>). By default Harbor only talks to that calendar host — never through public proxies. File import is the most private option.
+                Paste a <strong>secret iCal URL</strong> (ends with <strong>basic.ics</strong>). Harbor tries the calendar host first; if the browser blocks it (common with Google), it uses the network helper so events can load. <strong>Import file</strong> never needs a helper.
               </div>
               <div id="settings-calendar-feeds" class="space-y-2 mb-2"></div>
               <div class="flex gap-2 mb-2">
@@ -18199,7 +18743,7 @@
                 <div class="min-w-0">
                   <div class="text-xs font-medium text-harbor-text">Allow network helper</div>
                   <div class="text-[10px] text-harbor-muted leading-snug mt-0.5">
-                    Off by default. When on, failed direct fetches may retry via a <strong>third-party</strong> CORS helper — that service can see your feed URL. Prefer <strong>Import file</strong> for max privacy.
+                    <strong>On by default</strong> so Google/Outlook secret ICS links work in the browser. When needed, a <strong>third-party</strong> CORS helper may see your feed URL. Turn off and use <strong>Import file</strong> for max privacy.
                   </div>
                 </div>
                 <button type="button" id="calendar-cors-helper-toggle" role="switch" aria-checked="${corsHelperOn}"
@@ -18352,7 +18896,7 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1 flex items-center justify-between">
             <span>User Profile</span>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-4 leading-snug">Only basics that help Harbor personalize — nothing sensitive required.</div>
 
@@ -19187,46 +19731,95 @@
     }
 
     function isCalendarCorsHelperAllowed() {
-      return state.settings.calendarAllowCorsHelper === true;
+      // Default ON — browsers cannot read most Google/Outlook ICS feeds without a CORS helper
+      return state.settings.calendarAllowCorsHelper !== false;
+    }
+
+    function looksLikeIcsCalendarText(text) {
+      return typeof text === 'string' && /BEGIN:VCALENDAR/i.test(text);
     }
 
     async function fetchIcsText(url) {
-      const tryFetch = async (target) => {
+      const tryFetchText = async (target, options = {}) => {
         const res = await fetch(target, {
           method: 'GET',
           mode: 'cors',
           credentials: 'omit',
           cache: 'no-store',
-          referrerPolicy: 'no-referrer'
+          referrerPolicy: 'no-referrer',
+          headers: options.headers || undefined
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.text();
       };
 
-      // Privacy default: fetch only the calendar host (URL never leaves the device except to that host)
+      const tryAllOriginsJson = async () => {
+        // JSON envelope is more reliable than /raw for some networks
+        const res = await fetch(
+          `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&disableCache=true`,
+          { method: 'GET', mode: 'cors', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer' }
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const contents = data && (data.contents || data.content);
+        if (!contents) throw new Error('Empty proxy response');
+        // allorigins may base64-encode binary; ICS is text
+        if (typeof contents === 'string' && contents.startsWith('data:') && contents.includes('base64,')) {
+          const b64 = contents.split('base64,')[1] || '';
+          try {
+            return decodeURIComponent(escape(atob(b64)));
+          } catch {
+            return atob(b64);
+          }
+        }
+        return String(contents);
+      };
+
+      // 1) Direct — works only if the calendar host sends CORS headers (rare for Google)
       try {
-        return await tryFetch(url);
+        const direct = await tryFetchText(url);
+        if (looksLikeIcsCalendarText(direct)) return direct;
+        // Some hosts return HTML login/interstitial without throwing
+        throw new Error('Direct response was not an iCalendar feed');
       } catch (directErr) {
-        // Opt-in only: third-party CORS helpers can see the full secret feed URL
         if (!isCalendarCorsHelperAllowed()) {
           const err = new Error('DIRECT_FETCH_BLOCKED');
           err.cause = directErr;
           err.code = 'DIRECT_FETCH_BLOCKED';
           throw err;
         }
-        const proxies = [
-          `https://corsproxy.io/?${encodeURIComponent(url)}`,
-          `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+
+        // 2) Third-party helpers (secret feed URL is visible to the helper only during this request)
+        const proxyAttempts = [
+          { name: 'allorigins-json', run: tryAllOriginsJson },
+          {
+            name: 'allorigins-raw',
+            run: () => tryFetchText(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`)
+          },
+          {
+            name: 'corsproxy-io',
+            run: () => tryFetchText(`https://corsproxy.io/?${encodeURIComponent(url)}`)
+          },
+          {
+            name: 'codetabs',
+            run: () => tryFetchText(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`)
+          }
         ];
+
         let lastErr = directErr;
-        for (const proxy of proxies) {
+        for (const attempt of proxyAttempts) {
           try {
-            return await tryFetch(proxy);
+            const text = await attempt.run();
+            if (looksLikeIcsCalendarText(text)) return text;
+            lastErr = new Error(`${attempt.name}: not an iCalendar feed`);
           } catch (e) {
             lastErr = e;
           }
         }
-        throw lastErr;
+        const err = new Error(lastErr?.message || 'Calendar feed fetch failed');
+        err.cause = lastErr;
+        err.code = 'FEED_FETCH_FAILED';
+        throw err;
       }
     }
 
@@ -19300,12 +19893,16 @@
         const helperOff = !isCalendarCorsHelperAllowed();
         if (err?.code === 'DIRECT_FETCH_BLOCKED' || /DIRECT_FETCH_BLOCKED/i.test(msg)) {
           feed.lastError = helperOff
-            ? 'Direct fetch blocked. Import a .ics file, or enable Allow network helper (third-party).'
-            : 'Could not reach feed even with network helper.';
-        } else if (/failed to fetch|networkerror|load failed/i.test(msg)) {
+            ? 'Browser blocked direct calendar download. Turn on Allow network helper in Settings, or Import a .ics file.'
+            : 'Browser blocked direct calendar download.';
+        } else if (err?.code === 'FEED_FETCH_FAILED' || /not an iCalendar|FEED_FETCH/i.test(msg)) {
           feed.lastError = helperOff
-            ? 'Could not reach feed. Import a .ics file, or enable Allow network helper in Settings.'
-            : 'Could not reach feed (network/helper). Try file import.';
+            ? 'Could not load this ICS feed. Enable network helper or Import a .ics file.'
+            : 'Could not load this ICS feed (host or network helper). Try again or Import a .ics file.';
+        } else if (/failed to fetch|networkerror|load failed|TypeError/i.test(msg)) {
+          feed.lastError = helperOff
+            ? 'Could not reach feed. Enable Allow network helper in Settings, or Import a .ics file.'
+            : 'Could not reach feed (network). Check the URL or try file import.';
         } else {
           feed.lastError = msg;
         }
@@ -19471,9 +20068,9 @@
           <div class="flex items-center justify-between mb-3">
             <div>
               <div class="font-semibold text-lg">Calendar URL</div>
-              <div class="text-[11px] text-harbor-muted mt-0.5">ICS feed · direct fetch only unless network helper is on</div>
+              <div class="text-[11px] text-harbor-muted mt-0.5">Google secret ICS · network helper on by default</div>
             </div>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div id="schedule-calendar-feeds" class="space-y-2 mb-3"></div>
           <label class="block text-[10px] text-harbor-muted mb-1">iCal / webcal URL</label>
@@ -19484,7 +20081,7 @@
             <button type="button" id="schedule-ics-add" class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">Add & sync</button>
             <button type="button" id="schedule-ics-refresh" class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-medium">Refresh all</button>
           </div>
-          <p class="text-[10px] text-harbor-muted mb-2 leading-relaxed">Feed URLs stay on this device and are masked in the list. If sync fails, use file import or Settings → Allow network helper.</p>
+          <p class="text-[10px] text-harbor-muted mb-2 leading-relaxed">Feed URLs stay on this device and are masked in the list. Google blocks direct browser downloads, so Harbor may use a third-party network helper (see Menu → Privacy). You can turn that off in Settings.</p>
           <button type="button" onclick="this.closest('.fixed').remove(); showScheduleImportModal()"
             class="w-full py-2.5 rounded-2xl text-xs text-harbor-primary-light font-medium">Or import an .ics file instead</button>
         </div>
