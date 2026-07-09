@@ -1015,6 +1015,8 @@
       -webkit-overflow-scrolling: touch;
       /* Prefer vertical scroll; horizontal pans free for tab swipe */
       touch-action: pan-y;
+      /* Room for bottom-center Summary FAB */
+      padding-bottom: calc(5.25rem + var(--safe-bottom));
     }
 
     .library-filters-scroll,
@@ -2152,13 +2154,15 @@
     }
 
     /* ── Summary Orb ──
-       Circling aura + spin kept. Center icon = Harbor anchor mark. */
+       Bottom-center thumb zone; visible across main tabs. */
     button.summary-orb,
     .summary-orb {
       --orb-size: 3.85rem;
       position: fixed !important;
-      right: 0.95rem !important;
-      bottom: 1.35rem !important;
+      left: 50% !important;
+      right: auto !important;
+      bottom: calc(1.1rem + var(--safe-bottom)) !important;
+      transform: translateX(-50%);
       z-index: 55 !important;
       width: var(--orb-size) !important;
       height: var(--orb-size) !important;
@@ -2312,7 +2316,7 @@
     }
 
     .summary-orb:hover {
-      transform: translateY(-2px) scale(1.03);
+      transform: translateX(-50%) translateY(-2px) scale(1.03);
     }
 
     .summary-orb:hover .summary-orb-core {
@@ -2323,7 +2327,7 @@
     }
 
     .summary-orb:active {
-      transform: scale(0.95);
+      transform: translateX(-50%) scale(0.95);
     }
 
     .summary-orb:active .summary-orb-spin,
@@ -3985,8 +3989,10 @@
       button.summary-orb,
       .summary-orb {
         --orb-size: 4rem;
-        bottom: 1.45rem !important;
-        right: 0.9rem !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: calc(1.2rem + var(--safe-bottom)) !important;
+        transform: translateX(-50%);
       }
 
       .app-menu-wrap--mobile {
@@ -4217,8 +4223,10 @@
       button.summary-orb,
       .summary-orb {
         --orb-size: 4.05rem;
-        bottom: 1.55rem !important;
-        right: 1.5rem !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: calc(1.4rem + var(--safe-bottom)) !important;
+        transform: translateX(-50%);
       }
 
       body {
@@ -4968,7 +4976,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v108';
+    const HARBOR_BUILD = 'v109';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -14030,12 +14038,13 @@
       const badge = document.getElementById('summary-fab-badge');
       if (!el) return;
 
-      const showOnToday = currentTab === 'today';
+      // Bottom-center FAB on all main tabs (Today, Life, Streaks, Library)
+      const showOnMainTabs = MAIN_TAB_ORDER.includes(currentTab);
       const onboarded = isUserOnboarded();
       const onBriefTutorialStep = state.settings.tutorialActive && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'summary';
       const hideDuringEarlyTutorial = state.settings.tutorialActive && !onBriefTutorialStep && !state.settings.tutorialCompleted;
       const allowBrief = !hideDuringEarlyTutorial && (state.settings.tutorialCompleted || onBriefTutorialStep || onboarded);
-      el.classList.toggle('hidden', !showOnToday || !allowBrief);
+      el.classList.toggle('hidden', !showOnMainTabs || !allowBrief);
 
       const brief = buildSummary('day');
       const weekBrief = buildSummary('week');
@@ -19285,13 +19294,13 @@
         switchLifePanel(currentLifePanel, { dir: null });
       }
       if (tab === 'today') {
-        updateSummaryLauncher();
         updateSmartBanner();
       } else {
-        document.getElementById('summary-launcher')?.classList.add('hidden');
         const banner = document.getElementById('smart-banner');
         if (banner) banner.classList.add('hidden');
       }
+      // Summary FAB stays available on every main tab
+      updateSummaryLauncher();
 
       if (tab === 'streaks') {
         renderStreaks();
