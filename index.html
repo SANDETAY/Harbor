@@ -505,7 +505,8 @@
       position: relative;
       gap: 0.35rem;
       padding-bottom: 0.15rem;
-      touch-action: pan-y;
+      /* Own horizontal gestures so chip swipe works on touch devices */
+      touch-action: none;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -516,16 +517,16 @@
       top: 0.2rem;
       bottom: 0.35rem;
       left: 0;
-      width: 0;
+      width: 25%;
       border-radius: 0.75rem 0.75rem 0.35rem 0.35rem;
-      background: linear-gradient(180deg, rgba(47, 155, 140, 0.28) 0%, rgba(47, 155, 140, 0.1) 100%);
+      background: linear-gradient(180deg, rgba(47, 155, 140, 0.32) 0%, rgba(47, 155, 140, 0.12) 100%);
       box-shadow: inset 0 -3px 0 rgb(var(--harbor-primary));
       pointer-events: none;
       z-index: 0;
+      opacity: 1;
       transition:
-        transform 0.4s var(--harbor-ease-out),
-        width 0.4s var(--harbor-ease-out),
-        opacity 0.2s ease;
+        transform 0.42s var(--harbor-ease-out),
+        width 0.42s var(--harbor-ease-out);
       will-change: transform, width;
     }
 
@@ -543,7 +544,8 @@
       cursor: pointer;
       border-radius: 0.75rem 0.75rem 0 0;
       border-bottom: 3px solid transparent;
-      transition: color 0.25s ease, transform 0.15s var(--harbor-ease-out);
+      transition: color 0.25s ease, background 0.25s ease, transform 0.15s var(--harbor-ease-out);
+      touch-action: none;
     }
 
     .main-nav-tab:hover {
@@ -572,7 +574,7 @@
       border: 1px solid rgb(var(--harbor-border));
       background: rgba(22, 32, 38, 0.85);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-      touch-action: pan-y;
+      touch-action: none;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -583,15 +585,16 @@
       top: 0.3rem;
       bottom: 0.3rem;
       left: 0;
-      width: 0;
+      width: 25%;
       border-radius: 0.75rem;
-      background: linear-gradient(180deg, rgba(47, 155, 140, 0.42) 0%, rgba(47, 155, 140, 0.22) 100%);
-      box-shadow: 0 1px 0 rgba(107, 191, 176, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      background: linear-gradient(180deg, rgba(47, 155, 140, 0.48) 0%, rgba(47, 155, 140, 0.26) 100%);
+      box-shadow: 0 1px 0 rgba(107, 191, 176, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
       pointer-events: none;
       z-index: 0;
+      opacity: 1;
       transition:
-        transform 0.4s var(--harbor-ease-out),
-        width 0.4s var(--harbor-ease-out);
+        transform 0.42s var(--harbor-ease-out),
+        width 0.42s var(--harbor-ease-out);
       will-change: transform, width;
     }
 
@@ -614,6 +617,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       transition: color 0.25s ease, transform 0.15s var(--harbor-ease-out);
+      touch-action: none;
     }
 
     .life-nav-tab:hover {
@@ -4512,7 +4516,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v96';
+    const HARBOR_BUILD = 'v97';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -10649,7 +10653,8 @@
           tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
         }
       });
-      updateLifeNavIndicator();
+      if (typeof scheduleNavIndicators === 'function') scheduleNavIndicators();
+      else updateLifeNavIndicator();
       if (panel === 'bills') renderBills();
       if (panel === 'grocery') renderGrocery();
       if (panel === 'schedule') renderSchedule();
@@ -16549,8 +16554,14 @@
       const ind = ensureNavIndicator(navEl, indicatorClass);
       const active = navEl.querySelector(activeSel);
       if (!ind || !active) return;
-      ind.style.width = `${active.offsetWidth}px`;
-      ind.style.transform = `translate3d(${active.offsetLeft}px, 0, 0)`;
+      // Prefer layout boxes — works even when flex/gap/padding is involved
+      const navRect = navEl.getBoundingClientRect();
+      const activeRect = active.getBoundingClientRect();
+      if (navRect.width < 4 || activeRect.width < 4) return;
+      const left = activeRect.left - navRect.left;
+      const width = activeRect.width;
+      ind.style.width = `${Math.round(width * 100) / 100}px`;
+      ind.style.transform = `translate3d(${Math.round(left * 100) / 100}px, 0, 0)`;
       ind.style.opacity = '1';
     }
 
@@ -16570,7 +16581,24 @@
       );
     }
 
+    function scheduleNavIndicators() {
+      requestAnimationFrame(() => {
+        updateMainNavIndicator();
+        updateLifeNavIndicator();
+        requestAnimationFrame(() => {
+          updateMainNavIndicator();
+          updateLifeNavIndicator();
+        });
+      });
+    }
+
     function switchTab(tab, options = {}) {
+      if (!MAIN_TAB_ORDER.includes(tab)) return;
+      if (tab === currentTab && !options.force) {
+        scheduleNavIndicators();
+        return;
+      }
+
       const prev = currentTab;
       const prevIdx = MAIN_TAB_ORDER.indexOf(prev);
       const nextIdx = MAIN_TAB_ORDER.indexOf(tab);
@@ -16606,7 +16634,7 @@
       }
 
       currentTab = tab;
-      requestAnimationFrame(() => updateMainNavIndicator());
+      scheduleNavIndicators();
 
       if (tab !== 'today') hideWelcomeSpotlight();
 
@@ -16640,99 +16668,141 @@
       }
     }
 
+    /**
+     * Horizontal swipe on a chip strip only (main tabs / Life sub-tabs).
+     * Uses Pointer Events + setPointerCapture so touch and mouse both work.
+     */
     function bindChipStripSwipe(stripEl, onSwipe) {
       if (!stripEl || stripEl.dataset.chipSwipeBound === '1') return;
       stripEl.dataset.chipSwipeBound = '1';
+      stripEl.style.touchAction = 'none';
 
       let tracking = false;
+      let pointerId = null;
       let startX = 0;
       let startY = 0;
-      let axis = null;
-      const THRESH = 36;
-      const AXIS_MIN = 10;
+      let axis = null; // null | 'x' | 'y'
+      let movedX = 0;
+      const THRESH = 28;
+      const AXIS_MIN = 8;
 
-      const begin = (x, y) => {
-        tracking = true;
-        startX = x;
-        startY = y;
+      const reset = () => {
+        tracking = false;
+        pointerId = null;
         axis = null;
+        movedX = 0;
       };
 
-      const move = (x, y) => {
-        if (!tracking) return;
-        const dx = x - startX;
-        const dy = y - startY;
+      stripEl.addEventListener('pointerdown', (e) => {
+        if (e.isPrimary === false) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        tracking = true;
+        pointerId = e.pointerId;
+        startX = e.clientX;
+        startY = e.clientY;
+        axis = null;
+        movedX = 0;
+        try { stripEl.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+      });
+
+      stripEl.addEventListener('pointermove', (e) => {
+        if (!tracking || e.pointerId !== pointerId) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        movedX = dx;
+
         if (!axis) {
           if (Math.abs(dx) < AXIS_MIN && Math.abs(dy) < AXIS_MIN) return;
-          if (Math.abs(dx) > Math.abs(dy) * 1.15 && Math.abs(dx) > AXIS_MIN) {
+          // Prefer horizontal on chip strips (that's what they're for)
+          if (Math.abs(dx) >= Math.abs(dy) * 0.85) {
             axis = 'x';
           } else {
             axis = 'y';
-            tracking = false;
+            // Vertical intent — release and let the page behave normally
+            try { stripEl.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+            reset();
+            return;
           }
         }
-      };
 
-      const end = (x) => {
-        if (!tracking) {
-          axis = null;
-          return;
+        if (axis === 'x' && e.cancelable) {
+          e.preventDefault();
         }
-        const dx = x - startX;
+      });
+
+      const finish = (e) => {
+        if (!tracking || (pointerId != null && e.pointerId !== pointerId)) return;
+        const dx = (typeof e.clientX === 'number' ? e.clientX : startX + movedX) - startX;
         const wasX = axis === 'x';
-        tracking = false;
-        axis = null;
+        try { stripEl.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+        reset();
+
         if (!wasX || Math.abs(dx) < THRESH) return;
         if (Date.now() < tabSwipeCooldownUntil) return;
-        tabSwipeClickSuppressUntil = Date.now() + 420;
-        tabSwipeCooldownUntil = Date.now() + 280;
+
+        // Block the synthetic click that would re-fire the chip under the finger
+        tabSwipeClickSuppressUntil = Date.now() + 500;
+        tabSwipeCooldownUntil = Date.now() + 300;
         onSwipe(dx < 0 ? 'next' : 'prev');
       };
 
-      const cancel = () => {
-        tracking = false;
-        axis = null;
-      };
+      stripEl.addEventListener('pointerup', finish);
+      stripEl.addEventListener('pointercancel', (e) => {
+        if (pointerId != null && e.pointerId !== pointerId) return;
+        try { stripEl.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+        reset();
+      });
 
+      // Fallback for older WebViews that are flaky with pointer events
+      let touchTracking = false;
+      let tStartX = 0;
+      let tStartY = 0;
+      let tAxis = null;
       stripEl.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 1) return;
-        begin(e.touches[0].clientX, e.touches[0].clientY);
+        // Skip if pointer events already handling
+        if (window.PointerEvent && e.target?.hasPointerCapture?.(pointerId)) return;
+        touchTracking = true;
+        tStartX = e.touches[0].clientX;
+        tStartY = e.touches[0].clientY;
+        tAxis = null;
       }, { passive: true });
 
       stripEl.addEventListener('touchmove', (e) => {
-        if (!tracking || e.touches.length !== 1) return;
-        move(e.touches[0].clientX, e.touches[0].clientY);
-        if (axis === 'x' && e.cancelable) e.preventDefault();
+        if (!touchTracking || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - tStartX;
+        const dy = e.touches[0].clientY - tStartY;
+        if (!tAxis) {
+          if (Math.abs(dx) < AXIS_MIN && Math.abs(dy) < AXIS_MIN) return;
+          tAxis = Math.abs(dx) >= Math.abs(dy) * 0.85 ? 'x' : 'y';
+          if (tAxis === 'y') {
+            touchTracking = false;
+            return;
+          }
+        }
+        if (tAxis === 'x' && e.cancelable) e.preventDefault();
       }, { passive: false });
 
       stripEl.addEventListener('touchend', (e) => {
+        if (!touchTracking) return;
         const t = e.changedTouches[0];
-        if (t) end(t.clientX);
-        else cancel();
+        const dx = t ? t.clientX - tStartX : 0;
+        const wasX = tAxis === 'x';
+        touchTracking = false;
+        tAxis = null;
+        // If pointer path already fired, cooldown will no-op this
+        if (!wasX || Math.abs(dx) < THRESH) return;
+        if (Date.now() < tabSwipeCooldownUntil) return;
+        tabSwipeClickSuppressUntil = Date.now() + 500;
+        tabSwipeCooldownUntil = Date.now() + 300;
+        onSwipe(dx < 0 ? 'next' : 'prev');
       }, { passive: true });
-
-      stripEl.addEventListener('touchcancel', cancel, { passive: true });
-
-      let mouseDown = false;
-      stripEl.addEventListener('mousedown', (e) => {
-        if (e.button !== 0) return;
-        mouseDown = true;
-        begin(e.clientX, e.clientY);
-      });
-      window.addEventListener('mousemove', (e) => {
-        if (!mouseDown) return;
-        move(e.clientX, e.clientY);
-      });
-      window.addEventListener('mouseup', (e) => {
-        if (!mouseDown) return;
-        mouseDown = false;
-        end(e.clientX);
-      });
     }
 
     function initTabSwipeNav() {
       const mainNav = document.getElementById('main-nav-bar');
       const lifeNav = document.querySelector('.life-subnav');
+      if (!mainNav && !lifeNav) return;
 
       ensureNavIndicator(mainNav, 'main-nav-indicator');
       ensureNavIndicator(lifeNav, 'life-chip-indicator');
@@ -16748,7 +16818,10 @@
 
       // Swipe only on Life sub-tab chips → Schedule / Grocery / Bills / Subscriptions
       bindChipStripSwipe(lifeNav, (dir) => {
-        if (currentTab !== 'life') return;
+        if (currentTab !== 'life') {
+          // If somehow Life chips are visible, still switch panels after ensuring Life is open
+          switchTab('life', { dir: null });
+        }
         const i = LIFE_PANEL_ORDER.indexOf(currentLifePanel);
         if (i < 0) return;
         const n = dir === 'next' ? i + 1 : i - 1;
@@ -16768,14 +16841,12 @@
         }, true);
       }
 
-      const placeIndicators = () => {
-        updateMainNavIndicator();
-        updateLifeNavIndicator();
-      };
-      requestAnimationFrame(placeIndicators);
-      window.addEventListener('resize', () => requestAnimationFrame(placeIndicators));
-      setTimeout(placeIndicators, 120);
-      setTimeout(placeIndicators, 400);
+      scheduleNavIndicators();
+      window.addEventListener('resize', scheduleNavIndicators);
+      // After fonts / splash layout settle
+      setTimeout(scheduleNavIndicators, 200);
+      setTimeout(scheduleNavIndicators, 700);
+      setTimeout(scheduleNavIndicators, 1400);
     }
 
     // ==================== INIT & HELPERS ====================
