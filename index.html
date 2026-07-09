@@ -16,11 +16,14 @@
         var raw = localStorage.getItem('harbor_state_v1');
         if (!raw) return;
         var parsed = JSON.parse(raw);
-        var theme = parsed && parsed.settings && parsed.settings.theme === 'light' ? 'light' : 'dark';
+        var t = parsed && parsed.settings && parsed.settings.theme;
+        // Migrate old seafoam "light" → mono (black & white)
+        if (t === 'light') t = 'mono';
+        var theme = t === 'mono' ? 'mono' : 'dark';
         document.documentElement.setAttribute('data-theme', theme);
-        document.documentElement.style.colorScheme = theme;
+        document.documentElement.style.colorScheme = 'dark';
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', theme === 'light' ? '#EEF4F1' : '#0A1F1E');
+        if (meta) meta.setAttribute('content', theme === 'mono' ? '#0A0A0A' : '#0A1F1E');
       } catch (e) { /* ignore */ }
     })();
   </script>
@@ -70,7 +73,7 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
 
     :root, html[data-theme="dark"] {
-      /* Dawn-harbor palette — deep teal water, warm stone light (default dark) */
+      /* Dawn-harbor palette — deep teal water, warm stone (default) */
       --harbor-bg: #0A1F1E;
       --harbor-surface: #122E2C;
       --harbor-raised: #1A3C39;
@@ -94,44 +97,63 @@
       color-scheme: dark;
     }
 
-    html[data-theme="light"] {
-      /* Soft seafoam / stone light mode */
-      --harbor-bg: #EEF4F1;
-      --harbor-surface: #FFFFFF;
-      --harbor-raised: #E4EEEA;
-      --harbor-border: #C2D4CE;
-      --harbor-primary: #1F8A7A;
-      --harbor-primary-light: #167A6B;
-      --harbor-accent: #A67C3D;
-      --harbor-text: #142826;
-      --harbor-muted: #5A706B;
-      --harbor-low: #C96B52;
-      --harbor-med: #B8942E;
-      --harbor-high: #1F8A7A;
-      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 4px 16px rgba(20, 40, 36, 0.08);
-      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 12px 28px rgba(20, 40, 36, 0.12);
-      --harbor-glow-primary: 0 0 0 1px rgba(31, 138, 122, 0.28);
-      --harbor-dawn: #D8E8E2;
-      color-scheme: light;
+    /* Stylish monochrome — same structure as Harbor, pure black / silver / white */
+    html[data-theme="mono"] {
+      --harbor-bg: #0A0A0A;
+      --harbor-surface: #141414;
+      --harbor-raised: #1C1C1C;
+      --harbor-border: #2E2E2E;
+      --harbor-primary: #E8E8E8;
+      --harbor-primary-light: #FFFFFF;
+      --harbor-accent: #A8A8A8;
+      --harbor-text: #F2F2F2;
+      --harbor-muted: #8A8A8A;
+      --harbor-low: #B0B0B0;
+      --harbor-med: #C8C8C8;
+      --harbor-high: #E8E8E8;
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 4px 18px rgba(0, 0, 0, 0.45);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 12px 36px rgba(0, 0, 0, 0.55);
+      --harbor-glow-primary: 0 0 0 1px rgba(255, 255, 255, 0.18);
+      --harbor-dawn: #111111;
+      color-scheme: dark;
     }
 
-    html[data-theme="light"] body {
-      background-color: var(--harbor-bg);
-      color: var(--harbor-text);
+    html[data-theme="mono"] .site-header {
+      background: linear-gradient(180deg, rgba(20, 20, 20, 0.96) 0%, rgba(10, 10, 10, 0.94) 100%);
     }
 
-    html[data-theme="light"] .site-header {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(238, 244, 241, 0.92) 100%);
+    html[data-theme="mono"] .chip-add-btn,
+    html[data-theme="mono"] .today-add-btn {
+      background: #F2F2F2;
+      color: #0A0A0A;
     }
 
-    html[data-theme="light"] .chip-add-btn,
-    html[data-theme="light"] .today-add-btn {
-      color: #fff;
+    html[data-theme="mono"] .chip-add-btn:active,
+    html[data-theme="mono"] .today-add-btn:active {
+      opacity: 0.88;
     }
 
-    html[data-theme="light"] .life-nav-tab.life-panel-active,
-    html[data-theme="light"] .main-nav-tab.nav-active {
-      color: #0f2e2a;
+    html[data-theme="mono"] .life-nav-tab.life-panel-active,
+    html[data-theme="mono"] .main-nav-tab.nav-active {
+      color: #0A0A0A;
+      background: linear-gradient(180deg, rgba(242, 242, 242, 0.95) 0%, rgba(210, 210, 210, 0.9) 100%);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    html[data-theme="mono"] .summary-toggle-btn.is-active {
+      background: linear-gradient(135deg, #F2F2F2 0%, #C8C8C8 100%);
+      color: #0A0A0A;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    html[data-theme="mono"] .energy-btn.is-active,
+    html[data-theme="mono"] .energy-btn[aria-pressed="true"] {
+      color: #0A0A0A;
+    }
+
+    html[data-theme="mono"] .swipe-action-edit {
+      background: linear-gradient(180deg, #F0F0F0 0%, #C8C8C8 100%);
+      color: #0A0A0A;
     }
 
     * {
@@ -4957,7 +4979,9 @@
       if (!state.settings.scheduleView) {
         state.settings.scheduleView = 'today';
       }
-      if (state.settings.theme !== 'light' && state.settings.theme !== 'dark') {
+      // Migrate old seafoam light → mono; only dark | mono are valid
+      if (state.settings.theme === 'light') state.settings.theme = 'mono';
+      if (state.settings.theme !== 'mono' && state.settings.theme !== 'dark') {
         state.settings.theme = 'dark';
       }
       if (state.settings.showWelcomeBanner === undefined) {
@@ -14967,19 +14991,22 @@
     }
 
     function getAppTheme() {
-      return state?.settings?.theme === 'light' ? 'light' : 'dark';
+      const t = state?.settings?.theme;
+      if (t === 'light') return 'mono'; // legacy
+      return t === 'mono' ? 'mono' : 'dark';
     }
 
     function applyAppTheme(theme) {
-      const t = theme === 'light' ? 'light' : 'dark';
+      // dark = Harbor teal (default), mono = stylish black & white
+      let t = theme === 'mono' || theme === 'light' ? 'mono' : 'dark';
       if (state?.settings) state.settings.theme = t;
       document.documentElement.setAttribute('data-theme', t);
-      document.documentElement.style.colorScheme = t;
+      document.documentElement.style.colorScheme = 'dark';
       // Fun theme owns meta color while active
       const funActive = state?.settings?.funThemeUntil && state.settings.funThemeUntil >= todayStr();
       if (!funActive) {
         const metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (metaTheme) metaTheme.setAttribute('content', t === 'light' ? '#EEF4F1' : '#0A1F1E');
+        if (metaTheme) metaTheme.setAttribute('content', t === 'mono' ? '#0A0A0A' : '#0A1F1E');
       }
     }
 
@@ -15902,7 +15929,7 @@
       modal.className = `fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[60]`;
       
       const smartSuggestionsOn = !state.settings.smartSuggestionsMuted;
-      const darkModeOn = getAppTheme() === 'dark';
+      const monoModeOn = getAppTheme() === 'mono';
       const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
       const corsHelperOn = state.settings.calendarAllowCorsHelper === true;
       
@@ -15940,12 +15967,12 @@
 
             <div class="flex items-center justify-between gap-3 py-1">
               <div class="min-w-0">
-                <div class="text-sm font-medium text-harbor-text">Dark mode</div>
-                <div class="text-[10px] text-harbor-muted leading-snug">Deep harbor teal · off for light seafoam</div>
+                <div class="text-sm font-medium text-harbor-text">Mono theme</div>
+                <div class="text-[10px] text-harbor-muted leading-snug">Stylish black &amp; white · off = Harbor teal</div>
               </div>
-              <button type="button" id="dark-mode-toggle" role="switch" aria-checked="${darkModeOn}"
-                class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${darkModeOn ? 'bg-harbor-primary' : 'bg-harbor-border'}">
-                <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${darkModeOn ? 'translate-x-5' : 'translate-x-0'}"></span>
+              <button type="button" id="dark-mode-toggle" role="switch" aria-checked="${monoModeOn}"
+                class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${monoModeOn ? 'bg-harbor-primary' : 'bg-harbor-border'}">
+                <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${monoModeOn ? 'translate-x-5' : 'translate-x-0'}"></span>
               </button>
             </div>
 
