@@ -8,7 +8,22 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Harbor">
   <meta name="format-detection" content="telephone=no">
-  <meta name="theme-color" content="#0A1F1E">
+  <meta name="theme-color" content="#0A1F1E" id="meta-theme-color">
+  <script>
+    // Apply saved theme before paint to avoid flash
+    (function () {
+      try {
+        var raw = localStorage.getItem('harbor_state_v1');
+        if (!raw) return;
+        var parsed = JSON.parse(raw);
+        var theme = parsed && parsed.settings && parsed.settings.theme === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.style.colorScheme = theme;
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', theme === 'light' ? '#EEF4F1' : '#0A1F1E');
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
   <meta name="description" content="Harbor — your life management app. Energy-based tasks, bills, grocery, streaks, and smart suggestions. Design preview for testers.">
   <meta name="robots" content="noindex, nofollow">
   <meta property="og:title" content="Harbor — Life Management">
@@ -32,18 +47,18 @@
         extend: {
           colors: {
             harbor: {
-              bg: '#0A1F1E',
-              surface: '#122E2C',
-              raised: '#1A3C39',
-              border: '#2A4F4A',
-              primary: '#2F9B8C',
-              'primary-light': '#6BBFB0',
-              accent: '#C4A574',
-              text: '#F0EBE3',
-              muted: '#8FA8A3',
-              low: '#D4927A',
-              med: '#D4B56A',
-              high: '#2F9B8C',
+              bg: 'var(--harbor-bg)',
+              surface: 'var(--harbor-surface)',
+              raised: 'var(--harbor-raised)',
+              border: 'var(--harbor-border)',
+              primary: 'var(--harbor-primary)',
+              'primary-light': 'var(--harbor-primary-light)',
+              accent: 'var(--harbor-accent)',
+              text: 'var(--harbor-text)',
+              muted: 'var(--harbor-muted)',
+              low: 'var(--harbor-low)',
+              med: 'var(--harbor-med)',
+              high: 'var(--harbor-high)',
             }
           }
         }
@@ -54,8 +69,8 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
 
-    :root {
-      /* Dawn-harbor palette — deep teal water, warm stone light */
+    :root, html[data-theme="dark"] {
+      /* Dawn-harbor palette — deep teal water, warm stone light (default dark) */
       --harbor-bg: #0A1F1E;
       --harbor-surface: #122E2C;
       --harbor-raised: #1A3C39;
@@ -76,6 +91,47 @@
       --harbor-dawn: #0A3A38;
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-top: env(safe-area-inset-top, 0px);
+      color-scheme: dark;
+    }
+
+    html[data-theme="light"] {
+      /* Soft seafoam / stone light mode */
+      --harbor-bg: #EEF4F1;
+      --harbor-surface: #FFFFFF;
+      --harbor-raised: #E4EEEA;
+      --harbor-border: #C2D4CE;
+      --harbor-primary: #1F8A7A;
+      --harbor-primary-light: #167A6B;
+      --harbor-accent: #A67C3D;
+      --harbor-text: #142826;
+      --harbor-muted: #5A706B;
+      --harbor-low: #C96B52;
+      --harbor-med: #B8942E;
+      --harbor-high: #1F8A7A;
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 4px 16px rgba(20, 40, 36, 0.08);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 12px 28px rgba(20, 40, 36, 0.12);
+      --harbor-glow-primary: 0 0 0 1px rgba(31, 138, 122, 0.28);
+      --harbor-dawn: #D8E8E2;
+      color-scheme: light;
+    }
+
+    html[data-theme="light"] body {
+      background-color: var(--harbor-bg);
+      color: var(--harbor-text);
+    }
+
+    html[data-theme="light"] .site-header {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(238, 244, 241, 0.92) 100%);
+    }
+
+    html[data-theme="light"] .chip-add-btn,
+    html[data-theme="light"] .today-add-btn {
+      color: #fff;
+    }
+
+    html[data-theme="light"] .life-nav-tab.life-panel-active,
+    html[data-theme="light"] .main-nav-tab.nav-active {
+      color: #0f2e2a;
     }
 
     * {
@@ -4787,6 +4843,7 @@
           workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
           eventTimeFormat: '12h',
           scheduleView: 'today',
+          theme: 'dark',
           showWelcomeBanner: false,
           welcomeBannerDismissed: false,
           onboarded: false,
@@ -4882,6 +4939,9 @@
       }
       if (!state.settings.scheduleView) {
         state.settings.scheduleView = 'today';
+      }
+      if (state.settings.theme !== 'light' && state.settings.theme !== 'dark') {
+        state.settings.theme = 'dark';
       }
       if (state.settings.showWelcomeBanner === undefined) {
         state.settings.showWelcomeBanner = false;
@@ -14814,8 +14874,24 @@
       ['--harbor-primary', '--harbor-primary-light', '--harbor-high', '--harbor-glow-primary'].forEach(prop => {
         document.documentElement.style.removeProperty(prop);
       });
-      const metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (metaTheme) metaTheme.setAttribute('content', '#0A1F1E');
+      applyAppTheme(state.settings?.theme || 'dark');
+    }
+
+    function getAppTheme() {
+      return state?.settings?.theme === 'light' ? 'light' : 'dark';
+    }
+
+    function applyAppTheme(theme) {
+      const t = theme === 'light' ? 'light' : 'dark';
+      if (state?.settings) state.settings.theme = t;
+      document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.style.colorScheme = t;
+      // Fun theme owns meta color while active
+      const funActive = state?.settings?.funThemeUntil && state.settings.funThemeUntil >= todayStr();
+      if (!funActive) {
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) metaTheme.setAttribute('content', t === 'light' ? '#EEF4F1' : '#0A1F1E');
+      }
     }
 
     function refreshFunTheme() {
