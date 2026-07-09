@@ -16236,7 +16236,7 @@
 
     function mergeSyncPacket(packet) {
       ensureChallengesState();
-      if (!packet || packet.k !== 'sync') throw new Error('That code is not a Tide update (sync)');
+      if (!packet || packet.k !== 'sync') throw new Error('That code is not a crew update (sync)');
       const me = getCaptainId();
       let ch = getChallengeById(packet.id);
       if (!ch) {
@@ -16408,9 +16408,9 @@
       const code = encodeHarborPacket(buildSyncPacket(ch));
       const me = getLocalParticipant(ch);
       return (
-        `🌊 Tide update — ${ch.name}\n` +
+        `🌊 Crew update — ${ch.name}\n` +
         `${getCaptainName()}: ${me?.streak || 0}-day streak\n` +
-        `\nPaste this in Harbor → Streaks → Streak-Offs → Radio a Tide:\n${code}`
+        `\nPaste this in Harbor → Streaks → Streak-Offs → Radio My Crew:\n${code}`
       );
     }
 
@@ -16485,7 +16485,7 @@
             ${ch.stakeNote ? `<div class="relative z-[1] text-[10px] text-harbor-accent mt-2 px-0.5">Stake: ${escapeBriefHtml(ch.stakeNote)}</div>` : ''}
             <div class="streak-off-actions relative z-[1]">
               <button type="button" class="streak-off-btn primary" onclick="shareChallengeInvite('${ch.id}')"><i class="fa-solid fa-scroll mr-1"></i>Invite</button>
-              <button type="button" class="streak-off-btn" onclick="shareChallengeSync('${ch.id}')"><i class="fa-solid fa-tower-broadcast mr-1"></i>Radio Tide</button>
+              <button type="button" class="streak-off-btn" onclick="shareChallengeSync('${ch.id}')"><i class="fa-solid fa-tower-broadcast mr-1"></i>Radio My Crew</button>
               <button type="button" class="streak-off-btn" onclick="showChallengeDetail('${ch.id}')">Board</button>
             </div>
           </div>`;
@@ -16502,7 +16502,7 @@
             <div class="text-[10px] text-harbor-muted">Challenge friends · invite-only · no feed</div>
           </div>
           <div class="flex gap-1.5">
-            <button type="button" onclick="showJoinStreakOffModal()" class="streak-off-btn" style="flex:0;padding:0.4rem 0.55rem" title="Join or radio a tide"><i class="fa-solid fa-link"></i></button>
+            <button type="button" onclick="showJoinStreakOffModal()" class="streak-off-btn" style="flex:0;padding:0.4rem 0.55rem" title="Join or Radio a Tide"><i class="fa-solid fa-link"></i></button>
             <button type="button" onclick="showCreateStreakOffModal()" class="streak-off-btn primary" style="flex:0;padding:0.4rem 0.65rem"><i class="fa-solid fa-plus mr-1"></i>New</button>
           </div>
         </div>
@@ -16513,7 +16513,7 @@
               <div class="streak-off-title mb-1">No active Streak-Offs</div>
               <div class="text-[11px] text-harbor-muted leading-relaxed mb-3">
                 Challenge a friend (or a whole crew) to hold the longest streak for 7–30 days.
-                Share an invite bottle — then radio your tide so the board stays honest.
+                Share an invite bottle — then Radio your Tide so the board stays honest.
               </div>
               <div class="streak-off-actions justify-center">
                 <button type="button" class="streak-off-btn primary" onclick="showCreateStreakOffModal()">Start a Streak-Off</button>
@@ -16539,10 +16539,10 @@
       if (!ch) return;
       markLocalChallengeCheckIns();
       saveState();
-      const result = await shareHarborText('Harbor tide update', challengeSyncShareText(ch));
+      const result = await shareHarborText('Harbor Tide update', challengeSyncShareText(ch));
       if (result === 'shared') showToast('Tide radioed to crew');
       else if (result === 'copied') showToast('Tide code copied — crew pastes it to sync');
-      else if (result === 'failed') showToast('Could not share tide update', 'warn');
+      else if (result === 'failed') showToast('Could not share Tide update', 'warn');
     }
 
     function showCreateStreakOffModal() {
@@ -16652,17 +16652,17 @@
         <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[85vh] overflow-y-auto">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1 flex items-center justify-between">
-            <span>Join / Radio a tide</span>
+            <span>Join / Radio a Tide</span>
             <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-3 leading-relaxed">
-            Paste an <strong class="text-harbor-text">invite</strong> code to join a Streak-Off, or a <strong class="text-harbor-text">tide</strong> code to merge a friend’s progress onto your board.
+            Paste an <strong class="text-harbor-text">invite</strong> code to join a Streak-Off, or a <strong class="text-harbor-text">Tide</strong> code to merge a friend’s progress onto your board.
           </div>
           <textarea id="so-code" rows="4" placeholder="HB1.…. or whole shared message"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 text-xs text-harbor-text outline-none focus:border-harbor-primary font-mono mb-3">${escapeBriefHtml(prefill || '')}</textarea>
           <button type="button" id="so-import" class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold mb-2">Import code</button>
           <div class="text-[10px] text-harbor-muted leading-relaxed">
-            Tip: after you check in, hit <strong class="text-harbor-text">Radio tide</strong> and send the code to friends so their leaderboard updates. They do the same for you.
+            Tip: after you check in, hit <strong class="text-harbor-text">Radio Tide</strong> and send the code to friends so their leaderboard updates. They do the same for you.
           </div>
         </div>`;
       document.body.appendChild(modal);
@@ -16749,11 +16749,11 @@
           <div class="space-y-0.5 mb-4">${rows}</div>
           <div class="text-[10px] text-harbor-muted leading-relaxed mb-3">
             Check-ins land automatically when you complete a qualifying habit on Today.
-            Use <strong class="text-harbor-text">Radio tide</strong> so friends see your board (and import theirs).
+            Use <strong class="text-harbor-text">Radio Tide</strong> so friends see your board (and import theirs).
           </div>
           <div class="flex flex-col gap-2">
             <button type="button" class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold" onclick="shareChallengeInvite('${ch.id}')">Share invite bottle</button>
-            <button type="button" class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border font-semibold" onclick="shareChallengeSync('${ch.id}')">Radio my tide</button>
+            <button type="button" class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border font-semibold" onclick="shareChallengeSync('${ch.id}')">Radio my Tide</button>
             <button type="button" class="w-full py-2.5 rounded-2xl text-rose-300/90 text-xs" onclick="if(confirm('Leave or delete this Streak-Off on this device?')){leaveOrDeleteChallenge('${ch.id}');this.closest('.fixed').remove();}">${ch.hostId === me ? 'Delete challenge' : 'Leave crew'}</button>
           </div>
         </div>`;
