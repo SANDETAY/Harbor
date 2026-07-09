@@ -738,6 +738,156 @@
       text-transform: uppercase;
     }
 
+    /* ── Streak-Off (social challenges) ── */
+    .streak-off-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(47, 155, 140, 0.35);
+      background:
+        radial-gradient(ellipse at 12% 0%, rgba(107, 191, 176, 0.16) 0%, transparent 55%),
+        radial-gradient(ellipse at 100% 100%, rgba(196, 165, 116, 0.1) 0%, transparent 50%),
+        rgb(var(--harbor-surface));
+      padding: 0.9rem 0.95rem 0.85rem;
+      box-shadow: var(--harbor-shadow-sm);
+    }
+
+    .streak-off-card::after {
+      content: '';
+      position: absolute;
+      right: -0.5rem;
+      top: -0.5rem;
+      width: 4.5rem;
+      height: 4.5rem;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(47, 155, 140, 0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .streak-off-kicker {
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: rgb(var(--harbor-primary-light));
+      margin-bottom: 0.2rem;
+    }
+
+    .streak-off-title {
+      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+      color: rgb(var(--harbor-text));
+    }
+
+    .streak-off-meta {
+      font-size: 0.68rem;
+      color: rgb(var(--harbor-muted));
+      margin-top: 0.2rem;
+      line-height: 1.35;
+    }
+
+    .streak-off-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.55rem 0.6rem;
+      border-radius: 0.85rem;
+      background: rgba(10, 31, 30, 0.35);
+      border: 1px solid rgb(var(--harbor-border));
+      margin-top: 0.4rem;
+    }
+
+    .streak-off-row.is-you {
+      border-color: rgba(107, 191, 176, 0.45);
+      background: rgba(47, 155, 140, 0.12);
+    }
+
+    .streak-off-row.is-lead {
+      box-shadow: 0 0 0 1px rgba(196, 165, 116, 0.35);
+    }
+
+    .streak-off-rank {
+      width: 1.55rem;
+      height: 1.55rem;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 800;
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      flex-shrink: 0;
+    }
+
+    .streak-off-rank.is-1 {
+      background: linear-gradient(145deg, #e8c97a, #c4a574);
+      color: #1a1408;
+    }
+
+    .streak-off-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.65rem;
+    }
+
+    .streak-off-btn {
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 0.75rem;
+      font-size: 0.72rem;
+      font-weight: 650;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-text));
+    }
+
+    .streak-off-btn.primary {
+      background: linear-gradient(180deg, rgba(47, 155, 140, 0.95) 0%, rgba(36, 128, 116, 0.95) 100%);
+      border-color: transparent;
+      color: #fff;
+    }
+
+    .streak-off-empty {
+      text-align: center;
+      padding: 0.85rem 0.5rem 0.5rem;
+    }
+
+    .streak-off-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      border: 1px solid rgb(var(--harbor-border));
+      color: rgb(var(--harbor-muted));
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    .streak-off-chip.is-live {
+      color: #dff7f1;
+      border-color: rgba(107, 191, 176, 0.4);
+      background: rgba(47, 155, 140, 0.2);
+    }
+
+    .streak-off-chip.is-done {
+      color: #f0e6c8;
+      border-color: rgba(196, 165, 116, 0.4);
+      background: rgba(196, 165, 116, 0.15);
+    }
+
+    html[data-theme="dark"] .streak-off-card {
+      border-color: rgba(255, 255, 255, 0.12);
+      background:
+        radial-gradient(ellipse at 12% 0%, rgba(255, 255, 255, 0.08) 0%, transparent 55%),
+        rgb(var(--harbor-surface));
+    }
 
     .site-root {
       width: 100%;
@@ -4126,6 +4276,12 @@
                   <span>Settings</span>
                 </button>
                 <div class="app-menu-divider" role="separator"></div>
+                <div class="app-menu-section-label">Crew</div>
+                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="streakoff" onclick="runAppMenuAction('streakoff')">
+                  <i class="fa-solid fa-anchor"></i>
+                  <span>Streak-Offs</span>
+                </button>
+                <div class="app-menu-divider" role="separator"></div>
                 <div class="app-menu-section-label">Tutorial</div>
                 <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="tutorial" onclick="runAppMenuAction('tutorial')">
                   <i class="fa-solid fa-graduation-cap"></i>
@@ -4383,6 +4539,8 @@
 
       <!-- STREAKS TAB -->
       <div id="tab-content-streaks" class="tab-content px-5 pt-3 pb-6 bg-harbor-bg hidden">
+        <div id="streak-off-panel" class="mb-4"></div>
+
         <div class="section-header font-semibold text-harbor-text mb-1">Your streaks</div>
         <div class="text-[10px] text-harbor-muted mb-2">Daily habits only — chores and one-time tasks don’t build streaks</div>
         <div id="streak-badge-legend"></div>
@@ -4507,7 +4665,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v98';
+    const HARBOR_BUILD = 'v99';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -4532,6 +4690,7 @@
       subscriptions: [],
       metricLogs: {},
       rewardBank: { points: 0, totalEarned: 0, cheatDownsUsed: 0, lastCheatDate: null },
+      challenges: [], // Streak-Off challenges (local-first social)
       calendarCache: null,
       settings: {
         weightLb: 160,
@@ -5026,6 +5185,7 @@
         subscriptions: [],
         metricLogs: {},
         rewardBank: { points: 0, totalEarned: 0, cheatDownsUsed: 0, lastCheatDate: null },
+        challenges: [],
         habitSkips: {},
         feedbackLog: [],
       calendarCache: null,
@@ -5147,6 +5307,7 @@
       if (!state.habits) state.habits = [];
       if (!state.completions) state.completions = {};
       if (!state.habitSkips) state.habitSkips = {};
+      if (!Array.isArray(state.challenges)) state.challenges = [];
 
       currentEnergy = state.settings.energyToday || 2;
       if (!state.settings.maintenancePreference) {
@@ -11296,6 +11457,12 @@
       const pointsEarned = (typeof isCheatDayFundEnabled === 'function' && isCheatDayFundEnabled())
         ? awardRewardPoints(habit)
         : 0;
+
+      // Streak-Off: auto check-in when this completion qualifies
+      let streakOffHit = false;
+      if (typeof markLocalChallengeCheckIns === 'function') {
+        streakOffHit = !!markLocalChallengeCheckIns(habit);
+      }
       
       // If recurring, we don't add it again until next due — handled by isDueToday
       saveState();
@@ -11316,7 +11483,8 @@
       if (currentTab === 'streaks') renderRewardBank();
       
       const ptsMsg = pointsEarned ? ` · +${pointsEarned} pts` : '';
-      showToast(`Great job! ${habit.title} logged${ptsMsg}`);
+      const soMsg = streakOffHit ? ' · Streak-Off ✓' : '';
+      showToast(`Great job! ${habit.title} logged${ptsMsg}${soMsg}`);
       maybeAdvanceTutorial('habit-complete');
       
       // Gentle autonomous follow-up
@@ -15688,9 +15856,890 @@
     }
 
     // ==================== STREAKS + PROJECTIONS RENDER ====================
+    // ==================== STREAK-OFF (social challenges) ====================
+    // Local-first multiplayer: invite + sync codes over share/clipboard. No server required.
+    const STREAK_OFF_NAME_IDEAS = [
+      'Hold the Harbor', 'Tide War', 'Anchor Duel', 'Calm Waters',
+      'Storm Watch', 'First Light', 'Deep Water', 'No Drift Zone',
+      'Harbor Siege', 'Still Waters'
+    ];
+
+    function getCaptainId() {
+      try {
+        let id = localStorage.getItem('harbor_captain_id');
+        if (!id) {
+          id = 'cap_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+          localStorage.setItem('harbor_captain_id', id);
+        }
+        return id;
+      } catch (_) {
+        return 'cap_local';
+      }
+    }
+
+    function getCaptainName() {
+      const n = (state.settings?.profile?.displayName || '').trim();
+      return n || 'Captain';
+    }
+
+    function dayOffsetStr(dateStr, offset) {
+      const d = new Date(String(dateStr).slice(0, 10) + 'T12:00:00');
+      d.setDate(d.getDate() + offset);
+      return dateStrLocal(d);
+    }
+
+    function daysBetweenInclusive(start, end) {
+      const a = new Date(start + 'T12:00:00');
+      const b = new Date(end + 'T12:00:00');
+      return Math.max(1, Math.round((b - a) / 86400000) + 1);
+    }
+
+    function encodeHarborPacket(obj) {
+      try {
+        const json = JSON.stringify(obj);
+        const b64 = btoa(unescape(encodeURIComponent(json)))
+          .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        return 'HB1.' + b64;
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function decodeHarborPacket(str) {
+      try {
+        let s = String(str || '').trim();
+        const m = s.match(/HB1\.[A-Za-z0-9\-_]+/);
+        if (m) s = m[0];
+        if (!s.startsWith('HB1.')) return null;
+        let b64 = s.slice(4).replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        const json = decodeURIComponent(escape(atob(b64)));
+        return JSON.parse(json);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function ensureChallengesState() {
+      if (!Array.isArray(state.challenges)) state.challenges = [];
+    }
+
+    function getChallengeById(id) {
+      return (state.challenges || []).find(c => c.id === id) || null;
+    }
+
+    function computeChallengeParticipantStreak(p, ch) {
+      const checks = [...(p.checkIns || [])]
+        .filter(d => d >= ch.startsAt && d <= ch.endsAt)
+        .sort();
+      const set = new Set(checks);
+      let cursor = todayStr();
+      if (cursor > ch.endsAt) cursor = ch.endsAt;
+      if (cursor < ch.startsAt) return 0;
+      if (!set.has(cursor)) {
+        const y = dayOffsetStr(cursor, -1);
+        if (y >= ch.startsAt && set.has(y)) cursor = y;
+        else return 0;
+      }
+      let streak = 0;
+      while (cursor >= ch.startsAt && set.has(cursor)) {
+        streak++;
+        cursor = dayOffsetStr(cursor, -1);
+      }
+      return streak;
+    }
+
+    function isParticipantBroken(p, ch, today) {
+      if (today < ch.startsAt) return false;
+      const join = p.joinedAt && p.joinedAt > ch.startsAt ? p.joinedAt : ch.startsAt;
+      const lastRequired = today > ch.endsAt ? ch.endsAt : dayOffsetStr(today, -1);
+      if (lastRequired < join) return false;
+      const set = new Set(p.checkIns || []);
+      let d = join;
+      while (d <= lastRequired) {
+        if (!set.has(d)) return true;
+        d = dayOffsetStr(d, 1);
+      }
+      return false;
+    }
+
+    function refreshChallengeMeta(ch) {
+      if (!ch) return;
+      const today = todayStr();
+      if (today < ch.startsAt) ch.status = 'upcoming';
+      else if (today > ch.endsAt) ch.status = 'finished';
+      else ch.status = 'active';
+
+      (ch.participants || []).forEach(p => {
+        p.streak = computeChallengeParticipantStreak(p, ch);
+        p.bestStreak = Math.max(p.bestStreak || 0, p.streak || 0);
+        p.broken = isParticipantBroken(p, ch, today);
+      });
+
+      if (ch.status === 'finished') {
+        const sorted = [...(ch.participants || [])].sort(
+          (a, b) => (b.bestStreak || 0) - (a.bestStreak || 0) || (b.streak || 0) - (a.streak || 0)
+        );
+        const top = sorted[0]?.bestStreak || 0;
+        ch.winnerIds = top > 0
+          ? sorted.filter(p => (p.bestStreak || 0) === top).map(p => p.id)
+          : [];
+      } else {
+        ch.winnerIds = [];
+      }
+    }
+
+    function localQualifiedForChallenge(ch, habitJustCompleted) {
+      const today = todayStr();
+      if (ch.rule === 'named_habit' && (ch.habitTitle || ch.habitId)) {
+        if (habitJustCompleted) {
+          const h = habitJustCompleted;
+          if (ch.habitId && h.id === ch.habitId) return true;
+          if (ch.habitTitle && (h.title || '').toLowerCase() === ch.habitTitle.toLowerCase()) return true;
+        }
+        return (state.habits || []).some(h => {
+          const titleMatch = ch.habitTitle && (h.title || '').toLowerCase() === ch.habitTitle.toLowerCase();
+          const idMatch = ch.habitId && h.id === ch.habitId;
+          if (!titleMatch && !idMatch) return false;
+          return (getCompletions(h.id) || []).includes(today);
+        });
+      }
+      // any_daily: any streak-tracked habit completed today
+      if (habitJustCompleted && typeof shouldTrackStreak === 'function' && shouldTrackStreak(habitJustCompleted)) {
+        return true;
+      }
+      return (state.habits || []).some(h => {
+        if (typeof shouldTrackStreak === 'function' && !shouldTrackStreak(h)) return false;
+        return (getCompletions(h.id) || []).includes(today);
+      });
+    }
+
+    function markLocalChallengeCheckIns(habitJustCompleted) {
+      ensureChallengesState();
+      const me = getCaptainId();
+      const today = todayStr();
+      let changed = false;
+      state.challenges.forEach(ch => {
+        if (today < ch.startsAt || today > ch.endsAt) {
+          refreshChallengeMeta(ch);
+          return;
+        }
+        let p = (ch.participants || []).find(x => x.id === me);
+        if (!p) return;
+        p.name = getCaptainName();
+        if (localQualifiedForChallenge(ch, habitJustCompleted)) {
+          if (!p.checkIns) p.checkIns = [];
+          if (!p.checkIns.includes(today)) {
+            p.checkIns.push(today);
+            p.checkIns.sort();
+            p.lastCheckIn = today;
+            changed = true;
+          }
+        }
+        refreshChallengeMeta(ch);
+      });
+      return changed;
+    }
+
+    function createStreakOff({ name, durationDays, rule, habitId, habitTitle, maxPlayers, stakeNote }) {
+      ensureChallengesState();
+      const me = getCaptainId();
+      const startsAt = todayStr();
+      const days = [7, 14, 21, 30].includes(durationDays) ? durationDays : 14;
+      const endsAt = dayOffsetStr(startsAt, days - 1);
+      const id = 'ch_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
+      const ch = {
+        id,
+        name: (name || STREAK_OFF_NAME_IDEAS[Math.floor(Math.random() * STREAK_OFF_NAME_IDEAS.length)]).trim().slice(0, 42),
+        createdAt: new Date().toISOString(),
+        startsAt,
+        endsAt,
+        durationDays: days,
+        rule: rule === 'named_habit' ? 'named_habit' : 'any_daily',
+        habitId: habitId || null,
+        habitTitle: habitTitle || null,
+        hostId: me,
+        maxPlayers: Math.min(5, Math.max(2, maxPlayers || 4)),
+        stakeNote: (stakeNote || '').trim().slice(0, 80),
+        participants: [{
+          id: me,
+          name: getCaptainName(),
+          checkIns: [],
+          streak: 0,
+          bestStreak: 0,
+          lastCheckIn: null,
+          broken: false,
+          joinedAt: startsAt,
+          isHost: true
+        }],
+        status: 'active',
+        winnerIds: []
+      };
+      state.challenges.unshift(ch);
+      markLocalChallengeCheckIns();
+      saveState();
+      return ch;
+    }
+
+    function buildInvitePacket(ch) {
+      return {
+        v: 1,
+        k: 'invite',
+        id: ch.id,
+        n: ch.name,
+        d: ch.durationDays,
+        s: ch.startsAt,
+        e: ch.endsAt,
+        r: ch.rule,
+        ht: ch.habitTitle || null,
+        host: { id: ch.hostId, name: (ch.participants || []).find(p => p.id === ch.hostId)?.name || getCaptainName() },
+        max: ch.maxPlayers,
+        stake: ch.stakeNote || ''
+      };
+    }
+
+    function buildSyncPacket(ch) {
+      return {
+        v: 1,
+        k: 'sync',
+        id: ch.id,
+        n: ch.name,
+        s: ch.startsAt,
+        e: ch.endsAt,
+        d: ch.durationDays,
+        r: ch.rule,
+        ht: ch.habitTitle || null,
+        max: ch.maxPlayers,
+        hostId: ch.hostId,
+        stake: ch.stakeNote || '',
+        p: (ch.participants || []).map(p => ({
+          id: p.id,
+          name: p.name,
+          checkIns: p.checkIns || [],
+          lastCheckIn: p.lastCheckIn || null,
+          joinedAt: p.joinedAt || ch.startsAt,
+          isHost: !!p.isHost
+        }))
+      };
+    }
+
+    function joinFromInvitePacket(packet) {
+      ensureChallengesState();
+      if (!packet || packet.k !== 'invite') throw new Error('That code is not a Streak-Off invite');
+      const me = getCaptainId();
+      let ch = getChallengeById(packet.id);
+      if (ch) {
+        if (!(ch.participants || []).some(p => p.id === me)) {
+          if ((ch.participants || []).length >= (ch.maxPlayers || 4)) {
+            throw new Error('This harbor is full (max crew reached)');
+          }
+          ch.participants.push({
+            id: me,
+            name: getCaptainName(),
+            checkIns: [],
+            streak: 0,
+            bestStreak: 0,
+            lastCheckIn: null,
+            broken: false,
+            joinedAt: todayStr(),
+            isHost: me === ch.hostId
+          });
+        }
+      } else {
+        ch = {
+          id: packet.id,
+          name: packet.n || 'Streak-Off',
+          createdAt: new Date().toISOString(),
+          startsAt: packet.s,
+          endsAt: packet.e,
+          durationDays: packet.d || daysBetweenInclusive(packet.s, packet.e),
+          rule: packet.r || 'any_daily',
+          habitId: null,
+          habitTitle: packet.ht || null,
+          hostId: packet.host?.id || null,
+          maxPlayers: packet.max || 4,
+          stakeNote: packet.stake || '',
+          participants: [],
+          status: 'active',
+          winnerIds: []
+        };
+        if (packet.host?.id) {
+          ch.participants.push({
+            id: packet.host.id,
+            name: packet.host.name || 'Host',
+            checkIns: [],
+            streak: 0,
+            bestStreak: 0,
+            lastCheckIn: null,
+            broken: false,
+            joinedAt: packet.s,
+            isHost: true
+          });
+        }
+        if (me !== packet.host?.id) {
+          ch.participants.push({
+            id: me,
+            name: getCaptainName(),
+            checkIns: [],
+            streak: 0,
+            bestStreak: 0,
+            lastCheckIn: null,
+            broken: false,
+            joinedAt: todayStr(),
+            isHost: false
+          });
+        } else if (!(ch.participants || []).some(p => p.id === me)) {
+          ch.participants.push({
+            id: me,
+            name: getCaptainName(),
+            checkIns: [],
+            streak: 0,
+            bestStreak: 0,
+            lastCheckIn: null,
+            broken: false,
+            joinedAt: packet.s,
+            isHost: true
+          });
+        }
+        state.challenges.unshift(ch);
+      }
+      markLocalChallengeCheckIns();
+      saveState();
+      return ch;
+    }
+
+    function mergeSyncPacket(packet) {
+      ensureChallengesState();
+      if (!packet || packet.k !== 'sync') throw new Error('That code is not a tide update (sync)');
+      const me = getCaptainId();
+      let ch = getChallengeById(packet.id);
+      if (!ch) {
+        ch = {
+          id: packet.id,
+          name: packet.n || 'Streak-Off',
+          createdAt: new Date().toISOString(),
+          startsAt: packet.s,
+          endsAt: packet.e,
+          durationDays: packet.d || daysBetweenInclusive(packet.s, packet.e),
+          rule: packet.r || 'any_daily',
+          habitId: null,
+          habitTitle: packet.ht || null,
+          hostId: packet.hostId || null,
+          maxPlayers: packet.max || 4,
+          stakeNote: packet.stake || '',
+          participants: [],
+          status: 'active',
+          winnerIds: []
+        };
+        state.challenges.unshift(ch);
+      }
+      if (packet.stake && !ch.stakeNote) ch.stakeNote = packet.stake;
+      (packet.p || []).forEach(remote => {
+        if (!remote?.id) return;
+        let local = (ch.participants || []).find(p => p.id === remote.id);
+        if (!local) {
+          if ((ch.participants || []).length >= (ch.maxPlayers || 4) && remote.id !== me) return;
+          local = {
+            id: remote.id,
+            name: remote.name || 'Crew',
+            checkIns: [],
+            streak: 0,
+            bestStreak: 0,
+            lastCheckIn: null,
+            broken: false,
+            joinedAt: remote.joinedAt || ch.startsAt,
+            isHost: !!remote.isHost
+          };
+          ch.participants.push(local);
+        }
+        const merged = new Set([...(local.checkIns || []), ...(remote.checkIns || [])]);
+        local.checkIns = [...merged].filter(d => d >= ch.startsAt && d <= ch.endsAt).sort();
+        if (remote.name) local.name = remote.name;
+        if (remote.lastCheckIn && (!local.lastCheckIn || remote.lastCheckIn > local.lastCheckIn)) {
+          local.lastCheckIn = remote.lastCheckIn;
+        }
+        if (remote.isHost) local.isHost = true;
+        if (remote.joinedAt && (!local.joinedAt || remote.joinedAt < local.joinedAt)) {
+          local.joinedAt = remote.joinedAt;
+        }
+      });
+      if (!(ch.participants || []).some(p => p.id === me)) {
+        ch.participants.push({
+          id: me,
+          name: getCaptainName(),
+          checkIns: [],
+          streak: 0,
+          bestStreak: 0,
+          lastCheckIn: null,
+          broken: false,
+          joinedAt: todayStr(),
+          isHost: me === ch.hostId
+        });
+      }
+      markLocalChallengeCheckIns();
+      saveState();
+      return ch;
+    }
+
+    function leaveOrDeleteChallenge(challengeId) {
+      ensureChallengesState();
+      const ch = getChallengeById(challengeId);
+      if (!ch) return;
+      const me = getCaptainId();
+      if (ch.hostId === me) {
+        state.challenges = state.challenges.filter(c => c.id !== challengeId);
+      } else {
+        ch.participants = (ch.participants || []).filter(p => p.id !== me);
+      }
+      saveState();
+      renderStreakOffPanel();
+    }
+
+    function sortedChallengeCrew(ch) {
+      return [...(ch.participants || [])].sort((a, b) => {
+        if (ch.status === 'finished') {
+          return (b.bestStreak || 0) - (a.bestStreak || 0) || (b.streak || 0) - (a.streak || 0);
+        }
+        return (b.streak || 0) - (a.streak || 0) || (b.bestStreak || 0) - (a.bestStreak || 0);
+      });
+    }
+
+    function challengeStatusChip(ch) {
+      refreshChallengeMeta(ch);
+      if (ch.status === 'finished') {
+        return `<span class="streak-off-chip is-done"><i class="fa-solid fa-flag-checkered"></i> Finished</span>`;
+      }
+      if (ch.status === 'upcoming') {
+        return `<span class="streak-off-chip"><i class="fa-regular fa-clock"></i> Starts soon</span>`;
+      }
+      const left = Math.max(0, Math.round((new Date(ch.endsAt + 'T12:00:00') - new Date(todayStr() + 'T12:00:00')) / 86400000));
+      return `<span class="streak-off-chip is-live"><i class="fa-solid fa-water"></i> ${left === 0 ? 'Last day' : left + 'd left'}</span>`;
+    }
+
+    function challengeRuleLabel(ch) {
+      if (ch.rule === 'named_habit' && ch.habitTitle) {
+        return `Habit: ${ch.habitTitle}`;
+      }
+      return 'Any daily streak habit';
+    }
+
+    async function copyTextToClipboard(text) {
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (_) { /* fall through */ }
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        ta.remove();
+        return ok;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    async function shareHarborText(title, text) {
+      try {
+        if (navigator.share) {
+          await navigator.share({ title, text });
+          return 'shared';
+        }
+      } catch (e) {
+        if (e?.name === 'AbortError') return 'cancelled';
+      }
+      const ok = await copyTextToClipboard(text);
+      return ok ? 'copied' : 'failed';
+    }
+
+    function challengeInviteShareText(ch) {
+      const code = encodeHarborPacket(buildInvitePacket(ch));
+      let base = 'https://sandetay.github.io/Harbor/';
+      try {
+        if (location?.href && location.protocol !== 'null:') {
+          base = location.href.split('#')[0].split('?')[0];
+        }
+      } catch (_) { /* ignore */ }
+      const link = `${base}?challenge=${encodeURIComponent(code)}`;
+      return (
+        `⚓ Harbor Streak-Off: ${ch.name}\n` +
+        `${ch.durationDays} days · ${challengeRuleLabel(ch)}\n` +
+        (ch.stakeNote ? `Stake: ${ch.stakeNote}\n` : '') +
+        `\nJoin with this code in Harbor → Streaks → Streak-Offs:\n${code}\n` +
+        `\nOr open:\n${link}`
+      );
+    }
+
+    function challengeSyncShareText(ch) {
+      markLocalChallengeCheckIns();
+      refreshChallengeMeta(ch);
+      const code = encodeHarborPacket(buildSyncPacket(ch));
+      const me = getLocalParticipant(ch);
+      return (
+        `🌊 Tide update — ${ch.name}\n` +
+        `${getCaptainName()}: ${me?.streak || 0}-day run\n` +
+        `\nPaste this in Harbor → Streaks → Streak-Offs → Radio a tide:\n${code}`
+      );
+    }
+
+    function getLocalParticipant(ch) {
+      const me = getCaptainId();
+      return (ch.participants || []).find(p => p.id === me) || null;
+    }
+
+    function renderStreakOffPanel() {
+      const el = document.getElementById('streak-off-panel');
+      if (!el) return;
+      ensureChallengesState();
+      markLocalChallengeCheckIns();
+
+      const active = state.challenges.filter(c => {
+        refreshChallengeMeta(c);
+        return c.status === 'active' || c.status === 'upcoming';
+      });
+      const finished = state.challenges.filter(c => c.status === 'finished').slice(0, 3);
+
+      const cards = active.slice(0, 4).map(ch => {
+        const crew = sortedChallengeCrew(ch);
+        const me = getCaptainName();
+        const myP = getLocalParticipant(ch);
+        const lead = crew[0];
+        const rankRows = crew.slice(0, 4).map((p, idx) => {
+          const isYou = p.id === getCaptainId();
+          const isLead = idx === 0 && (p.streak > 0 || ch.status === 'finished');
+          const status = p.broken && ch.status === 'active'
+            ? '<span class="text-[9px] text-rose-300/90">took on water</span>'
+            : (isYou && myP?.lastCheckIn === todayStr()
+              ? '<span class="text-[9px] text-harbor-primary-light">checked in today</span>'
+              : `<span class="text-[9px] text-harbor-muted">${p.lastCheckIn ? 'last ' + formatDateShort(p.lastCheckIn) : 'no check-in yet'}</span>`);
+          return `
+            <div class="streak-off-row${isYou ? ' is-you' : ''}${isLead ? ' is-lead' : ''}">
+              <div class="streak-off-rank${idx === 0 ? ' is-1' : ''}">${idx + 1}</div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-semibold text-harbor-text truncate">${escapeBriefHtml(p.name)}${isYou ? ' <span class="text-harbor-primary-light font-medium">(you)</span>' : ''}${p.isHost ? ' <span class="text-[9px] text-harbor-muted">host</span>' : ''}</div>
+                ${status}
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="text-sm font-bold tabular-nums text-harbor-text">${p.streak || 0}<span class="text-[10px] font-medium text-harbor-muted">d</span></div>
+                <div class="text-[9px] text-harbor-muted">best ${p.bestStreak || 0}</div>
+              </div>
+            </div>`;
+        }).join('');
+
+        return `
+          <div class="streak-off-card mb-2.5">
+            <div class="flex items-start justify-between gap-2 relative z-[1]">
+              <div class="min-w-0">
+                <div class="streak-off-kicker">Streak-Off</div>
+                <div class="streak-off-title truncate">${escapeBriefHtml(ch.name)}</div>
+                <div class="streak-off-meta">${escapeBriefHtml(challengeRuleLabel(ch))} · ${ch.participants.length} crew · ${formatDateShort(ch.startsAt)}–${formatDateShort(ch.endsAt)}</div>
+              </div>
+              ${challengeStatusChip(ch)}
+            </div>
+            <div class="relative z-[1] mt-1">${rankRows || '<div class="text-[11px] text-harbor-muted mt-2">No crew yet — send an invite bottle.</div>'}</div>
+            ${ch.stakeNote ? `<div class="relative z-[1] text-[10px] text-harbor-accent mt-2 px-0.5">Stake: ${escapeBriefHtml(ch.stakeNote)}</div>` : ''}
+            <div class="streak-off-actions relative z-[1]">
+              <button type="button" class="streak-off-btn primary" onclick="shareChallengeInvite('${ch.id}')"><i class="fa-solid fa-scroll mr-1"></i>Invite</button>
+              <button type="button" class="streak-off-btn" onclick="shareChallengeSync('${ch.id}')"><i class="fa-solid fa-tower-broadcast mr-1"></i>Radio tide</button>
+              <button type="button" class="streak-off-btn" onclick="showChallengeDetail('${ch.id}')">Board</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      const finishedLine = finished.length
+        ? `<div class="text-[10px] text-harbor-muted mt-1 mb-2">Recent finishes: ${finished.map(c => escapeBriefHtml(c.name)).join(' · ')}</div>`
+        : '';
+
+      el.innerHTML = `
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <div>
+            <div class="section-header font-semibold text-harbor-text">Streak-Offs</div>
+            <div class="text-[10px] text-harbor-muted">Challenge friends · invite-only · no feed</div>
+          </div>
+          <div class="flex gap-1.5">
+            <button type="button" onclick="showJoinStreakOffModal()" class="streak-off-btn" style="flex:0;padding:0.4rem 0.55rem" title="Join or radio a tide"><i class="fa-solid fa-link"></i></button>
+            <button type="button" onclick="showCreateStreakOffModal()" class="streak-off-btn primary" style="flex:0;padding:0.4rem 0.65rem"><i class="fa-solid fa-plus mr-1"></i>New</button>
+          </div>
+        </div>
+        ${cards || `
+          <div class="streak-off-card">
+            <div class="streak-off-empty relative z-[1]">
+              <div class="text-2xl mb-1" aria-hidden="true">⚓</div>
+              <div class="streak-off-title mb-1">No active Streak-Offs</div>
+              <div class="text-[11px] text-harbor-muted leading-relaxed mb-3">
+                Challenge a friend (or a whole crew) to hold the longest run for 7–30 days.
+                Share an invite bottle — then radio your tide so the board stays honest.
+              </div>
+              <div class="streak-off-actions justify-center">
+                <button type="button" class="streak-off-btn primary" onclick="showCreateStreakOffModal()">Start a Streak-Off</button>
+                <button type="button" class="streak-off-btn" onclick="showJoinStreakOffModal()">Join with code</button>
+              </div>
+            </div>
+          </div>`}
+        ${finishedLine}
+      `;
+    }
+
+    async function shareChallengeInvite(challengeId) {
+      const ch = getChallengeById(challengeId);
+      if (!ch) return;
+      const result = await shareHarborText('Harbor Streak-Off', challengeInviteShareText(ch));
+      if (result === 'shared') showToast('Invite bottle cast to sea');
+      else if (result === 'copied') showToast('Invite code copied — send it to your crew');
+      else if (result === 'failed') showToast('Could not share — long-press to copy from Board', 'warn');
+    }
+
+    async function shareChallengeSync(challengeId) {
+      const ch = getChallengeById(challengeId);
+      if (!ch) return;
+      markLocalChallengeCheckIns();
+      saveState();
+      const result = await shareHarborText('Harbor tide update', challengeSyncShareText(ch));
+      if (result === 'shared') showToast('Tide radioed to crew');
+      else if (result === 'copied') showToast('Tide code copied — crew pastes it to sync');
+      else if (result === 'failed') showToast('Could not share tide update', 'warn');
+    }
+
+    function showCreateStreakOffModal() {
+      const streakHabits = (state.habits || []).filter(h => typeof shouldTrackStreak === 'function' ? shouldTrackStreak(h) : true);
+      const idea = STREAK_OFF_NAME_IDEAS[Math.floor(Math.random() * STREAK_OFF_NAME_IDEAS.length)];
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-harbor-bg/75 modal-overlay-blur flex items-end z-[70]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.closest('.fixed').remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-lg mb-1 flex items-center justify-between">
+            <span>New Streak-Off</span>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+          </div>
+          <div class="text-[11px] text-harbor-muted mb-4 leading-relaxed">
+            Time-boxed duel (or crew war). Longest unbroken run when the window ends wins. Invite-only — no public leaderboard.
+          </div>
+          <label class="block text-xs text-harbor-muted mb-1">Challenge name</label>
+          <input id="so-name" type="text" maxlength="42" value="${escapeBriefHtml(idea)}"
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 text-sm text-harbor-text outline-none focus:border-harbor-primary mb-3">
+          <label class="block text-xs text-harbor-muted mb-1">Duration</label>
+          <div class="flex gap-2 mb-3" id="so-duration">
+            ${[7, 14, 21, 30].map((d, i) => `
+              <button type="button" data-days="${d}" class="so-dur flex-1 py-2 rounded-xl text-xs font-semibold border ${d === 14 ? 'border-harbor-primary bg-harbor-primary/20 text-harbor-primary-light' : 'border-harbor-border bg-harbor-raised text-harbor-muted'}">${d}d</button>
+            `).join('')}
+          </div>
+          <label class="block text-xs text-harbor-muted mb-1">What counts</label>
+          <select id="so-rule" class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 text-sm text-harbor-text outline-none mb-2">
+            <option value="any_daily">Any daily streak habit</option>
+            <option value="named_habit">One specific habit</option>
+          </select>
+          <div id="so-habit-wrap" class="hidden mb-3">
+            <label class="block text-xs text-harbor-muted mb-1">Habit</label>
+            <select id="so-habit" class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 text-sm text-harbor-text outline-none">
+              ${streakHabits.length ? streakHabits.map(h => `<option value="${escapeBriefHtml(h.id)}">${escapeBriefHtml(h.title)}</option>`).join('') : '<option value="">No streak habits yet</option>'}
+            </select>
+          </div>
+          <label class="block text-xs text-harbor-muted mb-1">Crew size (max)</label>
+          <select id="so-max" class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 text-sm text-harbor-text outline-none mb-3">
+            <option value="2">Duel (2)</option>
+            <option value="3">Trio (3)</option>
+            <option value="4" selected>Crew (4)</option>
+            <option value="5">Fleet (5)</option>
+          </select>
+          <label class="block text-xs text-harbor-muted mb-1">Optional stake <span class="opacity-70">(bragging rights default)</span></label>
+          <input id="so-stake" type="text" maxlength="80" placeholder="e.g. Loser buys coffee"
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 text-sm text-harbor-text outline-none focus:border-harbor-primary mb-4">
+          <div class="text-[10px] text-harbor-muted mb-3 leading-relaxed">
+            You’re sailing as <strong class="text-harbor-text">${escapeBriefHtml(getCaptainName())}</strong>.
+            Set a display name in Profile so friends recognize you on the board.
+          </div>
+          <button type="button" id="so-create" class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Cast off</button>
+        </div>`;
+      document.body.appendChild(modal);
+
+      let days = 14;
+      modal.querySelectorAll('.so-dur').forEach(btn => {
+        btn.addEventListener('click', () => {
+          days = parseInt(btn.dataset.days, 10);
+          modal.querySelectorAll('.so-dur').forEach(b => {
+            const on = b === btn;
+            b.className = `so-dur flex-1 py-2 rounded-xl text-xs font-semibold border ${on ? 'border-harbor-primary bg-harbor-primary/20 text-harbor-primary-light' : 'border-harbor-border bg-harbor-raised text-harbor-muted'}`;
+          });
+        });
+      });
+      const ruleEl = modal.querySelector('#so-rule');
+      const habitWrap = modal.querySelector('#so-habit-wrap');
+      ruleEl.addEventListener('change', () => {
+        habitWrap.classList.toggle('hidden', ruleEl.value !== 'named_habit');
+      });
+      modal.querySelector('#so-create').onclick = () => {
+        const name = modal.querySelector('#so-name').value.trim();
+        const rule = ruleEl.value;
+        let habitId = null;
+        let habitTitle = null;
+        if (rule === 'named_habit') {
+          habitId = modal.querySelector('#so-habit').value || null;
+          const h = state.habits.find(x => x.id === habitId);
+          habitTitle = h?.title || null;
+          if (!habitTitle) {
+            showToast('Add a daily streak habit first, or pick “Any daily”', 'warn');
+            return;
+          }
+        }
+        const ch = createStreakOff({
+          name,
+          durationDays: days,
+          rule,
+          habitId,
+          habitTitle,
+          maxPlayers: parseInt(modal.querySelector('#so-max').value, 10) || 4,
+          stakeNote: modal.querySelector('#so-stake').value
+        });
+        modal.remove();
+        renderStreakOffPanel();
+        showToast(`⚓ ${ch.name} is live — send an invite bottle`);
+        setTimeout(() => shareChallengeInvite(ch.id), 280);
+      };
+    }
+
+    function showJoinStreakOffModal(prefill) {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-harbor-bg/75 modal-overlay-blur flex items-end z-[70]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.closest('.fixed').remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[85vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-lg mb-1 flex items-center justify-between">
+            <span>Join / Radio a tide</span>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+          </div>
+          <div class="text-[11px] text-harbor-muted mb-3 leading-relaxed">
+            Paste an <strong class="text-harbor-text">invite</strong> code to join a Streak-Off, or a <strong class="text-harbor-text">tide</strong> code to merge a friend’s progress onto your board.
+          </div>
+          <textarea id="so-code" rows="4" placeholder="HB1.…. or whole shared message"
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 text-xs text-harbor-text outline-none focus:border-harbor-primary font-mono mb-3">${escapeBriefHtml(prefill || '')}</textarea>
+          <button type="button" id="so-import" class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold mb-2">Import code</button>
+          <div class="text-[10px] text-harbor-muted leading-relaxed">
+            Tip: after you check in, hit <strong class="text-harbor-text">Radio tide</strong> and send the code to friends so their leaderboard updates. They do the same for you.
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.querySelector('#so-import').onclick = () => {
+        const raw = modal.querySelector('#so-code').value;
+        const packet = decodeHarborPacket(raw);
+        if (!packet) {
+          showToast('Could not read that code — check the HB1.… paste', 'warn');
+          return;
+        }
+        try {
+          if (packet.k === 'invite') {
+            const ch = joinFromInvitePacket(packet);
+            modal.remove();
+            renderStreakOffPanel();
+            showToast(`Joined ${ch.name} — hold the harbor`);
+            showChallengeDetail(ch.id);
+          } else if (packet.k === 'sync') {
+            const ch = mergeSyncPacket(packet);
+            modal.remove();
+            renderStreakOffPanel();
+            showToast(`Tide received for ${ch.name}`);
+            showChallengeDetail(ch.id);
+          } else {
+            showToast('Unknown code type', 'warn');
+          }
+        } catch (err) {
+          showToast(err?.message || 'Could not import code', 'warn');
+        }
+      };
+    }
+
+    function showChallengeDetail(challengeId) {
+      const ch = getChallengeById(challengeId);
+      if (!ch) return;
+      markLocalChallengeCheckIns();
+      refreshChallengeMeta(ch);
+      const crew = sortedChallengeCrew(ch);
+      const me = getCaptainId();
+      const winners = new Set(ch.winnerIds || []);
+
+      const rows = crew.map((p, idx) => {
+        const isYou = p.id === me;
+        const crown = ch.status === 'finished' && winners.has(p.id)
+          ? ' <i class="fa-solid fa-crown text-amber-300 text-[10px]"></i>'
+          : '';
+        return `
+          <div class="streak-off-row${isYou ? ' is-you' : ''}${idx === 0 ? ' is-lead' : ''}">
+            <div class="streak-off-rank${idx === 0 ? ' is-1' : ''}">${idx + 1}</div>
+            <div class="min-w-0 flex-1">
+              <div class="text-xs font-semibold truncate">${escapeBriefHtml(p.name)}${crown}${isYou ? ' · you' : ''}</div>
+              <div class="text-[10px] text-harbor-muted">${p.broken ? 'Took on water (missed a day)' : 'Still afloat'} · ${ (p.checkIns || []).length } check-ins</div>
+            </div>
+            <div class="text-right">
+              <div class="text-base font-bold tabular-nums">${p.streak}<span class="text-[10px] text-harbor-muted">d</span></div>
+              <div class="text-[9px] text-harbor-muted">best ${p.bestStreak || 0}</div>
+            </div>
+          </div>`;
+      }).join('');
+
+      const finishBlurb = ch.status === 'finished'
+        ? (winners.size
+          ? `<div class="text-sm text-harbor-primary-light font-semibold mb-2">🏆 ${crew.filter(p => winners.has(p.id)).map(p => escapeBriefHtml(p.name)).join(' & ')} held the harbor</div>`
+          : `<div class="text-sm text-harbor-muted mb-2">Ended with no surviving streaks — rematch?</div>`)
+        : '';
+
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-harbor-bg/75 modal-overlay-blur flex items-end z-[70]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.closest('.fixed').remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <div class="min-w-0">
+              <div class="streak-off-kicker">Captain’s board</div>
+              <div class="font-semibold text-lg truncate">${escapeBriefHtml(ch.name)}</div>
+              <div class="text-[11px] text-harbor-muted mt-0.5">${escapeBriefHtml(challengeRuleLabel(ch))} · ${formatDateShort(ch.startsAt)} → ${formatDateShort(ch.endsAt)}</div>
+            </div>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
+          </div>
+          <div class="mb-2">${challengeStatusChip(ch)}</div>
+          ${finishBlurb}
+          ${ch.stakeNote ? `<div class="text-[11px] text-harbor-accent mb-2">Stake: ${escapeBriefHtml(ch.stakeNote)}</div>` : ''}
+          <div class="space-y-0.5 mb-4">${rows}</div>
+          <div class="text-[10px] text-harbor-muted leading-relaxed mb-3">
+            Check-ins land automatically when you complete a qualifying habit on Today.
+            Use <strong class="text-harbor-text">Radio tide</strong> so friends see your board (and import theirs).
+          </div>
+          <div class="flex flex-col gap-2">
+            <button type="button" class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold" onclick="shareChallengeInvite('${ch.id}')">Share invite bottle</button>
+            <button type="button" class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border font-semibold" onclick="shareChallengeSync('${ch.id}')">Radio my tide</button>
+            <button type="button" class="w-full py-2.5 rounded-2xl text-rose-300/90 text-xs" onclick="if(confirm('Leave or delete this Streak-Off on this device?')){leaveOrDeleteChallenge('${ch.id}');this.closest('.fixed').remove();}">${ch.hostId === me ? 'Delete challenge' : 'Leave crew'}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+
+    function consumePendingChallengeLink() {
+      try {
+        const u = new URL(location.href);
+        const code = u.searchParams.get('challenge') || u.searchParams.get('streakoff');
+        if (!code) return;
+        u.searchParams.delete('challenge');
+        u.searchParams.delete('streakoff');
+        history.replaceState({}, '', u.pathname + u.search + u.hash);
+        setTimeout(() => {
+          showJoinStreakOffModal(code);
+          showToast('Streak-Off invite detected');
+        }, 700);
+      } catch (_) { /* ignore */ }
+    }
+
     function renderStreaks() {
       const legendEl = document.getElementById('streak-badge-legend');
       if (legendEl) legendEl.innerHTML = renderStreakBadgeLegend();
+      renderStreakOffPanel();
       renderStreakCards();
       renderRewardBank();
       updateProjectionHint();
@@ -16036,6 +17085,13 @@
       if (action === 'settings') showSettings();
       else if (action === 'profile') showUserProfile();
       else if (action === 'feedback') showFeedbackModal();
+      else if (action === 'streakoff') {
+        switchTab('streaks');
+        setTimeout(() => {
+          document.getElementById('streak-off-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          showToast('Streak-Offs live on the Streaks tab');
+        }, 120);
+      }
       else if (action === 'tutorial') {
         startAppTutorial();
         showToast('Starting app tour');
@@ -16061,6 +17117,12 @@
           <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="settings" onclick="runAppMenuAction('settings')">
             <i class="fa-solid fa-sliders"></i>
             <span>Settings</span>
+          </button>
+          <div class="app-menu-divider" role="separator"></div>
+          <div class="app-menu-section-label">Crew</div>
+          <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="streakoff" onclick="runAppMenuAction('streakoff')">
+            <i class="fa-solid fa-anchor"></i>
+            <span>Streak-Offs</span>
           </button>
           <div class="app-menu-divider" role="separator"></div>
           <div class="app-menu-section-label">Tutorial</div>
@@ -17886,10 +18948,12 @@
         initHorizontalScrollRows();
         initTabSwipeNav();
         if (typeof refreshFunTheme === 'function') refreshFunTheme();
+        if (typeof markLocalChallengeCheckIns === 'function') markLocalChallengeCheckIns();
+        if (typeof consumePendingChallengeLink === 'function') consumePendingChallengeLink();
 
         setTimeout(fetchRealWeather, 600);
         
-        window.HARBOR = { state, renderTasks, renderTodayFeed, completeHabit, setEnergy, simulateContextChange, addGroceryItem, markBillPaid, factoryReset: factoryResetApp };
+        window.HARBOR = { state, renderTasks, renderTodayFeed, completeHabit, setEnergy, simulateContextChange, addGroceryItem, markBillPaid, factoryReset: factoryResetApp, challenges: () => state.challenges };
         console.log('%c[Harbor] Prototype ready. Create your harbor.', 'color:#2F9B8C');
     }
 
