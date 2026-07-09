@@ -4042,7 +4042,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v78';
+    const HARBOR_BUILD = 'v79';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -4738,15 +4738,10 @@
       });
       // Old pro booking reminders used long intervals and vanished from Today mid-cycle
       let repaired = repairProRemindersInState();
-      // "walkways" used to match /walk/ and get tagged as a step goal — strip that
+      // Strip fake metrics: walkways→steps, stretch→"units", etc.
       (state.habits || []).forEach(h => {
         if (!h) return;
-        const t = (h.title || '').toLowerCase();
-        if (/\bwalkways?\b|\bsidewalks?\b/.test(t) && (h.unit === 'steps' || h.unit === 'miles')) {
-          h.unit = null;
-          h.target_value = null;
-          repaired = true;
-        }
+        if (stripBogusMetricFields(h)) repaired = true;
       });
       if (repaired) {
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { /* ignore */ }
@@ -5537,15 +5532,52 @@
       return isPhysicalActivity(habit) && isCompletedToday(habit.id) && !hasSyncedToday(habit.id);
     }
 
+    const REAL_METRIC_UNITS = new Set(['steps', 'miles', 'mi', 'km', 'pages', 'page', 'dollars', 'usd', 'lbs', 'kg']);
+
+    function isRealMetricUnit(unit) {
+      return REAL_METRIC_UNITS.has(String(unit || '').toLowerCase());
+    }
+
+    /** True only for intentional measurable goals — not stretch, mobility, chores, etc. */
     function getHabitMetricType(habit) {
+      if (!habit) return null;
       const unit = (habit.unit || '').toLowerCase();
-      const title = habit.title.toLowerCase();
-      if (isPetWalkingActivity(habit) || unit === 'miles' || unit === 'mi' || /\b(run|running|mile|miles|jog|jogging|hike|hiking)\b/i.test(title)) return 'miles';
-      if (unit === 'steps' || (titleLooksLikeStepWalk(habit.title) && !/dog|pet|puppy/.test(title))) return 'steps';
-      if (unit === 'dollars' || unit === 'usd' || /save|saving|money|budget|invest/i.test(title)) return 'savings';
-      if (unit === 'pages' || /\b(read|page|pages)\b/i.test(title)) return 'pages';
-      if (habit.target_value != null && habit.unit) return 'custom';
+      const title = (habit.title || '').toLowerCase();
+
+      // Explicit unit wins only when it's a real metric (ignore garbage like "units")
+      if (unit === 'miles' || unit === 'mi' || unit === 'km') return 'miles';
+      if (unit === 'steps') return 'steps';
+      if (unit === 'dollars' || unit === 'usd') return 'savings';
+      if (unit === 'pages' || unit === 'page') return 'pages';
+
+      // Title heuristics — word boundaries only; never treat stretch/mobility/etc. as metrics
+      if (isPetWalkingActivity(habit) || /\b(run|running|mile|miles|jog|jogging|hike|hiking)\b/i.test(title)) return 'miles';
+      if (titleLooksLikeStepWalk(habit.title) && !/dog|pet|puppy/.test(title)) return 'steps';
+      if (/\b(save|saving|savings|money|budget|invest)\b/i.test(title)) return 'savings';
+      // "read 10 pages" / "read" — not "ready", not random substrings
+      if (/\b(pages?)\b/i.test(title) || /\bread\b/i.test(title)) return 'pages';
+
+      if (habit.target_value != null && isRealMetricUnit(unit)) return 'custom';
       return null;
+    }
+
+    function stripBogusMetricFields(habit) {
+      if (!habit) return false;
+      // Only keep metrics when the title is actually a measurable activity
+      // (prevents stretch/mobility, walkways, etc. from carrying "units"/steps).
+      const titleType = getHabitMetricType({
+        title: habit.title,
+        unit: null,
+        target_value: null,
+        id: habit.id
+      });
+      if (titleType) return false;
+      if (habit.unit != null || habit.target_value != null) {
+        habit.unit = null;
+        habit.target_value = null;
+        return true;
+      }
+      return false;
     }
 
     function logMetricValue(habitId, value, source) {
@@ -13582,13 +13614,16 @@
     function addLibraryTaskToHabits(task, cardEl) {
       if (state.habits.some(h => h.id === task.id)) return;
 
-      // Use library defaults as-is. No "how many steps?" popup on add —
-      // only real metric presets (with unit/target) keep their goals silently.
+      // Library add is silent — never browser-prompt for amounts.
+      // Keep goals only on real metric presets (e.g. Walk with steps).
       const taskToAdd = { ...task };
-      if (taskToAdd.unit && taskToAdd.target_value == null) {
-        // Rare: unit without amount — leave unit, don't interrupt with a prompt
+      const isMetricPreset = isRealMetricUnit(taskToAdd.unit) || getHabitMetricType(taskToAdd) != null;
+      if (!isMetricPreset) {
+        taskToAdd.unit = null;
+        taskToAdd.target_value = null;
+      } else if (isRealMetricUnit(taskToAdd.unit) && taskToAdd.target_value == null) {
         taskToAdd.target_value = taskToAdd.unit === 'steps' ? 5000
-          : taskToAdd.unit === 'miles' ? 1
+          : (taskToAdd.unit === 'miles' || taskToAdd.unit === 'mi') ? 1
           : taskToAdd.unit === 'pages' ? 10
           : taskToAdd.unit === 'dollars' ? 5
           : null;
@@ -13682,7 +13717,7 @@
           </div>
 
           <div class="text-[10px] text-harbor-muted text-center mt-3 leading-relaxed">
-            Looks for it on the <strong class="text-harbor-text">Today</strong> tab after you add it
+            Booking task is saved on <strong class="text-harbor-text">Today</strong> — you'll stay here in Library
           </div>
         </div>
       `;
@@ -13719,9 +13754,8 @@
         updateSummaryLauncher();
         modal.remove();
         renderLibrary();
-        // Take the user where the task actually lives
-        switchTab('today');
-        showToast(`On Today · Book your ${pro.label.toLowerCase()}`);
+        // Stay in Library so users can keep browsing
+        showToast(`Saved on Today · Book your ${pro.label.toLowerCase()}`);
       };
 
       modal.querySelector('#pro-add-diy-too').onclick = () => {
