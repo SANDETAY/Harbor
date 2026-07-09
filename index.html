@@ -1499,133 +1499,456 @@
       color: #fbbf24;
     }
 
-    /* ── Rhythm Brief modal ── */
+    /* ── Rhythm Brief dashboard modal ── */
     .rhythm-brief-sheet {
       max-height: 92vh;
       overflow-y: auto;
       border-radius: 1.5rem 1.5rem 0 0;
+      background:
+        radial-gradient(ellipse 90% 50% at 50% -10%, rgba(61, 154, 139, 0.16) 0%, transparent 55%),
+        var(--rhythm-surface);
     }
 
-    .rhythm-brief-hero {
-      border-radius: 1.15rem;
-      background: linear-gradient(145deg, rgba(61, 154, 139, 0.2), rgba(30, 58, 74, 0.4));
-      border: 1px solid rgba(61, 154, 139, 0.25);
-      padding: 1rem 1.1rem;
-      margin-bottom: 1rem;
+    .rhythm-brief-dash-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.85rem;
     }
 
-    .rhythm-brief-hero-headline {
-      font-size: 0.95rem;
-      font-weight: 600;
-      line-height: 1.4;
+    .rhythm-brief-dash-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 0;
+    }
+
+    .rhythm-brief-dash-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 0.8rem;
+      background: linear-gradient(145deg, rgba(61, 154, 139, 0.35), rgba(22, 48, 58, 0.7));
+      border: 1px solid rgba(91, 184, 168, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 0 16px rgba(61, 154, 139, 0.2);
+    }
+
+    .rhythm-brief-dash-mark img {
+      width: 1.35rem;
+      height: 1.35rem;
+      object-fit: contain;
+      filter: brightness(1.1);
+    }
+
+    .rhythm-brief-dash-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
       color: var(--rhythm-text);
-      letter-spacing: -0.02em;
+      line-height: 1.15;
     }
 
-    .rhythm-brief-hero-insight {
-      font-size: 0.72rem;
-      color: var(--rhythm-muted);
-      line-height: 1.45;
-      margin-top: 0.45rem;
+    .rhythm-brief-dash-period {
+      font-size: 0.68rem;
+      color: var(--rhythm-primary-light);
+      font-weight: 500;
+      margin-top: 0.15rem;
     }
 
     .rhythm-brief-toggle {
       display: flex;
-      gap: 0.35rem;
-      padding: 0.25rem;
-      border-radius: 0.85rem;
-      background: var(--rhythm-raised);
+      gap: 0.3rem;
+      padding: 0.22rem;
+      border-radius: 999px;
+      background: rgba(18, 28, 34, 0.55);
       border: 1px solid var(--rhythm-border);
-      margin-bottom: 1rem;
+      margin-bottom: 0.9rem;
     }
 
     .rhythm-brief-toggle-btn {
       flex: 1;
-      padding: 0.5rem 0.75rem;
-      border-radius: 0.65rem;
-      font-size: 0.72rem;
-      font-weight: 600;
+      padding: 0.55rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 650;
       border: none;
       cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease;
+      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
       background: transparent;
       color: var(--rhythm-muted);
     }
 
     .rhythm-brief-toggle-btn.is-active {
-      background: var(--rhythm-primary);
+      background: linear-gradient(135deg, var(--rhythm-primary) 0%, #2d7d72 100%);
       color: #fff;
+      box-shadow: 0 4px 14px rgba(61, 154, 139, 0.35);
     }
 
-    .rhythm-brief-section {
-      margin-bottom: 1.1rem;
-    }
-
-    .rhythm-brief-section-hdr {
-      display: flex;
-      align-items: center;
+    /* KPI metric tiles — glanceable dashboard strip */
+    .rhythm-brief-kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 0.45rem;
-      font-size: 0.68rem;
-      font-weight: 700;
+      margin-bottom: 0.95rem;
+    }
+
+    .rhythm-brief-kpi {
+      border-radius: 1rem;
+      padding: 0.55rem 0.35rem 0.5rem;
+      text-align: center;
+      border: 1px solid var(--rhythm-border);
+      background: rgba(22, 32, 40, 0.65);
+      min-width: 0;
+    }
+
+    .rhythm-brief-kpi.is-hot {
+      border-color: rgba(251, 191, 36, 0.45);
+      background: linear-gradient(160deg, rgba(251, 191, 36, 0.14), rgba(22, 32, 40, 0.7));
+    }
+
+    .rhythm-brief-kpi.is-live {
+      border-color: rgba(61, 154, 139, 0.4);
+      background: linear-gradient(160deg, rgba(61, 154, 139, 0.16), rgba(22, 32, 40, 0.7));
+    }
+
+    .rhythm-brief-kpi-val {
+      font-size: 1.35rem;
+      font-weight: 750;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: var(--rhythm-text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rhythm-brief-kpi.is-hot .rhythm-brief-kpi-val {
+      color: #fbbf24;
+    }
+
+    .rhythm-brief-kpi.is-live .rhythm-brief-kpi-val {
+      color: var(--rhythm-primary-light);
+    }
+
+    .rhythm-brief-kpi-lbl {
+      font-size: 0.58rem;
+      font-weight: 650;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--rhythm-muted);
-      margin-bottom: 0.55rem;
+      margin-top: 0.3rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .rhythm-brief-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.65rem;
-      padding: 0.65rem 0.75rem;
-      border-radius: 0.95rem;
-      background: var(--rhythm-surface);
-      border: 1px solid var(--rhythm-border);
+    /* Single focus card — the only “must read” block */
+    .rhythm-brief-focus {
+      border-radius: 1.25rem;
+      padding: 1rem 1rem 0.95rem;
+      margin-bottom: 0.85rem;
+      border: 1px solid rgba(91, 184, 168, 0.4);
+      background:
+        radial-gradient(ellipse 80% 70% at 10% 0%, rgba(91, 184, 168, 0.22) 0%, transparent 55%),
+        linear-gradient(155deg, rgba(30, 70, 68, 0.55) 0%, rgba(22, 36, 44, 0.92) 100%);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .rhythm-brief-focus.is-clear {
+      border-color: var(--rhythm-border);
+      background: rgba(22, 32, 40, 0.55);
+      box-shadow: none;
+    }
+
+    .rhythm-brief-focus-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.6rem;
+      font-weight: 750;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--rhythm-primary-light);
       margin-bottom: 0.45rem;
     }
 
-    .rhythm-brief-item-priority {
-      width: 1.35rem;
-      height: 1.35rem;
-      border-radius: 0.45rem;
-      background: rgba(61, 154, 139, 0.2);
-      color: var(--rhythm-primary-light);
+    .rhythm-brief-focus-title {
+      font-size: 1.2rem;
+      font-weight: 750;
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+      color: #f3faf8;
+    }
+
+    .rhythm-brief-focus-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.65rem;
+    }
+
+    .rhythm-brief-chip {
       font-size: 0.62rem;
-      font-weight: 700;
+      font-weight: 600;
+      padding: 0.22rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(15, 20, 25, 0.45);
+      border: 1px solid rgba(91, 184, 168, 0.22);
+      color: rgba(214, 228, 224, 0.9);
+    }
+
+    .rhythm-brief-chip.is-due {
+      border-color: rgba(251, 191, 36, 0.4);
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.1);
+    }
+
+    .rhythm-brief-upnext {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 0.95rem;
+    }
+
+    .rhythm-brief-upnext-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.55rem 0.7rem;
+      border-radius: 0.9rem;
+      background: rgba(22, 32, 40, 0.55);
+      border: 1px solid var(--rhythm-border);
+    }
+
+    .rhythm-brief-upnext-rank {
+      width: 1.4rem;
+      height: 1.4rem;
+      border-radius: 0.45rem;
+      background: rgba(61, 154, 139, 0.18);
+      color: var(--rhythm-primary-light);
+      font-size: 0.68rem;
+      font-weight: 750;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
     }
 
-    .rhythm-brief-item-title {
+    .rhythm-brief-upnext-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--rhythm-text);
+      line-height: 1.25;
+      min-width: 0;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .rhythm-brief-upnext-meta {
+      font-size: 0.6rem;
+      color: var(--rhythm-muted);
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Two-up dashboard panels */
+    .rhythm-brief-panels {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.65rem;
+      margin-bottom: 0.35rem;
+    }
+
+    @media (min-width: 480px) {
+      .rhythm-brief-panels {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .rhythm-brief-panel {
+      border-radius: 1.1rem;
+      border: 1px solid var(--rhythm-border);
+      background: rgba(18, 28, 34, 0.55);
+      padding: 0.75rem 0.8rem 0.7rem;
+      min-width: 0;
+    }
+
+    .rhythm-brief-panel.is-wide {
+      grid-column: 1 / -1;
+    }
+
+    .rhythm-brief-panel-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.55rem;
+    }
+
+    .rhythm-brief-panel-title {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.68rem;
+      font-weight: 750;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--rhythm-muted);
+    }
+
+    .rhythm-brief-panel-title i {
+      font-size: 0.72rem;
+    }
+
+    .rhythm-brief-panel-count {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--rhythm-primary-light);
+      background: rgba(61, 154, 139, 0.14);
+      border-radius: 999px;
+      padding: 0.12rem 0.45rem;
+    }
+
+    .rhythm-brief-timeline-row {
+      display: grid;
+      grid-template-columns: 3.1rem 1fr;
+      gap: 0.5rem;
+      align-items: start;
+      padding: 0.4rem 0;
+      border-top: 1px solid rgba(61, 80, 90, 0.35);
+    }
+
+    .rhythm-brief-timeline-row:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .rhythm-brief-time {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--rhythm-primary-light);
+      font-variant-numeric: tabular-nums;
+      padding-top: 0.05rem;
+    }
+
+    .rhythm-brief-time-title {
       font-size: 0.78rem;
       font-weight: 600;
       color: var(--rhythm-text);
       line-height: 1.3;
     }
 
-    .rhythm-brief-item-meta {
-      font-size: 0.62rem;
+    .rhythm-brief-time-meta {
+      font-size: 0.6rem;
       color: var(--rhythm-muted);
-      margin-top: 0.15rem;
-      line-height: 1.35;
+      margin-top: 0.1rem;
+    }
+
+    .rhythm-brief-life-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.45rem 0;
+      border-top: 1px solid rgba(61, 80, 90, 0.35);
+    }
+
+    .rhythm-brief-life-row:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .rhythm-brief-life-icon {
+      width: 1.85rem;
+      height: 1.85rem;
+      border-radius: 0.55rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.72rem;
+    }
+
+    .rhythm-brief-life-icon.is-bill {
+      background: rgba(251, 191, 36, 0.12);
+      color: #fbbf24;
+    }
+
+    .rhythm-brief-life-icon.is-cart {
+      background: rgba(56, 189, 248, 0.12);
+      color: #7dd3fc;
+    }
+
+    .rhythm-brief-life-icon.is-chore {
+      background: rgba(61, 154, 139, 0.14);
+      color: var(--rhythm-primary-light);
+    }
+
+    .rhythm-brief-life-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .rhythm-brief-life-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--rhythm-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .rhythm-brief-life-meta {
+      font-size: 0.6rem;
+      color: var(--rhythm-muted);
+      margin-top: 0.08rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .rhythm-brief-empty {
       font-size: 0.72rem;
       color: var(--rhythm-muted);
-      padding: 0.65rem 0.75rem;
-      border-radius: 0.95rem;
-      background: var(--rhythm-raised);
-      border: 1px dashed var(--rhythm-border);
+      padding: 0.55rem 0.15rem;
+      line-height: 1.4;
     }
 
     .rhythm-brief-jump {
       font-size: 0.62rem;
+      font-weight: 600;
       color: var(--rhythm-primary-light);
-      margin-top: 0.35rem;
+      margin-top: 0.45rem;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .rhythm-brief-footnote {
+      font-size: 0.65rem;
+      color: var(--rhythm-muted);
+      line-height: 1.4;
+      margin-top: 0.35rem;
+      padding: 0.55rem 0.65rem;
+      border-radius: 0.75rem;
+      background: rgba(15, 20, 25, 0.35);
+      border: 1px solid rgba(61, 80, 90, 0.4);
+    }
+
+    @media (max-width: 380px) {
+      .rhythm-brief-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .rhythm-brief-kpi-val {
+        font-size: 1.2rem;
+      }
+      .rhythm-brief-focus-title {
+        font-size: 1.05rem;
+      }
     }
 
     .feedback-rating-btn {
@@ -3286,7 +3609,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v51';
+    const RHYTHM_BUILD = 'v53';
 
     let rhythmBriefMode = 'day';
     let state = {
@@ -9854,119 +10177,219 @@
         .replace(/"/g, '&quot;');
     }
 
-    function renderBriefTaskItem(item, rank) {
-      const h = item.habit;
-      const dueLabel = item.daysUntil <= 0 ? 'Due today' : item.daysUntil === 1 ? 'Tomorrow' : formatBriefDateLabel(item.date);
+    function renderBriefFocusCard(brief) {
+      const top = brief.doFirst[0];
+      if (!top) {
+        return `
+          <div class="rhythm-brief-focus is-clear">
+            <div class="rhythm-brief-focus-eyebrow"><i class="fa-solid fa-check"></i> Focus</div>
+            <div class="rhythm-brief-focus-title">You’re clear</div>
+            <div class="rhythm-brief-focus-meta">
+              <span class="rhythm-brief-chip">No priority tasks right now</span>
+            </div>
+          </div>`;
+      }
+      const h = top.habit;
+      const dueLabel = top.daysUntil <= 0 ? 'Due today' : top.daysUntil === 1 ? 'Tomorrow' : formatBriefDateLabel(top.date);
+      const dueHot = top.daysUntil <= 0;
       const diff = getDifficultyLabel(h.difficulty);
       return `
-        <div class="rhythm-brief-item">
-          ${rank ? `<div class="rhythm-brief-item-priority">${rank}</div>` : ''}
-          <div class="min-w-0 flex-1">
-            <div class="rhythm-brief-item-title">${escapeBriefHtml(h.title)}</div>
-            <div class="rhythm-brief-item-meta">${escapeBriefHtml(dueLabel)} · ${h.est_minutes || 10} min · ${diff} energy</div>
+        <div class="rhythm-brief-focus">
+          <div class="rhythm-brief-focus-eyebrow"><i class="fa-solid fa-bolt"></i> ${brief.mode === 'week' ? 'Do first this week' : 'Do this next'}</div>
+          <div class="rhythm-brief-focus-title">${escapeBriefHtml(h.title)}</div>
+          <div class="rhythm-brief-focus-meta">
+            <span class="rhythm-brief-chip${dueHot ? ' is-due' : ''}">${escapeBriefHtml(dueLabel)}</span>
+            <span class="rhythm-brief-chip">${h.est_minutes || 10} min</span>
+            <span class="rhythm-brief-chip">${escapeBriefHtml(diff)} energy</span>
+          </div>
+        </div>`;
+    }
+
+    function renderBriefUpNext(brief) {
+      const rest = brief.doFirst.slice(1);
+      if (!rest.length) return '';
+      return `
+        <div class="rhythm-brief-upnext" aria-label="Up next">
+          ${rest.map((item, i) => {
+            const h = item.habit;
+            const mins = h.est_minutes || 10;
+            return `
+              <div class="rhythm-brief-upnext-row">
+                <div class="rhythm-brief-upnext-rank">${i + 2}</div>
+                <div class="rhythm-brief-upnext-title">${escapeBriefHtml(h.title)}</div>
+                <div class="rhythm-brief-upnext-meta">${mins}m</div>
+              </div>`;
+          }).join('')}
+        </div>`;
+    }
+
+    function renderBriefSchedulePanel(brief) {
+      const mode = brief.mode;
+      let body = '';
+      let count = 0;
+
+      if (mode === 'day') {
+        const evs = brief.events || [];
+        count = evs.length;
+        body = evs.length
+          ? evs.slice(0, 5).map(e => `
+              <div class="rhythm-brief-timeline-row">
+                <div class="rhythm-brief-time">${escapeBriefHtml(e.time || '—')}</div>
+                <div class="min-w-0">
+                  <div class="rhythm-brief-time-title">${escapeBriefHtml(e.title)}</div>
+                  <div class="rhythm-brief-time-meta">${e.durationMin || 30} min</div>
+                </div>
+              </div>`).join('')
+          : '<div class="rhythm-brief-empty">Open calendar — free block for chores or rest.</div>';
+      } else {
+        const weekEvs = brief.events || [];
+        count = weekEvs.reduce((n, d) => n + (d.events?.length || 0), 0);
+        body = weekEvs.length
+          ? weekEvs.slice(0, 4).map(day => `
+              <div class="mb-1.5">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-rhythm-primary-light/90 mb-0.5">${escapeBriefHtml(day.label)}</div>
+                ${(day.events || []).slice(0, 3).map(e => `
+                  <div class="rhythm-brief-timeline-row">
+                    <div class="rhythm-brief-time">${escapeBriefHtml(e.time || '—')}</div>
+                    <div class="rhythm-brief-time-title">${escapeBriefHtml(e.title)}</div>
+                  </div>`).join('')}
+              </div>`).join('')
+          : '<div class="rhythm-brief-empty">No events loaded this week.</div>';
+      }
+
+      return `
+        <div class="rhythm-brief-panel">
+          <div class="rhythm-brief-panel-hdr">
+            <div class="rhythm-brief-panel-title"><i class="fa-regular fa-calendar text-sky-400"></i> Schedule</div>
+            ${count ? `<span class="rhythm-brief-panel-count">${count}</span>` : ''}
+          </div>
+          ${body}
+          <div class="rhythm-brief-jump" onclick="closeRhythmBriefModal(); switchTab('life'); switchLifePanel('schedule')">Full schedule <i class="fa-solid fa-arrow-right text-[9px]"></i></div>
+        </div>`;
+    }
+
+    function renderBriefLifePanel(brief) {
+      const bills = brief.bills || [];
+      const deck = getBriefAlsoOnDeck(brief);
+      const groceryN = brief.groceryTotal || 0;
+      const rows = [];
+
+      if (bills.length) {
+        bills.slice(0, 2).forEach(b => {
+          const st = getBillStatus(b);
+          const urgent = st === 'overdue' || st === 'due_today';
+          const days = getDaysUntilBillDue(b);
+          rows.push(`
+            <div class="rhythm-brief-life-row">
+              <div class="rhythm-brief-life-icon is-bill"><i class="fa-solid fa-receipt"></i></div>
+              <div class="rhythm-brief-life-main">
+                <div class="rhythm-brief-life-title">${escapeBriefHtml(b.name)} ${formatBillAmount(b.amount)}</div>
+                <div class="rhythm-brief-life-meta">${urgent ? 'Due now' : `Due in ${days}d`}${b.autopay ? ' · autopay' : ''}</div>
+              </div>
+            </div>`);
+        });
+      }
+
+      if (groceryN > 0) {
+        const names = (brief.grocery || []).slice(0, 3).map(g => g.name).join(', ');
+        rows.push(`
+          <div class="rhythm-brief-life-row">
+            <div class="rhythm-brief-life-icon is-cart"><i class="fa-solid fa-cart-shopping"></i></div>
+            <div class="rhythm-brief-life-main">
+              <div class="rhythm-brief-life-title">${groceryN} grocery item${groceryN === 1 ? '' : 's'}</div>
+              <div class="rhythm-brief-life-meta">${escapeBriefHtml(names || 'On your list')}</div>
+            </div>
+          </div>`);
+      }
+
+      if (deck.length) {
+        deck.slice(0, 3).forEach(item => {
+          const due = item.daysUntil <= 0 ? 'Due' : item.daysUntil === 1 ? 'Tomorrow' : formatBriefDateLabel(item.date);
+          rows.push(`
+            <div class="rhythm-brief-life-row">
+              <div class="rhythm-brief-life-icon is-chore"><i class="fa-solid fa-list-check"></i></div>
+              <div class="rhythm-brief-life-main">
+                <div class="rhythm-brief-life-title">${escapeBriefHtml(item.habit.title)}</div>
+                <div class="rhythm-brief-life-meta">${escapeBriefHtml(due)}${item.habit.interval_days >= 7 ? ' · recurring' : ''}</div>
+              </div>
+            </div>`);
+        });
+      }
+
+      if (!rows.length) {
+        rows.push('<div class="rhythm-brief-empty">Bills, grocery &amp; weekly chores look clear.</div>');
+      }
+
+      return `
+        <div class="rhythm-brief-panel">
+          <div class="rhythm-brief-panel-hdr">
+            <div class="rhythm-brief-panel-title"><i class="fa-solid fa-layer-group text-amber-300"></i> Life</div>
+            <span class="rhythm-brief-panel-count">${bills.length + groceryN + deck.length}</span>
+          </div>
+          ${rows.join('')}
+          <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+            <div class="rhythm-brief-jump" onclick="closeRhythmBriefModal(); switchTab('life'); switchLifePanel('bills')">Bills</div>
+            <div class="rhythm-brief-jump" onclick="closeRhythmBriefModal(); switchTab('life'); switchLifePanel('grocery')">Grocery</div>
           </div>
         </div>`;
     }
 
     function renderRhythmBriefModalContent(brief) {
       const mode = brief.mode;
-      const doFirstHtml = brief.doFirst.length
-        ? brief.doFirst.map((item, i) => renderBriefTaskItem(item, i + 1)).join('')
-        : '<div class="rhythm-brief-empty">Nothing due — add from Library or quick-add when you\'re ready.</div>';
-
-      let scheduleHtml = '';
-      if (mode === 'day') {
-        const evs = brief.events;
-        scheduleHtml = evs.length
-          ? evs.map(e => `
-              <div class="rhythm-brief-item">
-                <div class="min-w-0 flex-1">
-                  <div class="rhythm-brief-item-title">${escapeBriefHtml(e.time)} · ${escapeBriefHtml(e.title)}</div>
-                  <div class="rhythm-brief-item-meta">${e.durationMin || 30} min${brief.ctx.bestGap ? ` · next gap ~${brief.ctx.bestGap.minutes} min` : ''}</div>
-                </div>
-              </div>`).join('')
-          : '<div class="rhythm-brief-empty">No events today — open day for deep work or chores.</div>';
-      } else {
-        const weekEvs = brief.events;
-        scheduleHtml = weekEvs.length
-          ? weekEvs.map(day => `
-              <div class="mb-2">
-                <div class="text-[10px] font-semibold text-rhythm-primary-light mb-1">${escapeBriefHtml(day.label)}</div>
-                ${day.events.map(e => `
-                  <div class="rhythm-brief-item">
-                    <div class="min-w-0 flex-1">
-                      <div class="rhythm-brief-item-title">${escapeBriefHtml(e.time)} · ${escapeBriefHtml(e.title)}</div>
-                    </div>
-                  </div>`).join('')}
-              </div>`).join('')
-          : '<div class="rhythm-brief-empty">No calendar events loaded — add events in Life → Schedule or import a calendar.</div>';
-      }
-
-      const deckTasks = getBriefAlsoOnDeck(brief);
-      const tasksHtml = deckTasks.length
-        ? deckTasks.map(item => renderBriefTaskItem(item, null)).join('')
-        : '';
-
-      const billsHtml = brief.bills.length
-        ? brief.bills.map(b => {
-            const st = getBillStatus(b);
-            const urgent = st === 'overdue' || st === 'due_today';
-            return `
-              <div class="rhythm-brief-item">
-                <div class="min-w-0 flex-1">
-                  <div class="rhythm-brief-item-title">${escapeBriefHtml(b.name)} ${formatBillAmount(b.amount)}</div>
-                  <div class="rhythm-brief-item-meta">${urgent ? 'Due now' : `Due in ${getDaysUntilBillDue(b)} day${getDaysUntilBillDue(b) === 1 ? '' : 's'}`}${b.autopay ? ' · autopay' : ''}</div>
-                </div>
-              </div>`;
-          }).join('')
-        : '<div class="rhythm-brief-empty">No urgent bills this period.</div>';
-
-      const groceryHtml = brief.grocery.length
-        ? `<div class="rhythm-brief-item">
-            <div class="min-w-0 flex-1">
-              <div class="rhythm-brief-item-title">${brief.groceryTotal} item${brief.groceryTotal === 1 ? '' : 's'} on list</div>
-              <div class="rhythm-brief-item-meta">${escapeBriefHtml(brief.grocery.map(g => g.name).join(', '))}</div>
-            </div>
-          </div>`
-        : '<div class="rhythm-brief-empty">Grocery list is clear.</div>';
+      const taskN = brief.tasks.length;
+      const billN = brief.bills.length;
+      const groceryN = brief.groceryTotal || 0;
+      const eventN = mode === 'day'
+        ? (brief.events?.length || 0)
+        : (brief.events || []).reduce((n, d) => n + (d.events?.length || 0), 0);
 
       const periodLabel = mode === 'day'
-        ? new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+        ? new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
         : `${formatBriefDateLabel(brief.week.start)} – ${formatBriefDateLabel(brief.week.end)}`;
 
+      const kpiTasksHot = taskN > 0;
+      const kpiBillsHot = billN > 0;
+
+      // Keep insight short — one line max under KPIs when useful
+      const tip = (brief.insight || '').trim();
+      const shortTip = tip.length > 110 ? tip.slice(0, 107).trim() + '…' : tip;
+
       return `
-        <div class="rhythm-brief-toggle" role="tablist">
-          <button type="button" class="rhythm-brief-toggle-btn ${mode === 'day' ? 'is-active' : ''}" data-brief-mode="day" role="tab">Today</button>
-          <button type="button" class="rhythm-brief-toggle-btn ${mode === 'week' ? 'is-active' : ''}" data-brief-mode="week" role="tab">This week</button>
+        <div class="rhythm-brief-toggle" role="tablist" aria-label="Brief range">
+          <button type="button" class="rhythm-brief-toggle-btn ${mode === 'day' ? 'is-active' : ''}" data-brief-mode="day" role="tab" aria-selected="${mode === 'day'}">Today</button>
+          <button type="button" class="rhythm-brief-toggle-btn ${mode === 'week' ? 'is-active' : ''}" data-brief-mode="week" role="tab" aria-selected="${mode === 'week'}">This week</button>
         </div>
-        <div class="text-[10px] text-rhythm-muted mb-2">${escapeBriefHtml(periodLabel)}</div>
-        <div class="rhythm-brief-hero">
-          <div class="rhythm-brief-hero-headline">${escapeBriefHtml(brief.headline)}</div>
-          <div class="rhythm-brief-hero-insight">${escapeBriefHtml(brief.insight)}</div>
+
+        <div class="text-[11px] text-rhythm-muted mb-2 font-medium tracking-wide">${escapeBriefHtml(periodLabel)}</div>
+
+        <div class="rhythm-brief-kpis" aria-label="At a glance">
+          <div class="rhythm-brief-kpi${kpiTasksHot ? ' is-live' : ''}">
+            <div class="rhythm-brief-kpi-val">${taskN}</div>
+            <div class="rhythm-brief-kpi-lbl">Tasks</div>
+          </div>
+          <div class="rhythm-brief-kpi${eventN ? ' is-live' : ''}">
+            <div class="rhythm-brief-kpi-val">${eventN}</div>
+            <div class="rhythm-brief-kpi-lbl">Events</div>
+          </div>
+          <div class="rhythm-brief-kpi${kpiBillsHot ? ' is-hot' : ''}">
+            <div class="rhythm-brief-kpi-val">${billN}</div>
+            <div class="rhythm-brief-kpi-lbl">Bills</div>
+          </div>
+          <div class="rhythm-brief-kpi${groceryN ? ' is-live' : ''}">
+            <div class="rhythm-brief-kpi-val">${groceryN}</div>
+            <div class="rhythm-brief-kpi-lbl">Grocery</div>
+          </div>
         </div>
-        <div class="rhythm-brief-section">
-          <div class="rhythm-brief-section-hdr"><i class="fa-solid fa-bolt text-rhythm-accent"></i> ${mode === 'week' ? 'Priority this week' : 'Do first'}</div>
-          ${doFirstHtml}
+
+        ${renderBriefFocusCard(brief)}
+        ${renderBriefUpNext(brief)}
+
+        <div class="rhythm-brief-panels">
+          ${renderBriefSchedulePanel(brief)}
+          ${renderBriefLifePanel(brief)}
         </div>
-        <div class="rhythm-brief-section">
-          <div class="rhythm-brief-section-hdr"><i class="fa-regular fa-calendar text-sky-400"></i> Schedule</div>
-          ${scheduleHtml}
-          <div class="rhythm-brief-jump" onclick="closeRhythmBriefModal(); switchTab('life'); switchLifePanel('schedule')">Open full schedule →</div>
-        </div>
-        ${tasksHtml ? `<div class="rhythm-brief-section">
-          <div class="rhythm-brief-section-hdr"><i class="fa-solid fa-list-check text-rhythm-primary-light"></i> ${mode === 'week' ? 'Chores & repeats this week' : 'Also on deck'}</div>
-          ${tasksHtml}
-        </div>` : ''}
-        <div class="rhythm-brief-section">
-          <div class="rhythm-brief-section-hdr"><i class="fa-solid fa-receipt text-amber-400"></i> Bills</div>
-          ${billsHtml}
-          <div class="rhythm-brief-jump" onclick="closeRhythmBriefModal(); switchTab('life'); switchLifePanel('bills')">Life → Bills →</div>
-        </div>
-        <div class="rhythm-brief-section">
-          <div class="rhythm-brief-section-hdr"><i class="fa-solid fa-cart-shopping text-sky-300"></i> Grocery</div>
-          ${groceryHtml}
-          <div class="rhythm-brief-jump" onclick="closeRhythmBriefModal(); switchTab('life'); switchLifePanel('grocery')">Life → Grocery →</div>
-        </div>
+
+        ${shortTip ? `<div class="rhythm-brief-footnote">${escapeBriefHtml(shortTip)}</div>` : ''}
       `;
     }
 
@@ -9999,17 +10422,19 @@
       modal.className = 'fixed inset-0 bg-rhythm-bg/75 modal-overlay-blur flex items-end z-[65]';
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="closeRhythmBriefModal()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="rhythm-brief-sheet relative w-full bg-rhythm-surface border-t border-rhythm-border p-5 text-sm">
+        <div onclick="event.stopImmediatePropagation()" class="rhythm-brief-sheet relative w-full border-t border-rhythm-border p-5 text-sm">
           <div class="modal-grab-pill" aria-hidden="true"></div>
-          <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-2">
-              <div class="rhythm-brief-launcher-icon" style="width:2rem;height:2rem;font-size:0.85rem"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-              <div>
-                <div class="font-semibold text-base">Rhythm Brief</div>
-                <div class="text-[10px] text-rhythm-muted">Smart digest · tasks, schedule, life</div>
+          <div class="rhythm-brief-dash-head">
+            <div class="rhythm-brief-dash-brand">
+              <div class="rhythm-brief-dash-mark" aria-hidden="true">
+                <img src="./rythm-splash-mark.svg" alt="">
+              </div>
+              <div class="min-w-0">
+                <div class="rhythm-brief-dash-title">Rhythm Brief</div>
+                <div class="rhythm-brief-dash-period">${brief.mode === 'week' ? 'Week dashboard' : 'Day dashboard'}</div>
               </div>
             </div>
-            <button type="button" onclick="closeRhythmBriefModal()" class="text-rhythm-muted text-2xl leading-none px-1">×</button>
+            <button type="button" onclick="closeRhythmBriefModal()" class="text-rhythm-muted text-2xl leading-none px-1" aria-label="Close">×</button>
           </div>
           <div id="rhythm-brief-body">${renderRhythmBriefModalContent(brief)}</div>
         </div>
@@ -10364,22 +10789,33 @@
       `).join('');
     }
 
+    let weatherModalCloseGuardUntil = 0;
+
+    function closeWeatherModal() {
+      document.getElementById('weather-forecast-modal')?.remove();
+      document.getElementById('weather-access-modal')?.remove();
+      document.querySelectorAll('.weather-access-modal').forEach(el => el.remove());
+      // Prevent the same tap from hitting the weather strip underneath and reopening
+      weatherModalCloseGuardUntil = Date.now() + 450;
+    }
+
     function showWeatherAccessPrompt() {
-      const existing = document.querySelector('.weather-access-modal');
-      if (existing) existing.remove();
+      if (Date.now() < weatherModalCloseGuardUntil) return;
+      closeWeatherModal();
 
       const modal = document.createElement('div');
+      modal.id = 'weather-access-modal';
       modal.className = 'weather-access-modal fixed inset-0 bg-rhythm-bg/75 flex items-end sm:items-center justify-center z-[60]';
       modal.innerHTML = `
-        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
-        <div onclick="event.stopImmediatePropagation()"
-          class="relative w-full sm:max-w-md bg-rhythm-surface border border-rhythm-border sm:rounded-3xl rounded-t-3xl p-5 shadow-xl">
+        <div class="absolute inset-0" data-weather-dismiss="1"></div>
+        <div class="relative w-full sm:max-w-md bg-rhythm-surface border border-rhythm-border sm:rounded-3xl rounded-t-3xl p-5 shadow-xl"
+          data-weather-sheet="1">
           <div class="flex items-start justify-between gap-3 mb-3">
             <div>
               <div class="text-xs uppercase tracking-wider text-rhythm-muted font-semibold">Weather</div>
               <div class="text-base font-semibold text-rhythm-text mt-1">See your local forecast</div>
             </div>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="text-rhythm-muted text-2xl leading-none px-1">×</button>
+            <button type="button" data-weather-dismiss="1" class="text-rhythm-muted text-2xl leading-none px-1" aria-label="Close">×</button>
           </div>
           <p class="text-xs text-rhythm-muted leading-relaxed mb-4">
             Connect location for live hourly weather that helps Rhythm time outdoor tasks.
@@ -10398,17 +10834,32 @@
         </div>
       `;
       document.body.appendChild(modal);
-      modal.querySelector('#weather-enable-location').onclick = () => {
-        modal.remove();
+      modal.addEventListener('click', (e) => {
+        if (e.target.closest('[data-weather-dismiss]')) {
+          e.preventDefault();
+          e.stopPropagation();
+          closeWeatherModal();
+        }
+      });
+      modal.querySelector('[data-weather-sheet]')?.addEventListener('click', (e) => {
+        // Clicks on sheet content should not fall through to page
+        if (!e.target.closest('[data-weather-dismiss]')) e.stopPropagation();
+      });
+      modal.querySelector('#weather-enable-location').onclick = (e) => {
+        e.stopPropagation();
+        closeWeatherModal();
         fetchRealWeather({ openPane: true });
       };
-      modal.querySelector('#weather-simulate').onclick = () => {
-        modal.remove();
+      modal.querySelector('#weather-simulate').onclick = (e) => {
+        e.stopPropagation();
+        closeWeatherModal();
         simulateContextChange({ openWeatherPane: true });
       };
     }
 
     function showOutdoorWeatherPane() {
+      if (Date.now() < weatherModalCloseGuardUntil) return;
+
       if (!isLiveWeatherConnected() && state.settings.weatherSource !== 'simulated') {
         showWeatherAccessPrompt();
         return;
@@ -10425,6 +10876,10 @@
         return;
       }
 
+      closeWeatherModal();
+      // Opening intentionally — clear the close-guard set by closeWeatherModal above
+      weatherModalCloseGuardUntil = 0;
+
       const current = data.current || data.items[0];
       const paneTitle = data.hasOutdoorTasks ? 'Outdoor Weather' : 'Weather Forecast';
       const taskLine = data.hasOutdoorTasks
@@ -10432,16 +10887,18 @@
         : '';
 
       const modal = document.createElement('div');
+      modal.id = 'weather-forecast-modal';
       modal.className = 'fixed inset-0 bg-rhythm-bg/75 flex items-end z-[60]';
       modal.innerHTML = `
-        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="relative w-full max-h-[85vh] bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 overflow-y-auto">
-          <div class="flex items-start justify-between mb-4">
-            <div>
+        <div class="absolute inset-0" data-weather-dismiss="1"></div>
+        <div class="relative w-full max-h-[85vh] bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 overflow-y-auto"
+          data-weather-sheet="1">
+          <div class="flex items-start justify-between mb-4 gap-3">
+            <div class="min-w-0">
               <div class="text-xs uppercase tracking-wider text-rhythm-muted font-semibold">${paneTitle}</div>
               <div class="text-sm text-rhythm-primary-light mt-1 leading-snug">${data.advice}</div>
             </div>
-            <button onclick="this.closest('.fixed').remove()" class="text-rhythm-muted text-2xl leading-none px-1">×</button>
+            <button type="button" data-weather-dismiss="1" class="flex-shrink-0 text-rhythm-muted text-2xl leading-none px-2 py-1 rounded-lg active:bg-rhythm-raised" aria-label="Close weather">×</button>
           </div>
 
           <div class="rounded-2xl bg-rhythm-raised/70 border border-rhythm-border p-4 mb-4">
@@ -10476,10 +10933,22 @@
                   : 'Hour-by-hour breakdown through tomorrow.')}
           </div>
 
-          <button onclick="this.closest('.fixed').remove()"
-            class="w-full mt-4 py-3 bg-rhythm-surface active:bg-rhythm-border rounded-2xl text-sm font-medium text-rhythm-text">Close</button>
+          <button type="button" data-weather-dismiss="1"
+            class="w-full mt-4 py-3 bg-rhythm-raised border border-rhythm-border active:bg-rhythm-border rounded-2xl text-sm font-medium text-rhythm-text">Close</button>
         </div>
       `;
+
+      document.body.appendChild(modal);
+      modal.addEventListener('click', (e) => {
+        if (e.target.closest('[data-weather-dismiss]')) {
+          e.preventDefault();
+          e.stopPropagation();
+          closeWeatherModal();
+        }
+      });
+      modal.querySelector('[data-weather-sheet]')?.addEventListener('click', (e) => {
+        if (!e.target.closest('[data-weather-dismiss]')) e.stopPropagation();
+      });
 
       const hoursEl = modal.querySelector('#weather-pane-hours');
       let lastDayKey = null;
@@ -10507,8 +10976,6 @@
         `;
         hoursEl.appendChild(el);
       });
-
-      document.body.appendChild(modal);
     }
 
     function isOutdoorTask(habit) {
