@@ -103,3 +103,9 @@ webapp/
 ## Next Step: Native App
 
 When testing feedback is solid, the prototype logic ports to **Expo + React Native** per the architecture plan in `habit-ease/ARCHITECTURE.md`.
+
+## License
+
+**Proprietary — All Rights Reserved.**
+
+This project is **not** open source. You may **not** use, copy, modify, or share this code without written permission from the owner. See [`LICENSE`](./LICENSE) for the full terms.
