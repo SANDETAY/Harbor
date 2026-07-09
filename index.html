@@ -4042,7 +4042,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v77';
+    const HARBOR_BUILD = 'v78';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -4737,7 +4737,18 @@
         if (!h.added_at) h.added_at = today;
       });
       // Old pro booking reminders used long intervals and vanished from Today mid-cycle
-      if (repairProRemindersInState()) {
+      let repaired = repairProRemindersInState();
+      // "walkways" used to match /walk/ and get tagged as a step goal — strip that
+      (state.habits || []).forEach(h => {
+        if (!h) return;
+        const t = (h.title || '').toLowerCase();
+        if (/\bwalkways?\b|\bsidewalks?\b/.test(t) && (h.unit === 'steps' || h.unit === 'miles')) {
+          h.unit = null;
+          h.target_value = null;
+          repaired = true;
+        }
+      });
+      if (repaired) {
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { /* ignore */ }
       }
       if (!state.settings.profile) {
@@ -5493,6 +5504,17 @@
       return /dog|pet|puppy|kitty|cat walk|walk.*(dog|pet|puppy)/i.test(habit?.title || '');
     }
 
+    /** True for real walk/step workouts — not "walkways", sidewalks, etc. */
+    function titleLooksLikeStepWalk(title) {
+      const t = (title || '').toLowerCase();
+      if (!t) return false;
+      // Exclude path/surface words that contain "walk" as a substring
+      if (/\bwalkways?\b|\bsidewalks?\b|\bcrosswalks?\b|\bboardwalks?\b/i.test(t)) return false;
+      if (/\b(step|steps)\b/i.test(t)) return true;
+      // Word-boundary walk/walking only (avoids "walkways")
+      return /\bwalk(?:ing|s|ed)?\b/i.test(t);
+    }
+
     function isPhysicalActivity(habit) {
       if (!habit) return false;
       const type = getHabitMetricType(habit);
@@ -5518,10 +5540,10 @@
     function getHabitMetricType(habit) {
       const unit = (habit.unit || '').toLowerCase();
       const title = habit.title.toLowerCase();
-      if (isPetWalkingActivity(habit) || unit === 'miles' || unit === 'mi' || /run|mile|jog|hike/i.test(title)) return 'miles';
-      if (unit === 'steps' || /step/i.test(title) || (/walk/i.test(title) && !/dog|pet|puppy/.test(title))) return 'steps';
+      if (isPetWalkingActivity(habit) || unit === 'miles' || unit === 'mi' || /\b(run|running|mile|miles|jog|jogging|hike|hiking)\b/i.test(title)) return 'miles';
+      if (unit === 'steps' || (titleLooksLikeStepWalk(habit.title) && !/dog|pet|puppy/.test(title))) return 'steps';
       if (unit === 'dollars' || unit === 'usd' || /save|saving|money|budget|invest/i.test(title)) return 'savings';
-      if (unit === 'pages' || /read|page/i.test(title)) return 'pages';
+      if (unit === 'pages' || /\b(read|page|pages)\b/i.test(title)) return 'pages';
       if (habit.target_value != null && habit.unit) return 'custom';
       return null;
     }
@@ -6271,7 +6293,7 @@
         defaults.est_minutes = 0;
         defaults.target_value = parseTitleAmount(title) || 10;
       }
-      if ((/walk|walking/.test(lower)) && /dog|pet|puppy/.test(lower)) {
+      if (titleLooksLikeStepWalk(title) && /dog|pet|puppy/.test(lower)) {
         const parsedMiles = parseTitleAmount(title);
         const hasMileHint = /\b(mile|miles|mi)\b/i.test(title);
         defaults.unit = 'miles';
@@ -6281,7 +6303,7 @@
         else if (hasMileHint) defaults.target_value = 1;
         else defaults.target_value = 1;
       }
-      if (/run|jog|hike/.test(lower) && !/walk|dog|pet/.test(lower)) {
+      if (/\b(run|jog|hike)\b/.test(lower) && !titleLooksLikeStepWalk(title) && !/dog|pet/.test(lower)) {
         const parsedMiles = parseTitleAmount(title);
         const hasMileHint = /\b(mile|miles|mi)\b/i.test(title);
         defaults.unit = 'miles';
@@ -6290,16 +6312,16 @@
         if (parsedMiles != null) defaults.target_value = parsedMiles;
         else if (hasMileHint) defaults.target_value = 1;
       }
-      if ((/walk|step/.test(lower)) && !/dog|pet|run|jog|hike/.test(lower)) {
+      if (titleLooksLikeStepWalk(title) && !/dog|pet|run|jog|hike/.test(lower)) {
         const parsedSteps = parseTitleAmount(title);
-        const hasStepHint = /\b(step|steps|k)\b/i.test(title);
+        const hasStepHint = /\b(step|steps)\b/i.test(title);
         defaults.unit = 'steps';
         defaults.kind = 'metric';
         defaults.est_minutes = 40;
         if (parsedSteps != null) defaults.target_value = parsedSteps;
         else if (hasStepHint) defaults.target_value = 5000;
       }
-      if (/read|page/.test(lower)) {
+      if (/\b(read|page|pages)\b/.test(lower)) {
         const parsedPages = parseTitleAmount(title);
         defaults.unit = 'pages';
         defaults.kind = 'metric';
@@ -13560,15 +13582,16 @@
     function addLibraryTaskToHabits(task, cardEl) {
       if (state.habits.some(h => h.id === task.id)) return;
 
+      // Use library defaults as-is. No "how many steps?" popup on add —
+      // only real metric presets (with unit/target) keep their goals silently.
       const taskToAdd = { ...task };
-      if (taskToAdd.target_value || /read|walk|meditat|stretch/i.test(taskToAdd.title)) {
-        const metricType = getHabitMetricType(taskToAdd);
-        const unit = taskToAdd.unit || (metricType === 'miles' ? 'miles' : metricType === 'steps' ? 'steps' : 'units');
-        const val = prompt(`How many ${unit}?`, taskToAdd.target_value || (unit === 'miles' ? '1' : '10'));
-        if (val) {
-          taskToAdd.target_value = parseInt(val, 10);
-          taskToAdd.unit = unit;
-        }
+      if (taskToAdd.unit && taskToAdd.target_value == null) {
+        // Rare: unit without amount — leave unit, don't interrupt with a prompt
+        taskToAdd.target_value = taskToAdd.unit === 'steps' ? 5000
+          : taskToAdd.unit === 'miles' ? 1
+          : taskToAdd.unit === 'pages' ? 10
+          : taskToAdd.unit === 'dollars' ? 5
+          : null;
       }
 
       state.habits.push(stampHabitMeta(taskToAdd));
