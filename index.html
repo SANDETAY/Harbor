@@ -744,6 +744,13 @@
       overflow-x: hidden;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
+      /* Prefer vertical scroll; horizontal pans free for tab swipe */
+      touch-action: pan-y;
+    }
+
+    .library-filters-scroll,
+    #header-weather-hours {
+      touch-action: pan-x;
     }
 
     .tab-content:not(.hidden)::-webkit-scrollbar {
@@ -4387,7 +4394,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v94';
+    const HARBOR_BUILD = 'v95';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -16441,6 +16448,192 @@
       }
     }
 
+    const MAIN_TAB_ORDER = ['today', 'life', 'streaks', 'library'];
+    const LIFE_PANEL_ORDER = ['schedule', 'grocery', 'bills', 'subscriptions'];
+    let tabSwipeCooldownUntil = 0;
+    let tabSwipeClickSuppressUntil = 0;
+
+    function isTabSwipeBlockedTarget(target) {
+      if (!(target instanceof Element)) return true;
+      // Don't start tab-swipe on text fields, carousels, menus, or the summary orb
+      if (target.closest([
+        'input', 'textarea', 'select', 'option',
+        '[contenteditable="true"]',
+        '.library-filters-scroll',
+        '#header-weather-hours',
+        '.weather-hour-chip',
+        '.summary-orb',
+        '#summary-modal',
+        '#app-menu-sheet',
+        '.modal-sheet',
+        '.app-menu-dropdown',
+        '.swipe-action',
+        '[role="dialog"]',
+        '[role="slider"]'
+      ].join(','))) return true;
+
+      // Nested horizontal scrollers (don't steal their pan)
+      let node = target;
+      const shell = document.getElementById('app-shell');
+      while (node && node !== shell) {
+        if (node instanceof HTMLElement) {
+          const ox = getComputedStyle(node).overflowX;
+          if ((ox === 'auto' || ox === 'scroll') && node.scrollWidth > node.clientWidth + 6) {
+            return true;
+          }
+        }
+        node = node.parentElement;
+      }
+      return false;
+    }
+
+    function isOverlayBlockingTabSwipe() {
+      return !!(
+        document.getElementById('summary-modal') ||
+        document.getElementById('app-menu-sheet') ||
+        document.querySelector('.modal-overlay-blur') ||
+        document.body.classList.contains('is-splash-active')
+      );
+    }
+
+    /** dir: 'next' (swipe left) | 'prev' (swipe right) */
+    function navigateTabSwipe(dir) {
+      if (Date.now() < tabSwipeCooldownUntil) return;
+      if (isOverlayBlockingTabSwipe()) return;
+
+      // Don't fight an in-progress task/row swipe
+      if (document.querySelector('.swipe-row.is-swiping')) return;
+
+      const goMain = (fromTab, d) => {
+        const i = MAIN_TAB_ORDER.indexOf(fromTab);
+        if (i < 0) return false;
+        const next = d === 'next' ? i + 1 : i - 1;
+        if (next < 0 || next >= MAIN_TAB_ORDER.length) return false;
+        switchTab(MAIN_TAB_ORDER[next]);
+        return true;
+      };
+
+      // Life: prefer sub-tabs; at edges continue to main tabs
+      if (currentTab === 'life') {
+        const pi = LIFE_PANEL_ORDER.indexOf(currentLifePanel);
+        if (dir === 'next') {
+          if (pi >= 0 && pi < LIFE_PANEL_ORDER.length - 1) {
+            switchLifePanel(LIFE_PANEL_ORDER[pi + 1]);
+            tabSwipeCooldownUntil = Date.now() + 320;
+            return;
+          }
+          if (goMain('life', 'next')) tabSwipeCooldownUntil = Date.now() + 320;
+          return;
+        }
+        // prev
+        if (pi > 0) {
+          switchLifePanel(LIFE_PANEL_ORDER[pi - 1]);
+          tabSwipeCooldownUntil = Date.now() + 320;
+          return;
+        }
+        if (goMain('life', 'prev')) tabSwipeCooldownUntil = Date.now() + 320;
+        return;
+      }
+
+      if (goMain(currentTab, dir)) tabSwipeCooldownUntil = Date.now() + 320;
+    }
+
+    function initTabSwipeNav() {
+      // Shell covers chrome + content so swipes work on energy bar / padding too
+      const root = document.getElementById('app-shell') || document.getElementById('app-scroll');
+      if (!root || root.dataset.tabSwipeInit === '1') return;
+      root.dataset.tabSwipeInit = '1';
+
+      let tracking = false;
+      let startX = 0;
+      let startY = 0;
+      let axis = null; // null | 'x' | 'y'
+      let startedOnSwipeRow = false;
+
+      const THRESH = 64;
+      const AXIS_RATIO = 1.35;
+      const AXIS_MIN = 14;
+
+      const begin = (x, y, target) => {
+        if (isOverlayBlockingTabSwipe()) return;
+        if (isTabSwipeBlockedTarget(target)) return;
+        tracking = true;
+        startX = x;
+        startY = y;
+        axis = null;
+        // Task/grocery/event rows own their own left-swipe; never steal that gesture
+        startedOnSwipeRow = !!(target instanceof Element && target.closest('.swipe-row'));
+      };
+
+      const move = (x, y) => {
+        if (!tracking) return;
+        const dx = x - startX;
+        const dy = y - startY;
+        if (!axis) {
+          if (Math.abs(dx) < AXIS_MIN && Math.abs(dy) < AXIS_MIN) return;
+          if (Math.abs(dx) > Math.abs(dy) * AXIS_RATIO && Math.abs(dx) > AXIS_MIN) {
+            axis = 'x';
+          } else {
+            axis = 'y';
+            tracking = false;
+          }
+        }
+      };
+
+      const end = (x) => {
+        if (!tracking) {
+          axis = null;
+          return;
+        }
+        const dx = x - startX;
+        const wasX = axis === 'x';
+        tracking = false;
+        axis = null;
+
+        if (!wasX || Math.abs(dx) < THRESH) return;
+        // Entire gesture began on a swipe-row → leave it to Edit/Delete / close
+        if (startedOnSwipeRow) return;
+        if (document.querySelector('.swipe-row.is-swiping')) return;
+
+        // Kill the synthetic click that would fire on buttons under the finger
+        tabSwipeClickSuppressUntil = Date.now() + 420;
+        if (dx < 0) navigateTabSwipe('next');
+        else navigateTabSwipe('prev');
+      };
+
+      const cancel = () => {
+        tracking = false;
+        axis = null;
+      };
+
+      // Touch-only path avoids double-firing with pointer events on mobile browsers
+      root.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        begin(e.touches[0].clientX, e.touches[0].clientY, e.target);
+      }, { passive: true });
+
+      root.addEventListener('touchmove', (e) => {
+        if (!tracking || e.touches.length !== 1) return;
+        move(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+
+      root.addEventListener('touchend', (e) => {
+        const t = e.changedTouches[0];
+        if (t) end(t.clientX);
+        else cancel();
+      }, { passive: true });
+
+      root.addEventListener('touchcancel', cancel, { passive: true });
+
+      // After a tab swipe, swallow the ghost click on whatever was under the finger
+      document.addEventListener('click', (e) => {
+        if (Date.now() >= tabSwipeClickSuppressUntil) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }, true);
+    }
+
     // ==================== INIT & HELPERS ====================
     function updateDate() {
       updateHeaderContext();
@@ -17476,6 +17669,7 @@
         updateSummaryLauncher();
         renderHeaderWeather();
         initHorizontalScrollRows();
+        initTabSwipeNav();
         if (typeof refreshFunTheme === 'function') refreshFunTheme();
 
         setTimeout(fetchRealWeather, 600);
