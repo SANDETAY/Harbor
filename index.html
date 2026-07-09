@@ -3396,6 +3396,10 @@
                 <i class="fa-solid fa-bars text-base"></i>
               </button>
               <div id="app-menu-dropdown-header" class="app-menu-dropdown hidden" role="menu" aria-label="App menu">
+                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="profile" onclick="runAppMenuAction('profile')">
+                  <i class="fa-regular fa-user"></i>
+                  <span>User Profile</span>
+                </button>
                 <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="settings" onclick="runAppMenuAction('settings')">
                   <i class="fa-solid fa-sliders"></i>
                   <span>Settings</span>
@@ -3742,10 +3746,12 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v56';
+    const RHYTHM_BUILD = 'v57';
 
     // Fitness / wearable sync (Today “Done — sync”, device modal, etc.) — off until productized.
     const FEATURE_ACTIVITY_SYNC = false;
+    // Home maintenance DIY/Hire/Mix preference — off; library always shows pro + DIY options.
+    const FEATURE_MAINTENANCE_PREFERENCE = false;
 
     let rhythmBriefMode = 'day';
     let state = {
@@ -3766,11 +3772,21 @@
       calendarCache: null,
       settings: {
         weightLb: 160,
-        profile: { age: null, gender: null, heightIn: null },
+        profile: {
+          displayName: '',
+          age: null,
+          gender: null,
+          heightIn: null,
+          units: 'imperial',
+          homeCity: '',
+          householdSize: null,
+          focusAreas: [],
+          timezone: null
+        },
         mockWeather: null,
         mockCalendar: null,
         energyToday: 2,
-        maintenancePreference: 'mixed', // 'diy' | 'hire' | 'mixed'
+        maintenancePreference: 'mixed', // legacy; FEATURE_MAINTENANCE_PREFERENCE gates UI
         calendarConnections: {
           google: { connected: false, email: null, connectedAt: null },
           outlook: { connected: false, email: null, connectedAt: null },
@@ -4159,7 +4175,17 @@
         healthSyncs: {},
         settings: {
           weightLb: 160,
-          profile: { age: null, gender: null, heightIn: null },
+          profile: {
+            displayName: '',
+            age: null,
+            gender: null,
+            heightIn: null,
+            units: 'imperial',
+            homeCity: '',
+            householdSize: null,
+            focusAreas: [],
+            timezone: null
+          },
           mockWeather: null,
           mockCalendar: null,
           hourlyForecast: null,
@@ -4284,7 +4310,18 @@
         if (!h.added_at) h.added_at = today;
       });
       if (!state.settings.profile) {
-        state.settings.profile = { age: null, gender: null, heightIn: null };
+        state.settings.profile = {
+          displayName: '', age: null, gender: null, heightIn: null,
+          units: 'imperial', homeCity: '', householdSize: null, focusAreas: [], timezone: null
+        };
+      } else {
+        const p = state.settings.profile;
+        if (p.displayName === undefined) p.displayName = '';
+        if (p.units === undefined) p.units = 'imperial';
+        if (p.homeCity === undefined) p.homeCity = '';
+        if (p.householdSize === undefined) p.householdSize = null;
+        if (!Array.isArray(p.focusAreas)) p.focusAreas = [];
+        if (p.timezone === undefined) p.timezone = null;
       }
       if (state.settings.weightLb == null) {
         state.settings.weightLb = state.settings.weightKg
@@ -4525,7 +4562,10 @@
         'overseed-lawn': { key: 'lawn', short: 'Lawn overseeding' },
         'deck-wash': { key: 'general', short: 'Pressure washing' },
         'pre-emergent': { key: 'lawn', short: 'Lawn treatment' },
+        'post-emergent': { key: 'lawn', short: 'Weed control' },
         'fertilize-spring': { key: 'lawn', short: 'Lawn fertilizing' },
+        'fertilize-summer': { key: 'lawn', short: 'Lawn fertilizing' },
+        'fertilize-fall': { key: 'lawn', short: 'Lawn fertilizing' },
         'oil-change': { key: 'auto', short: 'Oil change' },
         'tire-rotate': { key: 'auto', short: 'Tire rotation' },
         'dental-cleaning': { key: 'dental', short: 'Dental cleaning' },
@@ -4533,13 +4573,65 @@
         'eye-exam': { key: 'vision', short: 'Eye exam' },
         'dermatologist': { key: 'medical', short: 'Skin check' },
         'garage-door-service': { key: 'general', short: 'Garage door service' },
-        'winterize-sprinklers': { key: 'lawn', short: 'Sprinkler winterization' }
+        'winterize-sprinklers': { key: 'lawn', short: 'Sprinkler winterization' },
+        'mower-blade': { key: 'lawn', short: 'Mower service' },
+        'range-hood-filter': { key: 'general', short: 'Range hood service' },
+        'prune-trees': { key: 'lawn', short: 'Tree pruning' },
+        'mulch-beds': { key: 'lawn', short: 'Mulching' },
+        'rake-leaves': { key: 'lawn', short: 'Leaf cleanup' },
+        'grub-control': { key: 'lawn', short: 'Grub treatment' },
+        'caulk-grout': { key: 'general', short: 'Caulk / grout pro' },
+        'washer-hoses': { key: 'plumbing', short: 'Washer hose check' },
+        'fridge-coils': { key: 'general', short: 'Appliance tech' },
+        'car-battery-test': { key: 'auto', short: 'Battery / auto shop' }
       };
       const meta = proMap[task.id];
       if (meta) {
         task.proOption = { ...meta, ...(PRO_SERVICE_HINTS[meta.key] || PRO_SERVICE_HINTS.general) };
+      } else if (shouldAutoTagProSchedule(task)) {
+        // Difficult home/yard/car chores busy people often hire out
+        const key = inferProServiceKey(task);
+        task.proOption = {
+          key,
+          short: task.title,
+          ...(PRO_SERVICE_HINTS[key] || PRO_SERVICE_HINTS.general)
+        };
       }
       return task;
+    }
+
+    function shouldAutoTagProSchedule(task) {
+      if (!task || task.is_personal || isPersonalLibraryTask?.(task)) return false;
+      const section = task.librarySection || '';
+      const homeish = MAINTENANCE_SECTIONS.includes(section)
+        || section === 'Weekly Chores'
+        || /yard|lawn|hvac|home|car|auto/i.test(section);
+      if (!homeish) return false;
+      const diff = task.difficulty || 2;
+      const mins = task.est_minutes || 0;
+      return diff >= 3 || mins >= 40;
+    }
+
+    function inferProServiceKey(task) {
+      const s = `${task.librarySection || ''} ${task.category || ''} ${task.title || ''}`.toLowerCase();
+      if (/hvac|furnace|a\/c|ac |filter|thermostat/.test(s)) return 'hvac';
+      if (/lawn|yard|mow|aerate|mulch|weed|fertiliz|leaf|tree|hedge|sprinkler/.test(s)) return 'lawn';
+      if (/plumb|drain|water heater|disposal|washer hose/.test(s)) return 'plumbing';
+      if (/roof|gutter/.test(s)) return 'roofing';
+      if (/chimney/.test(s)) return 'chimney';
+      if (/car|tire|oil|vehicle|battery|auto/.test(s)) return 'auto';
+      if (/dental|teeth/.test(s)) return 'dental';
+      if (/doctor|physical|derm|clinic/.test(s)) return 'medical';
+      if (/eye|vision|optom/.test(s)) return 'vision';
+      return 'general';
+    }
+
+    function getTaskProOption(task) {
+      if (!task) return null;
+      if (task.proOption) return task.proOption;
+      if (!shouldAutoTagProSchedule(task)) return null;
+      const key = inferProServiceKey(task);
+      return { key, short: task.title, ...(PRO_SERVICE_HINTS[key] || PRO_SERVICE_HINTS.general) };
     }
 
     function loadCommonTasks() {
@@ -4573,6 +4665,7 @@
     }
 
     function matchesMaintenancePreference(task) {
+      if (!FEATURE_MAINTENANCE_PREFERENCE) return true;
       const pref = getMaintenancePreference();
       if (pref === 'mixed' || pref === 'diy') return true;
       if (pref === 'hire') return !isComplexMaintenanceTask(task);
@@ -4883,11 +4976,17 @@
         ? Number(p.heightIn)
         : (p.heightCm != null ? Math.round(p.heightCm / 2.54) : null);
       return {
+        displayName: (p.displayName || '').trim(),
         age: p.age != null ? Number(p.age) : null,
         gender: p.gender || null,
         heightIn,
         weightLb,
-        weightKg: weightLb * 0.453592
+        weightKg: weightLb * 0.453592,
+        units: p.units === 'metric' ? 'metric' : 'imperial',
+        homeCity: (p.homeCity || '').trim(),
+        householdSize: p.householdSize != null ? Number(p.householdSize) : null,
+        focusAreas: Array.isArray(p.focusAreas) ? p.focusAreas : [],
+        timezone: p.timezone || (Intl.DateTimeFormat().resolvedOptions().timeZone || null)
       };
     }
 
@@ -5280,7 +5379,7 @@
         result.fatInsightKcal = loggedCal.totalCal;
         result.profileNote = hasDevice
           ? 'Calories sum your logged activity in this window.'
-          : 'Numbers are defaults — change your profile information in Settings for better accuracy.';
+          : 'Numbers are defaults — update body metrics in User Profile for better accuracy.';
       }
 
       if (type === 'savings') {
@@ -12881,11 +12980,13 @@
     }
 
     function scheduleProForTask(task) {
-      if (!task.proOption) return;
+      const pro = getTaskProOption(task);
+      if (!pro) return;
+      // Ensure task carries proOption for reminder linking
+      if (!task.proOption) task.proOption = pro;
 
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-rhythm-bg/75 flex items-end z-[60]';
-      const pro = task.proOption;
       const providers = (pro.providers || []).map(p =>
         `<div class="flex items-center gap-2 py-2 border-b border-rhythm-border/80 last:border-0">
           <i class="fa-solid fa-building text-rhythm-muted text-xs"></i>
@@ -12912,7 +13013,7 @@
 
           <div class="space-y-2">
             <button id="pro-add-reminder" class="w-full py-3.5 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 rounded-2xl font-semibold text-sm text-white">
-              <i class="fa-regular fa-calendar-plus mr-1.5"></i> Add "Schedule pro" reminder
+              <i class="fa-regular fa-calendar-plus mr-1.5"></i> Schedule Professional reminder
             </button>
             <button id="pro-add-diy-too" class="w-full py-3 bg-rhythm-surface active:bg-rhythm-border rounded-2xl font-medium text-sm text-rhythm-text">
               I'll DIY — add task to my list
@@ -12982,7 +13083,8 @@
 
     function renderLibraryTaskRow(task, container) {
       const alreadyAdded = state.habits.some(h => h.id === task.id);
-      const proScheduled = task.proOption && state.habits.some(h => h.id === 'pro-schedule-' + task.id);
+      const proOpt = getTaskProOption(task);
+      const proScheduled = proOpt && state.habits.some(h => h.id === 'pro-schedule-' + task.id);
       const isPersonal = isPersonalLibraryTask(task);
       const diff = task.difficulty || 2;
       const intervalLabel = formatIntervalLabel(task.interval_days);
@@ -12990,9 +13092,8 @@
       const div = document.createElement('div');
       div.className = `library-task-card rhythm-card bg-rhythm-raised/70 border ${alreadyAdded || proScheduled ? 'border-rhythm-primary/50' : 'border-rhythm-border/80'} rounded-2xl px-3.5 py-2.5 mb-2`;
 
-      const pref = getMaintenancePreference();
-      const diyBadge = (pref === 'diy' && isDiyFriendlyTask(task) && !isPersonal)
-        ? '<span class="text-[9px] px-1.5 py-px rounded-full bg-emerald-900/40 text-emerald-300 font-semibold">DIY</span>'
+      const proBadge = proOpt
+        ? '<span class="text-[9px] px-1.5 py-px rounded-full bg-sky-900/45 text-sky-300 font-semibold">Pro option</span>'
         : '';
       let actionCol = '';
 
@@ -13010,19 +13111,18 @@
             <span class="text-[10px] px-2.5 py-1.5 rounded-xl bg-rhythm-primary/20 text-rhythm-primary-light font-semibold">✓ Added</span>
           </div>`;
       } else if (proScheduled) {
-        actionCol = `<span class="text-[10px] px-2.5 py-1.5 rounded-xl bg-sky-900/40 text-sky-300 font-semibold">📅 Pro set</span>`;
-      } else if (pref === 'hire' && task.proOption) {
         actionCol = `<div class="flex flex-col gap-1 items-end">
-            <button class="lib-pro-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl bg-sky-600 hover:bg-sky-500 text-white">Schedule pro</button>
-            <button class="lib-add-btn text-[9px] text-rhythm-muted hover:text-rhythm-text">I'll DIY</button>
+            <span class="text-[10px] px-2.5 py-1.5 rounded-xl bg-sky-900/40 text-sky-300 font-semibold">Pro set</span>
+            <button class="lib-add-btn text-[9px] text-rhythm-muted hover:text-rhythm-text">+ Add DIY</button>
           </div>`;
-      } else if (pref === 'diy') {
-        actionCol = `<button class="lib-add-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl bg-rhythm-primary hover:bg-rhythm-primary-light text-white">+ Add</button>`;
+      } else if (proOpt) {
+        // Hard / hire-friendly chores: pro path first, DIY still available
+        actionCol = `<div class="flex flex-col gap-1 items-end">
+            <button class="lib-pro-btn px-2.5 py-1.5 text-[10px] font-semibold rounded-xl bg-sky-600 hover:bg-sky-500 text-white whitespace-nowrap">Schedule Pro</button>
+            <button class="lib-add-btn text-[9px] text-rhythm-muted hover:text-rhythm-text">+ Add DIY</button>
+          </div>`;
       } else {
-        actionCol = `<div class="flex flex-col gap-1 items-end">
-            <button class="lib-add-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl bg-rhythm-primary hover:bg-rhythm-primary-light text-white">+ Add</button>
-            ${task.proOption ? `<button class="lib-pro-btn px-2 py-1 text-[9px] font-medium rounded-lg bg-sky-900/50 text-sky-300 border border-sky-800/50">Schedule pro</button>` : ''}
-          </div>`;
+        actionCol = `<button class="lib-add-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl bg-rhythm-primary hover:bg-rhythm-primary-light text-white">+ Add</button>`;
       }
 
       div.innerHTML = `
@@ -13030,7 +13130,7 @@
           <div class="flex-1 min-w-0">
             <div class="font-medium text-sm leading-tight text-rhythm-text">${task.title}</div>
             <div class="flex flex-wrap items-center gap-1 mt-1">
-              ${diyBadge}
+              ${proBadge}
               <span class="text-[9px] px-1.5 py-px rounded-full ${getEnergyBadgeClass(diff)}">${getDifficultyLabel(diff)}</span>
               <span class="text-[9px] text-rhythm-muted">${task.est_minutes}m</span>
               <span class="text-[9px] px-1.5 py-px rounded bg-rhythm-surface/80 text-rhythm-primary-light/90">${intervalLabel}</span>
@@ -13065,9 +13165,10 @@
 
       if (statsEl) {
         const added = state.habits.filter(h => commonTasks.some(t => t.id === h.id)).length;
-        const prefTag = getMaintenancePrefLabel();
-        const prefNote = getMaintenancePreference() === 'hire' ? ' · pro-focused' : (getMaintenancePreference() === 'diy' ? ' · DIY catalog' : '');
-        statsEl.textContent = `${tasks.length} shown · ${added} in your Rhythm · ${prefTag}${prefNote}`;
+        const proCount = tasks.filter(t => getTaskProOption(t)).length;
+        statsEl.textContent = proCount
+          ? `${tasks.length} shown · ${added} in your Rhythm · ${proCount} with Schedule Pro`
+          : `${tasks.length} shown · ${added} in your Rhythm`;
       }
 
       if (tasks.length === 0) {
@@ -14089,6 +14190,7 @@
     function runAppMenuAction(action) {
       closeAppMenu();
       if (action === 'settings') showSettings();
+      else if (action === 'profile') showUserProfile();
       else if (action === 'feedback') showFeedbackModal();
     }
 
@@ -14103,6 +14205,10 @@
         <div onclick="event.stopImmediatePropagation()" class="app-menu-sheet-panel relative" role="menu" aria-label="App menu">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="app-menu-sheet-title">Menu</div>
+          <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="profile" onclick="runAppMenuAction('profile')">
+            <i class="fa-regular fa-user"></i>
+            <span>User Profile</span>
+          </button>
           <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="settings" onclick="runAppMenuAction('settings')">
             <i class="fa-solid fa-sliders"></i>
             <span>Settings</span>
@@ -14158,38 +14264,52 @@
     });
 
     // ==================== SETTINGS ====================
+    function wireSwitchToggle(el) {
+      if (!el) return;
+      el.onclick = () => {
+        const on = el.getAttribute('aria-checked') !== 'true';
+        el.setAttribute('aria-checked', on ? 'true' : 'false');
+        el.className = `smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${on ? 'bg-rhythm-primary' : 'bg-rhythm-border'}`;
+        const knob = el.querySelector('span');
+        if (knob) knob.className = `absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : 'translate-x-0'}`;
+      };
+    }
+
     function showSettings() {
       closeAppMenu();
       settingsWasOpen = true;
       const modal = document.createElement('div');
       modal.className = `fixed inset-0 bg-rhythm-bg/70 modal-overlay-blur flex items-end z-[60]`;
       
-      const profile = getUserProfile();
-      const maintPref = getMaintenancePreference();
       const conns = getCalendarConnections();
       const smartSuggestionsOn = !state.settings.smartSuggestionsMuted;
       const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
-      const genderOptions = [
-        { id: '', label: 'Prefer not to say' },
-        { id: 'female', label: 'Female' },
-        { id: 'male', label: 'Male' },
-        { id: 'nonbinary', label: 'Non-binary' }
-      ];
       
       modal.innerHTML = `
         <div onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="absolute inset-0"></div>
         <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm max-h-[85vh] overflow-y-auto">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-4 flex items-center justify-between">
-            <span>Your Rhythm Profile</span>
+            <span>Settings</span>
             <button onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="text-rhythm-muted text-2xl leading-none">×</button>
           </div>
           
           <div class="space-y-4">
             <div class="flex items-center justify-between gap-3 py-1">
               <div class="min-w-0">
+                <div class="text-sm font-medium text-rhythm-text">User Profile</div>
+                <div class="text-[10px] text-rhythm-muted leading-snug">Name, body metrics, home base</div>
+              </div>
+              <button type="button" onclick="this.closest('.fixed').remove(); showUserProfile()"
+                class="flex-shrink-0 px-3 py-1.5 rounded-xl bg-rhythm-raised border border-rhythm-border text-xs font-medium text-rhythm-primary-light">
+                Open
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 py-1">
+              <div class="min-w-0">
                 <div class="text-sm font-medium text-rhythm-text">Send Feedback</div>
-                <div class="text-[10px] text-rhythm-muted leading-snug">Report bugs or ideas — also in the header <i class="fa-regular fa-comment-dots"></i></div>
+                <div class="text-[10px] text-rhythm-muted leading-snug">Report bugs or ideas</div>
               </div>
               <button type="button" onclick="this.closest('.fixed').remove(); showFeedbackModal()"
                 class="flex-shrink-0 px-3 py-1.5 rounded-xl bg-rhythm-raised border border-rhythm-border text-xs font-medium text-rhythm-primary-light">
@@ -14211,7 +14331,7 @@
             <div class="flex items-center justify-between gap-3 py-1">
               <div class="min-w-0">
                 <div class="text-sm font-medium text-rhythm-text">Cheat Day Fund</div>
-                <div class="text-[10px] text-rhythm-muted leading-snug">Earn points from streaks on the Streaks tab — optional</div>
+                <div class="text-[10px] text-rhythm-muted leading-snug">Earn points from streaks — optional</div>
               </div>
               <button type="button" id="cheat-fund-toggle" role="switch" aria-checked="${cheatFundOn}"
                 class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${cheatFundOn ? 'bg-rhythm-primary' : 'bg-rhythm-border'}">
@@ -14229,65 +14349,20 @@
                 <i class="fa-solid fa-file-import mr-1.5 text-rhythm-primary-light"></i> Import iCalendar file (.ics / .ical)
               </button>
               <div class="text-[10px] text-rhythm-muted mt-1.5 leading-relaxed">
-                Export from Apple, Google, or Outlook as an <strong>iCalendar File</strong> (.ics / .ical). You can also use <strong>Life → Schedule → Import file</strong>. Live OAuth sync ships in the native app.
+                Export from Apple, Google, or Outlook as an <strong>iCalendar File</strong> (.ics / .ical). Also under <strong>Life → Schedule → Import file</strong>.
               </div>
             </div>
 
             <div>
-              <label class="block text-xs mb-2 text-rhythm-muted">Home maintenance style</label>
-              <div class="flex gap-1.5">
-                ${MAINTENANCE_PREF_OPTIONS.map(opt => `
-                  <button type="button" data-maint-pref="${opt.id}"
-                    class="maint-pref-btn flex-1 py-2.5 px-1 rounded-2xl text-[10px] font-semibold border transition-all ${maintPref === opt.id ? 'bg-rhythm-primary border-rhythm-primary text-white' : 'bg-rhythm-raised border-rhythm-border text-rhythm-muted'}">
-                    <i class="fa-solid ${opt.icon} block text-xs mb-0.5"></i>
-                    ${opt.id === 'diy' ? 'DIY' : opt.id === 'hire' ? 'Use a Professional' : 'Mix of Both'}
-                  </button>
-                `).join('')}
-              </div>
-              <div class="text-[10px] text-rhythm-muted mt-1.5">Shapes library defaults — Schedule pro vs DIY tasks</div>
-            </div>
-
-            <div>
-              <label class="block text-xs mb-2 text-rhythm-muted">Body profile</label>
-              <div class="text-[10px] text-rhythm-muted mb-2 leading-snug">Used for calorie estimates on Streaks when Garmin / Apple Health hasn't synced.</div>
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="block text-[10px] text-rhythm-muted mb-1">Age</label>
-                  <input id="profile-age" type="number" min="10" max="120" value="${profile.age ?? ''}" placeholder="32"
-                    class="w-full bg-rhythm-surface border border-rhythm-border rounded-2xl px-3 py-2.5">
-                </div>
-                <div>
-                  <label class="block text-[10px] text-rhythm-muted mb-1">Gender</label>
-                  <select id="profile-gender" class="w-full bg-rhythm-surface border border-rhythm-border rounded-2xl px-3 py-2.5 text-rhythm-text">
-                    ${genderOptions.map(g => `<option value="${g.id}" ${(profile.gender || '') === g.id ? 'selected' : ''}>${g.label}</option>`).join('')}
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-[10px] text-rhythm-muted mb-1">Height (in)</label>
-                  <input id="profile-height" type="number" min="48" max="96" value="${profile.heightIn ?? ''}" placeholder="68"
-                    class="w-full bg-rhythm-surface border border-rhythm-border rounded-2xl px-3 py-2.5">
-                </div>
-                <div>
-                  <label class="block text-[10px] text-rhythm-muted mb-1">Weight (lbs)</label>
-                  <input id="profile-weight" type="number" min="70" max="500" step="1" value="${profile.weightLb}" placeholder="160"
-                    class="w-full bg-rhythm-surface border border-rhythm-border rounded-2xl px-3 py-2.5">
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <label class="block text-xs mb-1 text-rhythm-muted">Calendar simulation</label>
+              <label class="block text-xs mb-1 text-rhythm-muted">Preview tools</label>
               <button onclick="simulateContextChange(); this.closest('.fixed').remove()" 
-                class="w-full py-3 rounded-2xl bg-rhythm-surface active:bg-rhythm-border">Simulate different day (weather + schedule)</button>
-            </div>
-            
-            <div>
+                class="w-full py-3 rounded-2xl bg-rhythm-surface active:bg-rhythm-border mb-2">Simulate different day (weather + schedule)</button>
               <button onclick="fetchRealWeather(); this.closest('.fixed').remove()" 
-                class="w-full py-3 rounded-2xl bg-rhythm-surface active:bg-rhythm-primary/20">Use real location + weather (open-meteo)</button>
+                class="w-full py-3 rounded-2xl bg-rhythm-surface active:bg-rhythm-primary/20">Use real location + weather</button>
             </div>
             
             <div class="pt-2 border-t border-rhythm-border">
-              <div class="text-xs text-rhythm-muted mb-1">Voice commands supported in this prototype:</div>
+              <div class="text-xs text-rhythm-muted mb-1">Voice commands (Chrome/Edge):</div>
               <div class="text-xs leading-snug text-rhythm-text">"add milk to grocery", "mark rent paid", "complete walk", "set energy low"</div>
             </div>
 
@@ -14301,7 +14376,7 @@
             </div>
             
             <div class="text-[10px] pt-2 text-center text-rhythm-muted">
-              Prototype uses mock OAuth — production ships real Google, Microsoft &amp; Apple sign-in
+              Rhythm ${RHYTHM_BUILD} · prototype build
             </div>
           </div>
           
@@ -14313,52 +14388,12 @@
       `;
       
       document.body.appendChild(modal);
-
-      const wireSwitchToggle = (el) => {
-        if (!el) return;
-        el.onclick = () => {
-          const on = el.getAttribute('aria-checked') !== 'true';
-          el.setAttribute('aria-checked', on ? 'true' : 'false');
-          el.className = `smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${on ? 'bg-rhythm-primary' : 'bg-rhythm-border'}`;
-          const knob = el.querySelector('span');
-          if (knob) knob.className = `absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : 'translate-x-0'}`;
-        };
-      };
       wireSwitchToggle(modal.querySelector('#smart-suggestions-toggle'));
       wireSwitchToggle(modal.querySelector('#cheat-fund-toggle'));
-
-      modal.querySelectorAll('.maint-pref-btn').forEach(btn => {
-        btn.onclick = () => {
-          modal.querySelectorAll('.maint-pref-btn').forEach(b => {
-            b.className = 'maint-pref-btn flex-1 py-2.5 px-1 rounded-2xl text-[10px] font-semibold border transition-all bg-rhythm-raised border-rhythm-border text-rhythm-muted';
-          });
-          btn.className = 'maint-pref-btn flex-1 py-2.5 px-1 rounded-2xl text-[10px] font-semibold border transition-all bg-rhythm-primary border-rhythm-primary text-white';
-          btn.dataset.selected = '1';
-        };
-      });
-      const activeBtn = modal.querySelector(`[data-maint-pref="${maintPref}"]`);
-      if (activeBtn) activeBtn.dataset.selected = '1';
     }
 
     function saveSettingsFromModal(btn) {
       const modal = btn.closest('.fixed');
-      const ageInput = document.getElementById('profile-age');
-      const genderInput = document.getElementById('profile-gender');
-      const heightInput = document.getElementById('profile-height');
-      const weightInput = document.getElementById('profile-weight');
-      const ageVal = ageInput?.value ? parseInt(ageInput.value, 10) : null;
-      const heightVal = heightInput?.value ? parseFloat(heightInput.value) : null;
-      const genderVal = genderInput?.value || null;
-      state.settings.profile = {
-        age: ageVal && ageVal >= 10 ? ageVal : null,
-        gender: genderVal || null,
-        heightIn: heightVal && heightVal >= 48 ? heightVal : null
-      };
-      if (weightInput) state.settings.weightLb = parseFloat(weightInput.value) || 160;
-      const selectedBtn = modal.querySelector('.maint-pref-btn.bg-rhythm-primary');
-      if (selectedBtn?.dataset.maintPref) {
-        state.settings.maintenancePreference = selectedBtn.dataset.maintPref;
-      }
       const smartToggle = modal.querySelector('#smart-suggestions-toggle');
       let reenabledSmartSuggestions = false;
       if (smartToggle) {
@@ -14380,13 +14415,175 @@
       if (reenabledSmartSuggestions) {
         showToast('Smart suggestions turned back on');
       } else {
-        showToast(`Profile saved · ${getMaintenancePrefLabel()} · ${getConnectedCalendarsLabel()}`);
+        showToast(`Settings saved · ${getConnectedCalendarsLabel()}`);
       }
       
-      // refresh projections if any
       if (currentProjectionHabit) {
         setTimeout(() => showProjections(currentProjectionHabit), 200);
       }
+    }
+
+    // ==================== USER PROFILE ====================
+    const PROFILE_FOCUS_OPTIONS = [
+      { id: 'home', label: 'Home & chores', icon: 'fa-house' },
+      { id: 'health', label: 'Health & fitness', icon: 'fa-heart-pulse' },
+      { id: 'money', label: 'Money & bills', icon: 'fa-wallet' },
+      { id: 'family', label: 'Family & life admin', icon: 'fa-people-group' },
+      { id: 'focus', label: 'Focus & habits', icon: 'fa-bullseye' }
+    ];
+
+    function showUserProfile() {
+      closeAppMenu();
+      const profile = getUserProfile();
+      const genderOptions = [
+        { id: '', label: 'Prefer not to say' },
+        { id: 'female', label: 'Female' },
+        { id: 'male', label: 'Male' },
+        { id: 'nonbinary', label: 'Non-binary' }
+      ];
+      const focusSet = new Set(profile.focusAreas || []);
+      const tz = profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || '—';
+
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-rhythm-bg/70 modal-overlay-blur flex items-end z-[60]';
+      modal.innerHTML = `
+        <div onclick="this.closest('.fixed').remove()" class="absolute inset-0"></div>
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-lg mb-1 flex items-center justify-between">
+            <span>User Profile</span>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="text-rhythm-muted text-2xl leading-none">×</button>
+          </div>
+          <div class="text-[11px] text-rhythm-muted mb-4 leading-snug">Only basics that help Rhythm personalize — nothing sensitive required.</div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs mb-2 text-rhythm-muted">Basics</label>
+              <div class="space-y-2">
+                <div>
+                  <label class="block text-[10px] text-rhythm-muted mb-1">Display name</label>
+                  <input id="profile-display-name" type="text" maxlength="40" value="${escapeBriefHtml(profile.displayName || '')}" placeholder="What should we call you?"
+                    class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5 text-rhythm-text">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-rhythm-muted mb-1">Home city <span class="opacity-70">(optional · weather / outdoor tips)</span></label>
+                  <input id="profile-home-city" type="text" maxlength="60" value="${escapeBriefHtml(profile.homeCity || '')}" placeholder="e.g. Austin"
+                    class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5 text-rhythm-text">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] text-rhythm-muted mb-1">Household size</label>
+                    <select id="profile-household" class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5 text-rhythm-text">
+                      <option value="">Not set</option>
+                      ${[1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${profile.householdSize === n ? 'selected' : ''}>${n}${n === 6 ? '+' : ''}</option>`).join('')}
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-rhythm-muted mb-1">Units</label>
+                    <select id="profile-units" class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5 text-rhythm-text">
+                      <option value="imperial" ${profile.units !== 'metric' ? 'selected' : ''}>US (lb, in, °F)</option>
+                      <option value="metric" ${profile.units === 'metric' ? 'selected' : ''}>Metric (kg, cm, °C)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="text-[10px] text-rhythm-muted px-0.5">Time zone: <span class="text-rhythm-primary-light">${escapeBriefHtml(tz)}</span> (from your device)</div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs mb-2 text-rhythm-muted">Body metrics</label>
+              <div class="text-[10px] text-rhythm-muted mb-2 leading-snug">Improves calorie estimates on Streaks. All optional.</div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[10px] text-rhythm-muted mb-1">Age</label>
+                  <input id="profile-age" type="number" min="10" max="120" value="${profile.age ?? ''}" placeholder="32"
+                    class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-rhythm-muted mb-1">Gender</label>
+                  <select id="profile-gender" class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5 text-rhythm-text">
+                    ${genderOptions.map(g => `<option value="${g.id}" ${(profile.gender || '') === g.id ? 'selected' : ''}>${g.label}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-rhythm-muted mb-1">Height (in)</label>
+                  <input id="profile-height" type="number" min="48" max="96" value="${profile.heightIn ?? ''}" placeholder="68"
+                    class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-rhythm-muted mb-1">Weight (lbs)</label>
+                  <input id="profile-weight" type="number" min="70" max="500" step="1" value="${profile.weightLb}" placeholder="160"
+                    class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5">
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs mb-2 text-rhythm-muted">What do you want help with?</label>
+              <div class="flex flex-wrap gap-1.5" id="profile-focus-areas">
+                ${PROFILE_FOCUS_OPTIONS.map(opt => `
+                  <button type="button" data-focus="${opt.id}"
+                    class="profile-focus-chip px-2.5 py-1.5 rounded-full text-[10px] font-semibold border transition-colors ${focusSet.has(opt.id) ? 'bg-rhythm-primary border-rhythm-primary text-white' : 'bg-rhythm-raised border-rhythm-border text-rhythm-muted'}">
+                    <i class="fa-solid ${opt.icon} mr-1 opacity-80"></i>${opt.label}
+                  </button>
+                `).join('')}
+              </div>
+              <div class="text-[10px] text-rhythm-muted mt-1.5">Shapes future suggestions — not shared.</div>
+            </div>
+          </div>
+
+          <div class="mt-5 flex gap-x-3">
+            <button type="button" onclick="saveUserProfileFromModal(this)" class="flex-1 bg-rhythm-primary active:bg-rhythm-primary-light py-3 rounded-2xl font-semibold">Save profile</button>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="flex-1 bg-rhythm-surface active:bg-rhythm-border py-3 rounded-2xl">Close</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      modal.querySelectorAll('.profile-focus-chip').forEach(btn => {
+        btn.onclick = () => {
+          const on = !btn.classList.contains('bg-rhythm-primary');
+          btn.className = on
+            ? 'profile-focus-chip px-2.5 py-1.5 rounded-full text-[10px] font-semibold border transition-colors bg-rhythm-primary border-rhythm-primary text-white'
+            : 'profile-focus-chip px-2.5 py-1.5 rounded-full text-[10px] font-semibold border transition-colors bg-rhythm-raised border-rhythm-border text-rhythm-muted';
+          btn.dataset.on = on ? '1' : '0';
+        };
+      });
+    }
+
+    function saveUserProfileFromModal(btn) {
+      const modal = btn.closest('.fixed');
+      const displayName = (document.getElementById('profile-display-name')?.value || '').trim().slice(0, 40);
+      const homeCity = (document.getElementById('profile-home-city')?.value || '').trim().slice(0, 60);
+      const householdRaw = document.getElementById('profile-household')?.value;
+      const units = document.getElementById('profile-units')?.value === 'metric' ? 'metric' : 'imperial';
+      const ageVal = document.getElementById('profile-age')?.value ? parseInt(document.getElementById('profile-age').value, 10) : null;
+      const heightVal = document.getElementById('profile-height')?.value ? parseFloat(document.getElementById('profile-height').value) : null;
+      const genderVal = document.getElementById('profile-gender')?.value || null;
+      const weightInput = document.getElementById('profile-weight');
+      const focusAreas = [...modal.querySelectorAll('.profile-focus-chip.bg-rhythm-primary')].map(el => el.dataset.focus).filter(Boolean);
+
+      state.settings.profile = {
+        ...(state.settings.profile || {}),
+        displayName,
+        homeCity,
+        householdSize: householdRaw ? parseInt(householdRaw, 10) : null,
+        units,
+        age: ageVal && ageVal >= 10 ? ageVal : null,
+        gender: genderVal || null,
+        heightIn: heightVal && heightVal >= 48 ? heightVal : null,
+        focusAreas,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null
+      };
+      if (weightInput) state.settings.weightLb = parseFloat(weightInput.value) || 160;
+
+      saveState();
+      modal.remove();
+      renderStreaks();
+      updateHeaderContext();
+      if (currentProjectionHabit) setTimeout(() => showProjections(currentProjectionHabit), 200);
+      const name = displayName || 'Profile';
+      showToast(`${name} saved`);
     }
 
     // ==================== TABS ====================
@@ -14688,6 +14885,7 @@
     }
 
     function getMaintenancePreference() {
+      if (!FEATURE_MAINTENANCE_PREFERENCE) return 'mixed';
       return state.settings.maintenancePreference || 'mixed';
     }
 
@@ -14964,7 +15162,7 @@
 
     let settingsWasOpen = false;
     function refreshSettingsModal() {
-      const open = document.querySelector('.fixed .maint-pref-btn');
+      const open = document.querySelector('.fixed #smart-suggestions-toggle, .fixed #cheat-fund-toggle');
       if (open) {
         open.closest('.fixed')?.remove();
         setTimeout(showSettings, 80);
