@@ -1511,6 +1511,25 @@
       margin-bottom: 0.65rem;
     }
 
+    .app-menu-section-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--rhythm-muted);
+      font-weight: 700;
+      margin: 0.65rem 0.35rem 0.35rem;
+    }
+
+    .app-menu-section-label:first-of-type {
+      margin-top: 0.15rem;
+    }
+
+    .app-menu-divider {
+      height: 1px;
+      background: var(--rhythm-border);
+      margin: 0.45rem 0.35rem;
+    }
+
     /* ── Rhythm Brief Orb ──
        Circling aura kept; expanding sonar rings removed (too loud).
        Icon = “morning brief” card with a soft scan (dashboard at a glance). */
@@ -3595,6 +3614,7 @@
                 <i class="fa-solid fa-bars text-base"></i>
               </button>
               <div id="app-menu-dropdown-header" class="app-menu-dropdown hidden" role="menu" aria-label="App menu">
+                <div class="app-menu-section-label">Account</div>
                 <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="profile" onclick="runAppMenuAction('profile')">
                   <i class="fa-regular fa-user"></i>
                   <span>User Profile</span>
@@ -3603,6 +3623,13 @@
                   <i class="fa-solid fa-sliders"></i>
                   <span>Settings</span>
                 </button>
+                <div class="app-menu-divider" role="separator"></div>
+                <div class="app-menu-section-label">Tutorial</div>
+                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="tutorial" onclick="runAppMenuAction('tutorial')">
+                  <i class="fa-solid fa-graduation-cap"></i>
+                  <span>App tour</span>
+                </button>
+                <div class="app-menu-divider" role="separator"></div>
                 <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="feedback" onclick="runAppMenuAction('feedback')">
                   <i class="fa-regular fa-comment-dots"></i>
                   <span>Send feedback</span>
@@ -3943,7 +3970,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v68';
+    const RHYTHM_BUILD = 'v69';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -3998,6 +4025,8 @@
         eventTimeFormat: '12h',
         scheduleView: 'today',
         showWelcomeBanner: false,
+        welcomeBannerDismissed: false,
+        onboarded: false,
         tutorialActive: false,
         tutorialCompleted: false,
         tutorialStep: 0,
@@ -4493,6 +4522,8 @@
           eventTimeFormat: '12h',
           scheduleView: 'today',
           showWelcomeBanner: false,
+          welcomeBannerDismissed: false,
+          onboarded: false,
           tutorialActive: false,
           tutorialCompleted: false,
           tutorialStep: 0,
@@ -4579,6 +4610,17 @@
       if (state.settings.showWelcomeBanner === undefined) {
         state.settings.showWelcomeBanner = false;
       }
+      if (state.settings.welcomeBannerDismissed === undefined) {
+        state.settings.welcomeBannerDismissed = false;
+      }
+      if (state.settings.onboarded === undefined) {
+        state.settings.onboarded = !!localStorage.getItem('rhythm_onboarded');
+      }
+      // Keep dual flag in sync (legacy key + settings)
+      if (state.settings.onboarded || localStorage.getItem('rhythm_onboarded')) {
+        state.settings.onboarded = true;
+        try { localStorage.setItem('rhythm_onboarded', '1'); } catch (_) { /* ignore */ }
+      }
       if (state.settings.smartSuggestionsMuted === undefined) {
         state.settings.smartSuggestionsMuted = false;
       }
@@ -4593,6 +4635,16 @@
       }
       if (state.settings.tutorialStep === undefined) {
         state.settings.tutorialStep = 0;
+      }
+      // Interrupted tour (app closed mid-tutorial): don't force it open again
+      if (state.settings.tutorialActive) {
+        state.settings.tutorialActive = false;
+        state.settings.showWelcomeBanner = false;
+        // Leave tutorialCompleted as-is so user can replay from Menu → Tutorial
+      }
+      // Never re-nudge welcome after user dismissed or finished/skipped the tour
+      if (state.settings.welcomeBannerDismissed || state.settings.tutorialCompleted) {
+        state.settings.showWelcomeBanner = false;
       }
       if (!state.settings.calendarSources) {
         state.settings.calendarSources = [];
@@ -4699,7 +4751,27 @@
     }
 
     function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      try {
+        if (state.settings?.onboarded) {
+          localStorage.setItem('rhythm_onboarded', '1');
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.warn('[Rhythm] Could not save local data', err?.name || err);
+        try {
+          // Last-ditch: keep onboarding/tutorial flags so users are not forced through setup again
+          localStorage.setItem('rhythm_onboarded', state.settings?.onboarded ? '1' : (localStorage.getItem('rhythm_onboarded') || ''));
+        } catch (_) { /* ignore */ }
+      }
+    }
+
+    function isUserOnboarded() {
+      return !!(state.settings?.onboarded || localStorage.getItem('rhythm_onboarded'));
+    }
+
+    function markUserOnboarded() {
+      state.settings.onboarded = true;
+      try { localStorage.setItem('rhythm_onboarded', '1'); } catch (_) { /* ignore */ }
     }
 
     const LIBRARY_SECTIONS = [
@@ -11098,7 +11170,7 @@
       if (!el) return;
 
       const showOnToday = currentTab === 'today';
-      const onboarded = !!localStorage.getItem('rhythm_onboarded');
+      const onboarded = isUserOnboarded();
       const onBriefTutorialStep = state.settings.tutorialActive && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'rhythm-brief';
       const hideDuringEarlyTutorial = state.settings.tutorialActive && !onBriefTutorialStep && !state.settings.tutorialCompleted;
       const allowBrief = !hideDuringEarlyTutorial && (state.settings.tutorialCompleted || onBriefTutorialStep || onboarded);
@@ -12477,6 +12549,7 @@
     function skipWelcomeSpotlight() {
       hideWelcomeSpotlight();
       state.settings.showWelcomeBanner = false;
+      state.settings.welcomeBannerDismissed = true;
       saveState();
       updateSmartBanner();
     }
@@ -12638,12 +12711,15 @@
     function startAppTutorial() {
       hideWelcomeSpotlight();
       tutorialLastCardPlacement = 'below';
+      // Seed starters only if Today is empty — never wipe user tasks
       ensureStarterRoutineTasks();
       state.settings.showWelcomeBanner = false;
+      state.settings.welcomeBannerDismissed = true;
       state.settings.tutorialActive = true;
       state.settings.tutorialCompleted = false;
       state.settings.tutorialStep = 0;
       saveState();
+      switchTab('today');
       renderTasks();
       updateSmartBanner();
       bindTutorialViewportSync();
@@ -12698,7 +12774,9 @@
       state.settings.tutorialActive = false;
       state.settings.tutorialCompleted = true;
       state.settings.showWelcomeBanner = false;
+      state.settings.welcomeBannerDismissed = true;
       state.settings.tutorialStep = 0;
+      // Do not re-seed or replace tasks here — only ensure empty Today still has starters
       ensureStarterRoutineTasks();
       saveState();
       switchTab('today');
@@ -12706,7 +12784,9 @@
       renderStreaks();
       updateSmartBanner();
       updateRhythmBriefLauncher();
-      showToast(skipped ? 'Tour skipped — smart suggestions are on' : 'Tour complete — smart suggestions are on');
+      showToast(skipped
+        ? 'Tour skipped — reopen anytime from Menu → Tutorial'
+        : 'Tour complete — replay anytime from Menu → Tutorial');
     }
 
     function updateSmartBanner() {
@@ -12960,6 +13040,7 @@
       if (state.settings.showWelcomeBanner) {
         hideWelcomeSpotlight();
         state.settings.showWelcomeBanner = false;
+        state.settings.welcomeBannerDismissed = true;
         saveState();
         updateSmartBanner();
         return;
@@ -14603,6 +14684,10 @@
       if (action === 'settings') showSettings();
       else if (action === 'profile') showUserProfile();
       else if (action === 'feedback') showFeedbackModal();
+      else if (action === 'tutorial') {
+        startAppTutorial();
+        showToast('Starting app tour');
+      }
     }
 
     function openAppMenuSheet() {
@@ -14616,6 +14701,7 @@
         <div onclick="event.stopImmediatePropagation()" class="app-menu-sheet-panel relative" role="menu" aria-label="App menu">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="app-menu-sheet-title">Menu</div>
+          <div class="app-menu-section-label">Account</div>
           <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="profile" onclick="runAppMenuAction('profile')">
             <i class="fa-regular fa-user"></i>
             <span>User Profile</span>
@@ -14624,6 +14710,13 @@
             <i class="fa-solid fa-sliders"></i>
             <span>Settings</span>
           </button>
+          <div class="app-menu-divider" role="separator"></div>
+          <div class="app-menu-section-label">Tutorial</div>
+          <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="tutorial" onclick="runAppMenuAction('tutorial')">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>App tour</span>
+          </button>
+          <div class="app-menu-divider" role="separator"></div>
           <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="feedback" onclick="runAppMenuAction('feedback')">
             <i class="fa-regular fa-comment-dots"></i>
             <span>Send feedback</span>
@@ -15266,12 +15359,10 @@
     }
 
     function repairOnboardedEmptyTodayList() {
-      if (!localStorage.getItem('rhythm_onboarded') || state.habits?.length > 0) return;
+      if (!isUserOnboarded() || state.habits?.length > 0) return;
+      // Only seed empty lists — never wipe existing tasks or re-open the forced tour
       ensureStarterRoutineTasks();
-      if (!state.settings.tutorialCompleted) {
-        state.settings.showWelcomeBanner = true;
-        saveState();
-      }
+      saveState();
     }
 
     const MAINTENANCE_PREF_OPTIONS = [
@@ -16035,12 +16126,13 @@
       }
       state.settings.routineLevel = null;
       state.settings.showWelcomeBanner = true;
+      state.settings.welcomeBannerDismissed = false;
       state.settings.tutorialCompleted = false;
       state.settings.tutorialActive = false;
       state.settings.tutorialStep = 0;
+      markUserOnboarded();
       saveState();
 
-      localStorage.setItem('rhythm_onboarded', '1');
       hideOnboardingOverlay();
       refreshAppAfterOnboarding();
       if (toastMsg) showToast(toastMsg);
@@ -16054,14 +16146,14 @@
       const habits = createStarterHabits(selectedStarterKeys);
       finishOnboardingSession(
         habits,
-        `Welcome in · ${habits.length} task${habits.length === 1 ? '' : 's'} on Today. Tap Learn More for a quick tour.`
+        `Welcome in · ${habits.length} task${habits.length === 1 ? '' : 's'} on Today. Replay the tour anytime from Menu → Tutorial.`
       );
     }
 
     function skipOnboarding() {
       finishOnboardingSession(
         createStarterHabits(),
-        'Your starter tasks are in Today — tap Learn More anytime for the guided tour.'
+        'Starter tasks are on Today — open Menu → Tutorial anytime for the guided tour.'
       );
     }
 
@@ -16111,7 +16203,7 @@
           }
         }, 800);
         
-        const isFirstRun = !localStorage.getItem('rhythm_onboarded');
+        const isFirstRun = !isUserOnboarded();
         
         if (isFirstRun) {
           showOnboarding();
@@ -16122,6 +16214,9 @@
             onboarding.style.display = 'none';
           }
           showMainContent();
+          // Ensure onboarded flag is dual-written after older sessions
+          markUserOnboarded();
+          saveState();
         }
         
         updateDate();
