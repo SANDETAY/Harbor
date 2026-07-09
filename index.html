@@ -5043,7 +5043,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v112';
+    const HARBOR_BUILD = 'v113';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -15283,13 +15283,95 @@
         ${stepsHtml}
         <p class="tutorial-install-note">You can reopen these steps anytime under <strong>Menu → Add to Home Screen</strong>.</p>
         <button type="button" class="tutorial-install-cta" onclick="event.stopPropagation(); openInstallGuideFromTutorial()">
-          Open full install guide
-        </button>`;
+          ${canNativePwaInstall() ? 'Install Harbor now' : 'Install / Add to Home Screen'}
+        </button>
+        <p class="tutorial-install-note" style="margin-bottom:0">
+          ${canNativePwaInstall()
+            ? 'Your browser can install Harbor in one tap.'
+            : getMobileInstallPlatform() === 'ios'
+              ? 'On iPhone, Safari requires the Share menu (Apple doesn’t allow one-tap install).'
+              : 'If one-tap isn’t ready yet, you’ll get simple steps for your phone.'}
+        </p>`;
     }
 
     function openInstallGuideFromTutorial() {
-      // Full guide uses z-index 220 so it layers above the tour coachmark
-      showAddToHomeScreenGuide();
+      // Try the browser install prompt first; fall back to the step-by-step guide
+      promptPwaInstall();
+    }
+
+    // ==================== PWA INSTALL (Add to Home Screen) ====================
+    // Chromium (Android Chrome, desktop Chrome/Edge) can show a native install dialog
+    // via beforeinstallprompt. iOS Safari has no API — manual Share steps only.
+    let deferredPwaInstallPrompt = null;
+
+    function isHarborRunningStandalone() {
+      return !!(
+        window.matchMedia('(display-mode: standalone)').matches
+        || window.matchMedia('(display-mode: fullscreen)').matches
+        || window.navigator.standalone === true
+      );
+    }
+
+    function canNativePwaInstall() {
+      return !!deferredPwaInstallPrompt && !isHarborRunningStandalone();
+    }
+
+    function bindPwaInstallPromptCapture() {
+      if (window.__harborPwaInstallBound) return;
+      window.__harborPwaInstallBound = true;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent mini-infobar; we trigger install from Menu / tutorial
+        e.preventDefault();
+        deferredPwaInstallPrompt = e;
+      });
+      window.addEventListener('appinstalled', () => {
+        deferredPwaInstallPrompt = null;
+        showToast('Harbor is on your home screen');
+      });
+    }
+    bindPwaInstallPromptCapture();
+
+    /**
+     * Prefer one-tap install when the browser supports it; otherwise open the guide.
+     * @returns {Promise<{ok:boolean, reason:string}>}
+     */
+    async function promptPwaInstall(options = {}) {
+      const { forceGuide = false } = options;
+      closeAppMenu();
+
+      if (isHarborRunningStandalone()) {
+        showToast('Harbor is already installed as an app');
+        if (!options.silentIfInstalled) {
+          showAddToHomeScreenGuide({ alreadyInstalled: true });
+        }
+        return { ok: true, reason: 'already-installed' };
+      }
+
+      if (!forceGuide && deferredPwaInstallPrompt) {
+        try {
+          const promptEvent = deferredPwaInstallPrompt;
+          deferredPwaInstallPrompt = null;
+          await promptEvent.prompt();
+          const choice = await promptEvent.userChoice;
+          if (choice?.outcome === 'accepted') {
+            showToast('Adding Harbor to your home screen…');
+            return { ok: true, reason: 'accepted' };
+          }
+          // User dismissed the system sheet — offer manual steps in case they want them
+          showToast('Install canceled', 'info');
+          showAddToHomeScreenGuide({ canRetryNative: false, dismissedNative: true });
+          return { ok: false, reason: 'dismissed' };
+        } catch (err) {
+          console.warn('[Harbor] PWA install prompt failed', err);
+          deferredPwaInstallPrompt = null;
+        }
+      }
+
+      showAddToHomeScreenGuide({
+        canRetryNative: canNativePwaInstall(),
+        platform: getMobileInstallPlatform()
+      });
+      return { ok: false, reason: 'guide' };
     }
 
     let welcomeSpotlightActive = false;
@@ -18840,7 +18922,7 @@
       else if (action === 'privacy') showPrivacyStatement();
       else if (action === 'household') showHouseholdProfilesModal();
       else if (action === 'overview') showFeatureOverview();
-      else if (action === 'install') showAddToHomeScreenGuide();
+      else if (action === 'install') promptPwaInstall();
       else if (action === 'streakoff') {
         switchTab('streaks');
         setTimeout(() => {
@@ -18909,8 +18991,13 @@
       document.body.appendChild(modal);
     }
 
-    function showAddToHomeScreenGuide() {
+    function showAddToHomeScreenGuide(options = {}) {
       closeAppMenu();
+      const already = !!options.alreadyInstalled || isHarborRunningStandalone();
+      const canNative = !!options.canRetryNative || canNativePwaInstall();
+      const platform = options.platform || getMobileInstallPlatform();
+      const dismissedNative = !!options.dismissedNative;
+
       const modal = document.createElement('div');
       // z-index high enough to sit above the in-app tutorial coachmark when opened mid-tour
       modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[220]';
@@ -18923,8 +19010,40 @@
             <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-4 leading-snug">
-            Put Harbor on your phone like a real app — full screen, no browser address bar covering the bottom buttons.
+            ${already
+              ? 'Harbor is already running as an installed app on this device.'
+              : canNative
+                ? 'Your browser can install Harbor for you — one tap below.'
+                : 'Put Harbor on your phone like a real app — full screen, no browser bar covering the bottom buttons.'}
           </div>
+
+          ${already ? `
+            <div class="privacy-block mb-4">
+              <h4><i class="fa-solid fa-circle-check text-harbor-primary-light mr-1.5"></i>You’re all set</h4>
+              <p>Open Harbor from your home screen icon anytime. Data stays on this device.</p>
+            </div>
+          ` : canNative ? `
+            <button type="button" id="pwa-native-install-btn"
+              class="w-full mb-4 py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm active:opacity-90">
+              <i class="fa-solid fa-download mr-1.5"></i>Install Harbor now
+            </button>
+            <div class="text-[10px] text-harbor-muted text-center mb-4 -mt-2">Uses your browser’s official install dialog</div>
+          ` : dismissedNative ? `
+            <div class="privacy-block mb-3">
+              <h4><i class="fa-solid fa-hand text-harbor-primary-light mr-1.5"></i>Install was canceled</h4>
+              <p>No problem — you can use the steps below, or try the install button again later from the menu.</p>
+            </div>
+          ` : platform === 'ios' ? `
+            <div class="privacy-block mb-3">
+              <h4><i class="fa-brands fa-apple text-harbor-text mr-1.5"></i>iPhone note</h4>
+              <p>Apple doesn’t let websites install themselves with one tap. Use Safari’s Share menu — it only takes a few seconds.</p>
+            </div>
+          ` : `
+            <div class="privacy-block mb-3">
+              <h4><i class="fa-solid fa-circle-info text-harbor-primary-light mr-1.5"></i>One-tap install</h4>
+              <p>If your browser supports it, an <strong class="text-harbor-text">Install Harbor now</strong> button appears here after the app is ready (service worker + visit). Until then, use the steps below.</p>
+            </div>
+          `}
 
           <div class="space-y-3">
             <div class="privacy-block">
@@ -18937,26 +19056,29 @@
             </div>
             <div class="privacy-block">
               <h4><i class="fa-brands fa-android text-emerald-400 mr-1.5"></i>Android (Chrome)</h4>
+              <p>When one-tap install is available, use <strong class="text-harbor-text">Install Harbor now</strong> above. Otherwise:</p>
               <p>1. Open Harbor in <strong class="text-harbor-text">Chrome</strong>.</p>
               <p>2. Tap the <strong class="text-harbor-text">⋮</strong> menu (top right).</p>
-              <p>3. Tap <strong class="text-harbor-text">Install app</strong> or <strong class="text-harbor-text">Add to Home screen</strong> / <strong class="text-harbor-text">Add to phone</strong>.</p>
+              <p>3. Tap <strong class="text-harbor-text">Install app</strong> or <strong class="text-harbor-text">Add to Home screen</strong>.</p>
               <p>4. Confirm <strong class="text-harbor-text">Install</strong> or <strong class="text-harbor-text">Add</strong>.</p>
-              <p class="mt-1">Launch Harbor from the home screen icon — no URL bar over the bottom of the app.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-lightbulb text-amber-300 mr-1.5"></i>Why this helps</h4>
               <p>In a normal browser tab, the address bar can sit at the bottom and cover the Summary button. A home-screen app uses the whole screen, so controls stay where you expect.</p>
             </div>
-            <div class="privacy-block">
-              <h4><i class="fa-solid fa-circle-info text-harbor-primary-light mr-1.5"></i>Tip</h4>
-              <p>Your data stays on this device either way. Installing doesn’t create an account — it just makes Harbor easier to open.</p>
-            </div>
           </div>
 
           <button type="button" onclick="this.closest('.fixed').remove()"
-            class="w-full mt-5 py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Got it</button>
+            class="w-full mt-5 py-3 rounded-2xl ${canNative && !already ? 'bg-harbor-raised border border-harbor-border text-harbor-muted' : 'bg-harbor-primary text-white'} font-semibold">
+            ${already || !canNative ? 'Got it' : 'Not now'}
+          </button>
         </div>`;
       document.body.appendChild(modal);
+
+      modal.querySelector('#pwa-native-install-btn')?.addEventListener('click', async () => {
+        modal.remove();
+        await promptPwaInstall();
+      });
     }
 
     function openAppMenuSheet() {
