@@ -370,16 +370,19 @@
     .life-nav-tab {
       flex: 1;
       min-width: 0;
-      padding: 0.55rem 0.3rem;
+      padding: 0.55rem 0.22rem;
       border: none;
       border-radius: 0.75rem;
       background: transparent;
       color: rgba(154, 170, 178, 0.88);
-      font-size: 0.78rem;
+      font-size: clamp(0.62rem, 2.7vw, 0.78rem);
       font-weight: 650;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
       cursor: pointer;
       border-bottom: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
     }
 
@@ -1755,14 +1758,35 @@
       .summary-orb-glow { opacity: 0.65; }
     }
 
+    /* Shared panel toolbars — Today +Add chip is the system standard */
+    .panel-toolbar,
     .today-toolbar {
       display: flex;
       align-items: center;
       justify-content: flex-end;
       gap: 0.45rem;
+      flex-shrink: 0;
+    }
+
+    .today-toolbar {
       margin-bottom: 0.65rem;
     }
 
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.35rem;
+      min-width: 0;
+    }
+
+    .panel-head .section-header {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .chip-add-btn,
     .today-add-btn {
       flex-shrink: 0;
       font-size: 0.7rem;
@@ -1771,12 +1795,17 @@
       border-radius: 0.75rem;
       background: var(--harbor-primary);
       color: #fff;
+      border: none;
+      line-height: 1.1;
+      white-space: nowrap;
     }
 
+    .chip-add-btn:active,
     .today-add-btn:active {
       opacity: 0.9;
     }
 
+    .chip-voice-btn,
     .today-voice-btn {
       flex-shrink: 0;
       width: 2.15rem;
@@ -1791,12 +1820,55 @@
       transition: background 0.15s ease, border-color 0.15s ease;
     }
 
+    .chip-voice-btn:active,
     .today-voice-btn:active {
       background: var(--harbor-raised);
     }
 
+    .chip-voice-btn i,
     .today-voice-btn i {
       font-size: 0.85rem;
+    }
+
+    /* Quiet secondary tools (Recipe / Manage / Clear / Import) */
+    .panel-tools {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.15rem 0.15rem;
+      margin-bottom: 0.55rem;
+    }
+
+    .chip-tool-link {
+      appearance: none;
+      background: transparent;
+      border: none;
+      padding: 0.2rem 0.45rem;
+      margin: 0;
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: var(--harbor-muted);
+      border-radius: 999px;
+      line-height: 1.2;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .chip-tool-link:hover,
+    .chip-tool-link:focus-visible {
+      color: var(--harbor-primary-light);
+      background: rgba(47, 155, 140, 0.1);
+      outline: none;
+    }
+
+    .chip-tool-link:active {
+      background: rgba(47, 155, 140, 0.16);
+    }
+
+    .chip-tool-sep {
+      color: var(--harbor-border);
+      font-size: 0.65rem;
+      user-select: none;
+      padding: 0 0.05rem;
     }
 
     .summary-stat {
@@ -3719,11 +3791,11 @@
       <div id="app-scroll">
       <!-- TODAY TAB -->
       <div id="tab-content-today" class="tab-content px-5 pt-3 bg-harbor-bg">
-        <div class="today-toolbar">
-          <button type="button" onclick="showQuickTaskModal({ mode: 'habit' })" class="today-add-btn" id="today-add-btn">
+        <div class="today-toolbar panel-toolbar">
+          <button type="button" onclick="showQuickTaskModal({ mode: 'habit' })" class="chip-add-btn today-add-btn" id="today-add-btn">
             <i class="fa-solid fa-plus mr-1"></i>Add
           </button>
-          <button type="button" onclick="startVoiceAdd()" class="today-voice-btn" id="today-voice-btn" aria-label="Add task by voice">
+          <button type="button" onclick="startVoiceAdd()" class="chip-voice-btn today-voice-btn" id="today-voice-btn" aria-label="Add task by voice">
             <i class="fa-solid fa-microphone"></i>
           </button>
         </div>
@@ -3743,7 +3815,7 @@
           <button type="button" role="tab" aria-selected="false" onclick="switchLifePanel('bills')" id="life-panel-tab-bills"
             class="life-nav-tab">Bills</button>
           <button type="button" role="tab" aria-selected="false" onclick="switchLifePanel('subscriptions')" id="life-panel-tab-subscriptions"
-            class="life-nav-tab">Subs</button>
+            class="life-nav-tab">Subscriptions</button>
         </div>
 
         <!-- Schedule Panel -->
@@ -3782,43 +3854,38 @@
 
         <!-- Grocery Panel -->
         <div id="life-panel-grocery" class="life-panel hidden">
-          <div class="flex items-center justify-between mb-1">
+          <div class="panel-head">
             <div class="section-header font-semibold text-harbor-text">Dinner &amp; Grocery</div>
-            <div class="flex items-center gap-2">
-              <button onclick="tryShowAddMealPresetModal()" class="text-xs text-harbor-primary-light font-medium">+ Recipe</button>
-              <button onclick="showManageMealPresetsModal()" class="text-xs text-harbor-muted font-medium">Manage</button>
-              <button onclick="clearCheckedGrocery()" class="text-xs text-harbor-muted font-medium">Clear done</button>
+            <div class="panel-toolbar">
+              <button type="button" onclick="showAddGroceryItemModal()" class="chip-add-btn" id="grocery-add-btn" aria-label="Add grocery item">
+                <i class="fa-solid fa-plus mr-1"></i>Add
+              </button>
+              <button type="button" onclick="startVoiceAdd()" class="chip-voice-btn" id="grocery-voice-btn" aria-label="Add grocery item by voice">
+                <i class="fa-solid fa-microphone"></i>
+              </button>
             </div>
+          </div>
+          <div class="panel-tools" aria-label="Grocery tools">
+            <button type="button" onclick="tryShowAddMealPresetModal()" class="chip-tool-link">+ Recipe</button>
+            <span class="chip-tool-sep" aria-hidden="true">·</span>
+            <button type="button" onclick="showManageMealPresetsModal()" class="chip-tool-link">Manage</button>
+            <span class="chip-tool-sep" aria-hidden="true">·</span>
+            <button type="button" onclick="clearCheckedGrocery()" class="chip-tool-link">Clear done</button>
           </div>
           <div id="grocery-view-label" class="text-[10px] text-harbor-muted mb-2">Themed dinners · Sun–Sat</div>
           <div id="meal-grocery-filters" class="library-filters-scroll mb-2 -mx-1 px-1"></div>
-          <div id="grocery-list" class="space-y-2 mb-4"></div>
-          <div class="flex gap-x-2">
-            <div class="flex-1 relative">
-              <input id="grocery-add-input" type="text"
-                class="w-full bg-harbor-surface border border-harbor-border focus:border-harbor-primary rounded-2xl py-3 px-4 text-sm placeholder:text-harbor-muted outline-none"
-                placeholder="Add item..."
-                enterkeyhint="done"
-                autocomplete="off"
-                onkeydown="if(event.key==='Enter'){event.preventDefault();addGroceryFromInput();}">
-              <button type="button" onclick="addGroceryFromInput()"
-                class="absolute right-1.5 top-1.5 bg-harbor-primary hover:bg-harbor-primary-light active:opacity-90 transition-colors text-white w-8 h-8 rounded-2xl flex items-center justify-center"
-                aria-label="Add grocery item">
-                <i class="fa-solid fa-plus text-sm"></i>
-              </button>
-            </div>
-            <button onclick="startVoiceAdd()"
-              class="w-12 h-12 flex-shrink-0 bg-harbor-surface hover:bg-harbor-raised active:bg-harbor-border transition-colors border border-harbor-border rounded-2xl flex items-center justify-center text-harbor-primary-light">
-              <i class="fa-solid fa-microphone text-xl"></i>
-            </button>
-          </div>
+          <div id="grocery-list" class="space-y-2 mb-2"></div>
         </div>
 
         <!-- Bills Panel -->
         <div id="life-panel-bills" class="life-panel hidden">
-          <div class="flex items-center justify-between mb-1">
+          <div class="panel-head">
             <div class="section-header font-semibold text-harbor-text">Bills</div>
-            <button onclick="addBillFromPrompt()" class="text-xs text-harbor-primary-light font-medium">+ Add</button>
+            <div class="panel-toolbar">
+              <button type="button" onclick="addBillFromPrompt()" class="chip-add-btn" id="bills-add-btn" aria-label="Add bill">
+                <i class="fa-solid fa-plus mr-1"></i>Add
+              </button>
+            </div>
           </div>
           <div id="bills-monthly-total" class="hidden text-[10px] text-harbor-muted mb-2"></div>
           <div id="bills-list" class="space-y-2"></div>
@@ -3826,12 +3893,16 @@
 
         <!-- Subscriptions Panel -->
         <div id="life-panel-subscriptions" class="life-panel hidden">
-          <div class="flex items-center justify-between mb-1">
+          <div class="panel-head">
             <div class="section-header font-semibold text-harbor-text">Subscriptions</div>
-            <div class="flex items-center gap-2">
-              <button onclick="showSubscriptionImportModal()" class="text-xs text-harbor-muted font-medium">Import CSV</button>
-              <button onclick="showAddSubscriptionModal()" class="text-xs text-harbor-primary-light font-medium">+ Add</button>
+            <div class="panel-toolbar">
+              <button type="button" onclick="showAddSubscriptionModal()" class="chip-add-btn" id="subs-add-btn" aria-label="Add subscription">
+                <i class="fa-solid fa-plus mr-1"></i>Add
+              </button>
             </div>
+          </div>
+          <div class="panel-tools" aria-label="Subscription tools">
+            <button type="button" onclick="showSubscriptionImportModal()" class="chip-tool-link">Import CSV</button>
           </div>
           <div id="subs-monthly-total" class="hidden mb-2"></div>
           <div class="relative mb-2.5">
@@ -3874,9 +3945,13 @@
       <!-- LIBRARY TAB -->
       <div id="tab-content-library" class="tab-content px-5 pt-3 pb-2 bg-harbor-bg hidden">
         <div class="library-header">
-          <div class="flex items-center justify-between mb-1">
+          <div class="panel-head">
             <div class="section-header font-semibold text-harbor-text">Task Library</div>
-            <button onclick="addCustomToLibrary()" class="text-[10px] px-2.5 py-1 text-harbor-primary-light border border-harbor-primary/40 rounded-full font-medium active:bg-harbor-primary/20">+ Yours</button>
+            <div class="panel-toolbar">
+              <button type="button" onclick="addCustomToLibrary()" class="chip-add-btn" id="library-add-btn" aria-label="Add personal library task">
+                <i class="fa-solid fa-plus mr-1"></i>Add
+              </button>
+            </div>
           </div>
           <div id="library-stats" class="text-[10px] text-harbor-muted mb-2"></div>
 
@@ -3967,7 +4042,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v75';
+    const HARBOR_BUILD = 'v76';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -7597,12 +7672,47 @@
     }
 
     function addGroceryFromInput() {
-      const input = document.getElementById('grocery-add-input');
+      // Prefer modal field; keep legacy id support
+      const input = document.getElementById('grocery-add-modal-input') || document.getElementById('grocery-add-input');
       if (!input) return;
       const name = input.value.trim();
       if (!name) return;
       addGroceryItem(name);
       input.value = '';
+      document.getElementById('grocery-add-modal')?.remove();
+    }
+
+    function showAddGroceryItemModal() {
+      document.getElementById('grocery-add-modal')?.remove();
+      const modal = document.createElement('div');
+      modal.id = 'grocery-add-modal';
+      modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.closest('#grocery-add-modal')?.remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="font-semibold text-lg text-harbor-text">Add grocery item</div>
+              <div class="text-[10px] text-harbor-muted mt-0.5">Or use the mic for hands-free adds</div>
+            </div>
+            <button type="button" onclick="document.getElementById('grocery-add-modal')?.remove()" class="w-8 h-8 rounded-full bg-harbor-raised text-harbor-muted text-xl leading-none" aria-label="Close">×</button>
+          </div>
+          <label class="block text-xs text-harbor-muted mb-1" for="grocery-add-modal-input">Item</label>
+          <input id="grocery-add-modal-input" type="text"
+            class="w-full bg-harbor-raised border border-harbor-border focus:border-harbor-primary rounded-2xl px-4 py-3 mb-4 outline-none text-harbor-text placeholder:text-harbor-muted"
+            placeholder="e.g. milk, avocados..."
+            enterkeyhint="done"
+            autocomplete="off"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();addGroceryFromInput();}">
+          <button type="button" onclick="addGroceryFromInput()"
+            class="w-full py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold active:opacity-90">
+            <i class="fa-solid fa-plus mr-1"></i>Add to list
+          </button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      setTimeout(() => modal.querySelector('#grocery-add-modal-input')?.focus(), 60);
     }
 
     function toggleGroceryItem(itemId) {
@@ -7678,7 +7788,7 @@
           isMeal ? 'Pick a themed dinner' : 'No master list yet',
           isMeal
             ? 'Select a day chip above (Taco Tuesday, Pizza Friday…) for that dinner’s shopping list.'
-            : 'Tap a themed dinner above for a ready-made list, or add staples below / by voice.'
+            : 'Tap a themed dinner above for a ready-made list, or use Add / the mic for staples.'
         );
         return;
       }
@@ -11785,12 +11895,12 @@
     const APP_TIPS = [
       { id: 'energy-levels', reason: '<strong>Energy levels</strong> reshape your Today list — <strong>Low</strong> surfaces quick wins, <strong>Medium</strong> balances the day, and <strong>High</strong> pushes bigger tasks to the top. Try switching before you start.', cta: 'Set energy', action: 'energy' },
       { id: 'library-browse', reason: 'The <strong>Library</strong> is a catalog of chores and habits — tap any card to add it to your Harbor without typing from scratch.', cta: 'Open Library', action: 'library' },
-      { id: 'library-custom', reason: 'Built something unique? Use <strong>+ Yours</strong> in the Library to save custom tasks you can re-add anytime.', cta: 'Add custom task', action: 'library-custom' },
+      { id: 'library-custom', reason: 'Built something unique? Use <strong>Add</strong> in the Library to save custom tasks you can re-add anytime.', cta: 'Add custom task', action: 'library-custom' },
       { id: 'library-columns', reason: 'The <strong>Library</strong> is organized in columns — Daily Habits, Weekly Chores, Monthly Maintenance, and more. Use the search bar to narrow down fast.', cta: 'Browse Library', action: 'library' },
       { id: 'quick-add', reason: 'Tap <strong>Add</strong> on Today (or the mic) to spin up a task — set type, difficulty, and schedule before you save.', cta: 'Add a task', action: 'quick-add' },
       { id: 'schedule-interval', reason: 'When adding a task, <strong>Adjust schedule</strong> supports daily, weekly, biweekly, monthly, and custom intervals — chores can repeat on your cadence.', cta: 'Add scheduled task', action: 'quick-add' },
       { id: 'life-bills', reason: 'The <strong>Life</strong> tab tracks bills with due dates and overdue states — Harbor can nudge you when something needs attention.', cta: 'View bills', action: 'life-bills' },
-      { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> with a master list and trip mode — add items by voice or keyboard and check them off while shopping.', cta: 'Open grocery', action: 'life-grocery' },
+      { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> with themed dinners and a master list — tap <strong>Add</strong> or the mic to stock items, then check them off while shopping.', cta: 'Open grocery', action: 'life-grocery' },
       { id: 'life-schedule', reason: '<strong>Life → Schedule</strong> holds appointments and events — block time so suggestions can find gaps between meetings.', cta: 'View schedule', action: 'life-schedule' },
       { id: 'calendar-sync', reason: 'Add a calendar <strong>ICS URL</strong> in Settings (or Life → Schedule → Calendar URL). Harbor refreshes events when you open the app — file import works as a backup.', cta: 'Calendar settings', action: 'settings' },
       { id: 'work-schedule', reason: 'On <strong>Life → Schedule</strong>, tap <strong>Set your work hours</strong> so free-time estimates and smart suggestions match your real day.', cta: 'Open schedule', action: 'life-schedule' },
@@ -13080,11 +13190,7 @@
       
       if (!SpeechRec) {
         if (voiceContext === 'grocery') {
-          const input = document.getElementById('grocery-add-input');
-          if (input) {
-            input.focus();
-            input.placeholder = 'Voice not supported. Type item...';
-          }
+          showAddGroceryItemModal();
         } else {
           showQuickTaskModal({ mode: 'habit' });
         }
