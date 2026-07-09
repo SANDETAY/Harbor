@@ -24,7 +24,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="harbor-apple-touch.png">
 
   <link rel="manifest" href="manifest.webmanifest">
-  <title>Harbor · Find Your Harbor</title>
+  <title>Harbor · Create Your Harbor</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -3907,7 +3907,7 @@
             </div>
             <div class="splash-wordmark">Harbor</div>
           </div>
-          <p id="splash-slogan" class="splash-slogan">Find your harbor.</p>
+          <p id="splash-slogan" class="splash-slogan">Create your harbor.</p>
         </div>
       </div>
 
@@ -4236,7 +4236,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v87';
+    const HARBOR_BUILD = 'v88';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -17200,7 +17200,7 @@
         setTimeout(fetchRealWeather, 600);
         
         window.HARBOR = { state, renderTasks, renderTodayFeed, completeHabit, setEnergy, simulateContextChange, addGroceryItem, markBillPaid, factoryReset: factoryResetApp };
-        console.log('%c[Harbor] Prototype ready. Find your harbor.', 'color:#2F9B8C');
+        console.log('%c[Harbor] Prototype ready. Create your harbor.', 'color:#2F9B8C');
     }
 
     function runSplashSequence(onComplete) {
