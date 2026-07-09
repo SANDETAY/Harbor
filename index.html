@@ -11,7 +11,7 @@
   <meta name="theme-color" content="#0A1F1E" id="meta-theme-color">
   <script>
     // Apply saved theme before paint to avoid flash
-    // harbor = splash teal (default) · dark = sleek black & white dark mode
+    // harbor = splash teal (default) · light = sleek seafoam · dark = sleek noir
     (function () {
       try {
         var raw = localStorage.getItem('harbor_state_v1');
@@ -20,17 +20,20 @@
         var s = parsed && parsed.settings ? parsed.settings : {};
         var t = s.theme;
         // v2: dark=sleek mono, harbor=teal. Migrate v1 (dark=teal, mono=b&w).
+        // v3: light is a first-class seafoam theme (no longer remapped to dark).
         if (!s.themeSchemeV2) {
-          t = (t === 'mono' || t === 'light') ? 'dark' : 'harbor';
-        } else if (t === 'mono' || t === 'light') {
+          t = (t === 'mono') ? 'dark' : (t === 'light') ? 'light' : 'harbor';
+        } else if (t === 'mono') {
           t = 'dark';
-        } else if (t !== 'dark') {
+        } else if (t !== 'dark' && t !== 'light' && t !== 'harbor') {
           t = 'harbor';
         }
         document.documentElement.setAttribute('data-theme', t);
-        document.documentElement.style.colorScheme = 'dark';
+        document.documentElement.style.colorScheme = t === 'light' ? 'light' : 'dark';
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', t === 'dark' ? '#070707' : '#0A1F1E');
+        if (meta) {
+          meta.setAttribute('content', t === 'dark' ? '#070707' : t === 'light' ? '#F3F7F6' : '#0A1F1E');
+        }
       } catch (e) { /* ignore */ }
     })();
   </script>
@@ -215,12 +218,218 @@
       color: #070707;
     }
 
-    html[data-theme="dark"] .smart-suggestions-toggle[aria-checked="true"] {
-      background: rgb(245 245 245) !important;
+    /* ── LIGHT MODE: sleek seafoam with Harbor teal accents ── */
+    html[data-theme="light"] {
+      --harbor-bg: 243 247 246;             /* #F3F7F6 soft mint wash */
+      --harbor-surface: 255 255 255;        /* #FFFFFF cards */
+      --harbor-raised: 236 243 241;         /* #ECF3F1 raised rows */
+      --harbor-border: 206 222 218;         /* #CEDEDA soft teal border */
+      --harbor-primary: 47 155 140;         /* #2F9B8C same brand teal */
+      --harbor-primary-light: 38 130 118;   /* #268276 deeper teal for text on light */
+      --harbor-accent: 176 138 72;          /* #B08A48 warm gold */
+      --harbor-text: 18 36 34;              /* #122422 deep ink */
+      --harbor-muted: 90 112 108;           /* #5A706C */
+      --harbor-low: 196 110 86;             /* coral energy */
+      --harbor-med: 184 148 48;
+      --harbor-high: 47 155 140;
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 4px 16px rgba(18, 48, 44, 0.07);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 12px 32px rgba(18, 48, 44, 0.1);
+      --harbor-glow-primary: 0 0 0 1px rgba(47, 155, 140, 0.22);
+      --harbor-dawn: 220 236 232;           /* soft mint for dawn accents */
+      color-scheme: light;
     }
 
-    html[data-theme="dark"] .smart-suggestions-toggle[aria-checked="true"] span {
-      background: #070707 !important;
+    html[data-theme="light"] .site-header {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(243, 247, 246, 0.94) 100%);
+      border-bottom-color: rgb(206 222 218);
+    }
+
+    html[data-theme="light"] .chip-add-btn,
+    html[data-theme="light"] .today-add-btn {
+      background: linear-gradient(180deg, #3AADA0 0%, #2F9B8C 100%);
+      color: #FFFFFF;
+      box-shadow: 0 2px 12px rgba(47, 155, 140, 0.32), 0 0 0 1px rgba(47, 155, 140, 0.12);
+    }
+
+    html[data-theme="light"] .chip-voice-btn,
+    html[data-theme="light"] .today-voice-btn {
+      background: rgb(255 255 255);
+      border-color: rgb(206 222 218);
+      color: rgb(18 36 34);
+    }
+
+    html[data-theme="light"] .life-nav-tab.life-panel-active,
+    html[data-theme="light"] .main-nav-tab.nav-active {
+      color: #0A1F1E;
+      font-weight: 750;
+    }
+
+    html[data-theme="light"] .life-chip-indicator {
+      background: linear-gradient(180deg, #3AADA0 0%, #2F9B8C 100%);
+      box-shadow: 0 2px 10px rgba(47, 155, 140, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    html[data-theme="light"] .main-nav-indicator {
+      background: linear-gradient(180deg, #3AADA0 0%, #2F9B8C 100%);
+      box-shadow: 0 2px 10px rgba(47, 155, 140, 0.25);
+    }
+
+    html[data-theme="light"] .summary-toggle-btn.is-active {
+      background: linear-gradient(135deg, #3AADA0 0%, #2F9B8C 100%);
+      color: #FFFFFF;
+      box-shadow: 0 4px 16px rgba(47, 155, 140, 0.28);
+    }
+
+    html[data-theme="light"] .energy-btn.is-active,
+    html[data-theme="light"] .energy-btn[aria-pressed="true"] {
+      color: #FFFFFF;
+    }
+
+    html[data-theme="light"] .swipe-action-edit {
+      background: linear-gradient(180deg, #3AADA0 0%, #268276 100%);
+      color: #FFFFFF;
+    }
+
+    html[data-theme="light"] body > .fixed.inset-0.modal-overlay-blur,
+    html[data-theme="light"] body > .fixed.inset-0[class*="bg-harbor-bg"] {
+      background-color: rgba(18, 36, 34, 0.42) !important;
+    }
+
+    html[data-theme="light"] .modal-close-chip {
+      color: rgba(18, 36, 34, 0.72);
+      background: rgba(47, 155, 140, 0.08);
+      border-color: rgba(47, 155, 140, 0.2);
+    }
+
+    /* ── Settings switches (explicit CSS so knobs always render) ── */
+    .smart-suggestions-toggle,
+    .harbor-switch {
+      position: relative;
+      display: inline-block;
+      width: 2.75rem;
+      height: 1.5rem;
+      min-width: 2.75rem;
+      min-height: 1.5rem;
+      flex-shrink: 0;
+      padding: 0;
+      margin: 0;
+      border: none;
+      border-radius: 9999px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background: rgb(var(--harbor-border));
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+      transition: background-color 0.18s ease, box-shadow 0.18s ease;
+      vertical-align: middle;
+    }
+
+    .smart-suggestions-toggle > span,
+    .harbor-switch > span {
+      position: absolute;
+      top: 0.125rem;
+      left: 0.125rem;
+      width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 9999px;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.04);
+      transition: transform 0.18s cubic-bezier(0.32, 0.72, 0, 1);
+      pointer-events: none;
+      display: block;
+    }
+
+    .smart-suggestions-toggle[aria-checked="true"],
+    .harbor-switch[aria-checked="true"] {
+      background: rgb(var(--harbor-primary));
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18);
+    }
+
+    .smart-suggestions-toggle[aria-checked="true"] > span,
+    .harbor-switch[aria-checked="true"] > span {
+      transform: translateX(1.25rem);
+    }
+
+    html[data-theme="dark"] .smart-suggestions-toggle[aria-checked="true"],
+    html[data-theme="dark"] .harbor-switch[aria-checked="true"] {
+      background: rgb(245 245 245);
+    }
+
+    html[data-theme="dark"] .smart-suggestions-toggle[aria-checked="true"] > span,
+    html[data-theme="dark"] .harbor-switch[aria-checked="true"] > span {
+      background: #070707;
+    }
+
+    html[data-theme="light"] .smart-suggestions-toggle[aria-checked="true"],
+    html[data-theme="light"] .harbor-switch[aria-checked="true"] {
+      background: rgb(47 155 140);
+    }
+
+    html[data-theme="light"] .smart-suggestions-toggle[aria-checked="true"] > span,
+    html[data-theme="light"] .harbor-switch[aria-checked="true"] > span {
+      background: #ffffff;
+    }
+
+    /* Appearance: Light + Dark side-by-side */
+    .theme-appearance-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .theme-appearance-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.7rem 0.75rem;
+      border-radius: 1rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised) / 0.55);
+      min-width: 0;
+    }
+
+    .theme-appearance-card.is-active {
+      border-color: rgb(var(--harbor-primary) / 0.55);
+      background: rgb(var(--harbor-primary) / 0.12);
+      box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.12);
+    }
+
+    .theme-appearance-card .theme-card-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: rgb(var(--harbor-text));
+      line-height: 1.2;
+    }
+
+    .theme-appearance-card .theme-card-sub {
+      font-size: 0.625rem;
+      color: rgb(var(--harbor-muted));
+      line-height: 1.25;
+      margin-top: 0.1rem;
+    }
+
+    .theme-teal-hint {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.45rem;
+      padding: 0.45rem 0.65rem;
+      border-radius: 0.75rem;
+      background: rgb(var(--harbor-raised) / 0.4);
+      border: 1px dashed rgb(var(--harbor-border));
+      font-size: 0.625rem;
+      color: rgb(var(--harbor-muted));
+      line-height: 1.3;
+    }
+
+    .theme-teal-dot {
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 9999px;
+      background: #2F9B8C;
+      box-shadow: 0 0 0 2px rgba(47, 155, 140, 0.25);
+      flex-shrink: 0;
     }
 
     * {
@@ -2076,11 +2285,15 @@
       position: absolute;
       top: calc(100% + 0.45rem);
       right: 0;
-      min-width: 11.5rem;
+      min-width: 16.5rem;
+      max-width: min(20rem, calc(100vw - 1.25rem));
+      max-height: min(78vh, 34rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
       background: rgb(var(--harbor-surface));
       border: 1px solid rgb(var(--harbor-border));
-      border-radius: 1rem;
-      padding: 0.35rem;
+      border-radius: 1.1rem;
+      padding: 0.45rem;
       box-shadow: var(--harbor-shadow-md);
       z-index: 200;
     }
@@ -2088,11 +2301,11 @@
     .app-menu-item {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
+      gap: 0.7rem;
       width: 100%;
       text-align: left;
-      padding: 0.65rem 0.75rem;
-      border-radius: 0.7rem;
+      padding: 0.62rem 0.7rem;
+      border-radius: 0.75rem;
       font-size: 0.82rem;
       color: rgb(var(--harbor-text));
       transition: background 0.15s ease;
@@ -2103,10 +2316,275 @@
       background: rgb(var(--harbor-raised));
     }
 
-    .app-menu-item i {
-      width: 1rem;
+    .app-menu-item > i:first-child {
+      width: 1.05rem;
+      flex-shrink: 0;
       text-align: center;
       color: rgb(var(--harbor-primary-light));
+      font-size: 0.9rem;
+    }
+
+    .app-menu-item-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.08rem;
+    }
+
+    .app-menu-item-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      line-height: 1.25;
+      color: rgb(var(--harbor-text));
+    }
+
+    .app-menu-item-hint {
+      font-size: 0.625rem;
+      line-height: 1.3;
+      color: rgb(var(--harbor-muted));
+    }
+
+    .app-menu-item-chevron {
+      flex-shrink: 0;
+      font-size: 0.62rem;
+      color: rgb(var(--harbor-muted));
+      opacity: 0.7;
+    }
+
+    .app-menu-item--primary {
+      background: rgb(var(--harbor-primary) / 0.1);
+      border: 1px solid rgb(var(--harbor-primary) / 0.22);
+    }
+
+    .app-menu-item--primary:hover,
+    .app-menu-item--primary:active {
+      background: rgb(var(--harbor-primary) / 0.16);
+    }
+
+    .app-menu-item--primary > i:first-child {
+      color: rgb(var(--harbor-primary-light));
+    }
+
+    /* Settings sheet layout */
+    .settings-sheet {
+      display: flex;
+      flex-direction: column;
+      max-height: min(90vh, 100dvh);
+      padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+      overflow: hidden;
+    }
+
+    .settings-sheet-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 0.35rem;
+    }
+
+    .settings-sheet-footer {
+      flex-shrink: 0;
+      padding-top: 0.85rem;
+      margin-top: 0.15rem;
+      border-top: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-surface));
+    }
+
+    .settings-section {
+      margin-bottom: 1.1rem;
+    }
+
+    .settings-section:last-child {
+      margin-bottom: 0.25rem;
+    }
+
+    .settings-section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin: 0 0.1rem 0.45rem;
+    }
+
+    .settings-section-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+    }
+
+    .settings-section-note {
+      font-size: 0.6rem;
+      color: rgb(var(--harbor-muted));
+      opacity: 0.9;
+    }
+
+    .settings-card {
+      border: 1px solid rgb(var(--harbor-border));
+      border-radius: 1rem;
+      background: rgb(var(--harbor-raised) / 0.45);
+      overflow: hidden;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.8rem 0.85rem;
+      border-bottom: 1px solid rgb(var(--harbor-border) / 0.75);
+    }
+
+    .settings-row:last-child {
+      border-bottom: none;
+    }
+
+    .settings-row-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .settings-row-title {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: rgb(var(--harbor-text));
+      line-height: 1.25;
+    }
+
+    .settings-row-desc {
+      font-size: 0.625rem;
+      line-height: 1.35;
+      color: rgb(var(--harbor-muted));
+      margin-top: 0.15rem;
+    }
+
+    .settings-row-action {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.7rem;
+      border-radius: 0.7rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-surface));
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.72rem;
+      font-weight: 650;
+    }
+
+    .settings-row-action:active {
+      background: rgb(var(--harbor-border) / 0.45);
+    }
+
+    .settings-card-block {
+      padding: 0.85rem;
+      border-bottom: 1px solid rgb(var(--harbor-border) / 0.75);
+    }
+
+    .settings-card-block:last-child {
+      border-bottom: none;
+    }
+
+    .settings-inline-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.55rem;
+    }
+
+    .settings-inline-actions.is-stack {
+      flex-direction: column;
+    }
+
+    .settings-inline-actions > button {
+      flex: 1;
+      min-width: 0;
+      padding: 0.65rem 0.55rem;
+      border-radius: 0.85rem;
+      font-size: 0.72rem;
+      font-weight: 650;
+    }
+
+    .settings-inline-actions.is-stack > button {
+      flex: none;
+      width: 100%;
+    }
+
+    .settings-row.is-top {
+      align-items: flex-start;
+    }
+
+    .settings-btn-secondary {
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-surface));
+      color: rgb(var(--harbor-text));
+    }
+
+    .settings-btn-secondary:active {
+      background: rgb(var(--harbor-border) / 0.5);
+    }
+
+    .settings-btn-primary {
+      background: rgb(var(--harbor-primary));
+      color: #fff;
+    }
+
+    .settings-btn-primary:active {
+      opacity: 0.9;
+    }
+
+    .settings-help-text {
+      font-size: 0.625rem;
+      line-height: 1.45;
+      color: rgb(var(--harbor-muted));
+    }
+
+    .settings-help-text strong {
+      color: rgb(var(--harbor-text));
+      font-weight: 650;
+    }
+
+    .settings-voice-examples {
+      margin-top: 0.4rem;
+      padding: 0.55rem 0.65rem;
+      border-radius: 0.75rem;
+      background: rgb(var(--harbor-surface));
+      border: 1px solid rgb(var(--harbor-border) / 0.8);
+      font-size: 0.68rem;
+      line-height: 1.4;
+      color: rgb(var(--harbor-text));
+    }
+
+    .settings-danger-btn {
+      width: 100%;
+      padding: 0.8rem 0.9rem;
+      border-radius: 0.9rem;
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      background: rgba(136, 19, 55, 0.28);
+      color: #fda4af;
+      font-weight: 700;
+      font-size: 0.84rem;
+    }
+
+    .settings-danger-btn:active {
+      background: rgba(159, 18, 57, 0.45);
+    }
+
+    html[data-theme="light"] .settings-danger-btn {
+      background: rgba(255, 228, 230, 0.9);
+      border-color: rgba(244, 63, 94, 0.35);
+      color: #be123c;
+    }
+
+    .settings-build-meta {
+      text-align: center;
+      font-size: 0.625rem;
+      color: rgb(var(--harbor-muted));
+      padding: 0.35rem 0 0.1rem;
     }
 
     /* Household person color coding on events */
@@ -2269,6 +2747,9 @@
 
     .app-menu-sheet-panel {
       width: 100%;
+      max-height: min(88vh, 100dvh);
+      overflow-y: auto;
+      overscroll-behavior: contain;
       background: rgb(var(--harbor-surface));
       border-top: 1px solid rgb(var(--harbor-border));
       border-radius: 1.25rem 1.25rem 0 0;
@@ -2276,12 +2757,24 @@
     }
 
     .app-menu-sheet-title {
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: rgb(var(--harbor-muted));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+      color: rgb(var(--harbor-text));
+      font-weight: 700;
+      margin-bottom: 0.85rem;
+      text-transform: none;
+    }
+
+    .app-menu-sheet-title-sub {
+      font-size: 0.62rem;
       font-weight: 600;
-      margin-bottom: 0.65rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
     }
 
     .app-menu-section-label {
@@ -2290,17 +2783,29 @@
       letter-spacing: 0.1em;
       color: rgb(var(--harbor-muted));
       font-weight: 700;
-      margin: 0.65rem 0.35rem 0.35rem;
+      margin: 0.7rem 0.4rem 0.3rem;
     }
 
     .app-menu-section-label:first-of-type {
-      margin-top: 0.15rem;
+      margin-top: 0.05rem;
     }
 
     .app-menu-divider {
       height: 1px;
       background: rgb(var(--harbor-border));
-      margin: 0.45rem 0.35rem;
+      margin: 0.5rem 0.35rem;
+    }
+
+    .app-menu-group {
+      border: 1px solid rgb(var(--harbor-border) / 0.85);
+      border-radius: 0.9rem;
+      background: rgb(var(--harbor-raised) / 0.35);
+      padding: 0.2rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .app-menu-group .app-menu-item {
+      margin-bottom: 0;
     }
 
     /* ── Summary Orb ──
@@ -4813,48 +5318,7 @@
                 <i class="fa-solid fa-bars text-base"></i>
               </button>
               <div id="app-menu-dropdown-header" class="app-menu-dropdown hidden" role="menu" aria-label="App menu">
-                <div class="app-menu-section-label">Account</div>
-                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="profile" onclick="runAppMenuAction('profile')">
-                  <i class="fa-regular fa-user"></i>
-                  <span>User Profile</span>
-                </button>
-                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="settings" onclick="runAppMenuAction('settings')">
-                  <i class="fa-solid fa-sliders"></i>
-                  <span>Settings</span>
-                </button>
-                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="import-profile" onclick="runAppMenuAction('import-profile')">
-                  <i class="fa-solid fa-file-import"></i>
-                  <span>Import profile</span>
-                </button>
-                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="privacy" onclick="runAppMenuAction('privacy')">
-                  <i class="fa-solid fa-shield-halved"></i>
-                  <span>Privacy</span>
-                </button>
-                <div class="app-menu-divider" role="separator"></div>
-                <div class="app-menu-section-label">Crew</div>
-                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="streakoff" onclick="runAppMenuAction('streakoff')">
-                  <i class="fa-solid fa-anchor"></i>
-                  <span>Streak-Offs</span>
-                </button>
-                <div class="app-menu-divider" role="separator"></div>
-                <div class="app-menu-section-label">Help &amp; tutorial</div>
-                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="tutorial" onclick="runAppMenuAction('tutorial')">
-                  <i class="fa-solid fa-graduation-cap"></i>
-                  <span>App tour</span>
-                </button>
-                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="overview" onclick="runAppMenuAction('overview')">
-                  <i class="fa-solid fa-book-open"></i>
-                  <span>Feature overview</span>
-                </button>
-                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="install" onclick="runAppMenuAction('install')">
-                  <i class="fa-solid fa-mobile-screen-button"></i>
-                  <span>Add to Home Screen</span>
-                </button>
-                <div class="app-menu-divider" role="separator"></div>
-                <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="feedback" onclick="runAppMenuAction('feedback')">
-                  <i class="fa-regular fa-comment-dots"></i>
-                  <span>Send feedback</span>
-                </button>
+                <!-- Filled by renderAppMenuContent on open; static fallback for first paint -->
               </div>
             </div>
           </div>
@@ -5241,7 +5705,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v118';
+    const HARBOR_BUILD = 'v120';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -5923,15 +6387,17 @@
       if (!state.settings.scheduleView) {
         state.settings.scheduleView = 'today';
       }
-      // Theme scheme v2: harbor = splash teal (default), dark = sleek noir.
-      // v1 had dark=teal and mono/light=B&W — remap once, then only harbor|dark.
+      // Theme scheme: harbor = splash teal (default), light = seafoam, dark = sleek noir.
+      // v1 had dark=teal and mono=B&W. v2 remapped mono→dark. v3 keeps light as first-class.
       if (!state.settings.themeSchemeV2) {
         const old = state.settings.theme;
-        state.settings.theme = (old === 'mono' || old === 'light') ? 'dark' : 'harbor';
+        if (old === 'mono') state.settings.theme = 'dark';
+        else if (old === 'light') state.settings.theme = 'light';
+        else state.settings.theme = 'harbor';
         state.settings.themeSchemeV2 = true;
-      } else if (state.settings.theme === 'mono' || state.settings.theme === 'light') {
+      } else if (state.settings.theme === 'mono') {
         state.settings.theme = 'dark';
-      } else if (state.settings.theme !== 'dark' && state.settings.theme !== 'harbor') {
+      } else if (state.settings.theme !== 'dark' && state.settings.theme !== 'light' && state.settings.theme !== 'harbor') {
         state.settings.theme = 'harbor';
       }
       if (state.settings.showWelcomeBanner === undefined) {
@@ -17790,25 +18256,33 @@
 
     function getAppTheme() {
       const t = state?.settings?.theme;
-      // dark = sleek noir (settings Dark mode ON); harbor = splash teal (default)
-      if (t === 'mono' || t === 'light') return 'dark'; // legacy aliases
-      return t === 'dark' ? 'dark' : 'harbor';
+      // harbor = splash teal · light = seafoam · dark = sleek noir
+      if (t === 'mono') return 'dark'; // legacy alias
+      if (t === 'dark' || t === 'light' || t === 'harbor') return t;
+      return 'harbor';
+    }
+
+    function themeMetaColor(theme) {
+      if (theme === 'dark') return '#070707';
+      if (theme === 'light') return '#F3F7F6';
+      return '#0A1F1E';
     }
 
     function applyAppTheme(theme) {
-      // harbor = splash teal (default), dark = sleek black & white redesign
-      let t = (theme === 'dark' || theme === 'mono' || theme === 'light') ? 'dark' : 'harbor';
+      // harbor = splash teal (default), light = seafoam, dark = sleek noir
+      let t = theme === 'mono' ? 'dark' : theme;
+      if (t !== 'dark' && t !== 'light' && t !== 'harbor') t = 'harbor';
       if (state?.settings) {
         state.settings.theme = t;
         state.settings.themeSchemeV2 = true;
       }
       document.documentElement.setAttribute('data-theme', t);
-      document.documentElement.style.colorScheme = 'dark';
+      document.documentElement.style.colorScheme = t === 'light' ? 'light' : 'dark';
       // Fun theme owns meta color while active
       const funActive = state?.settings?.funThemeUntil && state.settings.funThemeUntil >= todayStr();
       if (!funActive) {
         const metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (metaTheme) metaTheme.setAttribute('content', t === 'dark' ? '#070707' : '#0A1F1E');
+        if (metaTheme) metaTheme.setAttribute('content', themeMetaColor(t));
       }
     }
 
@@ -19567,6 +20041,67 @@
       document.getElementById('app-menu-sheet')?.remove();
     }
 
+    function appMenuItemHtml(action, icon, label, hint, opts = {}) {
+      const primary = opts.primary ? ' app-menu-item--primary' : '';
+      const extra = opts.extraClass ? ` ${opts.extraClass}` : '';
+      return `
+        <button type="button" role="menuitem" class="app-menu-item${primary}${extra}" data-app-menu-action="${action}" onclick="runAppMenuAction('${action}')">
+          <i class="${icon}" aria-hidden="true"></i>
+          <span class="app-menu-item-body">
+            <span class="app-menu-item-label">${label}</span>
+            ${hint ? `<span class="app-menu-item-hint">${hint}</span>` : ''}
+          </span>
+          <i class="fa-solid fa-chevron-right app-menu-item-chevron" aria-hidden="true"></i>
+        </button>`;
+    }
+
+    function getAppMenuContentHtml({ sheet = false } = {}) {
+      const title = sheet
+        ? `<div class="app-menu-sheet-title">
+            <span>Menu</span>
+            <span class="app-menu-sheet-title-sub">Harbor</span>
+          </div>`
+        : '';
+      return `
+        ${title}
+        <div class="app-menu-section-label">You</div>
+        <div class="app-menu-group">
+          ${appMenuItemHtml('profile', 'fa-regular fa-user', 'Profile', 'Name, metrics, home base')}
+          ${appMenuItemHtml('household', 'fa-solid fa-people-group', 'Household', 'Spouse, kids &amp; event colors')}
+        </div>
+
+        <div class="app-menu-section-label">Preferences</div>
+        <div class="app-menu-group">
+          ${appMenuItemHtml('settings', 'fa-solid fa-sliders', 'Settings', 'Theme, features, calendar', { primary: true })}
+        </div>
+
+        <div class="app-menu-section-label">Share &amp; privacy</div>
+        <div class="app-menu-group">
+          ${appMenuItemHtml('export-profile', 'fa-solid fa-file-export', 'Export profile', 'Backup file for a spouse or new device')}
+          ${appMenuItemHtml('import-profile', 'fa-solid fa-file-import', 'Import profile', 'Load a Harbor backup file')}
+          ${appMenuItemHtml('privacy', 'fa-solid fa-shield-halved', 'Privacy', 'How data is stored on this device')}
+        </div>
+
+        <div class="app-menu-section-label">Crew</div>
+        <div class="app-menu-group">
+          ${appMenuItemHtml('streakoff', 'fa-solid fa-anchor', 'Streak-Offs', 'Challenge friends on the Streaks tab')}
+        </div>
+
+        <div class="app-menu-section-label">Help</div>
+        <div class="app-menu-group">
+          ${appMenuItemHtml('tutorial', 'fa-solid fa-graduation-cap', 'App tour', 'Guided walkthrough of the basics')}
+          ${appMenuItemHtml('overview', 'fa-solid fa-book-open', 'Feature overview', 'What each tab is for')}
+          ${appMenuItemHtml('install', 'fa-solid fa-mobile-screen-button', 'Add to Home Screen', 'Install Harbor like an app')}
+          ${appMenuItemHtml('feedback', 'fa-regular fa-comment-dots', 'Send feedback', 'Report a bug or share an idea')}
+        </div>
+      `;
+    }
+
+    function renderAppMenuContent(container) {
+      if (!container) return;
+      container.innerHTML = getAppMenuContentHtml({ sheet: false });
+    }
+
     function runAppMenuAction(action) {
       closeAppMenu();
       if (action === 'settings') showSettings();
@@ -19938,49 +20473,7 @@
         <div class="absolute inset-0" onclick="closeAppMenu()"></div>
         <div onclick="event.stopImmediatePropagation()" class="app-menu-sheet-panel relative" role="menu" aria-label="App menu">
           <div class="modal-grab-pill" aria-hidden="true"></div>
-          <div class="app-menu-sheet-title">Menu</div>
-          <div class="app-menu-section-label">Account</div>
-          <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="profile" onclick="runAppMenuAction('profile')">
-            <i class="fa-regular fa-user"></i>
-            <span>User Profile</span>
-          </button>
-          <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="settings" onclick="runAppMenuAction('settings')">
-            <i class="fa-solid fa-sliders"></i>
-            <span>Settings</span>
-          </button>
-          <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="import-profile" onclick="runAppMenuAction('import-profile')">
-            <i class="fa-solid fa-file-import"></i>
-            <span>Import profile</span>
-          </button>
-          <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="privacy" onclick="runAppMenuAction('privacy')">
-            <i class="fa-solid fa-shield-halved"></i>
-            <span>Privacy</span>
-          </button>
-          <div class="app-menu-divider" role="separator"></div>
-          <div class="app-menu-section-label">Crew</div>
-          <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="streakoff" onclick="runAppMenuAction('streakoff')">
-            <i class="fa-solid fa-anchor"></i>
-            <span>Streak-Offs</span>
-          </button>
-          <div class="app-menu-divider" role="separator"></div>
-          <div class="app-menu-section-label">Help &amp; tutorial</div>
-          <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="tutorial" onclick="runAppMenuAction('tutorial')">
-            <i class="fa-solid fa-graduation-cap"></i>
-            <span>App tour</span>
-          </button>
-          <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="overview" onclick="runAppMenuAction('overview')">
-            <i class="fa-solid fa-book-open"></i>
-            <span>Feature overview</span>
-          </button>
-          <button type="button" role="menuitem" class="app-menu-item mb-1" data-app-menu-action="install" onclick="runAppMenuAction('install')">
-            <i class="fa-solid fa-mobile-screen-button"></i>
-            <span>Add to Home Screen</span>
-          </button>
-          <div class="app-menu-divider" role="separator"></div>
-          <button type="button" role="menuitem" class="app-menu-item" data-app-menu-action="feedback" onclick="runAppMenuAction('feedback')">
-            <i class="fa-regular fa-comment-dots"></i>
-            <span>Send feedback</span>
-          </button>
+          ${getAppMenuContentHtml({ sheet: true })}
         </div>
       `;
       document.body.appendChild(sheet);
@@ -20006,6 +20499,7 @@
       closeAppMenu();
       if (willOpen) {
         appMenuOpenSource = 'header';
+        renderAppMenuContent(dropdown);
         dropdown.classList.remove('hidden');
         trigger.classList.add('is-open');
         trigger.setAttribute('aria-expanded', 'true');
@@ -20030,14 +20524,29 @@
     // ==================== SETTINGS ====================
     function wireSwitchToggle(el, onChange) {
       if (!el) return;
-      el.onclick = () => {
+      // Ensure knob span exists even if markup was stripped
+      if (!el.querySelector('span')) {
+        const knob = document.createElement('span');
+        el.appendChild(knob);
+      }
+      el.classList.add('smart-suggestions-toggle', 'harbor-switch');
+      el.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const on = el.getAttribute('aria-checked') !== 'true';
         el.setAttribute('aria-checked', on ? 'true' : 'false');
-        el.className = `smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${on ? 'bg-harbor-primary' : 'bg-harbor-border'}`;
-        const knob = el.querySelector('span');
-        if (knob) knob.className = `absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : 'translate-x-0'}`;
         if (typeof onChange === 'function') onChange(on);
       };
+    }
+
+    function setSwitchChecked(el, on) {
+      if (!el) return;
+      el.setAttribute('aria-checked', on ? 'true' : 'false');
+      if (!el.querySelector('span')) {
+        const knob = document.createElement('span');
+        el.appendChild(knob);
+      }
+      el.classList.add('smart-suggestions-toggle', 'harbor-switch');
     }
 
     function showSettings() {
@@ -20047,194 +20556,292 @@
       modal.className = `fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[60]`;
       
       const smartSuggestionsOn = !state.settings.smartSuggestionsMuted;
-      const darkModeOn = getAppTheme() === 'dark';
+      const currentTheme = getAppTheme();
+      const darkModeOn = currentTheme === 'dark';
+      const lightModeOn = currentTheme === 'light';
       const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
       const corsHelperOn = state.settings.calendarAllowCorsHelper !== false;
       
       modal.innerHTML = `
         <div onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="absolute inset-0"></div>
-        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[85vh] overflow-y-auto">
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet settings-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm">
           <div class="modal-grab-pill" aria-hidden="true"></div>
-          <div class="font-semibold text-lg mb-4 flex items-center justify-between">
-            <span>Settings</span>
-            <button onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
+          <div class="font-semibold text-lg mb-3 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div>Settings</div>
+              <div class="text-[10px] font-medium text-harbor-muted mt-0.5 tracking-wide">You → look → features → calendar → tools</div>
+            </div>
+            <button type="button" onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
-          
-          <div class="space-y-4">
-            <div class="flex items-center justify-between gap-3 py-1">
-              <div class="min-w-0">
-                <div class="text-sm font-medium text-harbor-text">User Profile</div>
-                <div class="text-[10px] text-harbor-muted leading-snug">Name, body metrics, home base</div>
-              </div>
-              <button type="button" onclick="this.closest('.fixed').remove(); showUserProfile()"
-                class="flex-shrink-0 px-3 py-1.5 rounded-xl bg-harbor-raised border border-harbor-border text-xs font-medium text-harbor-primary-light">
-                Open
-              </button>
-            </div>
 
-            <div class="flex items-center justify-between gap-3 py-1">
-              <div class="min-w-0">
-                <div class="text-sm font-medium text-harbor-text">Household</div>
-                <div class="text-[10px] text-harbor-muted leading-snug">Spouse, kids &amp; color-coded events</div>
+          <div class="settings-sheet-body">
+            <!-- 1. You -->
+            <section class="settings-section" aria-labelledby="settings-sec-you">
+              <div class="settings-section-head">
+                <h3 id="settings-sec-you" class="settings-section-title">1 · You</h3>
               </div>
-              <button type="button" onclick="this.closest('.fixed').remove(); showHouseholdProfilesModal()"
-                class="flex-shrink-0 px-3 py-1.5 rounded-xl bg-harbor-raised border border-harbor-border text-xs font-medium text-harbor-primary-light">
-                Manage
-              </button>
-            </div>
-
-            <div class="py-1">
-              <div class="text-sm font-medium text-harbor-text mb-0.5">Share profile</div>
-              <div class="text-[10px] text-harbor-muted leading-snug mb-2">Export a backup file so a spouse can import it and match schedules.</div>
-              <div class="flex gap-2">
-                <button type="button" onclick="exportHarborProfile()"
-                  class="flex-1 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-semibold text-harbor-text active:bg-harbor-border">
-                  <i class="fa-solid fa-file-export mr-1.5 text-harbor-primary-light"></i>Export
-                </button>
-                <button type="button" onclick="this.closest('.fixed').remove(); triggerHarborProfileImport()"
-                  class="flex-1 py-2.5 rounded-2xl bg-harbor-primary text-white text-xs font-semibold active:opacity-90">
-                  <i class="fa-solid fa-file-import mr-1.5"></i>Import
-                </button>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between gap-3 py-1">
-              <div class="min-w-0">
-                <div class="text-sm font-medium text-harbor-text">Privacy</div>
-                <div class="text-[10px] text-harbor-muted leading-snug">How your data is stored &amp; used</div>
-              </div>
-              <button type="button" onclick="this.closest('.fixed').remove(); showPrivacyStatement()"
-                class="flex-shrink-0 px-3 py-1.5 rounded-xl bg-harbor-raised border border-harbor-border text-xs font-medium text-harbor-primary-light">
-                Read
-              </button>
-            </div>
-
-            <div class="flex items-center justify-between gap-3 py-1">
-              <div class="min-w-0">
-                <div class="text-sm font-medium text-harbor-text">Send Feedback</div>
-                <div class="text-[10px] text-harbor-muted leading-snug">Report bugs or ideas</div>
-              </div>
-              <button type="button" onclick="this.closest('.fixed').remove(); showFeedbackModal()"
-                class="flex-shrink-0 px-3 py-1.5 rounded-xl bg-harbor-raised border border-harbor-border text-xs font-medium text-harbor-primary-light">
-                Open
-              </button>
-            </div>
-
-            <div class="flex items-center justify-between gap-3 py-1">
-              <div class="min-w-0">
-                <div class="text-sm font-medium text-harbor-text">Dark mode</div>
-                <div class="text-[10px] text-harbor-muted leading-snug">Sleek black &amp; white · off = Harbor teal</div>
-              </div>
-              <button type="button" id="dark-mode-toggle" role="switch" aria-checked="${darkModeOn}"
-                class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${darkModeOn ? 'bg-harbor-primary' : 'bg-harbor-border'}">
-                <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${darkModeOn ? 'translate-x-5' : 'translate-x-0'}"></span>
-              </button>
-            </div>
-
-            <div class="flex items-center justify-between gap-3 py-1">
-              <div class="min-w-0">
-                <div class="text-sm font-medium text-harbor-text">Smart Suggestions</div>
-                <div class="text-[10px] text-harbor-muted leading-snug">Contextual tips on the Today tab</div>
-              </div>
-              <button type="button" id="smart-suggestions-toggle" role="switch" aria-checked="${smartSuggestionsOn}"
-                class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${smartSuggestionsOn ? 'bg-harbor-primary' : 'bg-harbor-border'}">
-                <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${smartSuggestionsOn ? 'translate-x-5' : 'translate-x-0'}"></span>
-              </button>
-            </div>
-
-            <div class="flex items-center justify-between gap-3 py-1">
-              <div class="min-w-0">
-                <div class="text-sm font-medium text-harbor-text">Cheat Day Fund</div>
-                <div class="text-[10px] text-harbor-muted leading-snug">Earn points from streaks — optional</div>
-              </div>
-              <button type="button" id="cheat-fund-toggle" role="switch" aria-checked="${cheatFundOn}"
-                class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${cheatFundOn ? 'bg-harbor-primary' : 'bg-harbor-border'}">
-                <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${cheatFundOn ? 'translate-x-5' : 'translate-x-0'}"></span>
-              </button>
-            </div>
-
-            <div>
-              <label class="block text-xs mb-2 text-harbor-muted">Calendar (ICS)</label>
-              <div class="text-[10px] text-harbor-muted mb-2 leading-relaxed">
-                Paste a <strong>secret iCal URL</strong> (ends with <strong>basic.ics</strong>). Harbor tries the calendar host first; if the browser blocks it (common with Google), it uses the network helper so events can load. <strong>Import file</strong> never needs a helper.
-              </div>
-              <div id="settings-calendar-feeds" class="space-y-2 mb-2"></div>
-              <div class="flex gap-2 mb-2">
-                <input id="settings-ics-url" type="url" placeholder="https://…/basic.ics"
-                  class="flex-1 min-w-0 bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 text-xs text-harbor-text outline-none focus:border-harbor-primary"
-                  autocomplete="off" spellcheck="false">
-                <button type="button" id="settings-ics-add"
-                  class="flex-shrink-0 px-3 py-2.5 rounded-2xl bg-harbor-primary text-white text-xs font-semibold active:opacity-90">
-                  Add
-                </button>
-              </div>
-              <div class="flex gap-2 mb-2">
-                <button type="button" id="settings-ics-refresh"
-                  class="flex-1 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-medium text-harbor-text active:bg-harbor-border">
-                  <i class="fa-solid fa-rotate mr-1.5 text-harbor-primary-light"></i>Refresh feeds
-                </button>
-                <button type="button" onclick="triggerCalendarICSImport()"
-                  class="flex-1 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-medium text-harbor-text active:bg-harbor-border">
-                  <i class="fa-solid fa-file-import mr-1.5 text-harbor-primary-light"></i>Import file
-                </button>
-              </div>
-              <div class="flex items-start justify-between gap-3 py-2 px-2.5 mb-1.5 rounded-2xl border border-harbor-border bg-harbor-raised/50">
-                <div class="min-w-0">
-                  <div class="text-xs font-medium text-harbor-text">Allow network helper</div>
-                  <div class="text-[10px] text-harbor-muted leading-snug mt-0.5">
-                    <strong>On by default</strong> so Google/Outlook secret ICS links work in the browser. When needed, a <strong>third-party</strong> CORS helper may see your feed URL. Turn off and use <strong>Import file</strong> for max privacy.
+              <div class="settings-card">
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Profile</div>
+                    <div class="settings-row-desc">Name, body metrics, home base</div>
+                  </div>
+                  <button type="button" class="settings-row-action" onclick="this.closest('.fixed').remove(); showUserProfile()">
+                    Open <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Household</div>
+                    <div class="settings-row-desc">Spouse, kids &amp; color-coded events</div>
+                  </div>
+                  <button type="button" class="settings-row-action" onclick="this.closest('.fixed').remove(); showHouseholdProfilesModal()">
+                    Manage <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <div class="settings-card-block">
+                  <div class="settings-row-title">Share profile</div>
+                  <div class="settings-row-desc">Export a backup so a spouse can import it and match schedules.</div>
+                  <div class="settings-inline-actions">
+                    <button type="button" class="settings-btn-secondary" onclick="exportHarborProfile()">
+                      <i class="fa-solid fa-file-export mr-1 text-harbor-primary-light" aria-hidden="true"></i>Export
+                    </button>
+                    <button type="button" class="settings-btn-primary" onclick="this.closest('.fixed').remove(); triggerHarborProfileImport()">
+                      <i class="fa-solid fa-file-import mr-1" aria-hidden="true"></i>Import
+                    </button>
                   </div>
                 </div>
-                <button type="button" id="calendar-cors-helper-toggle" role="switch" aria-checked="${corsHelperOn}"
-                  class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${corsHelperOn ? 'bg-harbor-primary' : 'bg-harbor-border'}">
-                  <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${corsHelperOn ? 'translate-x-5' : 'translate-x-0'}"></span>
-                </button>
               </div>
-              <div class="text-[10px] text-harbor-muted mt-1.5 leading-relaxed">
-                Google: Settings → your calendar → <strong>Integrate calendar</strong> → <strong>Secret address in iCal format</strong> (…/<strong>basic.ics</strong>, not <span class="text-harbor-text">?cid=</span>). URLs are masked in the list; stored only on this device.
+            </section>
+
+            <!-- 2. Look & feel -->
+            <section class="settings-section" aria-labelledby="settings-sec-look">
+              <div class="settings-section-head">
+                <h3 id="settings-sec-look" class="settings-section-title">2 · Look &amp; feel</h3>
               </div>
-            </div>
+              <div class="settings-card">
+                <div class="settings-card-block">
+                  <div class="settings-row-title">Appearance</div>
+                  <div class="settings-row-desc mb-2">Light sits next to Dark. Turn both off for Harbor teal.</div>
+                  <div class="theme-appearance-row" id="theme-appearance-row">
+                    <div class="theme-appearance-card ${darkModeOn ? 'is-active' : ''}" data-theme-card="dark">
+                      <div class="min-w-0">
+                        <div class="theme-card-label">Dark</div>
+                        <div class="theme-card-sub">Sleek noir</div>
+                      </div>
+                      <button type="button" id="dark-mode-toggle" role="switch" aria-checked="${darkModeOn ? 'true' : 'false'}"
+                        aria-label="Dark mode" class="smart-suggestions-toggle harbor-switch">
+                        <span></span>
+                      </button>
+                    </div>
+                    <div class="theme-appearance-card ${lightModeOn ? 'is-active' : ''}" data-theme-card="light">
+                      <div class="min-w-0">
+                        <div class="theme-card-label">Light</div>
+                        <div class="theme-card-sub">Teal accents</div>
+                      </div>
+                      <button type="button" id="light-mode-toggle" role="switch" aria-checked="${lightModeOn ? 'true' : 'false'}"
+                        aria-label="Light mode" class="smart-suggestions-toggle harbor-switch">
+                        <span></span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="theme-teal-hint mt-2">
+                    <span class="theme-teal-dot" aria-hidden="true"></span>
+                    <span>Default is <strong class="text-harbor-text">Harbor teal</strong> — both switches off.</span>
+                  </div>
+                </div>
+              </div>
+            </section>
 
-            <div>
-              <label class="block text-xs mb-1 text-harbor-muted">Preview tools</label>
-              <button onclick="simulateContextChange(); this.closest('.fixed').remove()" 
-                class="w-full py-3 rounded-2xl bg-harbor-surface active:bg-harbor-border mb-2">Simulate different day (weather + schedule)</button>
-              <button onclick="fetchRealWeather(); this.closest('.fixed').remove()" 
-                class="w-full py-3 rounded-2xl bg-harbor-surface active:bg-harbor-primary/20">Use real location + weather</button>
-            </div>
-            
-            <div class="pt-2 border-t border-harbor-border">
-              <div class="text-xs text-harbor-muted mb-1">Voice commands (Chrome/Edge):</div>
-              <div class="text-xs leading-snug text-harbor-text">"add milk to grocery", "mark rent paid", "complete walk", "set energy low"</div>
-            </div>
+            <!-- 3. Features -->
+            <section class="settings-section" aria-labelledby="settings-sec-features">
+              <div class="settings-section-head">
+                <h3 id="settings-sec-features" class="settings-section-title">3 · Features</h3>
+              </div>
+              <div class="settings-card">
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Smart Suggestions</div>
+                    <div class="settings-row-desc">Contextual tips on the Today tab</div>
+                  </div>
+                  <button type="button" id="smart-suggestions-toggle" role="switch" aria-checked="${smartSuggestionsOn ? 'true' : 'false'}"
+                    aria-label="Smart Suggestions" class="smart-suggestions-toggle harbor-switch">
+                    <span></span>
+                  </button>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Cheat Day Fund</div>
+                    <div class="settings-row-desc">Earn points from streaks — optional</div>
+                  </div>
+                  <button type="button" id="cheat-fund-toggle" role="switch" aria-checked="${cheatFundOn ? 'true' : 'false'}"
+                    aria-label="Cheat Day Fund" class="smart-suggestions-toggle harbor-switch">
+                    <span></span>
+                  </button>
+                </div>
+              </div>
+            </section>
 
-            <div class="pt-3 border-t border-harbor-border">
-              <label class="block text-xs mb-2 text-harbor-muted">Reset app</label>
-              <button type="button" onclick="confirmFactoryResetFromSettings(this)"
-                class="w-full py-3 rounded-2xl border border-rose-500/40 bg-rose-950/30 text-rose-300 active:bg-rose-900/50 font-semibold">
-                Factory reset
-              </button>
-              <div class="text-[10px] text-harbor-muted mt-1.5 leading-snug">Clears all tasks, Life data, streaks, and settings — restarts like a fresh install.</div>
-            </div>
-            
-            <div class="text-[10px] pt-2 text-center text-harbor-muted">
-              Harbor ${HARBOR_BUILD} · prototype build
-            </div>
+            <!-- 4. Calendar -->
+            <section class="settings-section" aria-labelledby="settings-sec-cal">
+              <div class="settings-section-head">
+                <h3 id="settings-sec-cal" class="settings-section-title">4 · Calendar</h3>
+                <span class="settings-section-note">ICS feeds</span>
+              </div>
+              <div class="settings-card">
+                <div class="settings-card-block">
+                  <p class="settings-help-text mb-2">
+                    Paste a <strong>secret iCal URL</strong> (ends with <strong>basic.ics</strong>). Harbor tries the calendar host first; if the browser blocks it (common with Google), it uses the network helper so events can load. <strong>Import file</strong> never needs a helper.
+                  </p>
+                  <div id="settings-calendar-feeds" class="space-y-2 mb-2"></div>
+                  <div class="flex gap-2 mb-2">
+                    <input id="settings-ics-url" type="url" placeholder="https://…/basic.ics"
+                      class="flex-1 min-w-0 bg-harbor-surface border border-harbor-border rounded-2xl px-3 py-2.5 text-xs text-harbor-text outline-none focus:border-harbor-primary"
+                      autocomplete="off" spellcheck="false">
+                    <button type="button" id="settings-ics-add" class="settings-btn-primary flex-shrink-0 px-3 rounded-2xl text-xs">
+                      Add
+                    </button>
+                  </div>
+                  <div class="settings-inline-actions">
+                    <button type="button" id="settings-ics-refresh" class="settings-btn-secondary">
+                      <i class="fa-solid fa-rotate mr-1 text-harbor-primary-light" aria-hidden="true"></i>Refresh feeds
+                    </button>
+                    <button type="button" class="settings-btn-secondary" onclick="triggerCalendarICSImport()">
+                      <i class="fa-solid fa-file-import mr-1 text-harbor-primary-light" aria-hidden="true"></i>Import file
+                    </button>
+                  </div>
+                </div>
+                <div class="settings-row is-top">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Allow network helper</div>
+                    <div class="settings-row-desc">
+                      <strong class="text-harbor-text">On by default</strong> so Google/Outlook secret ICS links work. When needed, a <strong class="text-harbor-text">third-party</strong> CORS helper may see your feed URL. Turn off and use Import file for max privacy.
+                    </div>
+                  </div>
+                  <button type="button" id="calendar-cors-helper-toggle" role="switch" aria-checked="${corsHelperOn ? 'true' : 'false'}"
+                    aria-label="Allow network helper" class="smart-suggestions-toggle harbor-switch mt-0.5">
+                    <span></span>
+                  </button>
+                </div>
+                <div class="settings-card-block">
+                  <p class="settings-help-text">
+                    Google: Settings → your calendar → <strong>Integrate calendar</strong> → <strong>Secret address in iCal format</strong> (…/<strong>basic.ics</strong>, not <span class="text-harbor-text">?cid=</span>). URLs are masked in the list; stored only on this device.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <!-- 5. Tools -->
+            <section class="settings-section" aria-labelledby="settings-sec-tools">
+              <div class="settings-section-head">
+                <h3 id="settings-sec-tools" class="settings-section-title">5 · Tools</h3>
+              </div>
+              <div class="settings-card">
+                <div class="settings-card-block">
+                  <div class="settings-row-title mb-1">Preview tools</div>
+                  <div class="settings-inline-actions is-stack">
+                    <button type="button" class="settings-btn-secondary" onclick="simulateContextChange(); this.closest('.fixed').remove()">
+                      Simulate different day (weather + schedule)
+                    </button>
+                    <button type="button" class="settings-btn-secondary" onclick="fetchRealWeather(); this.closest('.fixed').remove()">
+                      Use real location + weather
+                    </button>
+                  </div>
+                </div>
+                <div class="settings-card-block">
+                  <div class="settings-row-title">Voice commands</div>
+                  <div class="settings-row-desc">Chrome / Edge only</div>
+                  <div class="settings-voice-examples">"add milk to grocery" · "mark rent paid" · "complete walk" · "set energy low"</div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 6. Support -->
+            <section class="settings-section" aria-labelledby="settings-sec-support">
+              <div class="settings-section-head">
+                <h3 id="settings-sec-support" class="settings-section-title">6 · Support</h3>
+              </div>
+              <div class="settings-card">
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Privacy</div>
+                    <div class="settings-row-desc">How your data is stored &amp; used</div>
+                  </div>
+                  <button type="button" class="settings-row-action" onclick="this.closest('.fixed').remove(); showPrivacyStatement()">
+                    Read <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Send feedback</div>
+                    <div class="settings-row-desc">Report bugs or ideas</div>
+                  </div>
+                  <button type="button" class="settings-row-action" onclick="this.closest('.fixed').remove(); showFeedbackModal()">
+                    Open <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <!-- 7. Danger zone -->
+            <section class="settings-section" aria-labelledby="settings-sec-reset">
+              <div class="settings-section-head">
+                <h3 id="settings-sec-reset" class="settings-section-title">7 · Reset</h3>
+              </div>
+              <div class="settings-card">
+                <div class="settings-card-block">
+                  <button type="button" class="settings-danger-btn" onclick="confirmFactoryResetFromSettings(this)">
+                    Factory reset
+                  </button>
+                  <p class="settings-help-text mt-2">
+                    Clears all tasks, Life data, streaks, and settings — restarts like a fresh install.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <div class="settings-build-meta">Harbor ${HARBOR_BUILD} · prototype build</div>
           </div>
-          
-          <div class="mt-5 flex gap-x-3">
-            <button onclick="saveSettingsFromModal(this)" class="flex-1 bg-harbor-primary active:bg-harbor-primary-light py-3 rounded-2xl font-semibold">Save</button>
-            <button onclick="this.closest('.fixed').remove()" class="flex-1 bg-harbor-surface active:bg-harbor-border py-3 rounded-2xl">Close</button>
+
+          <div class="settings-sheet-footer flex gap-x-3">
+            <button type="button" onclick="saveSettingsFromModal(this)" class="flex-1 bg-harbor-primary text-white active:bg-harbor-primary-light py-3 rounded-2xl font-semibold">Save</button>
+            <button type="button" onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="flex-1 bg-harbor-raised border border-harbor-border active:bg-harbor-border py-3 rounded-2xl font-medium text-harbor-text">Close</button>
           </div>
         </div>
       `;
       
       document.body.appendChild(modal);
-      wireSwitchToggle(modal.querySelector('#dark-mode-toggle'), (on) => {
+
+      const darkToggle = modal.querySelector('#dark-mode-toggle');
+      const lightToggle = modal.querySelector('#light-mode-toggle');
+      const refreshThemeCards = () => {
+        const t = getAppTheme();
+        setSwitchChecked(darkToggle, t === 'dark');
+        setSwitchChecked(lightToggle, t === 'light');
+        modal.querySelectorAll('[data-theme-card]').forEach((card) => {
+          card.classList.toggle('is-active', card.getAttribute('data-theme-card') === t);
+        });
+      };
+
+      wireSwitchToggle(darkToggle, (on) => {
         applyAppTheme(on ? 'dark' : 'harbor');
+        refreshThemeCards();
         saveState();
         showToast(on ? 'Dark mode on' : 'Harbor teal on');
       });
+      wireSwitchToggle(lightToggle, (on) => {
+        applyAppTheme(on ? 'light' : 'harbor');
+        refreshThemeCards();
+        saveState();
+        showToast(on ? 'Light mode on' : 'Harbor teal on');
+      });
+      // Re-assert initial checked state after wiring (ensures knobs paint)
+      setSwitchChecked(darkToggle, darkModeOn);
+      setSwitchChecked(lightToggle, lightModeOn);
+      setSwitchChecked(modal.querySelector('#smart-suggestions-toggle'), smartSuggestionsOn);
+      setSwitchChecked(modal.querySelector('#cheat-fund-toggle'), cheatFundOn);
+      setSwitchChecked(modal.querySelector('#calendar-cors-helper-toggle'), corsHelperOn);
+
       wireSwitchToggle(modal.querySelector('#smart-suggestions-toggle'));
       wireSwitchToggle(modal.querySelector('#cheat-fund-toggle'));
       wireSwitchToggle(modal.querySelector('#calendar-cors-helper-toggle'), (on) => {
@@ -20284,10 +20891,13 @@
       if (corsHelperToggle) {
         state.settings.calendarAllowCorsHelper = corsHelperToggle.getAttribute('aria-checked') === 'true';
       }
-      const darkToggle = modal.querySelector('#dark-mode-toggle');
-      if (darkToggle) {
-        applyAppTheme(darkToggle.getAttribute('aria-checked') === 'true' ? 'dark' : 'harbor');
-      }
+      const darkToggleEl = modal.querySelector('#dark-mode-toggle');
+      const lightToggleEl = modal.querySelector('#light-mode-toggle');
+      const darkOn = darkToggleEl?.getAttribute('aria-checked') === 'true';
+      const lightOn = lightToggleEl?.getAttribute('aria-checked') === 'true';
+      if (darkOn) applyAppTheme('dark');
+      else if (lightOn) applyAppTheme('light');
+      else applyAppTheme('harbor');
       saveState();
       settingsWasOpen = false;
       modal.remove();
@@ -21810,7 +22420,12 @@
       try {
         const theme = document.documentElement.getAttribute('data-theme') || 'harbor';
         const metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (metaTheme) metaTheme.setAttribute('content', theme === 'dark' ? '#070707' : '#0A1F1E');
+        if (metaTheme) {
+          metaTheme.setAttribute(
+            'content',
+            typeof themeMetaColor === 'function' ? themeMetaColor(theme) : (theme === 'dark' ? '#070707' : theme === 'light' ? '#F3F7F6' : '#0A1F1E')
+          );
+        }
       } catch (_) { /* ignore */ }
       const appWrap = document.querySelector('.app-content-wrap');
       if (appWrap) {
