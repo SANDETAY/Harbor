@@ -614,6 +614,18 @@
       min-width: 0;
       min-height: 0;
       flex: 1;
+      /* Match left/right padding feel — no gutter lost to a scrollbar */
+      scrollbar-gutter: auto;
+    }
+
+    #schedule-view-toggle {
+      flex-wrap: wrap;
+    }
+
+    #schedule-view-toggle .cal-format-chip {
+      flex: 1 1 auto;
+      text-align: center;
+      min-width: 0;
     }
 
     .library-header {
@@ -635,7 +647,22 @@
       flex-direction: column;
       gap: 0.85rem;
       align-items: stretch;
+      width: 100%;
       padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+      /* Camouflage scrollbar — scroll still works */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    #library-list::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+      background: transparent;
+    }
+
+    #library-list::-webkit-scrollbar-thumb {
+      background: transparent;
     }
 
     .library-column {
@@ -643,10 +670,11 @@
       width: 100%;
       min-width: 0;
       max-width: none;
+      box-sizing: border-box;
       background: var(--harbor-surface);
       border: 1px solid var(--harbor-border);
       border-radius: 1rem;
-      padding: 0.75rem 0.7rem 0.65rem;
+      padding: 0.75rem 0.85rem 0.7rem;
       box-shadow: var(--harbor-shadow-sm);
     }
 
@@ -1099,15 +1127,6 @@
       .splash-wave-layer { opacity: 0.35; }
       body.is-splash-active .app-content-wrap { opacity: 1; }
       body.is-splash-active .site-header { opacity: 1; pointer-events: auto; }
-    }
-
-    #library-list::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    #library-list::-webkit-scrollbar-thumb {
-      background: var(--harbor-border);
-      border-radius: 4px;
     }
 
     #app-chrome {
@@ -3295,9 +3314,10 @@
       }
 
       .library-column {
-        flex: 0 0 85vw;
-        min-width: 85vw;
-        max-width: 85vw;
+        flex: none;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
       }
 
       .streaks-body {
@@ -3860,6 +3880,8 @@
               class="cal-format-chip is-active">Today</button>
             <button type="button" role="tab" data-schedule-view="week" onclick="setScheduleView('week')"
               class="cal-format-chip">This week</button>
+            <button type="button" role="tab" data-schedule-view="month" onclick="setScheduleView('month')"
+              class="cal-format-chip">This month</button>
           </div>
           <button type="button" id="work-schedule-chip" onclick="showWorkScheduleModal()" class="work-hours-card" aria-label="Set your work hours">
             <div class="work-hours-icon" aria-hidden="true"><i class="fa-regular fa-clock"></i></div>
@@ -3995,7 +4017,7 @@
           <div id="library-filters" class="library-filters mb-2" role="tablist" aria-label="Library categories"></div>
         </div>
         
-        <div id="library-list" class="pr-0.5" role="region" aria-label="Library tasks by category"></div>
+        <div id="library-list" role="region" aria-label="Library tasks by category"></div>
       </div>
       </div><!-- /app-scroll -->
 
@@ -4073,7 +4095,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v81';
+    const HARBOR_BUILD = 'v82';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -8342,11 +8364,13 @@
     }
 
     function getScheduleView() {
-      return state.settings.scheduleView === 'week' ? 'week' : 'today';
+      const v = state.settings.scheduleView;
+      if (v === 'week' || v === 'month') return v;
+      return 'today';
     }
 
     function setScheduleView(view) {
-      state.settings.scheduleView = view === 'week' ? 'week' : 'today';
+      state.settings.scheduleView = view === 'week' || view === 'month' ? view : 'today';
       saveState();
       renderSchedule();
     }
@@ -8360,7 +8384,11 @@
       });
       const title = document.getElementById('schedule-section-title');
       if (title) {
-        title.textContent = view === 'week' ? "This Week's Schedule" : "Today's Schedule";
+        title.textContent = view === 'week'
+          ? "This Week's Schedule"
+          : view === 'month'
+            ? "This Month's Schedule"
+            : "Today's Schedule";
       }
     }
 
@@ -8371,6 +8399,15 @@
         const s = getEventDate(e);
         const en = getEventEndDate(e);
         // Overlaps week window
+        return s <= end && en >= start;
+      });
+    }
+
+    function filterEventsForMonth(events, anchorDate = todayStr()) {
+      const { start, end } = getMonthBounds(anchorDate);
+      return (events || []).filter(e => {
+        const s = getEventDate(e);
+        const en = getEventEndDate(e);
         return s <= end && en >= start;
       });
     }
@@ -9214,14 +9251,22 @@
         if (view === 'week') {
           const weekEvents = filterEventsForWeek(allEvents);
           freeEl.textContent = `${weekEvents.length} event${weekEvents.length === 1 ? '' : 's'}`;
+        } else if (view === 'month') {
+          const monthEvents = filterEventsForMonth(allEvents);
+          freeEl.textContent = `${monthEvents.length} event${monthEvents.length === 1 ? '' : 's'}`;
         } else {
           freeEl.textContent = formatScheduleLoadLabel(avail);
         }
       }
       if (detailEl) {
-        detailEl.textContent = view === 'week'
-          ? `${formatEventDateLabel(getWeekStartDateStr(today))} – ${formatEventDateLabel(getWeekEndDateStr(today))}`
-          : avail.summary;
+        if (view === 'week') {
+          detailEl.textContent = `${formatEventDateLabel(getWeekStartDateStr(today))} – ${formatEventDateLabel(getWeekEndDateStr(today))}`;
+        } else if (view === 'month') {
+          const { start, end } = getMonthBounds(today);
+          detailEl.textContent = `${formatEventDateLabel(start)} – ${formatEventDateLabel(end)}`;
+        } else {
+          detailEl.textContent = avail.summary;
+        }
       }
       const chipLabelEl = document.getElementById('work-schedule-chip-label');
       if (chipLabelEl) {
@@ -9247,8 +9292,21 @@
           container.appendChild(renderScheduleSectionHeader(formatEventDateLabel(date)));
           events.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
         });
+      } else if (view === 'month') {
+        const monthEvents = filterEventsForMonth(allEvents);
+        if (!monthEvents.length) {
+          container.innerHTML = harborEmptyHtml('📅', 'Open month', 'No events this month. Tap + Event or Import CSV.');
+          return;
+        }
+        const { start, end } = getMonthBounds(today);
+        groupEventsByDate(monthEvents)
+          .filter(({ date }) => date >= start && date <= end)
+          .forEach(({ date, events }) => {
+            container.appendChild(renderScheduleSectionHeader(formatEventDateLabel(date)));
+            events.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
+          });
       } else {
-        const todayEvents = allEvents.filter(e => getEventDate(e) === today);
+        const todayEvents = allEvents.filter(e => eventOccursOnDate(e, today));
         if (!todayEvents.length) {
           container.innerHTML = harborEmptyHtml('📅', 'Open schedule', cache?.note || 'No events on calendar today. Tap + Add event or Import CSV.');
           return;
