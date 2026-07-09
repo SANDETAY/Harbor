@@ -3602,10 +3602,10 @@
       <div id="main-nav-bar" class="main-nav px-5 pt-2 flex border-b border-rhythm-border bg-rhythm-bg" role="tablist" aria-label="Main navigation">
         <button type="button" role="tab" aria-selected="true" onclick="switchTab('today')" id="tab-today"
           class="main-nav-tab nav-active">Today</button>
-        <button type="button" role="tab" aria-selected="false" onclick="switchTab('streaks')" id="tab-streaks"
-          class="main-nav-tab">Streaks</button>
         <button type="button" role="tab" aria-selected="false" onclick="switchTab('life')" id="tab-life"
           class="main-nav-tab">Life</button>
+        <button type="button" role="tab" aria-selected="false" onclick="switchTab('streaks')" id="tab-streaks"
+          class="main-nav-tab">Streaks</button>
         <button type="button" role="tab" aria-selected="false" onclick="switchTab('library')" id="tab-library"
           class="main-nav-tab">Library</button>
       </div>
@@ -3852,7 +3852,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v61';
+    const RHYTHM_BUILD = 'v62';
 
     // Fitness / wearable sync (Today “Done — sync”, device modal, etc.) — off until productized.
     const FEATURE_ACTIVITY_SYNC = false;
@@ -11511,7 +11511,7 @@
       { id: 'meal-presets', reason: 'Life grocery includes meal presets — stock a recipe’s ingredients to your list in one tap when meal planning.', cta: 'Grocery list', action: 'life-grocery' },
       { id: 'health-sync', reason: 'Step and distance goals on Streaks use what you log in the app for now — wearable sync will return in a later update.', cta: 'View streaks', action: 'streaks' },
       { id: 'dismiss-vs-mute', reason: '<strong>Dismiss</strong> hides one suggestion; <strong>Mute</strong> removes the panel entirely for more room. Re-enable anytime in Settings.', cta: 'Open settings', action: 'settings' },
-      { id: 'tabs-overview', reason: '<strong>Today</strong> is your action list, <strong>Streaks</strong> tracks progress, <strong>Life</strong> holds bills & schedule, and <strong>Library</strong> is where tasks are sourced.', cta: 'Explore tabs', action: 'library' },
+      { id: 'tabs-overview', reason: '<strong>Today</strong> is your action list, <strong>Life</strong> holds schedule & bills, <strong>Streaks</strong> tracks progress, and <strong>Library</strong> is where tasks are sourced.', cta: 'Explore tabs', action: 'library' },
       { id: 'onboarding-routine', reason: 'Want a fuller Today list? Pull tasks from the <strong>Library</strong>, set intervals, and Rhythm will surface them when energy and free time line up.', cta: 'Browse Library', action: 'library' }
     ];
 
@@ -11846,6 +11846,14 @@
         prepare: () => switchTab('today')
       },
       {
+        id: 'life-intro',
+        title: 'Life tab',
+        body: 'Right next to Today — schedule, groceries, bills, and subscriptions in one place.',
+        target: () => document.getElementById('tab-life'),
+        cardPlacement: 'below',
+        prepare: () => switchTab('life')
+      },
+      {
         id: 'streaks-intro',
         title: 'Streaks tab',
         body: 'Daily habits build streaks here.',
@@ -11878,14 +11886,6 @@
           renderStreaks();
           if (currentProjectionHabit) showProjections(currentProjectionHabit);
         }
-      },
-      {
-        id: 'life-intro',
-        title: 'Life tab',
-        body: 'Keep track of your schedule, groceries, bills, and subscriptions.',
-        target: () => document.getElementById('tab-life'),
-        cardPlacement: 'below',
-        prepare: () => switchTab('life')
       },
       {
         id: 'library-intro',

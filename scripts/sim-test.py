@@ -249,7 +249,7 @@ def run_tests():
         ok("state manipulation via RHYTHM API")
 
         # --- Simulation 13: Tutorial highlights align on mobile ---
-        tutorial_steps = [0, 4, 9]  # today tab, streaks tab, energy+smart
+        tutorial_steps = [0, 3, 4]  # today tab, life tab, streaks tab
         page.evaluate("""() => {
           localStorage.setItem('rhythm_onboarded', '1');
           if (typeof startAppTutorial === 'function') startAppTutorial();
