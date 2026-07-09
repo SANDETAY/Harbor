@@ -16409,7 +16409,7 @@
       const me = getLocalParticipant(ch);
       return (
         `🌊 Tide update — ${ch.name}\n` +
-        `${getCaptainName()}: ${me?.streak || 0}-day run\n` +
+        `${getCaptainName()}: ${me?.streak || 0}-day streak\n` +
         `\nPaste this in Harbor → Streaks → Streak-Offs → Radio a tide:\n${code}`
       );
     }
@@ -16512,7 +16512,7 @@
               <div class="text-2xl mb-1" aria-hidden="true">⚓</div>
               <div class="streak-off-title mb-1">No active Streak-Offs</div>
               <div class="text-[11px] text-harbor-muted leading-relaxed mb-3">
-                Challenge a friend (or a whole crew) to hold the longest run for 7–30 days.
+                Challenge a friend (or a whole crew) to hold the longest streak for 7–30 days.
                 Share an invite bottle — then radio your tide so the board stays honest.
               </div>
               <div class="streak-off-actions justify-center">
@@ -16559,7 +16559,7 @@
             <button type="button" onclick="this.closest('.fixed').remove()" class="text-harbor-muted text-2xl leading-none">×</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-4 leading-relaxed">
-            Time-boxed duel (or crew war). Longest unbroken run when the window ends wins. Invite-only — no public leaderboard.
+            Time-boxed duel (or crew war). Longest unbroken streak when the window ends wins. Invite-only — no public leaderboard.
           </div>
           <label class="block text-xs text-harbor-muted mb-1">Challenge name</label>
           <input id="so-name" type="text" maxlength="42" value="${escapeBriefHtml(idea)}"
