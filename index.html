@@ -4768,7 +4768,7 @@
       if (type === 'miles' || type === 'steps') {
         const loggedCal = getLoggedCalorieEstimate(habit, sample, dailyAvg);
         result.metrics.push({
-          label: hasDevice ? 'Est. calories (logged)' : 'Est. calories (logged, profile)',
+          label: 'Estimated Calories',
           value: `${loggedCal.totalCal.toLocaleString()} kcal`
         });
         result.streakCalorieDetail = loggedCal;
@@ -14611,10 +14611,31 @@
     // Boot
     window.onload = init;
 
-    // PWA service worker (design preview — caches assets for faster reload)
+    // PWA service worker — network-first with versioned cache (see sw.js CACHE_NAME)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => {
+            reg.update().catch(() => {});
+            // If a new worker is waiting, activate it so testers see copy/UI fixes promptly
+            if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            reg.addEventListener('updatefound', () => {
+              const worker = reg.installing;
+              if (!worker) return;
+              worker.addEventListener('statechange', () => {
+                if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                  worker.postMessage({ type: 'SKIP_WAITING' });
+                }
+              });
+            });
+          })
+          .catch(() => {});
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
       });
     }
   </script>
