@@ -4285,25 +4285,21 @@
     function renderProjectionMetricLogger(habit) {
       const meta = getMetricInputMeta(habit);
       if (!meta) return '';
+      // Hide log UI during Projected Wins tutorial step (keeps the panel readable).
+      if (state.settings.tutorialActive && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'projections-read') {
+        return '';
+      }
       const todayLog = getTodaysMetricLog(habit);
       const recent = collectMetricDataPoints(habit).slice(-5).reverse();
       const inputId = `proj-metric-${habit.id}`;
-      const manualId = `proj-manual-${habit.id}`;
       const syncedToday = hasSyncedToday(habit.id);
 
+      // Physical activity: no Log activity box here — sync from Today after complete.
       if (isPhysicalActivity(habit)) {
-        // Device sync lives on Today after you complete an activity — not in Projected Wins.
+        if (!todayLog && !syncedToday && !recent.length) return '';
         return `
           <div class="mt-4 pt-3 border-t border-rhythm-border">
-            <label class="block text-xs font-medium text-rhythm-text mb-1">Log activity</label>
-            <div class="text-[10px] text-rhythm-muted mb-2 leading-snug">Enter what you did for projections. After you complete an activity on Today, use <strong>Sync</strong> there to pull from a wearable.</div>
-            <div class="flex gap-2">
-              <input id="${manualId}" type="number" min="0" step="${meta.step}" value="${todayLog?.value ?? ''}" placeholder="${meta.placeholder}"
-                class="flex-1 bg-rhythm-raised border border-rhythm-border focus:border-rhythm-primary rounded-2xl px-3 py-2.5 text-sm outline-none text-rhythm-text">
-              <button type="button" data-save-metric="${habit.id}" data-metric-input="${manualId}"
-                class="px-4 py-2.5 rounded-2xl bg-rhythm-primary text-white text-xs font-semibold active:opacity-90">Save</button>
-            </div>
-            ${todayLog ? `<div class="text-[10px] text-rhythm-muted mt-1.5">Today: <strong class="text-rhythm-text">${todayLog.value} ${meta.unitLabel}</strong> <span class="opacity-70">(${todayLog.source || 'logged'})</span></div>` : ''}
+            ${todayLog ? `<div class="text-[10px] text-rhythm-muted">Today: <strong class="text-rhythm-text">${todayLog.value} ${meta.unitLabel}</strong> <span class="opacity-70">(${todayLog.source || 'logged'})</span></div>` : ''}
             ${syncedToday ? `<div class="text-[10px] text-sky-300 mt-1">Device synced today</div>` : ''}
             ${recent.length ? `
               <div class="mt-2.5">
@@ -4324,8 +4320,8 @@
 
       return `
         <div class="mt-4 pt-3 border-t border-rhythm-border">
-          <label class="block text-xs font-medium text-rhythm-text mb-1">Log activity</label>
-          <div class="text-[10px] text-rhythm-muted mb-2 leading-snug">Record what you actually did — projections use your logged ${meta.unitLabel}, not a default guess.</div>
+          <label class="block text-xs font-medium text-rhythm-text mb-1">Update total</label>
+          <div class="text-[10px] text-rhythm-muted mb-2 leading-snug">Record what you actually did — projections use your logged ${meta.unitLabel}.</div>
           <div class="flex gap-2">
             <input id="${inputId}" type="number" min="0" step="${meta.step}" value="${todayLog?.value ?? ''}" placeholder="${meta.placeholder}"
               class="flex-1 bg-rhythm-raised border border-rhythm-border focus:border-rhythm-primary rounded-2xl px-3 py-2.5 text-sm outline-none text-rhythm-text">
@@ -4614,7 +4610,6 @@
               <div class="text-xs text-rhythm-text leading-relaxed">
                 About <span class="font-semibold tabular-nums">${insight.kcalPerLb.toLocaleString()} kcal</span>
                 ≈ <span class="font-semibold">1 lb</span> of body fat.
-                <span class="text-rhythm-muted"> (widely used estimate — actual loss varies by person.)</span>
               </div>
               ${streakLine}
             </div>
@@ -4780,7 +4775,7 @@
         result.fatInsightKcal = loggedCal.totalCal;
         result.profileNote = hasDevice
           ? 'Calories sum your logged activity in this window.'
-          : `Based on your profile (${profile.weightLb} lbs${profile.age ? `, age ${profile.age}` : ''}) — add Garmin sync for tighter accuracy.`;
+          : 'Numbers are defaults — change your profile information in Settings for better accuracy.';
       }
 
       if (type === 'savings') {
@@ -10830,7 +10825,7 @@
       {
         id: 'today-intro',
         title: 'Today tab',
-        body: 'Your action list lives here. Things due today show up every morning — tap the circle to log a win.',
+        body: 'Your daily tasks will be shown here. Tasks for that day show up every morning.',
         target: () => document.getElementById('tab-today'),
         cardPlacement: 'below',
         prepare: () => switchTab('today')
@@ -10838,7 +10833,7 @@
       {
         id: 'complete-task',
         title: 'Complete a task',
-        body: 'Try it now — tap the circle on a task. Completing daily <strong>habits</strong> feeds your <strong>Streaks</strong> tab.',
+        body: '<strong>Tap</strong> the circle to log a win.',
         target: () => getTutorialTaskCard(),
         waitFor: 'habit-complete',
         interactive: true,
@@ -10846,9 +10841,10 @@
       },
       {
         id: 'edit-delete-task',
-        title: 'Swipe to edit',
-        mobileOnly: true,
-        body: 'On phone, <strong>swipe a Today task left</strong> to reveal <strong>Edit</strong> and <strong>Delete</strong>. That same swipe pattern shows up elsewhere once you know it.<br><br>Tap <strong>Next</strong> when you\'re ready.',
+        title: 'Edit or delete',
+        body: () => isSwipeMobile()
+          ? '<strong>Swipe a task left</strong> to edit or delete the task.'
+          : 'Use <strong>Edit</strong> or <strong>×</strong> on a task card to change or remove it.',
         target: () => getTutorialTaskCard(),
         cardPlacement: 'below',
         prepare: () => switchTab('today')
@@ -10856,7 +10852,7 @@
       {
         id: 'streaks-intro',
         title: 'Streaks tab',
-        body: 'Daily <strong>habits</strong> build streaks here. Tap a streak to open <strong>Projected Wins</strong> for measurable goals.',
+        body: 'Daily habits build streaks here.',
         target: () => document.getElementById('tab-streaks'),
         cardPlacement: 'below',
         prepare: () => switchTab('streaks')
@@ -10884,12 +10880,13 @@
         prepare: () => {
           switchTab('streaks');
           renderStreaks();
+          if (currentProjectionHabit) showProjections(currentProjectionHabit);
         }
       },
       {
         id: 'life-intro',
         title: 'Life tab',
-        body: '<strong>Schedule</strong> for events, <strong>Grocery</strong> for lists, <strong>Bills</strong> for due dates, and <strong>Subscriptions</strong> for recurring costs.',
+        body: 'Keep track of your schedule, groceries, bills, and subscriptions.',
         target: () => document.getElementById('tab-life'),
         cardPlacement: 'below',
         prepare: () => switchTab('life')
@@ -13077,7 +13074,7 @@
 
       panel.innerHTML = `
         <div class="font-semibold text-base mb-1">${proj.title}</div>
-        <div class="text-xs text-rhythm-muted mb-3">Last 30 days · data-driven forecast</div>
+        <div class="text-xs text-rhythm-muted mb-3">Last 30 days</div>
         
         <div class="space-y-2 text-sm">
           ${proj.metrics.map(m => `
@@ -14287,7 +14284,7 @@
             <div class="onboarding-step-label">Welcome</div>
             <div class="onboarding-title">Your day, matched to your energy</div>
             <div class="onboarding-subtitle">
-              Rhythm keeps tasks, life admin, and progress in one calm place — then orders Today by how you feel.
+              Rhythm tracks tasks, life, and progress in one calm space.
             </div>
           </div>
 
@@ -14303,14 +14300,14 @@
               <div class="onboarding-feature-icon"><i class="fa-solid fa-layer-group"></i></div>
               <div class="min-w-0">
                 <div class="text-sm font-semibold text-rhythm-text">Life in one tab</div>
-                <div class="text-xs text-rhythm-muted leading-snug mt-0.5">Bills, schedule, grocery, and subscriptions sit under Life — not scattered across apps.</div>
+                <div class="text-xs text-rhythm-muted leading-snug mt-0.5">Bills, groceries, subscriptions, and schedules all in one tab — not scattered across apps.</div>
               </div>
             </div>
             <div class="onboarding-feature">
               <div class="onboarding-feature-icon"><i class="fa-solid fa-fire"></i></div>
               <div class="min-w-0">
                 <div class="text-sm font-semibold text-rhythm-text">Streaks &amp; Cheat Day Fund</div>
-                <div class="text-xs text-rhythm-muted leading-snug mt-0.5">Completions build real progress — and points you can cash for a guilt-free break.</div>
+                <div class="text-xs text-rhythm-muted leading-snug mt-0.5">Streaks build real progress — with points you can redeem for a guilt-free break.</div>
               </div>
             </div>
           </div>
@@ -14319,9 +14316,6 @@
           <div class="text-center">
             <button type="button" onclick="skipOnboarding()" class="text-xs text-rhythm-muted hover:text-rhythm-text underline underline-offset-2">Just explore</button>
           </div>
-          <p class="text-[10px] text-rhythm-muted text-center mt-4 leading-relaxed px-2">
-            Calendar sync, DIY vs pro library preferences, and work hours live in <strong class="text-rhythm-text/80">Settings</strong> — set them when you’re ready.
-          </p>
         </div>
       `;
     }
@@ -14352,7 +14346,7 @@
             <div class="onboarding-step-label">Step 2 of 2</div>
             <div class="onboarding-title">Start with a few essentials</div>
             <div class="onboarding-subtitle">
-              These land on <strong class="text-rhythm-text">Today</strong> so you can try energy sorting, streaks, and activity sync right away. Uncheck anything you don’t want.
+              These will go to your <strong class="text-rhythm-text">Today</strong> tab so you can try energy sorting, streaks, and activity syncing. Uncheck anything you don’t want.
             </div>
           </div>
 
