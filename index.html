@@ -3240,8 +3240,10 @@
       recipientEmail: 'Taylorsanders12360@gmail.com',
       web3formsAccessKey: '',
       appName: 'Rhythm',
-      appVersion: 'preview-1.1'
+      appVersion: 'preview-1.2'
     };
+    // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
+    const RHYTHM_BUILD = 'v49';
 
     let rhythmBriefMode = 'day';
     let state = {
@@ -13091,6 +13093,7 @@
         ${metricLogger}
         
         <div class="text-xs text-center mt-3 text-rhythm-muted">Tap another streak to compare</div>
+        <div class="text-[9px] text-center mt-2 text-rhythm-muted/50 tabular-nums">Rhythm ${RHYTHM_BUILD}</div>
       `;
       bindProjectionMetricLogger(panel, habitId);
       
