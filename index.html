@@ -11,19 +11,26 @@
   <meta name="theme-color" content="#0A1F1E" id="meta-theme-color">
   <script>
     // Apply saved theme before paint to avoid flash
+    // harbor = splash teal (default) · dark = sleek black & white dark mode
     (function () {
       try {
         var raw = localStorage.getItem('harbor_state_v1');
         if (!raw) return;
         var parsed = JSON.parse(raw);
-        var t = parsed && parsed.settings && parsed.settings.theme;
-        // Migrate old seafoam "light" → mono (black & white)
-        if (t === 'light') t = 'mono';
-        var theme = t === 'mono' ? 'mono' : 'dark';
-        document.documentElement.setAttribute('data-theme', theme);
+        var s = parsed && parsed.settings ? parsed.settings : {};
+        var t = s.theme;
+        // v2: dark=sleek mono, harbor=teal. Migrate v1 (dark=teal, mono=b&w).
+        if (!s.themeSchemeV2) {
+          t = (t === 'mono' || t === 'light') ? 'dark' : 'harbor';
+        } else if (t === 'mono' || t === 'light') {
+          t = 'dark';
+        } else if (t !== 'dark') {
+          t = 'harbor';
+        }
+        document.documentElement.setAttribute('data-theme', t);
         document.documentElement.style.colorScheme = 'dark';
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', theme === 'mono' ? '#0A0A0A' : '#0A1F1E');
+        if (meta) meta.setAttribute('content', t === 'dark' ? '#070707' : '#0A1F1E');
       } catch (e) { /* ignore */ }
     })();
   </script>
@@ -72,17 +79,17 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
 
-    /* ── Splash-inspired Harbor palette (default) ──
-       Deep harbor teal · warm stone text · seafoam accents
-       RGB channel form so Tailwind bg-harbor-primary/20 works. */
-    :root, html[data-theme="dark"] {
+    /* ── BASE (default): Splash-inspired Harbor teal ──
+       Deep teal · warm stone text · seafoam · dawn accent
+       RGB channels so Tailwind /20 opacity works. */
+    :root, html[data-theme="harbor"] {
       --harbor-bg: 10 31 30;              /* #0A1F1E */
       --harbor-surface: 18 46 44;         /* #122E2C */
       --harbor-raised: 26 60 57;          /* #1A3C39 */
       --harbor-border: 42 79 74;          /* #2A4F4A */
       --harbor-primary: 47 155 140;       /* #2F9B8C */
       --harbor-primary-light: 107 191 176;/* #6BBFB0 */
-      --harbor-accent: 196 165 116;       /* #C4A574 warm dawn stone */
+      --harbor-accent: 196 165 116;       /* #C4A574 */
       --harbor-text: 240 235 227;         /* #F0EBE3 */
       --harbor-muted: 143 168 163;        /* #8FA8A3 */
       --harbor-low: 212 146 122;          /* #D4927A */
@@ -93,69 +100,111 @@
       --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 4px 18px rgba(4, 22, 20, 0.32);
       --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 12px 36px rgba(4, 22, 20, 0.42);
       --harbor-glow-primary: 0 0 0 1px rgba(107, 191, 176, 0.22);
-      --harbor-dawn: 10 58 56;            /* #0A3A38 splash deep teal */
+      --harbor-dawn: 10 58 56;            /* #0A3A38 */
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-top: env(safe-area-inset-top, 0px);
       color-scheme: dark;
     }
 
-    /* Stylish mono — optional black / silver / white */
-    html[data-theme="mono"] {
-      --harbor-bg: 10 10 10;
-      --harbor-surface: 20 20 20;
-      --harbor-raised: 28 28 28;
-      --harbor-border: 46 46 46;
-      --harbor-primary: 232 232 232;
-      --harbor-primary-light: 255 255 255;
-      --harbor-accent: 168 168 168;
-      --harbor-text: 242 242 242;
-      --harbor-muted: 138 138 138;
-      --harbor-low: 176 176 176;
-      --harbor-med: 200 200 200;
-      --harbor-high: 232 232 232;
-      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 4px 18px rgba(0, 0, 0, 0.45);
-      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 12px 36px rgba(0, 0, 0, 0.55);
-      --harbor-glow-primary: 0 0 0 1px rgba(255, 255, 255, 0.18);
-      --harbor-dawn: 17 17 17;
+    /* ── DARK MODE (settings toggle ON): sleek noir redesign ──
+       True black · graphite · silver · pure white accents */
+    html[data-theme="dark"] {
+      --harbor-bg: 7 7 7;                /* #070707 */
+      --harbor-surface: 18 18 18;         /* #121212 */
+      --harbor-raised: 28 28 28;          /* #1C1C1C */
+      --harbor-border: 42 42 42;          /* #2A2A2A */
+      --harbor-primary: 245 245 245;      /* #F5F5F5 */
+      --harbor-primary-light: 255 255 255;/* #FFFFFF */
+      --harbor-accent: 180 180 180;       /* #B4B4B4 */
+      --harbor-text: 245 245 245;         /* #F5F5F5 */
+      --harbor-muted: 140 140 140;        /* #8C8C8C */
+      --harbor-low: 200 200 200;          /* energy still readable in mono */
+      --harbor-med: 220 220 220;
+      --harbor-high: 245 245 245;
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 6px 20px rgba(0, 0, 0, 0.55);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 14px 40px rgba(0, 0, 0, 0.65);
+      --harbor-glow-primary: 0 0 0 1px rgba(255, 255, 255, 0.16);
+      --harbor-dawn: 12 12 12;
       color-scheme: dark;
     }
 
-    html[data-theme="mono"] .site-header {
-      background: linear-gradient(180deg, rgba(20, 20, 20, 0.96) 0%, rgba(10, 10, 10, 0.94) 100%);
+    html[data-theme="dark"] .site-header {
+      background: linear-gradient(180deg, rgba(18, 18, 18, 0.97) 0%, rgba(7, 7, 7, 0.95) 100%);
+      border-bottom-color: rgb(42 42 42);
     }
 
-    html[data-theme="mono"] .chip-add-btn,
-    html[data-theme="mono"] .today-add-btn {
-      background: rgb(242 242 242);
-      color: rgb(10 10 10);
+    html[data-theme="dark"] .chip-add-btn,
+    html[data-theme="dark"] .today-add-btn {
+      background: linear-gradient(180deg, #FFFFFF 0%, #E8E8E8 100%);
+      color: #070707;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
     }
 
-    html[data-theme="mono"] .chip-add-btn:active,
-    html[data-theme="mono"] .today-add-btn:active {
-      opacity: 0.88;
+    html[data-theme="dark"] .chip-add-btn:active,
+    html[data-theme="dark"] .today-add-btn:active {
+      opacity: 0.9;
     }
 
-    html[data-theme="mono"] .life-nav-tab.life-panel-active,
-    html[data-theme="mono"] .main-nav-tab.nav-active {
-      color: rgb(10 10 10);
-      background: linear-gradient(180deg, rgba(242, 242, 242, 0.95) 0%, rgba(210, 210, 210, 0.9) 100%);
-      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    html[data-theme="dark"] .chip-voice-btn,
+    html[data-theme="dark"] .today-voice-btn {
+      background: rgb(28 28 28);
+      border-color: rgb(55 55 55);
+      color: rgb(245 245 245);
     }
 
-    html[data-theme="mono"] .summary-toggle-btn.is-active {
-      background: linear-gradient(135deg, #F2F2F2 0%, #C8C8C8 100%);
-      color: rgb(10 10 10);
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    html[data-theme="dark"] .life-nav-tab.life-panel-active,
+    html[data-theme="dark"] .main-nav-tab.nav-active {
+      color: #070707;
+      background: linear-gradient(180deg, #FFFFFF 0%, #DCDCDC 100%);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      font-weight: 750;
     }
 
-    html[data-theme="mono"] .energy-btn.is-active,
-    html[data-theme="mono"] .energy-btn[aria-pressed="true"] {
-      color: rgb(10 10 10);
+    html[data-theme="dark"] .summary-toggle-btn.is-active {
+      background: linear-gradient(135deg, #FFFFFF 0%, #D0D0D0 100%);
+      color: #070707;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     }
 
-    html[data-theme="mono"] .swipe-action-edit {
-      background: linear-gradient(180deg, #F0F0F0 0%, #C8C8C8 100%);
-      color: rgb(10 10 10);
+    html[data-theme="dark"] .summary-orb-core {
+      background:
+        radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.22) 0%, transparent 42%),
+        linear-gradient(155deg, #3A3A3A 0%, #1A1A1A 48%, #0A0A0A 100%);
+      border-color: rgba(255, 255, 255, 0.22);
+    }
+
+    html[data-theme="dark"] .summary-orb-glow {
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.04) 48%, transparent 72%);
+    }
+
+    html[data-theme="dark"] .summary-orb-spin {
+      background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(255, 255, 255, 0.05) 50deg,
+        rgba(255, 255, 255, 0.9) 95deg,
+        rgba(200, 200, 200, 0.45) 145deg,
+        transparent 210deg,
+        transparent 360deg
+      );
+    }
+
+    html[data-theme="dark"] .energy-btn.is-active,
+    html[data-theme="dark"] .energy-btn[aria-pressed="true"] {
+      color: #070707;
+    }
+
+    html[data-theme="dark"] .swipe-action-edit {
+      background: linear-gradient(180deg, #F5F5F5 0%, #C8C8C8 100%);
+      color: #070707;
+    }
+
+    html[data-theme="dark"] .smart-suggestions-toggle[aria-checked="true"] {
+      background: rgb(245 245 245) !important;
+    }
+
+    html[data-theme="dark"] .smart-suggestions-toggle[aria-checked="true"] span {
+      background: #070707 !important;
     }
 
     * {
@@ -4333,7 +4382,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v92';
+    const HARBOR_BUILD = 'v93';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -4884,7 +4933,8 @@
           workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
           eventTimeFormat: '12h',
           scheduleView: 'today',
-          theme: 'dark',
+          theme: 'harbor',
+          themeSchemeV2: true,
           showWelcomeBanner: false,
           welcomeBannerDismissed: false,
           onboarded: false,
@@ -4981,10 +5031,16 @@
       if (!state.settings.scheduleView) {
         state.settings.scheduleView = 'today';
       }
-      // Migrate old seafoam light → mono; only dark | mono are valid
-      if (state.settings.theme === 'light') state.settings.theme = 'mono';
-      if (state.settings.theme !== 'mono' && state.settings.theme !== 'dark') {
+      // Theme scheme v2: harbor = splash teal (default), dark = sleek noir.
+      // v1 had dark=teal and mono/light=B&W — remap once, then only harbor|dark.
+      if (!state.settings.themeSchemeV2) {
+        const old = state.settings.theme;
+        state.settings.theme = (old === 'mono' || old === 'light') ? 'dark' : 'harbor';
+        state.settings.themeSchemeV2 = true;
+      } else if (state.settings.theme === 'mono' || state.settings.theme === 'light') {
         state.settings.theme = 'dark';
+      } else if (state.settings.theme !== 'dark' && state.settings.theme !== 'harbor') {
+        state.settings.theme = 'harbor';
       }
       if (state.settings.showWelcomeBanner === undefined) {
         state.settings.showWelcomeBanner = false;
@@ -14989,26 +15045,30 @@
       ['--harbor-primary', '--harbor-primary-light', '--harbor-high', '--harbor-glow-primary'].forEach(prop => {
         document.documentElement.style.removeProperty(prop);
       });
-      applyAppTheme(state.settings?.theme || 'dark');
+      applyAppTheme(state.settings?.theme || 'harbor');
     }
 
     function getAppTheme() {
       const t = state?.settings?.theme;
-      if (t === 'light') return 'mono'; // legacy
-      return t === 'mono' ? 'mono' : 'dark';
+      // dark = sleek noir (settings Dark mode ON); harbor = splash teal (default)
+      if (t === 'mono' || t === 'light') return 'dark'; // legacy aliases
+      return t === 'dark' ? 'dark' : 'harbor';
     }
 
     function applyAppTheme(theme) {
-      // dark = Harbor teal (default), mono = stylish black & white
-      let t = theme === 'mono' || theme === 'light' ? 'mono' : 'dark';
-      if (state?.settings) state.settings.theme = t;
+      // harbor = splash teal (default), dark = sleek black & white redesign
+      let t = (theme === 'dark' || theme === 'mono' || theme === 'light') ? 'dark' : 'harbor';
+      if (state?.settings) {
+        state.settings.theme = t;
+        state.settings.themeSchemeV2 = true;
+      }
       document.documentElement.setAttribute('data-theme', t);
       document.documentElement.style.colorScheme = 'dark';
       // Fun theme owns meta color while active
       const funActive = state?.settings?.funThemeUntil && state.settings.funThemeUntil >= todayStr();
       if (!funActive) {
         const metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (metaTheme) metaTheme.setAttribute('content', t === 'mono' ? '#0A0A0A' : '#0A1F1E');
+        if (metaTheme) metaTheme.setAttribute('content', t === 'dark' ? '#070707' : '#0A1F1E');
       }
     }
 
@@ -15931,7 +15991,7 @@
       modal.className = `fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[60]`;
       
       const smartSuggestionsOn = !state.settings.smartSuggestionsMuted;
-      const monoModeOn = getAppTheme() === 'mono';
+      const darkModeOn = getAppTheme() === 'dark';
       const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
       const corsHelperOn = state.settings.calendarAllowCorsHelper === true;
       
@@ -15969,12 +16029,12 @@
 
             <div class="flex items-center justify-between gap-3 py-1">
               <div class="min-w-0">
-                <div class="text-sm font-medium text-harbor-text">Mono theme</div>
-                <div class="text-[10px] text-harbor-muted leading-snug">Stylish black &amp; white · off = Harbor teal</div>
+                <div class="text-sm font-medium text-harbor-text">Dark mode</div>
+                <div class="text-[10px] text-harbor-muted leading-snug">Sleek black &amp; white · off = Harbor teal</div>
               </div>
-              <button type="button" id="dark-mode-toggle" role="switch" aria-checked="${monoModeOn}"
-                class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${monoModeOn ? 'bg-harbor-primary' : 'bg-harbor-border'}">
-                <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${monoModeOn ? 'translate-x-5' : 'translate-x-0'}"></span>
+              <button type="button" id="dark-mode-toggle" role="switch" aria-checked="${darkModeOn}"
+                class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${darkModeOn ? 'bg-harbor-primary' : 'bg-harbor-border'}">
+                <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${darkModeOn ? 'translate-x-5' : 'translate-x-0'}"></span>
               </button>
             </div>
 
@@ -16078,9 +16138,9 @@
       
       document.body.appendChild(modal);
       wireSwitchToggle(modal.querySelector('#dark-mode-toggle'), (on) => {
-        applyAppTheme(on ? 'mono' : 'dark');
+        applyAppTheme(on ? 'dark' : 'harbor');
         saveState();
-        showToast(on ? 'Mono theme on' : 'Harbor teal on');
+        showToast(on ? 'Dark mode on' : 'Harbor teal on');
       });
       wireSwitchToggle(modal.querySelector('#smart-suggestions-toggle'));
       wireSwitchToggle(modal.querySelector('#cheat-fund-toggle'));
@@ -16133,7 +16193,7 @@
       }
       const darkToggle = modal.querySelector('#dark-mode-toggle');
       if (darkToggle) {
-        applyAppTheme(darkToggle.getAttribute('aria-checked') === 'true' ? 'mono' : 'dark');
+        applyAppTheme(darkToggle.getAttribute('aria-checked') === 'true' ? 'dark' : 'harbor');
       }
       saveState();
       settingsWasOpen = false;
@@ -17361,7 +17421,7 @@
 
     function bootApp() {
         loadState();
-        applyAppTheme(state.settings?.theme || 'dark');
+        applyAppTheme(state.settings?.theme || 'harbor');
         repairOnboardedEmptyTodayList();
         loadCommonTasks();
         refreshCalendarCache();
