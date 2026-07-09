@@ -9,9 +9,15 @@ cd "P:\App Projects\Projects\webapp"
 powershell -ExecutionPolicy Bypass -File scripts\start-server.ps1
 ```
 
-Open **http://localhost:3000** in Chrome or Edge (best for voice + location features).
+Open in Chrome or Edge (best for voice + location features):
 
-Or double-click `index.html` to open directly in your browser (some features like service worker require a local server).
+| Preview | URL |
+|---------|-----|
+| **Web** | http://localhost:3000/index.html |
+| **Mobile** (phone frame) | http://localhost:3000/mobile.html |
+| **Dual** (web + mobile side-by-side) | http://localhost:3000/dual-preview.html |
+
+Edit **`index.html` only** — one responsive app powers web and mobile. Use `mobile.html` / `dual-preview.html` to verify layouts before you push. Do not double-click files for day-to-day testing (service worker + APIs need the local server).
 
 ## Share With Testers
 

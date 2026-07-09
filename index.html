@@ -1318,51 +1318,248 @@
       margin-bottom: 0.65rem;
     }
 
-    /* ── Rhythm Brief FAB (thumb-friendly, bottom-right) ── */
-    button.rhythm-brief-fab,
-    .rhythm-brief-fab {
+    /* ── Rhythm Brief Orb (premium floating launcher) ──
+       Pattern: living assistant orb + continuous soft rings
+       (sonar pulse + liquid-glass core — popular in 2025–26 mobile UI) */
+    button.rhythm-brief-orb,
+    .rhythm-brief-orb {
+      --orb-size: 4rem;
       position: fixed !important;
-      right: 1rem !important;
-      bottom: 1.25rem !important;
+      right: 0.95rem !important;
+      bottom: 1.2rem !important;
       z-index: 55 !important;
-      width: 3.5rem !important;
-      height: 3.5rem !important;
+      width: var(--orb-size) !important;
+      height: var(--orb-size) !important;
       margin: 0 !important;
       padding: 0 !important;
+      border: none !important;
       border-radius: 999px !important;
-      border: 1px solid rgba(91, 184, 168, 0.45) !important;
-      background:
-        radial-gradient(circle at 30% 25%, rgba(143, 212, 199, 0.55) 0%, transparent 42%),
-        linear-gradient(145deg, rgba(61, 154, 139, 0.95) 0%, rgba(30, 90, 88, 0.98) 55%, rgba(22, 48, 58, 0.98) 100%) !important;
-      color: #f0faf7 !important;
-      box-shadow:
-        0 10px 28px rgba(0, 0, 0, 0.35),
-        0 0 0 1px rgba(91, 184, 168, 0.12),
-        0 0 22px rgba(61, 154, 139, 0.28);
+      background: transparent !important;
+      box-shadow: none !important;
       display: flex !important;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
-      transition: transform 0.18s var(--rhythm-ease-out), box-shadow 0.18s ease;
-      animation: briefFabBreathe 3.2s ease-in-out infinite;
+      isolation: isolate;
+      transition: transform 0.2s var(--rhythm-ease-out);
     }
 
-    .rhythm-brief-fab i {
-      font-size: 1.05rem;
-      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
-      position: relative;
+    button.rhythm-brief-orb.hidden,
+    .rhythm-brief-orb.hidden {
+      display: none !important;
+    }
+
+    .rhythm-brief-orb-glow {
+      position: absolute;
+      inset: -18%;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(91, 184, 168, 0.45) 0%, rgba(61, 154, 139, 0.12) 42%, transparent 70%);
+      filter: blur(6px);
+      animation: orbAmbientGlow 3.6s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .rhythm-brief-orb-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      border: 1.5px solid rgba(91, 184, 168, 0.55);
+      box-shadow: 0 0 12px rgba(61, 154, 139, 0.25);
+      animation: orbSonar 2.8s cubic-bezier(0.15, 0.7, 0.25, 1) infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .rhythm-brief-orb-ring--delay {
+      animation-delay: 1.4s;
+      border-color: rgba(143, 212, 199, 0.4);
+    }
+
+    .rhythm-brief-orb-spin {
+      position: absolute;
+      inset: -2px;
+      border-radius: 999px;
+      background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(91, 184, 168, 0.05) 40deg,
+        rgba(156, 240, 220, 0.95) 90deg,
+        rgba(61, 154, 139, 0.55) 140deg,
+        transparent 200deg,
+        transparent 360deg
+      );
+      animation: orbSpin 5.5s linear infinite;
+      pointer-events: none;
       z-index: 1;
+      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+      mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
     }
 
-    .rhythm-brief-fab-logo {
-      width: 1.9rem;
-      height: 1.9rem;
+    .rhythm-brief-orb-core {
+      position: relative;
+      z-index: 2;
+      width: calc(var(--orb-size) - 0.55rem);
+      height: calc(var(--orb-size) - 0.55rem);
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 32% 28%, rgba(200, 255, 240, 0.28) 0%, transparent 42%),
+        linear-gradient(155deg, rgba(72, 170, 156, 0.98) 0%, rgba(28, 92, 86, 0.98) 48%, rgba(16, 42, 50, 0.99) 100%);
+      border: 1px solid rgba(180, 240, 225, 0.28);
+      box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 -10px 18px rgba(0, 0, 0, 0.22);
+      overflow: hidden;
+    }
+
+    .rhythm-brief-orb-core::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(125deg, rgba(255, 255, 255, 0.18) 0%, transparent 38%, transparent 62%, rgba(0, 0, 0, 0.12) 100%);
+      pointer-events: none;
+    }
+
+    .rhythm-brief-orb-logo {
+      width: 52%;
+      height: 52%;
       object-fit: contain;
       position: relative;
       z-index: 1;
       pointer-events: none;
-      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)) brightness(1.08);
+      filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35)) brightness(1.12);
+      animation: orbLogoFloat 4s ease-in-out infinite;
+    }
+
+    .rhythm-brief-orb-label {
+      position: absolute;
+      bottom: -1.15rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(180, 210, 204, 0.72);
+      white-space: nowrap;
+      pointer-events: none;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
+      z-index: 3;
+    }
+
+    .rhythm-brief-orb-badge {
+      position: absolute;
+      top: 0.05rem;
+      right: 0.05rem;
+      min-width: 1.2rem;
+      height: 1.2rem;
+      padding: 0 0.3rem;
+      border-radius: 999px;
+      background: linear-gradient(145deg, #ffd36a, #f0b429);
+      color: #1a1410;
+      font-size: 0.58rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(15, 20, 25, 0.55);
+      z-index: 4;
+    }
+
+    .rhythm-brief-orb-badge.hidden {
+      display: none !important;
+    }
+
+    .rhythm-brief-orb:hover {
+      transform: translateY(-3px) scale(1.04);
+    }
+
+    .rhythm-brief-orb:hover .rhythm-brief-orb-core {
+      box-shadow:
+        0 16px 34px rgba(0, 0, 0, 0.45),
+        0 0 24px rgba(61, 154, 139, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    }
+
+    .rhythm-brief-orb:active {
+      transform: scale(0.94);
+    }
+
+    .rhythm-brief-orb:active .rhythm-brief-orb-ring,
+    .rhythm-brief-orb:active .rhythm-brief-orb-spin,
+    .rhythm-brief-orb:active .rhythm-brief-orb-glow {
+      animation-play-state: paused;
+    }
+
+    .rhythm-brief-orb:focus-visible {
+      outline: 2px solid var(--rhythm-primary-light);
+      outline-offset: 5px;
+    }
+
+    .tutorial-target-pulse.rhythm-brief-orb .rhythm-brief-orb-core {
+      animation: orbTutorialPulse 1.3s ease-in-out infinite;
+    }
+
+    @keyframes orbSonar {
+      0% {
+        transform: scale(0.92);
+        opacity: 0.7;
+      }
+      70% {
+        opacity: 0.15;
+      }
+      100% {
+        transform: scale(1.55);
+        opacity: 0;
+      }
+    }
+
+    @keyframes orbAmbientGlow {
+      0%, 100% {
+        opacity: 0.55;
+        transform: scale(0.95);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.08);
+      }
+    }
+
+    @keyframes orbSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes orbLogoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-1px); }
+    }
+
+    @keyframes orbTutorialPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(91, 184, 168, 0.5), 0 12px 28px rgba(0, 0, 0, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(91, 184, 168, 0), 0 12px 28px rgba(0, 0, 0, 0.4); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rhythm-brief-orb-glow,
+      .rhythm-brief-orb-ring,
+      .rhythm-brief-orb-spin,
+      .rhythm-brief-orb-logo {
+        animation: none !important;
+      }
+      .rhythm-brief-orb-glow {
+        opacity: 0.7;
+      }
+      .rhythm-brief-orb-ring {
+        opacity: 0.35;
+        transform: scale(1.12);
+      }
     }
 
     .today-toolbar {
@@ -1407,81 +1604,6 @@
 
     .today-voice-btn i {
       font-size: 0.85rem;
-    }
-
-    .rhythm-brief-fab::before {
-      content: '';
-      position: absolute;
-      inset: -3px;
-      border-radius: inherit;
-      border: 1px solid rgba(91, 184, 168, 0.28);
-      opacity: 0.85;
-      animation: briefFabRing 3.2s ease-in-out infinite;
-      pointer-events: none;
-    }
-
-    .rhythm-brief-fab:hover {
-      transform: translateY(-2px) scale(1.03);
-      box-shadow:
-        0 14px 32px rgba(0, 0, 0, 0.4),
-        0 0 28px rgba(61, 154, 139, 0.4);
-    }
-
-    .rhythm-brief-fab:active {
-      transform: scale(0.96);
-      animation: none;
-    }
-
-    .rhythm-brief-fab:focus-visible {
-      outline: 2px solid var(--rhythm-primary-light);
-      outline-offset: 3px;
-    }
-
-    button.rhythm-brief-fab.hidden,
-    .rhythm-brief-fab.hidden {
-      display: none !important;
-    }
-
-    .rhythm-brief-fab-badge {
-      position: absolute;
-      top: -0.15rem;
-      right: -0.15rem;
-      min-width: 1.15rem;
-      height: 1.15rem;
-      padding: 0 0.28rem;
-      border-radius: 999px;
-      background: #f0b429;
-      color: #1a1410;
-      font-size: 0.58rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-      z-index: 2;
-    }
-
-    .rhythm-brief-fab-badge.hidden {
-      display: none !important;
-    }
-
-    .tutorial-target-pulse.rhythm-brief-fab {
-      animation: briefFabPulse 1.4s ease-in-out infinite;
-    }
-
-    @keyframes briefFabBreathe {
-      0%, 100% { box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35), 0 0 18px rgba(61, 154, 139, 0.22); }
-      50% { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38), 0 0 28px rgba(91, 184, 168, 0.38); }
-    }
-
-    @keyframes briefFabRing {
-      0%, 100% { transform: scale(1); opacity: 0.75; }
-      50% { transform: scale(1.08); opacity: 0.35; }
-    }
-
-    @keyframes briefFabPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(91, 184, 168, 0.45); }
-      50% { box-shadow: 0 0 0 10px rgba(91, 184, 168, 0); }
     }
 
     .rhythm-brief-stat {
@@ -2725,12 +2847,11 @@
         font-size: 0.62rem;
       }
 
-      button.rhythm-brief-fab,
-      .rhythm-brief-fab {
-        width: 3.6rem !important;
-        height: 3.6rem !important;
-        bottom: 1.35rem !important;
-        right: 0.95rem !important;
+      button.rhythm-brief-orb,
+      .rhythm-brief-orb {
+        --orb-size: 4.15rem;
+        bottom: 1.4rem !important;
+        right: 0.9rem !important;
       }
 
       .app-menu-wrap--mobile {
@@ -2963,9 +3084,10 @@
         display: none !important;
       }
 
-      button.rhythm-brief-fab,
-      .rhythm-brief-fab {
-        bottom: 1.5rem !important;
+      button.rhythm-brief-orb,
+      .rhythm-brief-orb {
+        --orb-size: 4.25rem;
+        bottom: 1.55rem !important;
         right: 1.5rem !important;
       }
 
@@ -3553,11 +3675,18 @@
       </div><!-- /app-scroll -->
 
       <!-- Rhythm Brief FAB — thumb zone, day/week digest -->
-      <button type="button" id="rhythm-brief-launcher" class="rhythm-brief-fab hidden"
+      <button type="button" id="rhythm-brief-launcher" class="rhythm-brief-orb hidden"
         onclick="showRhythmBriefModal()"
         aria-label="Open your Rhythm Brief">
-        <span id="rhythm-brief-fab-badge" class="rhythm-brief-fab-badge hidden" aria-hidden="true"></span>
-        <img src="./rythm-splash-mark.svg" alt="" class="rhythm-brief-fab-logo" aria-hidden="true">
+        <span class="rhythm-brief-orb-glow" aria-hidden="true"></span>
+        <span class="rhythm-brief-orb-ring" aria-hidden="true"></span>
+        <span class="rhythm-brief-orb-ring rhythm-brief-orb-ring--delay" aria-hidden="true"></span>
+        <span class="rhythm-brief-orb-spin" aria-hidden="true"></span>
+        <span class="rhythm-brief-orb-core" aria-hidden="true">
+          <img src="./rythm-splash-mark.svg" alt="" class="rhythm-brief-orb-logo">
+        </span>
+        <span class="rhythm-brief-orb-label" aria-hidden="true">Brief</span>
+        <span id="rhythm-brief-fab-badge" class="rhythm-brief-orb-badge hidden" aria-hidden="true"></span>
       </button>
       </div><!-- /app-shell -->
       </div><!-- /app-content-wrap -->
@@ -3609,7 +3738,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v53';
+    const RHYTHM_BUILD = 'v54';
 
     let rhythmBriefMode = 'day';
     let state = {
@@ -11498,7 +11627,7 @@
       {
         id: 'rhythm-brief',
         title: 'Rhythm Brief',
-        body: 'Tap the <strong>Rhythm logo</strong> (bottom right) for your day &amp; week at a glance. Weekly, monthly, and longer tasks show up here — along with schedule, bills, and grocery — so Today stays focused on what matters now.',
+        body: 'Tap the glowing <strong>Brief orb</strong> (bottom right) for your day &amp; week at a glance. Weekly, monthly, and longer tasks show up here — along with schedule, bills, and grocery — so Today stays focused on what matters now.',
         target: () => document.getElementById('rhythm-brief-launcher'),
         waitFor: 'rhythm-brief-open',
         interactive: true,

@@ -1,7 +1,10 @@
 $port = 3000
 $root = Split-Path -Parent $PSScriptRoot
 
-Write-Host "Rhythm preview: http://localhost:$port"
+Write-Host "Rhythm previews:"
+Write-Host "  Web     http://localhost:$port/index.html"
+Write-Host "  Mobile  http://localhost:$port/mobile.html"
+Write-Host "  Dual    http://localhost:$port/dual-preview.html"
 Write-Host "Press Ctrl+C to stop."
 Write-Host ""
 
