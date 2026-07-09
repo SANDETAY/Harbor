@@ -1539,8 +1539,7 @@
     }
 
     /* ── Summary Orb ──
-       Circling aura kept; expanding sonar rings removed (too loud).
-       Icon = “morning brief” card with a soft scan (dashboard at a glance). */
+       Circling aura + spin kept. Center icon = Harbor anchor mark. */
     button.summary-orb,
     .summary-orb {
       --orb-size: 3.85rem;
@@ -1631,47 +1630,33 @@
       pointer-events: none;
     }
 
-    /* Briefing card icon */
+    /* Harbor anchor mark */
     .summary-orb-icon {
       position: relative;
       z-index: 1;
-      width: 1.35rem;
+      width: 1.55rem;
       height: 1.55rem;
       display: block;
       overflow: visible;
+      color: rgba(244, 239, 230, 0.96);
       filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.28));
+      animation: harborMarkBob 3.6s ease-in-out infinite;
     }
 
-    .summary-orb-icon .brief-sheet {
-      fill: rgba(244, 252, 249, 0.96);
-      stroke: rgba(255, 255, 255, 0.35);
-      stroke-width: 0.6;
-    }
-
-    .summary-orb-icon .brief-header {
-      fill: rgba(45, 125, 115, 0.92);
-    }
-
-    .summary-orb-icon .brief-line {
-      fill: rgba(28, 70, 68, 0.55);
-    }
-
-    .summary-orb-icon .brief-line.is-accent {
-      fill: rgba(45, 140, 128, 0.95);
-    }
-
-    .summary-orb-icon .brief-scan {
+    .summary-orb-icon .harbor-ring {
+      stroke: currentColor;
       fill: none;
-      stroke: rgba(47, 155, 140, 0.85);
-      stroke-width: 1.1;
-      stroke-linecap: round;
-      filter: drop-shadow(0 0 2px rgba(107, 191, 176, 0.7));
-      animation: briefScan 3.8s ease-in-out infinite;
+      opacity: 0.92;
     }
 
-    .summary-orb-icon .brief-dot {
-      fill: rgba(107, 191, 176, 0.95);
-      animation: briefDot 3.8s ease-in-out infinite;
+    .summary-orb-icon .harbor-ring-fill {
+      fill: currentColor;
+      opacity: 0.12;
+    }
+
+    .summary-orb-icon .harbor-anchor {
+      fill: currentColor;
+      stroke: currentColor;
     }
 
     .summary-orb-label {
@@ -1751,16 +1736,9 @@
       to { transform: rotate(360deg); }
     }
 
-    @keyframes briefScan {
-      0%, 8% { transform: translateY(0); opacity: 0; }
-      14% { opacity: 0.95; }
-      78% { opacity: 0.75; }
-      92%, 100% { transform: translateY(11px); opacity: 0; }
-    }
-
-    @keyframes briefDot {
-      0%, 100% { opacity: 0.55; }
-      50% { opacity: 1; }
+    @keyframes harborMarkBob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-1.5px); }
     }
 
     @keyframes orbTutorialPulse {
@@ -1771,12 +1749,10 @@
     @media (prefers-reduced-motion: reduce) {
       .summary-orb-glow,
       .summary-orb-spin,
-      .summary-orb-icon .brief-scan,
-      .summary-orb-icon .brief-dot {
+      .summary-orb-icon {
         animation: none !important;
       }
       .summary-orb-glow { opacity: 0.65; }
-      .summary-orb-icon .brief-scan { opacity: 0.45; transform: translateY(5px); }
     }
 
     .today-toolbar {
@@ -3924,15 +3900,18 @@
         <span class="summary-orb-glow" aria-hidden="true"></span>
         <span class="summary-orb-spin" aria-hidden="true"></span>
         <span class="summary-orb-core" aria-hidden="true">
-          <!-- Morning-brief card: header + priority lines + soft scan -->
-          <svg class="summary-orb-icon" viewBox="0 0 24 28" aria-hidden="true">
-            <rect class="brief-sheet" x="3.5" y="2.5" width="17" height="23" rx="3.2"/>
-            <rect class="brief-header" x="6" y="5.2" width="12" height="2.2" rx="1.1"/>
-            <rect class="brief-line is-accent" x="6" y="10" width="10.5" height="1.55" rx="0.75"/>
-            <rect class="brief-line" x="6" y="13.6" width="8.2" height="1.45" rx="0.7"/>
-            <rect class="brief-line" x="6" y="17" width="11.2" height="1.45" rx="0.7"/>
-            <circle class="brief-dot" cx="18.2" cy="5.1" r="1.15"/>
-            <line class="brief-scan" x1="6.2" y1="9.2" x2="17.6" y2="9.2"/>
+          <!-- Harbor anchor mark -->
+          <svg class="summary-orb-icon" viewBox="0 0 128 128" fill="none" aria-hidden="true">
+            <circle class="harbor-ring" cx="64" cy="64" r="54" stroke-width="5.5"/>
+            <circle class="harbor-ring-fill" cx="64" cy="64" r="48"/>
+            <g class="harbor-anchor">
+              <circle cx="64" cy="30" r="9" fill="none" stroke-width="6"/>
+              <rect x="40" y="40" width="48" height="8" rx="4" stroke="none"/>
+              <rect x="58.5" y="38" width="11" height="54" rx="5.5" stroke="none"/>
+              <path d="M28 78c4 22 22 34 36 34s32-12 36-34" fill="none" stroke-width="9" stroke-linecap="round"/>
+              <path d="M28 78l-11-2 4.5-13z" stroke="none"/>
+              <path d="M100 78l11-2-4.5-13z" stroke="none"/>
+            </g>
           </svg>
         </span>
         <span class="summary-orb-label" aria-hidden="true">Summary</span>
@@ -3988,7 +3967,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v74';
+    const HARBOR_BUILD = 'v75';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -11179,7 +11158,6 @@
               </div>
               <div class="min-w-0">
                 <div class="summary-dash-title">Summary</div>
-                <div class="summary-dash-period">${brief.mode === 'week' ? 'Week dashboard' : 'Day dashboard'}</div>
               </div>
             </div>
             <button type="button" onclick="closeSummaryModal()" class="text-harbor-muted text-2xl leading-none px-1" aria-label="Close">×</button>
