@@ -3302,6 +3302,64 @@
       transition: top 0.42s var(--harbor-ease-out), left 0.42s var(--harbor-ease-out);
     }
 
+    .tutorial-card.tutorial-card-center {
+      max-width: min(28rem, calc(100vw - 2rem));
+    }
+
+    .tutorial-install-lead {
+      margin: 0 0 0.65rem;
+      color: rgb(var(--harbor-text));
+      font-size: 0.78rem;
+      line-height: 1.45;
+      font-weight: 500;
+    }
+
+    .tutorial-install-steps {
+      margin: 0 0 0.7rem;
+      padding: 0 0 0 1.15rem;
+      color: rgb(var(--harbor-muted));
+      font-size: 0.74rem;
+      line-height: 1.5;
+    }
+
+    .tutorial-install-steps li {
+      margin-bottom: 0.35rem;
+    }
+
+    .tutorial-install-steps li:last-child {
+      margin-bottom: 0;
+    }
+
+    .tutorial-install-steps strong {
+      color: rgb(var(--harbor-text));
+      font-weight: 650;
+    }
+
+    .tutorial-install-note {
+      margin: 0 0 0.65rem;
+      font-size: 0.68rem;
+      line-height: 1.4;
+      color: rgba(143, 168, 163, 0.85);
+    }
+
+    .tutorial-install-cta {
+      display: block;
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(107, 191, 176, 0.35);
+      background: rgba(47, 155, 140, 0.12);
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.72rem;
+      font-weight: 650;
+      text-align: center;
+      margin-bottom: 0.15rem;
+    }
+
+    .tutorial-install-cta:active {
+      background: rgba(47, 155, 140, 0.2);
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .tutorial-card {
         transition: none;
@@ -4985,7 +5043,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v110';
+    const HARBOR_BUILD = 'v111';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -15153,7 +15211,7 @@
       {
         id: 'summary',
         title: 'Summary',
-        body: 'Tap the glowing <strong>Summary</strong> button at the <strong>bottom right</strong> for your day, week, and month at a glance. Weekly, monthly, and longer tasks show up here — along with schedule, bills, and grocery — so Today stays focused on what matters now. Tip: add Harbor to your Home Screen (Menu → Help) so the browser bar doesn’t cover this button.',
+        body: 'Tap the glowing <strong>Summary</strong> button at the <strong>bottom right</strong> for your day, week, and month at a glance. Weekly, monthly, and longer tasks show up here — along with schedule, bills, and grocery — so Today stays focused on what matters now.',
         target: () => document.getElementById('summary-launcher'),
         waitFor: 'summary-open',
         interactive: true,
@@ -15165,8 +15223,72 @@
           if (fab) fab.classList.remove('hidden');
           requestAnimationFrame(() => requestAnimationFrame(() => hideTutorialSmartBanner()));
         }
+      },
+      {
+        id: 'install-home',
+        title: 'Add Harbor to your phone',
+        body: () => getInstallTutorialBody(),
+        target: null,
+        noHighlight: true,
+        cardPlacement: 'center',
+        prepare: () => {
+          switchTab('today');
+          // Close summary if still open from previous step so the coachmark is clear
+          if (typeof closeSummaryModal === 'function') closeSummaryModal();
+        }
       }
     ];
+
+    function getMobileInstallPlatform() {
+      const ua = navigator.userAgent || '';
+      // iPadOS 13+ reports as MacIntel with touch
+      if (/iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+        return 'ios';
+      }
+      if (/Android/i.test(ua)) return 'android';
+      return 'generic';
+    }
+
+    function getInstallTutorialBody() {
+      const platform = getMobileInstallPlatform();
+      let stepsHtml = '';
+      if (platform === 'ios') {
+        stepsHtml = `
+          <ol class="tutorial-install-steps">
+            <li>Open Harbor in <strong>Safari</strong> (not Chrome).</li>
+            <li>Tap <strong>Share</strong> <span class="tutorial-install-icon" aria-hidden="true">⬆️</span> at the bottom.</li>
+            <li>Scroll and tap <strong>Add to Home Screen</strong>.</li>
+            <li>Tap <strong>Add</strong> — then open Harbor from the new icon.</li>
+          </ol>`;
+      } else if (platform === 'android') {
+        stepsHtml = `
+          <ol class="tutorial-install-steps">
+            <li>Open Harbor in <strong>Chrome</strong>.</li>
+            <li>Tap the <strong>⋮</strong> menu (top right).</li>
+            <li>Choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li>
+            <li>Confirm — then launch Harbor from your home screen.</li>
+          </ol>`;
+      } else {
+        stepsHtml = `
+          <ol class="tutorial-install-steps">
+            <li><strong>iPhone:</strong> Safari → Share → Add to Home Screen.</li>
+            <li><strong>Android:</strong> Chrome → ⋮ menu → Install app / Add to Home screen.</li>
+            <li>Open the new icon for a full-screen app (no browser bar).</li>
+          </ol>`;
+      }
+      return `
+        <p class="tutorial-install-lead">For the best feel — and so the browser bar doesn’t cover the <strong>Summary</strong> button — add Harbor to your home screen like a real app.</p>
+        ${stepsHtml}
+        <p class="tutorial-install-note">You can reopen these steps anytime under <strong>Menu → Add to Home Screen</strong>.</p>
+        <button type="button" class="tutorial-install-cta" onclick="event.stopPropagation(); openInstallGuideFromTutorial()">
+          Open full install guide
+        </button>`;
+    }
+
+    function openInstallGuideFromTutorial() {
+      // Full guide uses z-index 220 so it layers above the tour coachmark
+      showAddToHomeScreenGuide();
+    }
 
     let welcomeSpotlightActive = false;
     let welcomeSpotlightSyncBound = false;
@@ -15218,9 +15340,51 @@
       return normalizeTutorialRect(target.getBoundingClientRect());
     }
 
+    function centerTutorialCard(step) {
+      const card = document.getElementById('tutorial-card');
+      const highlight = document.getElementById('tutorial-highlight');
+      if (!card || card.classList.contains('hidden')) return;
+      if (highlight) highlight.classList.add('hidden');
+
+      const vv = getTutorialViewport();
+      const margin = window.innerWidth < 768 ? 10 : 16;
+      const cardH = Math.max(card.offsetHeight || 0, card.scrollHeight || 0, 200);
+      const maxH = Math.max(160, vv.height - margin * 2);
+      // Keep tall install copy scrollable inside the coachmark if needed
+      card.style.maxHeight = `${maxH}px`;
+      card.style.overflowY = 'auto';
+
+      let top = vv.top + Math.max(margin, (vv.height - Math.min(cardH, maxH)) / 2);
+      const minTop = vv.top + margin;
+      const maxTop = vv.top + vv.height - Math.min(cardH, maxH) - margin;
+      top = Math.max(minTop, Math.min(top, maxTop));
+
+      card.classList.remove('tutorial-card-top', 'tutorial-card-bottom', 'tutorial-card-interactive');
+      card.classList.add('tutorial-card-center');
+      card.style.top = `${top}px`;
+      card.style.bottom = 'auto';
+      tutorialLastCardPlacement = 'center';
+      tutorialLastTargetRect = {
+        top: vv.top + vv.height / 2,
+        left: vv.left + vv.width / 2,
+        width: 1,
+        height: 1,
+        right: vv.left + vv.width / 2,
+        bottom: vv.top + vv.height / 2
+      };
+    }
+
     function positionTutorialCard(targetRect, step) {
       const card = document.getElementById('tutorial-card');
-      if (!card || card.classList.contains('hidden') || !targetRect) return;
+      if (!card || card.classList.contains('hidden')) return;
+      if (step?.noHighlight || step?.cardPlacement === 'center') {
+        centerTutorialCard(step);
+        return;
+      }
+      if (!targetRect) return;
+      card.style.maxHeight = '';
+      card.style.overflowY = '';
+      card.classList.remove('tutorial-card-center');
 
       const vv = getTutorialViewport();
       const isMobile = window.innerWidth < 768;
@@ -15338,9 +15502,11 @@
       const card = document.getElementById('tutorial-card');
       if (overlay) overlay.classList.remove('is-interactive-step');
       if (card) {
-        card.classList.remove('tutorial-card-interactive', 'tutorial-card-top', 'tutorial-card-bottom');
+        card.classList.remove('tutorial-card-interactive', 'tutorial-card-top', 'tutorial-card-bottom', 'tutorial-card-center');
         card.style.top = '';
         card.style.bottom = '';
+        card.style.maxHeight = '';
+        card.style.overflowY = '';
       }
     }
 
@@ -15376,8 +15542,15 @@
       const card = document.getElementById('tutorial-card');
       clearTutorialHighlight();
 
+      if (step?.noHighlight || step?.cardPlacement === 'center') {
+        document.getElementById('tutorial-highlight')?.classList.add('hidden');
+        if (overlay) overlay.classList.remove('is-interactive-step');
+        centerTutorialCard(step);
+        return;
+      }
+
       const unionRect = step.highlightUnion?.();
-      let target = typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
+      let target = typeof step.target === 'function' ? step.target() : (step.target ? document.querySelector(step.target) : null);
       const rect = unionRect || (target ? getTutorialTargetRect(target) : null);
 
       if (rect) positionTutorialHighlightRect(rect, step);
@@ -18712,7 +18885,8 @@
     function showAddToHomeScreenGuide() {
       closeAppMenu();
       const modal = document.createElement('div');
-      modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[62]';
+      // z-index high enough to sit above the in-app tutorial coachmark when opened mid-tour
+      modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[220]';
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.closest('.fixed').remove()"></div>
         <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[90vh] overflow-y-auto">
