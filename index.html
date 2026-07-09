@@ -882,6 +882,12 @@
       background: rgba(196, 165, 116, 0.15);
     }
 
+    #streak-off-panel {
+      display: block;
+      width: 100%;
+      flex-shrink: 0;
+    }
+
     html[data-theme="dark"] .streak-off-card {
       border-color: rgba(255, 255, 255, 0.12);
       background:
@@ -4158,6 +4164,7 @@
         display: grid;
         grid-template-columns: 1fr;
         grid-template-areas:
+          "streakoff"
           "title"
           "legend"
           "body"
@@ -4167,7 +4174,13 @@
         align-items: start;
       }
 
-      #tab-content-streaks:not(.hidden) > .section-header:first-child {
+      #tab-content-streaks:not(.hidden) > #streak-off-panel {
+        grid-area: streakoff;
+        display: block !important;
+        min-height: 4rem;
+      }
+
+      #tab-content-streaks:not(.hidden) > .streaks-title-header {
         grid-area: title;
       }
 
@@ -4539,10 +4552,23 @@
 
       <!-- STREAKS TAB -->
       <div id="tab-content-streaks" class="tab-content px-5 pt-3 pb-6 bg-harbor-bg hidden">
-        <div id="streak-off-panel" class="mb-4"></div>
+        <div id="streak-off-panel" class="mb-4" aria-label="Streak-Offs">
+          <!-- Filled by renderStreakOffPanel(); static fallback if JS lags -->
+          <div class="streak-off-card">
+            <div class="flex items-center justify-between gap-2 relative z-[1]">
+              <div>
+                <div class="streak-off-kicker">Streak-Offs</div>
+                <div class="streak-off-title">Challenge a friend</div>
+                <div class="streak-off-meta">Loading crew board…</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <div class="section-header font-semibold text-harbor-text mb-1">Your streaks</div>
-        <div class="text-[10px] text-harbor-muted mb-2">Daily habits only — chores and one-time tasks don’t build streaks</div>
+        <div class="streaks-title-header">
+          <div class="section-header font-semibold text-harbor-text mb-1">Your streaks</div>
+          <div class="text-[10px] text-harbor-muted mb-2">Daily habits only — chores and one-time tasks don’t build streaks</div>
+        </div>
         <div id="streak-badge-legend"></div>
 
         <div class="streaks-body">
@@ -4665,7 +4691,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v99';
+    const HARBOR_BUILD = 'v100';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -16395,15 +16421,28 @@
 
     function renderStreakOffPanel() {
       const el = document.getElementById('streak-off-panel');
-      if (!el) return;
-      ensureChallengesState();
-      markLocalChallengeCheckIns();
+      if (!el) {
+        console.warn('[Harbor] streak-off-panel missing from DOM');
+        return;
+      }
+      try {
+        ensureChallengesState();
+        markLocalChallengeCheckIns();
+      } catch (err) {
+        console.warn('[Harbor] Streak-Off refresh failed', err);
+      }
 
-      const active = state.challenges.filter(c => {
-        refreshChallengeMeta(c);
-        return c.status === 'active' || c.status === 'upcoming';
-      });
-      const finished = state.challenges.filter(c => c.status === 'finished').slice(0, 3);
+      let active = [];
+      let finished = [];
+      try {
+        active = (state.challenges || []).filter(c => {
+          refreshChallengeMeta(c);
+          return c.status === 'active' || c.status === 'upcoming';
+        });
+        finished = (state.challenges || []).filter(c => c.status === 'finished').slice(0, 3);
+      } catch (err) {
+        console.warn('[Harbor] Streak-Off list failed', err);
+      }
 
       const cards = active.slice(0, 4).map(ch => {
         const crew = sortedChallengeCrew(ch);
@@ -16737,9 +16776,26 @@
     }
 
     function renderStreaks() {
+      try {
+        if (typeof renderStreakOffPanel === 'function') renderStreakOffPanel();
+      } catch (err) {
+        console.warn('[Harbor] renderStreakOffPanel error', err);
+        const el = document.getElementById('streak-off-panel');
+        if (el) {
+          el.innerHTML = `
+            <div class="streak-off-card">
+              <div class="streak-off-kicker">Streak-Offs</div>
+              <div class="streak-off-title">Challenge a friend</div>
+              <div class="text-[11px] text-harbor-muted mb-3">Something glitched loading challenges.</div>
+              <div class="streak-off-actions">
+                <button type="button" class="streak-off-btn primary" onclick="showCreateStreakOffModal()">Start a Streak-Off</button>
+                <button type="button" class="streak-off-btn" onclick="showJoinStreakOffModal()">Join with code</button>
+              </div>
+            </div>`;
+        }
+      }
       const legendEl = document.getElementById('streak-badge-legend');
       if (legendEl) legendEl.innerHTML = renderStreakBadgeLegend();
-      renderStreakOffPanel();
       renderStreakCards();
       renderRewardBank();
       updateProjectionHint();
