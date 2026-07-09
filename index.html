@@ -350,22 +350,109 @@
       text-shadow: 0 0 18px rgba(91, 184, 168, 0.25);
     }
 
+    .life-subnav {
+      display: flex;
+      gap: 0.3rem;
+      padding: 0.3rem;
+      margin-bottom: 1rem;
+      border-radius: 1rem;
+      border: 1px solid var(--rhythm-border);
+      background: rgba(22, 32, 38, 0.85);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
     .life-nav-tab {
       flex: 1;
-      padding: 0.55rem 0.25rem;
+      min-width: 0;
+      padding: 0.55rem 0.3rem;
       border: none;
+      border-radius: 0.75rem;
       background: transparent;
-      color: var(--rhythm-muted);
-      font-size: 0.8rem;
-      font-weight: 600;
+      color: rgba(154, 170, 178, 0.88);
+      font-size: 0.78rem;
+      font-weight: 650;
+      letter-spacing: -0.01em;
       cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: color 0.2s ease, border-color 0.25s var(--rhythm-ease-out);
+      border-bottom: none;
+      transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+    }
+
+    .life-nav-tab:hover {
+      color: var(--rhythm-text);
+      background: rgba(61, 154, 139, 0.08);
+    }
+
+    .life-nav-tab:active {
+      transform: scale(0.98);
     }
 
     .life-nav-tab.life-panel-active {
+      color: #e8faf5;
+      background: linear-gradient(180deg, rgba(61, 154, 139, 0.38) 0%, rgba(61, 154, 139, 0.2) 100%);
+      box-shadow: 0 1px 0 rgba(91, 184, 168, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      font-weight: 750;
+      border-bottom: none;
+    }
+
+    .work-hours-card {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      text-align: left;
+      padding: 0.75rem 0.85rem;
+      margin-bottom: 0.55rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(61, 154, 139, 0.35);
+      background: linear-gradient(135deg, rgba(61, 154, 139, 0.14) 0%, rgba(22, 32, 38, 0.9) 55%);
+      color: var(--rhythm-text);
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+    }
+
+    .work-hours-card:hover {
+      border-color: rgba(61, 154, 139, 0.55);
+      background: linear-gradient(135deg, rgba(61, 154, 139, 0.2) 0%, rgba(22, 32, 38, 0.95) 55%);
+    }
+
+    .work-hours-card:active {
+      transform: scale(0.99);
+    }
+
+    .work-hours-icon {
+      flex-shrink: 0;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(61, 154, 139, 0.22);
       color: var(--rhythm-primary-light);
-      border-bottom-color: var(--rhythm-primary);
+      font-size: 0.95rem;
+    }
+
+    .work-hours-cta {
+      flex-shrink: 0;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--rhythm-primary-light);
+      padding: 0.35rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid rgba(61, 154, 139, 0.4);
+      background: rgba(61, 154, 139, 0.12);
+    }
+
+    .work-hours-card--set {
+      border-color: rgba(61, 154, 139, 0.28);
+      background: linear-gradient(135deg, rgba(61, 154, 139, 0.1) 0%, rgba(22, 32, 38, 0.88) 60%);
+    }
+
+    .work-hours-card--set .work-hours-cta {
+      color: var(--rhythm-muted);
+      border-color: var(--rhythm-border);
+      background: var(--rhythm-raised);
     }
 
     .tab-content.tab-enter {
@@ -383,10 +470,7 @@
       text-transform: uppercase;
     }
 
-    .life-panel-active {
-      color: var(--rhythm-primary-light);
-      border-bottom: 2px solid var(--rhythm-primary);
-    }
+
 
     .site-root {
       width: 100%;
@@ -3630,7 +3714,7 @@
 
       <!-- LIFE TAB -->
       <div id="tab-content-life" class="tab-content px-5 pt-3 pb-6 bg-rhythm-bg hidden">
-        <div class="main-nav flex border-b border-rhythm-border mb-4" role="tablist" aria-label="Life sections">
+        <div class="life-subnav" role="tablist" aria-label="Life sections">
           <button type="button" role="tab" aria-selected="true" onclick="switchLifePanel('schedule')" id="life-panel-tab-schedule"
             class="life-nav-tab life-panel-active">Schedule</button>
           <button type="button" role="tab" aria-selected="false" onclick="switchLifePanel('grocery')" id="life-panel-tab-grocery"
@@ -3653,13 +3737,16 @@
             <button type="button" role="tab" data-schedule-view="week" onclick="setScheduleView('week')"
               class="cal-format-chip">This week</button>
           </div>
-          <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-            <button type="button" id="work-schedule-chip" onclick="showWorkScheduleModal()"
-              class="text-[10px] px-2.5 py-1 rounded-full border border-rhythm-border bg-rhythm-raised text-rhythm-muted active:bg-rhythm-border">
-              Hours: Flexible
-            </button>
-            <span id="schedule-availability" class="text-[10px] text-rhythm-muted"></span>
-          </div>
+          <button type="button" id="work-schedule-chip" onclick="showWorkScheduleModal()" class="work-hours-card" aria-label="Set your work hours">
+            <div class="work-hours-icon" aria-hidden="true"><i class="fa-regular fa-clock"></i></div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[12px] font-semibold text-rhythm-text leading-tight">Set your work hours</div>
+              <div id="work-schedule-chip-label" class="text-[11px] text-rhythm-primary-light font-medium mt-0.5 truncate">Flexible · not set</div>
+              <div class="text-[10px] text-rhythm-muted leading-snug mt-0.5">So free-time estimates &amp; smart suggestions match your day</div>
+            </div>
+            <span class="work-hours-cta">Edit</span>
+          </button>
+          <div id="schedule-availability" class="text-[10px] text-rhythm-muted mb-1.5"></div>
           <div id="schedule-sync-badge" class="text-[10px] text-rhythm-muted mb-2"></div>
           <div id="schedule-list" class="space-y-2 mb-4"></div>
           <div class="flex gap-2">
@@ -3852,7 +3939,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v64';
+    const RHYTHM_BUILD = 'v65';
 
     // Fitness / wearable sync (Today “Done — sync”, device modal, etc.) — off until productized.
     const FEATURE_ACTIVITY_SYNC = false;
@@ -7647,8 +7734,8 @@
         <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm max-h-[85vh] overflow-y-auto">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <div class="font-semibold text-lg text-rhythm-text">Your typical hours</div>
-              <div class="text-[10px] text-rhythm-muted mt-0.5">Helps calculate real free time — change anytime, no rigid 9–5 required</div>
+              <div class="font-semibold text-lg text-rhythm-text">When do you usually work?</div>
+              <div class="text-[11px] text-rhythm-muted mt-0.5 leading-snug">Rhythm uses this to estimate free time and time smart suggestions — skip if your day is flexible.</div>
             </div>
             <button type="button" onclick="closeWorkScheduleModal()" class="w-8 h-8 rounded-full bg-rhythm-raised text-rhythm-muted text-xl leading-none">×</button>
           </div>
@@ -8629,7 +8716,17 @@
           ? `${formatEventDateLabel(getWeekStartDateStr(today))} – ${formatEventDateLabel(getWeekEndDateStr(today))}`
           : avail.summary;
       }
-      if (chipEl) chipEl.textContent = `Hours: ${avail.workLabel}`;
+      const chipLabelEl = document.getElementById('work-schedule-chip-label');
+      if (chipLabelEl) {
+        const workLabel = avail.workLabel || 'Flexible';
+        const isUnset = /flexible/i.test(workLabel);
+        chipLabelEl.textContent = isUnset
+          ? 'Flexible · tap Edit to set hours'
+          : workLabel;
+      }
+      if (chipEl) {
+        chipEl.classList.toggle('work-hours-card--set', !/flexible/i.test(avail.workLabel || 'Flexible'));
+      }
 
       container.innerHTML = '';
 
@@ -11499,7 +11596,7 @@
       { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> with a master list and trip mode — add items by voice or keyboard and check them off while shopping.', cta: 'Open grocery', action: 'life-grocery' },
       { id: 'life-schedule', reason: '<strong>Life → Schedule</strong> holds appointments and events — block time so suggestions can find gaps between meetings.', cta: 'View schedule', action: 'life-schedule' },
       { id: 'calendar-sync', reason: 'Add a calendar <strong>ICS URL</strong> in Settings (or Life → Schedule → Calendar URL). Rhythm refreshes events when you open the app — file import works as a backup.', cta: 'Calendar settings', action: 'settings' },
-      { id: 'work-schedule', reason: 'Set your work hours in <strong>Settings</strong> — off-hours and weekends unlock different suggestion windows.', cta: 'Profile settings', action: 'settings' },
+      { id: 'work-schedule', reason: 'On <strong>Life → Schedule</strong>, tap <strong>Set your work hours</strong> so free-time estimates and smart suggestions match your real day.', cta: 'Open schedule', action: 'life-schedule' },
       { id: 'weather-strip', reason: 'The hourly weather strip at the top forecasts the next 24 hours — tap it for the full pane through tomorrow when planning yard work or a walk.', cta: 'See forecast', action: 'weather' },
       { id: 'outdoor-rain', reason: 'Outdoor tasks get rain warnings when afternoon showers are likely — reschedule before you get caught in the weather.', cta: 'Check weather', action: 'weather' },
       { id: 'streaks-log', reason: '<strong>Streaks</strong> logs completions over time — tap a habit to see history and how consistent you have been.', cta: 'View streaks', action: 'streaks' },
