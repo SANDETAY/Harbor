@@ -3852,7 +3852,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v62';
+    const RHYTHM_BUILD = 'v63';
 
     // Fitness / wearable sync (Today “Done — sync”, device modal, etc.) — off until productized.
     const FEATURE_ACTIVITY_SYNC = false;
@@ -14552,7 +14552,7 @@
                 </button>
               </div>
               <div class="text-[10px] text-rhythm-muted mt-1.5 leading-relaxed">
-                Google: Calendar settings → Integrate calendar → <strong>Secret address in iCal format</strong>. Outlook: Share → Publish. Apple: often needs a published/shared webcal link.
+                Google: Settings → your calendar → <strong>Integrate calendar</strong> → copy <strong>Secret address in iCal format</strong> (must end with <strong>basic.ics</strong> — not the browser link with <span class="text-rhythm-text">?cid=</span>). Outlook: Share → Publish. Apple: published webcal link.
               </div>
             </div>
 
@@ -15181,6 +15181,43 @@
       }
     }
 
+    /** Detect common non-feed calendar links (browser share pages, etc.). */
+    function getIcsUrlGuidance(rawUrl) {
+      const url = normalizeIcsFeedUrl(rawUrl) || String(rawUrl || '').trim();
+      if (!url) return 'Paste a full iCal URL (usually ends with .ics).';
+      try {
+        const u = new URL(url);
+        const href = u.href;
+        const host = u.hostname.replace(/^www\./, '');
+        const isGoogle = /google\.com$/i.test(host) || /googleusercontent\.com$/i.test(host);
+
+        // Google Calendar browser UI / “open calendar” links — not fetchable feeds
+        if (isGoogle) {
+          const looksLikeIcalFeed = /\/calendar\/ical\//i.test(href) || /\.ics(\?|#|$)/i.test(href);
+          const looksLikePage =
+            u.searchParams.has('cid')
+            || /\/calendar\/u\//i.test(u.pathname)
+            || /\/calendar\/r(\/|$)/i.test(u.pathname)
+            || /\/calendar\/embed/i.test(u.pathname)
+            || (!looksLikeIcalFeed && /calendar\.google\.com/i.test(host));
+          if (looksLikePage && !looksLikeIcalFeed) {
+            return 'That’s a Google Calendar page link, not an iCal feed. Open Settings → your calendar → Integrate calendar → copy “Secret address in iCal format” (URL ends with basic.ics).';
+          }
+        }
+
+        if (/\.ics(\?|#|$)/i.test(href) || /\/calendar\/ical\//i.test(href) || /webcal/i.test(String(rawUrl))) {
+          return null;
+        }
+        // Soft hint for other hosts without .ics
+        if (!/\.ics(\?|#|$)/i.test(href)) {
+          return 'This doesn’t look like an iCal feed URL. It should usually end with .ics (Google: Settings → Integrate calendar → Secret address).';
+        }
+      } catch {
+        return 'Enter a valid http(s) or webcal calendar URL';
+      }
+      return null;
+    }
+
     function calendarFeedLabelFromUrl(url) {
       try {
         const host = new URL(url).hostname.replace(/^www\./, '');
@@ -15286,10 +15323,17 @@
         return { ok: true, count };
       } catch (err) {
         console.error('Calendar feed sync failed', err);
-        feed.lastError = err?.message || 'Sync failed';
+        const msg = err?.message || 'Sync failed';
+        feed.lastError = /failed to fetch|networkerror|load failed/i.test(msg)
+          ? 'Could not reach feed (CORS/network). Use a …/basic.ics secret URL or file import.'
+          : msg;
         saveState();
         if (!silent) {
-          showToast(`Couldn’t sync ${feed.label}. Check the URL or use file import.`, 'warn');
+          const guide = getIcsUrlGuidance(feed.url);
+          showToast(
+            guide || `Couldn’t sync ${feed.label}. Check the URL or use file import.`,
+            'warn'
+          );
         }
         return { ok: false, error: feed.lastError };
       }
@@ -15298,9 +15342,26 @@
     async function addCalendarFeedFromUrl(rawUrl, options = {}) {
       const url = normalizeIcsFeedUrl(rawUrl);
       if (!url) {
-        showToast('Enter a valid http(s) or webcal calendar URL', 'warn');
+        showToast(getIcsUrlGuidance(rawUrl) || 'Enter a valid http(s) or webcal calendar URL', 'warn');
         return false;
       }
+      // Google browser / share page links (?cid=…) are not ICS feeds
+      try {
+        const u = new URL(url);
+        const href = u.href;
+        const isGooglePage = /calendar\.google\.com/i.test(u.hostname)
+          && !/\/calendar\/ical\//i.test(href)
+          && !/\.ics(\?|#|$)/i.test(href);
+        if (isGooglePage) {
+          showToast(
+            getIcsUrlGuidance(rawUrl)
+              || 'Use Google’s Secret address in iCal format (…/basic.ics), not the browser calendar link.',
+            'warn'
+          );
+          return false;
+        }
+      } catch { /* continue */ }
+
       const feeds = getCalendarFeeds();
       if (feeds.some(f => f.url === url)) {
         showToast('That calendar URL is already added');
