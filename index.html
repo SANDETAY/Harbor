@@ -2774,8 +2774,21 @@
     }
 
     .summary-day-events-sheet {
-      max-height: 72vh;
+      max-height: 78vh;
       overflow-y: auto;
+    }
+
+    .summary-day-events-list {
+      max-height: min(48vh, 22rem);
+      overflow-y: auto;
+      overflow-x: hidden;
+      margin: 0 -0.15rem;
+      padding: 0 0.15rem 0.15rem;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .summary-day-events-list .swipe-row {
+      margin-bottom: 0.45rem;
     }
 
     .summary-day-event-row {
@@ -4955,7 +4968,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v107';
+    const HARBOR_BUILD = 'v108';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -10648,8 +10661,6 @@
 
         refreshCalendarCache();
         saveState();
-        switchTab('life');
-        switchLifePanel('schedule');
         renderTodayFeed();
         updateSmartBanner();
         modal.remove();
@@ -10658,6 +10669,20 @@
           showToast(`Event updated: ${title} · ${when} ${formatScheduleEventTime(time)}`);
         } else {
           showToast(`Event added: ${title} · ${when} ${formatScheduleEventTime(time)}`);
+        }
+
+        // If we came from Summary day popup, return there; otherwise open Schedule
+        const returnDay = window.__harborSummaryDayReturn || null;
+        window.__harborSummaryDayReturn = null;
+        if (returnDay && document.getElementById('summary-modal')) {
+          refreshSummaryModal(summaryMode || 'month');
+          showSummaryDayEvents(returnDay);
+        } else if (returnDay) {
+          showSummaryDayEvents(returnDay);
+        } else {
+          switchTab('life');
+          switchLifePanel('schedule');
+          renderSchedule();
         }
       };
 
@@ -10677,6 +10702,9 @@
     function deleteCalendarEvent(eventId) {
       if (!confirm('Remove this event from your schedule?')) return;
 
+      const dayModal = document.getElementById('summary-day-events-modal');
+      const dayDate = dayModal?.dataset?.forDate || null;
+
       if (state.settings.mockCalendar?.events) {
         state.settings.mockCalendar.events = filterCalendarEventsById(state.settings.mockCalendar.events, eventId);
       }
@@ -10689,6 +10717,14 @@
       renderTodayFeed();
       updateSmartBanner();
       showToast('Event removed');
+
+      // Keep Summary month in sync + refresh day popup list if it was open
+      if (document.getElementById('summary-modal') && typeof summaryMode === 'string') {
+        refreshSummaryModal(summaryMode);
+      }
+      if (dayDate) {
+        showSummaryDayEvents(dayDate);
+      }
     }
 
     function renderScheduleEventRow(ev, options = {}) {
@@ -10743,7 +10779,17 @@
         row.style.setProperty('--person-color', personColor);
       }
 
-      const openEdit = () => showAddCalendarEventModal(getCalendarEventById(eventId) || ev);
+      const openEdit = () => {
+        const fromDay = row.dataset.summaryDayDate || null;
+        if (fromDay) {
+          // Remember day so save can return to the Summary day popup
+          window.__harborSummaryDayReturn = fromDay;
+          closeSummaryDayEventsModal();
+        } else {
+          window.__harborSummaryDayReturn = null;
+        }
+        showAddCalendarEventModal(getCalendarEventById(eventId) || ev);
+      };
       row.querySelector('.cal-event-body')?.addEventListener('click', openEdit);
       row.querySelector('.cal-edit-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -13326,49 +13372,10 @@
         weekday: 'long', month: 'long', day: 'numeric'
       });
 
-      let bodyHtml = '';
-      if (!events.length) {
-        bodyHtml = `
-          <div class="summary-empty py-4 text-center">
-            No events scheduled for ${escapeBriefHtml(label)}.
-          </div>
-          <button type="button" id="summary-day-add-event"
-            class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold active:opacity-90">
-            <i class="fa-solid fa-plus mr-1.5"></i>Add event
-          </button>`;
-      } else {
-        bodyHtml = events.map(e => {
-          const person = getHouseholdPerson(e.personId);
-          const style = person ? ` style="--person-color:${escapeBriefHtml(person.color)}"` : '';
-          const cls = person
-            ? 'summary-day-event-row summary-day-event-row--person'
-            : 'summary-day-event-row';
-          return `
-            <div class="${cls}"${style} data-event-id="${escapeBriefHtml(e.id || '')}">
-              <div class="summary-day-event-time">${escapeBriefHtml(formatScheduleEventTime(e.time))}</div>
-              <div class="min-w-0 flex-1">
-                <div class="summary-day-event-title flex items-center gap-1.5">
-                  ${person ? `<span class="person-swatch" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
-                  <span>${escapeBriefHtml(e.title)}</span>
-                </div>
-                <div class="summary-day-event-meta">
-                  ${person ? renderPersonChipHtml(person.id) : ''}
-                  <span>${e.durationMin || 30} min</span>
-                  ${getEventEndDate(e) !== getEventDate(e) ? '<span>Multi-day</span>' : ''}
-                </div>
-              </div>
-            </div>`;
-        }).join('');
-        bodyHtml += `
-          <button type="button" id="summary-day-add-event"
-            class="w-full mt-2 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-semibold text-harbor-primary-light active:bg-harbor-border">
-            <i class="fa-solid fa-plus mr-1.5"></i>Add another event
-          </button>`;
-      }
-
       const modal = document.createElement('div');
       modal.id = 'summary-day-events-modal';
       modal.className = 'modal-overlay-blur';
+      modal.dataset.forDate = dateStr;
       modal.setAttribute('role', 'dialog');
       modal.setAttribute('aria-modal', 'true');
       modal.setAttribute('aria-label', `Events on ${label}`);
@@ -13380,12 +13387,38 @@
             <span>${escapeBriefHtml(label)}</span>
             <button type="button" class="modal-close-chip" data-day-events-close="1" aria-label="Close">Close</button>
           </div>
-          <div class="text-[11px] text-harbor-muted mb-3">${escapeBriefHtml(longLabel)}
+          <div class="text-[11px] text-harbor-muted mb-3" id="summary-day-events-meta">${escapeBriefHtml(longLabel)}
             ${events.length ? ` · ${events.length} event${events.length === 1 ? '' : 's'}` : ''}
           </div>
-          ${bodyHtml}
+          <div id="summary-day-events-list" class="summary-day-events-list mb-2"></div>
+          <p id="summary-day-swipe-hint" class="text-[10px] text-harbor-muted mb-2 ${events.length ? '' : 'hidden'}">
+            ${isSwipeMobile() ? 'Swipe left on an event to Edit or Delete' : 'Use Edit / Delete on each event'}
+          </p>
+          <button type="button" id="summary-day-add-event"
+            class="w-full py-2.5 rounded-2xl ${events.length ? 'bg-harbor-raised border border-harbor-border text-xs font-semibold text-harbor-primary-light active:bg-harbor-border' : 'bg-harbor-primary text-white font-semibold active:opacity-90 py-3'}">
+            <i class="fa-solid fa-plus mr-1.5"></i>${events.length ? 'Add another event' : 'Add event'}
+          </button>
         </div>`;
       document.body.appendChild(modal);
+
+      const listEl = modal.querySelector('#summary-day-events-list');
+      if (listEl) {
+        if (!events.length) {
+          listEl.innerHTML = `
+            <div class="summary-empty py-4 text-center mb-1">
+              No events scheduled for ${escapeBriefHtml(label)}.
+            </div>`;
+        } else {
+          events.forEach(ev => {
+            // Same swipe Edit/Delete rows as Schedule tab
+            const row = renderScheduleEventRow(ev, { showDate: false });
+            // When editing from this popup, return to the day list after save if possible
+            row.dataset.summaryDayDate = dateStr;
+            listEl.appendChild(row);
+          });
+          bindSwipeRows(listEl);
+        }
+      }
 
       modal.querySelector('[data-day-events-backdrop]')?.addEventListener('click', (e) => {
         e.preventDefault();
@@ -13397,24 +13430,16 @@
         e.stopPropagation();
         closeSummaryDayEventsModal();
       });
-      modal.querySelector('.summary-day-events-sheet')?.addEventListener('click', (e) => e.stopPropagation());
+      modal.querySelector('.summary-day-events-sheet')?.addEventListener('click', (e) => {
+        // Don't block swipe action buttons
+        if (e.target.closest('.swipe-action, .cal-edit-btn, .cal-delete-btn, .cal-event-body')) return;
+        e.stopPropagation();
+      });
 
       modal.querySelector('#summary-day-add-event')?.addEventListener('click', () => {
         closeSummaryDayEventsModal();
-        closeSummaryModal();
+        window.__harborSummaryDayReturn = dateStr;
         showAddCalendarEventModal({ date: dateStr, time: '09:00', title: '', durationMin: 30 });
-      });
-
-      modal.querySelectorAll('[data-event-id]').forEach(row => {
-        const id = row.getAttribute('data-event-id');
-        if (!id) return;
-        row.style.cursor = 'pointer';
-        row.addEventListener('click', () => {
-          const ev = getCalendarEventById(id);
-          if (!ev) return;
-          closeSummaryDayEventsModal();
-          showAddCalendarEventModal(ev);
-        });
       });
 
       requestAnimationFrame(() => {
