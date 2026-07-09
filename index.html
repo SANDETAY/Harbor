@@ -3939,7 +3939,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v66';
+    const RHYTHM_BUILD = 'v67';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -7505,7 +7505,7 @@
             <button type="button" onclick="selectMealGroceryList('${p.id}')"
               class="meal-grocery-chip px-3 py-1.5 rounded-full border text-xs font-semibold whitespace-nowrap ${activeMeal === p.id ? 'is-active border-rhythm-primary text-rhythm-text' : 'border-rhythm-border bg-rhythm-raised text-rhythm-muted'}"
               title="${escapeBriefHtml(p.recipe || getMealEffortLabel(p.effort))}">
-              ${p.dayShort ? `<span class="opacity-80 mr-0.5">${p.dayShort}</span>` : ''}${getMealChipLabel(p)}
+              ${getMealChipLabel(p)}
             </button>
           `).join('')}
         </div>
