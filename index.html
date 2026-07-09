@@ -3742,7 +3742,10 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v55';
+    const RHYTHM_BUILD = 'v56';
+
+    // Fitness / wearable sync (Today “Done — sync”, device modal, etc.) — off until productized.
+    const FEATURE_ACTIVITY_SYNC = false;
 
     let rhythmBriefMode = 'day';
     let state = {
@@ -4795,13 +4798,13 @@
       const inputId = `proj-metric-${habit.id}`;
       const syncedToday = hasSyncedToday(habit.id);
 
-      // Physical activity: no Log activity box here — sync from Today after complete.
+      // Physical activity: show recent logs only (wearable sync disabled for now)
       if (isPhysicalActivity(habit)) {
-        if (!todayLog && !syncedToday && !recent.length) return '';
+        if (!todayLog && !(FEATURE_ACTIVITY_SYNC && syncedToday) && !recent.length) return '';
         return `
           <div class="mt-4 pt-3 border-t border-rhythm-border">
             ${todayLog ? `<div class="text-[10px] text-rhythm-muted">Today: <strong class="text-rhythm-text">${todayLog.value} ${meta.unitLabel}</strong> <span class="opacity-70">(${todayLog.source || 'logged'})</span></div>` : ''}
-            ${syncedToday ? `<div class="text-[10px] text-sky-300 mt-1">Device synced today</div>` : ''}
+            ${FEATURE_ACTIVITY_SYNC && syncedToday ? `<div class="text-[10px] text-sky-300 mt-1">Device synced today</div>` : ''}
             ${recent.length ? `
               <div class="mt-2.5">
                 <div class="text-[10px] text-rhythm-muted mb-1">Recent logs</div>
@@ -4954,6 +4957,7 @@
 
     /** Sync only after a physical activity is completed today (Today list “Done — sync” row). */
     function canShowActivitySync(habit) {
+      if (!FEATURE_ACTIVITY_SYNC) return false;
       return isPhysicalActivity(habit) && isCompletedToday(habit.id) && !hasSyncedToday(habit.id);
     }
 
@@ -11221,7 +11225,7 @@
       { id: 'task-difficulty', reason: 'Each task has a difficulty (1–3). Rhythm weighs it against your energy so you are not steered toward heavy work on a low day.', cta: 'Adjust energy', action: 'energy' },
       { id: 'flexible-tasks', reason: 'Tasks without a fixed due date stay flexible — they appear when energy and calendar gaps align, not only on a rigid schedule.', cta: 'Got it', action: 'none' },
       { id: 'meal-presets', reason: 'Life grocery includes meal presets — stock a recipe’s ingredients to your list in one tap when meal planning.', cta: 'Grocery list', action: 'life-grocery' },
-      { id: 'health-sync', reason: 'Health-linked habits in the Library can sync step or workout data — check Streaks after you connect a tracker in production.', cta: 'Library health', action: 'library-health' },
+      { id: 'health-sync', reason: 'Step and distance goals on Streaks use what you log in the app for now — wearable sync will return in a later update.', cta: 'View streaks', action: 'streaks' },
       { id: 'dismiss-vs-mute', reason: '<strong>Dismiss</strong> hides one suggestion; <strong>Mute</strong> removes the panel entirely for more room. Re-enable anytime in Settings.', cta: 'Open settings', action: 'settings' },
       { id: 'tabs-overview', reason: '<strong>Today</strong> is your action list, <strong>Streaks</strong> tracks progress, <strong>Life</strong> holds bills & schedule, and <strong>Library</strong> is where tasks are sourced.', cta: 'Explore tabs', action: 'library' },
       { id: 'onboarding-routine', reason: 'Want a fuller Today list? Pull tasks from the <strong>Library</strong>, set intervals, and Rhythm will surface them when energy and free time line up.', cta: 'Browse Library', action: 'library' }
@@ -12707,6 +12711,10 @@
     ];
 
     function showDeviceSyncModal(habitId) {
+      if (!FEATURE_ACTIVITY_SYNC) {
+        // Wearable sync intentionally disabled until a real integration ships.
+        return;
+      }
       const habit = state.habits.find(h => h.id === habitId);
       if (!habit) return;
       if (!isPhysicalActivity(habit)) {
@@ -14009,7 +14017,7 @@
           
           ${habit.interval_days ? `<div class="mb-4 text-sm px-3 py-2 bg-rhythm-primary/20 rounded-2xl text-center">Recurs every <strong>${habit.interval_days} days</strong></div>` : ''}
           
-          ${ (state.healthSyncs && state.healthSyncs[habitId] && state.healthSyncs[habitId][todayStr()]) ? `<div class="mb-4 text-sm px-3 py-2 bg-sky-900/30 rounded-2xl text-center text-sky-300">Synced: ${state.healthSyncs[habitId][todayStr()].steps} steps • ${state.healthSyncs[habitId][todayStr()].distance} mi • ${state.healthSyncs[habitId][todayStr()].duration} min • ${state.healthSyncs[habitId][todayStr()].calories} cal</div>` : '' }
+          ${ FEATURE_ACTIVITY_SYNC && state.healthSyncs?.[habitId]?.[todayStr()] ? `<div class="mb-4 text-sm px-3 py-2 bg-sky-900/30 rounded-2xl text-center text-sky-300">Synced: ${state.healthSyncs[habitId][todayStr()].steps} steps • ${state.healthSyncs[habitId][todayStr()].distance} mi • ${state.healthSyncs[habitId][todayStr()].duration} min • ${state.healthSyncs[habitId][todayStr()].calories} cal</div>` : '' }
           
           <div class="flex gap-x-3">
             <button onclick="completeHabit('${habitId}'); this.closest('.fixed').remove()" 
@@ -14018,7 +14026,7 @@
             <button onclick="removeHabit('${habitId}', this)" 
               class="flex-1 py-3 bg-rhythm-surface active:bg-rose-900/70 text-rose-300 rounded-2xl font-semibold">Remove habit</button>
             
-            ${ isPhysicalActivity(habit) && isCompletedToday(habitId) ? `<button onclick="showDeviceSyncModal('${habitId}'); this.closest('.fixed').remove()" class="flex-1 py-3 bg-sky-600 active:bg-sky-500 rounded-2xl font-semibold text-sm">${hasSyncedToday(habitId) ? 'Re-sync' : 'Sync'}</button>` : '' }
+            ${ FEATURE_ACTIVITY_SYNC && isPhysicalActivity(habit) && isCompletedToday(habitId) ? `<button onclick="showDeviceSyncModal('${habitId}'); this.closest('.fixed').remove()" class="flex-1 py-3 bg-sky-600 active:bg-sky-500 rounded-2xl font-semibold text-sm">${hasSyncedToday(habitId) ? 'Re-sync' : 'Sync'}</button>` : '' }
           </div>
           
           <div class="text-[10px] text-center mt-3 text-rhythm-muted">Voice command also works: “complete ${habit.title.toLowerCase()}”</div>
@@ -14504,7 +14512,7 @@
       });
     }
 
-    // Starter pack — small set that demos energy, streaks/metrics, and activity sync
+    // Starter pack — small set that demos energy, streaks/metrics
     const STARTER_ROUTINE_TASKS = [
       {
         key: 'save',
@@ -14521,7 +14529,7 @@
       {
         key: 'walk',
         title: 'Walk 5000 Steps',
-        blurb: 'Health activity · complete, then sync fitness data',
+        blurb: 'Health habit · tracks steps & streaks',
         category: 'health',
         est_minutes: 15,
         difficulty: 2,
@@ -15059,7 +15067,7 @@
             <div class="onboarding-step-label">Step 2 of 2</div>
             <div class="onboarding-title">Start with a few essentials</div>
             <div class="onboarding-subtitle">
-              These will go to your <strong class="text-rhythm-text">Today</strong> tab so you can try energy sorting, streaks, and activity syncing. Uncheck anything you don’t want.
+              These will go to your <strong class="text-rhythm-text">Today</strong> tab so you can try energy sorting and streaks. Uncheck anything you don’t want.
             </div>
           </div>
 
