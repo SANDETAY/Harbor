@@ -3762,14 +3762,14 @@
         <!-- Grocery Panel -->
         <div id="life-panel-grocery" class="life-panel hidden">
           <div class="flex items-center justify-between mb-1">
-            <div class="section-header font-semibold text-rhythm-text">Grocery List</div>
+            <div class="section-header font-semibold text-rhythm-text">Dinner &amp; Grocery</div>
             <div class="flex items-center gap-2">
               <button onclick="tryShowAddMealPresetModal()" class="text-xs text-rhythm-primary-light font-medium">+ Recipe</button>
               <button onclick="showManageMealPresetsModal()" class="text-xs text-rhythm-muted font-medium">Manage</button>
               <button onclick="clearCheckedGrocery()" class="text-xs text-rhythm-muted font-medium">Clear done</button>
             </div>
           </div>
-          <div id="grocery-view-label" class="text-[10px] text-rhythm-muted mb-2">Master list</div>
+          <div id="grocery-view-label" class="text-[10px] text-rhythm-muted mb-2">Themed dinners · Sun–Sat</div>
           <div id="meal-grocery-filters" class="library-filters-scroll mb-2 -mx-1 px-1"></div>
           <div id="grocery-list" class="space-y-2 mb-4"></div>
           <div class="flex gap-x-2">
@@ -3939,7 +3939,9 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v65';
+    const RHYTHM_BUILD = 'v66';
+    const MAX_MEAL_PRESETS = 10;
+    const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
     // Fitness / wearable sync (Today “Done — sync”, device modal, etc.) — off until productized.
     const FEATURE_ACTIVITY_SYNC = false;
@@ -4000,7 +4002,8 @@
         weatherUnit: 'fahrenheit',
         cheatDayFundEnabled: true,
         // Privacy: never send calendar feed URLs through third-party CORS proxies unless user opts in
-        calendarAllowCorsHelper: false
+        calendarAllowCorsHelper: false,
+        mealPresetsVersion: MEAL_PRESETS_VERSION
       }
     };
 
@@ -4073,8 +4076,6 @@
       { id: 'mind', label: 'Mind & Social', icon: 'fa-face-smile', color: 'violet' },
       { id: 'personal', label: 'Personal', icon: 'fa-user', color: 'pink' }
     ];
-
-    const MAX_MEAL_PRESETS = 8;
 
     const SUBSCRIPTION_BRAND_ICONS = {
       netflix: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.398 0 8.348 23.602c2.346.059 4.856.398 4.856.398L10.113 0H5.398zm8.489 0v9.172l4.715 13.33V0h-4.715zM5.398 1.5V24c1.873-.225 2.81-.312 4.715-.398V14.83L5.398 1.5z"/></svg>',
@@ -4240,54 +4241,143 @@
       }
     ];
 
+    // Popular themed weeknight dinners (Meatless Monday, Taco Tuesday, etc.) — each loads as its own grocery list
     const BUILTIN_MEAL_PRESETS = [
       {
-        id: 'spaghetti-meat-sauce',
-        label: '🍝 Spaghetti & Meat Sauce',
-        effort: 2,
-        items: ['Spaghetti pasta', 'Ground beef', 'Crushed tomatoes (canned)', 'Yellow onion', 'Garlic', 'Parmesan cheese']
-      },
-      {
-        id: 'tacos',
-        label: '🌮 Tacos',
-        effort: 1,
-        items: ['Ground beef', 'Flour tortillas', 'Shredded cheddar', 'Lettuce', 'Roma tomato', 'Sour cream', 'Salsa']
-      },
-      {
-        id: 'grilled-cheese-soup',
-        label: '🥪 Grilled Cheese & Tomato Soup',
-        effort: 1,
-        items: ['Sandwich bread', 'Cheddar cheese', 'Butter', 'Canned tomato soup', 'Milk']
-      },
-      {
-        id: 'chicken-stir-fry',
-        label: '🥘 Chicken Stir Fry',
-        effort: 2,
-        items: ['Chicken breast', 'White rice', 'Broccoli florets', 'Bell pepper', 'Carrots', 'Soy sauce', 'Yellow onion']
-      },
-      {
-        id: 'meatloaf-mashed-potatoes',
-        label: '🥩 Meatloaf & Mashed Potatoes',
+        id: 'sunday-supper',
+        weekday: 0,
+        dayShort: 'Sun',
+        label: '🍗 Sunday Supper',
+        recipe: 'Roast chicken & veggies',
         effort: 3,
-        items: ['Ground beef', 'Eggs', 'Plain breadcrumbs', 'Ketchup', 'Russet potatoes', 'Butter', 'Milk']
+        items: [
+          'Whole chicken or bone-in thighs (3–4 lb)',
+          'Baby potatoes',
+          'Carrots',
+          'Yellow onion',
+          'Garlic',
+          'Lemon',
+          'Butter',
+          'Fresh rosemary or thyme (optional)',
+          'Green salad mix'
+        ]
       },
       {
-        id: 'blt',
-        label: '🥓 BLT Sandwiches',
+        id: 'meatless-monday',
+        weekday: 1,
+        dayShort: 'Mon',
+        label: '🌱 Meatless Monday',
+        recipe: 'Chickpea veggie pasta',
+        effort: 2,
+        items: [
+          'Pasta (penne or spaghetti)',
+          'Chickpeas (canned)',
+          'Marinara sauce',
+          'Zucchini',
+          'Baby spinach',
+          'Mushrooms',
+          'Garlic',
+          'Mozzarella or parmesan',
+          'Olive oil'
+        ]
+      },
+      {
+        id: 'taco-tuesday',
+        weekday: 2,
+        dayShort: 'Tue',
+        label: '🌮 Taco Tuesday',
+        recipe: 'Classic beef tacos',
         effort: 1,
-        items: ['Bacon', 'Sandwich bread', 'Lettuce', 'Roma tomato', 'Mayonnaise']
+        items: [
+          'Ground beef (or turkey)',
+          'Flour or corn tortillas',
+          'Taco seasoning',
+          'Shredded cheddar',
+          'Romaine or iceberg lettuce',
+          'Roma tomatoes',
+          'Yellow onion',
+          'Sour cream',
+          'Salsa or pico de gallo',
+          'Lime',
+          'Avocado (optional)'
+        ]
       },
       {
-        id: 'beef-chili',
-        label: '🫕 Homestyle Beef Chili',
+        id: 'wing-wednesday',
+        weekday: 3,
+        dayShort: 'Wed',
+        label: '🍗 Wing Wednesday',
+        recipe: 'Buffalo wings & dips',
         effort: 2,
-        items: ['Ground beef', 'Kidney beans (canned)', 'Diced tomatoes (canned)', 'Yellow onion', 'Bell pepper']
+        items: [
+          'Chicken wings (2–3 lb)',
+          'Buffalo wing sauce',
+          'Butter',
+          'Celery stalks',
+          'Carrots',
+          'Blue cheese or ranch dressing',
+          'Ranch seasoning (optional)',
+          'Paper towels / foil for baking'
+        ]
       },
       {
-        id: 'pork-chops',
-        label: '🍖 Pan-Seared Pork Chops',
+        id: 'stir-fry-thursday',
+        weekday: 4,
+        dayShort: 'Thu',
+        label: '🥘 Stir-Fry Thursday',
+        recipe: 'Chicken veggie stir-fry',
         effort: 2,
-        items: ['Bone-in pork chops', 'Russet potatoes', 'Green beans', 'Butter']
+        items: [
+          'Chicken breast or thighs',
+          'White or jasmine rice',
+          'Broccoli florets',
+          'Bell pepper',
+          'Carrots',
+          'Snow peas or green beans',
+          'Soy sauce',
+          'Garlic',
+          'Fresh ginger (or paste)',
+          'Sesame oil (optional)'
+        ]
+      },
+      {
+        id: 'pizza-friday',
+        weekday: 5,
+        dayShort: 'Fri',
+        label: '🍕 Pizza Friday',
+        recipe: 'Homemade sheet-pan pizza',
+        effort: 1,
+        items: [
+          'Pizza dough or pre-baked crusts',
+          'Pizza sauce',
+          'Shredded mozzarella',
+          'Pepperoni or cooked sausage',
+          'Bell pepper',
+          'Mushrooms',
+          'Red onion',
+          'Black olives (optional)',
+          'Parmesan (optional)'
+        ]
+      },
+      {
+        id: 'grill-saturday',
+        weekday: 6,
+        dayShort: 'Sat',
+        label: '🔥 Grill Saturday',
+        recipe: 'Burgers & corn',
+        effort: 2,
+        items: [
+          'Ground beef (burger patties)',
+          'Hamburger buns',
+          'Cheddar cheese slices',
+          'Lettuce',
+          'Tomato',
+          'Red onion',
+          'Pickles',
+          'Corn on the cob (or frozen)',
+          'Ketchup & mustard',
+          'Potato chips or fries'
+        ]
       }
     ];
 
@@ -4408,7 +4498,8 @@
           calendarSources: [],
           routineLevel: null,
           cheatDayFundEnabled: true,
-          calendarAllowCorsHelper: false
+          calendarAllowCorsHelper: false,
+          mealPresetsVersion: MEAL_PRESETS_VERSION
         }
       };
     }
@@ -4570,9 +4661,7 @@
       }
       if (!state.groceryView) state.groceryView = { mode: 'master' };
       if (!state.groceryTripItems) state.groceryTripItems = [];
-      if (!state.mealPresets || !state.mealPresets.length) {
-        state.mealPresets = JSON.parse(JSON.stringify(BUILTIN_MEAL_PRESETS));
-      }
+      migrateMealPresetsIfNeeded();
       if (!state.subscriptions) state.subscriptions = [];
       if (!state.metricLogs) state.metricLogs = {};
       if (!state.rewardBank) state.rewardBank = { points: 0, totalEarned: 0, cheatDownsUsed: 0, lastCheatDate: null };
@@ -7109,7 +7198,19 @@
       });
     }
 
+    function migrateMealPresetsIfNeeded() {
+      const ver = state.settings.mealPresetsVersion || 0;
+      if (ver >= MEAL_PRESETS_VERSION && state.mealPresets?.length) return;
+      const custom = (state.mealPresets || []).filter(p => p.isCustom);
+      state.mealPresets = [
+        ...JSON.parse(JSON.stringify(BUILTIN_MEAL_PRESETS)),
+        ...custom
+      ].slice(0, MAX_MEAL_PRESETS);
+      state.settings.mealPresetsVersion = MEAL_PRESETS_VERSION;
+    }
+
     function ensureMealPresets() {
+      migrateMealPresetsIfNeeded();
       if (!state.mealPresets || !state.mealPresets.length) {
         state.mealPresets = JSON.parse(JSON.stringify(BUILTIN_MEAL_PRESETS));
       }
@@ -7124,16 +7225,29 @@
       return { 1: 'Easy', 2: 'Medium', 3: 'Involved' }[effort] || 'Medium';
     }
 
+    function getMealChipLabel(preset) {
+      if (!preset) return 'Recipe';
+      if (preset.dayShort) return `${preset.label}`;
+      return preset.label;
+    }
+
     function getMealPresetsForEnergy(energy) {
+      // Themed week dinners always show (Sun–Sat order). Energy only soft-filters custom recipes.
       return ensureMealPresets()
-        .filter(p => (p.effort || 2) <= energy)
-        .sort((a, b) => (a.effort || 2) - (b.effort || 2));
+        .filter(p => {
+          if (p.weekday != null || !p.isCustom) return true;
+          return (p.effort || 2) <= energy;
+        })
+        .sort((a, b) => {
+          const aw = a.weekday != null ? a.weekday : 100;
+          const bw = b.weekday != null ? b.weekday : 100;
+          if (aw !== bw) return aw - bw;
+          return (a.effort || 2) - (b.effort || 2);
+        });
     }
 
     function getMealEnergyFilterLabel(energy) {
-      if (energy === 1) return 'Showing easy recipes for low energy';
-      if (energy === 2) return 'Showing easy & medium recipes for balanced energy';
-      return 'Showing all recipes for high energy';
+      return 'Themed dinners · Sun–Sat · tap a day for its shopping list';
     }
 
     function removeMealPreset(presetId) {
@@ -7156,7 +7270,7 @@
       modal.innerHTML = `
         <div onclick="event.stopImmediatePropagation()" class="bg-rhythm-surface border border-rhythm-border rounded-3xl p-5 max-w-sm w-full text-sm shadow-2xl">
           <div class="text-3xl mb-2 text-center">🍽</div>
-          <div class="font-semibold text-lg text-center text-rhythm-text mb-2">You've hit the 8-recipe limit</div>
+          <div class="font-semibold text-lg text-center text-rhythm-text mb-2">You've hit the ${MAX_MEAL_PRESETS}-recipe limit</div>
           <p class="text-rhythm-muted text-xs leading-relaxed mb-4 text-center">
             Rhythm caps grocery meal shortcuts at <strong class="text-rhythm-text">${MAX_MEAL_PRESETS} recipes</strong> so the chip row stays quick to scroll and tap on your phone.
             Your <strong class="text-rhythm-text">master grocery list</strong> is unlimited — only these meal presets are capped.
@@ -7296,8 +7410,8 @@
         row.className = 'bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5 flex items-center gap-2';
         row.innerHTML = `
           <div class="flex-1 min-w-0">
-            <div class="font-medium text-sm truncate">${p.label}</div>
-            <div class="text-[10px] text-rhythm-muted">${getMealEffortLabel(p.effort)} · ${p.items.length} ingredients</div>
+            <div class="font-medium text-sm truncate">${p.dayShort ? `${p.dayShort} · ` : ''}${p.label}</div>
+            <div class="text-[10px] text-rhythm-muted">${p.recipe ? `${p.recipe} · ` : ''}${getMealEffortLabel(p.effort)} · ${p.items.length} ingredients</div>
           </div>
           <button type="button" data-id="${p.id}" class="mp-delete text-rose-400 text-xs font-medium px-2">Delete</button>
         `;
@@ -7354,8 +7468,7 @@
       const preset = getMealPresetById(mealId);
       if (!preset) return;
       if ((preset.effort || 2) > currentEnergy) {
-        showToast(`${getMealEffortLabel(preset.effort)} recipe — try a higher energy level or pick an easier meal`);
-        return;
+        showToast(`${getMealEffortLabel(preset.effort)} dinner — list loaded for planning`);
       }
       state.groceryView = { mode: 'meal', mealId };
       state.groceryTripItems = preset.items.map((name, i) => ({
@@ -7367,7 +7480,8 @@
       }));
       saveState();
       renderGrocery();
-      showToast(`${preset.label.replace(/^🍽?\s*/, '')} shopping list ready`);
+      const nice = preset.recipe ? `${preset.label} · ${preset.recipe}` : preset.label;
+      showToast(`${nice} list ready`);
     }
 
     function renderMealGroceryFilters() {
@@ -7390,8 +7504,8 @@
           ${visible.map(p => `
             <button type="button" onclick="selectMealGroceryList('${p.id}')"
               class="meal-grocery-chip px-3 py-1.5 rounded-full border text-xs font-semibold whitespace-nowrap ${activeMeal === p.id ? 'is-active border-rhythm-primary text-rhythm-text' : 'border-rhythm-border bg-rhythm-raised text-rhythm-muted'}"
-              title="${getMealEffortLabel(p.effort)} effort">
-              ${p.label} <span class="text-[9px] opacity-70">${getMealEffortLabel(p.effort)}</span>
+              title="${escapeBriefHtml(p.recipe || getMealEffortLabel(p.effort))}">
+              ${p.dayShort ? `<span class="opacity-80 mr-0.5">${p.dayShort}</span>` : ''}${getMealChipLabel(p)}
             </button>
           `).join('')}
         </div>
@@ -7466,8 +7580,8 @@
       if (labelEl) {
         const preset = isMeal ? getMealPresetById(state.groceryView.mealId) : null;
         labelEl.textContent = isMeal
-          ? `${preset?.label || 'Meal'} list · master list unchanged`
-          : `${getMealEnergyFilterLabel(currentEnergy)} · voice & typing always add to master`;
+          ? `${preset?.label || 'Dinner'}${preset?.recipe ? ` · ${preset.recipe}` : ''} · master list unchanged`
+          : `${getMealEnergyFilterLabel(currentEnergy)} · adds go to master`;
       }
 
       container.innerHTML = '';
@@ -7476,7 +7590,13 @@
       const checked = items.filter(g => g.checked);
 
       if (items.length === 0) {
-        container.innerHTML = rhythmEmptyHtml('🛒', isMeal ? 'Pick a recipe' : 'Grocery list is empty', isMeal ? 'Select a meal chip above to load ingredients.' : 'Add items below or try voice: “add milk to grocery list.”');
+        container.innerHTML = rhythmEmptyHtml(
+          '🛒',
+          isMeal ? 'Pick a themed dinner' : 'No master list yet',
+          isMeal
+            ? 'Select a day chip above (Taco Tuesday, Pizza Friday…) for that dinner’s shopping list.'
+            : 'Tap a themed dinner above for a ready-made list, or add staples below / by voice.'
+        );
         return;
       }
 
@@ -11119,13 +11239,8 @@
     }
 
     function formatWeatherHourLabel(date) {
-      const todayKey = todayStr();
-      const tomorrowKey = tomorrowStr();
-      const dayKey = dateStrLocal(date);
-      const time = date.toLocaleTimeString([], { hour: 'numeric' });
-      if (dayKey === todayKey) return time;
-      if (dayKey === tomorrowKey) return `Tom ${time}`;
-      return `${date.toLocaleDateString([], { weekday: 'short' })} ${time}`;
+      // Day grouping is shown separately in the weather pane; chips only need the clock time
+      return date.toLocaleTimeString([], { hour: 'numeric' });
     }
 
     function getWeatherDayLabel(date) {
