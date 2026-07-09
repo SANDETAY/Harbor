@@ -5175,7 +5175,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v116';
+    const HARBOR_BUILD = 'v117';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -15748,6 +15748,18 @@
           // Close summary if still open from previous step so the coachmark is clear
           if (typeof closeSummaryModal === 'function') closeSummaryModal();
         }
+      },
+      {
+        id: 'prototype-note',
+        title: 'You’re in the Harbor prototype',
+        body: () => getPrototypeTutorialBody(),
+        target: null,
+        noHighlight: true,
+        cardPlacement: 'center',
+        prepare: () => {
+          switchTab('today');
+          if (typeof closeSummaryModal === 'function') closeSummaryModal();
+        }
       }
     ];
 
@@ -15794,7 +15806,7 @@
           </div>`;
       }
       return `
-        <p class="tutorial-install-lead">Best experience: put Harbor on your home screen. Full screen, no browser bar covering the <strong>Summary</strong> button.</p>
+        <p class="tutorial-install-lead">Harbor feels fastest as a home-screen app — full screen, one tap from your phone, and it behaves more like something you own than a tab you keep losing.</p>
         ${stepsHtml}
         <p class="tutorial-install-note">You can open this again anytime under <strong>Menu → Add to Home Screen</strong>.</p>
         <button type="button" class="tutorial-install-cta" onclick="event.stopPropagation(); openInstallGuideFromTutorial()">
@@ -15802,11 +15814,32 @@
         </button>
         <p class="tutorial-install-note" style="margin-bottom:0">
           ${canNativePwaInstall()
-            ? 'One tap opens your browser’s “add to home screen” dialog — nothing shady, no app store download.'
+            ? 'One tap opens your browser’s official add-to-home-screen dialog — a local shortcut, not an app-store download.'
             : platform === 'ios'
               ? 'Apple requires the Safari Share steps above (sites can’t add icons silently).'
               : 'If a one-tap button isn’t ready yet, the guide will walk you through it.'}
         </p>`;
+    }
+
+    function getPrototypeTutorialBody() {
+      return `
+        <p class="tutorial-install-lead">Quick honesty before you sail off: <strong>Harbor is a live prototype</strong> — think early beta, not a finished store app.</p>
+        <div class="tutorial-install-platform">
+          <div class="tutorial-install-platform-title"><i class="fa-brands fa-github mr-1"></i> Why GitHub?</div>
+          <p class="text-[0.74rem] text-harbor-muted leading-relaxed m-0">
+            You’re using a preview hosted from our GitHub Pages build. That’s how we ship updates quickly for testers — no App Store review wait, no install package. Same local-first privacy: your data stays in <strong class="text-harbor-text">this browser / device</strong>.
+          </p>
+        </div>
+        <div class="tutorial-install-platform" style="margin-top:0.5rem">
+          <div class="tutorial-install-platform-title"><i class="fa-solid fa-flask mr-1"></i> What to expect</div>
+          <ol class="tutorial-install-steps">
+            <li>Features may change, get renamed, or get sharper as we learn from real use.</li>
+            <li>You might hit rough edges — that’s useful signal, not a personal failing.</li>
+            <li>Clearing site data or switching browsers can look like a “new” Harbor (export a profile backup if you care about your lists).</li>
+            <li>Feedback from the menu helps us prioritize what to polish next.</li>
+          </ol>
+        </div>
+        <p class="tutorial-install-note" style="margin-bottom:0">Thanks for testing the waters with us. Tap <strong>Finish tour</strong> when you’re ready to use Harbor for real.</p>`;
     }
 
     function openInstallGuideFromTutorial() {
@@ -19546,7 +19579,7 @@
           steps: [
             'Open Harbor in <strong>Chrome</strong> on your computer.',
             'Use Harbor’s <strong>Add to home screen</strong> button, or the install icon in the address bar, or menu ⋮ → <strong>Install Harbor</strong> / <strong>Cast, save, and share</strong> → Install.',
-            'Harbor opens in its own window without the browser toolbar.'
+            'Harbor opens in its own window — cleaner, faster to reopen, more like a real app.'
           ]
         },
         {
@@ -19558,7 +19591,7 @@
           steps: [
             'Open Harbor in <strong>Edge</strong>.',
             'Tap Harbor’s install button if shown, or menu ⋯ → <strong>Apps</strong> → <strong>Install this site as an app</strong>.',
-            'Confirm install. Edge uses the same secure web-app prompt as Chromium — no extra account required.'
+            'Confirm. Edge uses the same secure web-app prompt as Chromium — no extra account required.'
           ]
         },
         {
