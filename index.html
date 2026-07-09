@@ -2497,13 +2497,53 @@
     }
 
     /* ── Summary dashboard modal ── */
+    #summary-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 260;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      background: rgba(8, 18, 18, 0.78);
+      /* solid fallback so underlying weather/tabs never “bleed” into the sheet */
+    }
+
+    #summary-modal .summary-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      z-index: 0;
+    }
+
     .summary-sheet {
+      position: relative;
+      z-index: 1;
+      width: 100%;
       max-height: 92vh;
+      min-height: 42vh;
+      overflow-x: hidden;
       overflow-y: auto;
       border-radius: 1.5rem 1.5rem 0 0;
+      border-top: 1px solid rgb(var(--harbor-border));
       background:
         radial-gradient(ellipse 90% 50% at 50% -10%, rgba(47, 155, 140, 0.16) 0%, transparent 55%),
         rgb(var(--harbor-surface));
+      box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+      -webkit-overflow-scrolling: touch;
+      isolation: isolate;
+    }
+
+    body.summary-open #site-root {
+      pointer-events: none;
+    }
+
+    body.summary-open .summary-orb {
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    html[data-theme="dark"] #summary-modal {
+      background: rgba(0, 0, 0, 0.82);
     }
 
     .summary-dash-head {
@@ -2567,15 +2607,17 @@
     }
 
     .summary-toggle-btn {
-      flex: 1;
-      min-width: 0;
-      padding: 0.5rem 0.4rem;
+      flex: 1 1 0;
+      min-width: 4.5rem;
+      padding: 0.5rem 0.35rem;
       border-radius: 999px;
       font-size: clamp(0.65rem, 2.6vw, 0.75rem);
       font-weight: 650;
       border: none;
       cursor: pointer;
       white-space: nowrap;
+      overflow: visible;
+      text-overflow: clip;
       transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
       background: transparent;
       color: rgb(var(--harbor-muted));
@@ -4935,7 +4977,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v104';
+    const HARBOR_BUILD = 'v105';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -13567,15 +13609,16 @@
 
     function closeSummaryModal() {
       document.getElementById('summary-modal')?.remove();
+      document.body.classList.remove('summary-open');
+      closeSummaryDayEventsModal();
     }
 
     // ==================== SHEET SWIPE-TO-DISMISS ====================
     function findSheetPanel(overlay) {
       if (!overlay) return null;
+      // Prefer explicit sheet panels — never treat a full-screen backdrop as the sheet
       return overlay.querySelector(
         '.summary-sheet, .summary-day-events-sheet, .modal-sheet, .app-menu-sheet-panel, [data-weather-sheet], [data-sheet-panel]'
-      ) || Array.from(overlay.children).find(el =>
-        el.classList && !el.classList.contains('absolute') && el !== overlay
       ) || null;
     }
 
@@ -13650,7 +13693,9 @@
       sheet.classList.add('is-sheet-dismissing');
       sheet.style.transform = `translate3d(0, ${Math.max(sheet.offsetHeight || 400, 400)}px, 0)`;
       sheet.style.opacity = '0.85';
-      const backdrop = overlay.querySelector(':scope > .absolute.inset-0, :scope > [data-weather-dismiss="1"]');
+      const backdrop = overlay.querySelector(
+        ':scope > .summary-modal-backdrop, :scope > .absolute.inset-0, :scope > [data-weather-dismiss="1"]'
+      );
       if (backdrop) {
         backdrop.classList.add('sheet-backdrop-dim');
         backdrop.style.opacity = '0';
@@ -13669,7 +13714,7 @@
     function wireSheetSwipeToDismiss(overlay) {
       if (!overlay || overlay.nodeType !== 1) return;
       if (overlay.dataset.sheetSwipeBound === '1') return;
-      if (!overlay.classList.contains('fixed')) return;
+      if (!overlay.classList.contains('fixed') && overlay.id !== 'summary-modal') return;
 
       const sheet = findSheetPanel(overlay);
       if (!sheet) return;
@@ -13686,6 +13731,8 @@
 
       overlay.dataset.sheetSwipeBound = '1';
       sheet.classList.add('sheet-swipe-target');
+      // Ignore residual pointer/ghost-click from the control that opened the sheet
+      const armedAt = Date.now() + 320;
 
       let startY = 0;
       let startX = 0;
@@ -13705,7 +13752,9 @@
         sheet.style.transition = 'transform 0.22s cubic-bezier(0.32, 0.72, 0, 1)';
         sheet.style.transform = '';
         sheet.style.opacity = '';
-        const backdrop = overlay.querySelector(':scope > .absolute.inset-0, :scope > [data-weather-dismiss="1"]');
+        const backdrop = overlay.querySelector(
+          ':scope > .summary-modal-backdrop, :scope > .absolute.inset-0, :scope > [data-weather-dismiss="1"]'
+        );
         if (backdrop) backdrop.style.opacity = '';
         setTimeout(() => {
           if (sheet.isConnected) sheet.style.transition = '';
@@ -13727,7 +13776,7 @@
         const rawDx = e.clientX - startX;
 
         if (!decided) {
-          if (Math.abs(rawDy) < 8 && Math.abs(rawDx) < 8) return;
+          if (Math.abs(rawDy) < 10 && Math.abs(rawDx) < 10) return;
           decided = true;
           if (Math.abs(rawDx) > Math.abs(rawDy) * 1.15) {
             cleanup();
@@ -13737,7 +13786,7 @@
             cleanup();
             return;
           }
-          if (getScrollTop() > 2 && !e.target.closest('.modal-grab-pill')) {
+          if (getScrollTop() > 2 && !e.target.closest('.modal-grab-pill, .summary-dash-head')) {
             cleanup();
             return;
           }
@@ -13750,10 +13799,6 @@
         dy = Math.max(0, rawDy);
         const resisted = dy < 120 ? dy : 120 + (dy - 120) * 0.35;
         sheet.style.transform = `translate3d(0, ${resisted}px, 0)`;
-        const backdrop = overlay.querySelector(':scope > .absolute.inset-0, :scope > [data-weather-dismiss="1"]');
-        if (backdrop) {
-          backdrop.style.opacity = String(Math.max(0.25, 1 - resisted / 420));
-        }
       };
 
       const onPointerUp = (e) => {
@@ -13766,7 +13811,7 @@
           resetSheet();
           return;
         }
-        const threshold = Math.min(140, Math.max(88, (sheet.offsetHeight || 300) * 0.18));
+        const threshold = Math.min(140, Math.max(96, (sheet.offsetHeight || 300) * 0.2));
         if (finalDy >= threshold) {
           animateSheetDismiss(overlay, sheet, () => dismissBottomSheet(overlay));
         } else {
@@ -13776,13 +13821,17 @@
       };
 
       const onPointerDown = (e) => {
+        if (Date.now() < armedAt) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return;
-        if (e.target.closest('input, textarea, select, button, a, [role="switch"], [role="tab"], .person-pick-btn')) {
+        if (e.target.closest('input, textarea, select, button, a, [role="switch"], [role="tab"], .person-pick-btn, .modal-close-chip, .summary-toggle, .summary-month-cal')) {
           return;
         }
+        // Only start dismiss from grab area / top of sheet — avoids eating content scroll
         const grab = e.target.closest('.modal-grab-pill, .summary-dash-head, .app-menu-sheet-title');
+        const rect = sheet.getBoundingClientRect();
+        const nearTop = e.clientY <= rect.top + 56;
         const scrollTop = getScrollTop();
-        if (!grab && scrollTop > 2) return;
+        if (!grab && !(nearTop && scrollTop <= 2)) return;
 
         startY = e.clientY;
         startX = e.clientX;
@@ -13860,14 +13909,27 @@
     function showSummaryModal(mode) {
       summaryMode = mode || summaryMode || 'day';
       closeSummaryModal();
-      const brief = buildSummary(summaryMode);
+
+      let bodyHtml = '';
+      try {
+        const brief = buildSummary(summaryMode);
+        bodyHtml = renderSummaryModalContent(brief);
+      } catch (err) {
+        console.error('[Harbor] Summary failed to render', err);
+        bodyHtml = `<div class="text-sm text-harbor-muted py-6 text-center">Couldn’t build Summary. Close and try again.</div>`;
+      }
 
       const modal = document.createElement('div');
       modal.id = 'summary-modal';
-      modal.className = 'fixed inset-0 bg-harbor-bg/75 modal-overlay-blur flex items-end z-[65]';
+      modal.className = 'fixed inset-0 modal-overlay-blur';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-label', 'Summary');
+      // Ignore the same tap/click that opened the FAB from immediately closing via backdrop
+      const ignoreBackdropUntil = Date.now() + 400;
       modal.innerHTML = `
-        <div class="absolute inset-0" onclick="closeSummaryModal()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="summary-sheet relative w-full border-t border-harbor-border p-5 text-sm">
+        <div class="summary-modal-backdrop" data-summary-backdrop="1"></div>
+        <div class="summary-sheet p-5 text-sm" data-sheet-panel="1">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="summary-dash-head">
             <div class="summary-dash-brand">
@@ -13878,13 +13940,33 @@
                 <div class="summary-dash-title">Summary</div>
               </div>
             </div>
-            <button type="button" onclick="closeSummaryModal()" class="modal-close-chip" aria-label="Close">Close</button>
+            <button type="button" class="modal-close-chip" data-summary-close="1" aria-label="Close">Close</button>
           </div>
-          <div id="summary-body">${renderSummaryModalContent(brief)}</div>
+          <div id="summary-body">${bodyHtml}</div>
         </div>
       `;
       document.body.appendChild(modal);
+      document.body.classList.add('summary-open');
+
+      modal.querySelector('[data-summary-backdrop]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (Date.now() < ignoreBackdropUntil) return;
+        closeSummaryModal();
+      });
+      modal.querySelector('[data-summary-close]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeSummaryModal();
+      });
+      // Keep sheet taps from hitting backdrop
+      modal.querySelector('.summary-sheet')?.addEventListener('click', (e) => e.stopPropagation());
+
       wireSummaryModal(modal.querySelector('#summary-body'));
+      // Wire swipe after paint so open-tap doesn't start a dismiss gesture
+      requestAnimationFrame(() => {
+        if (modal.isConnected) wireSheetSwipeToDismiss(modal);
+      });
       maybeAdvanceTutorial('summary-open');
     }
 
