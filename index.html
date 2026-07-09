@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="is-splash-active">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -255,7 +255,8 @@
     }
 
     html {
-      background-color: var(--harbor-dawn, #0A3A38);
+      /* Solid dawn teal — matches splash top; avoids invalid RGB-token var misuse */
+      background-color: #0A3A38;
     }
 
     body {
@@ -2143,6 +2144,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 0.4rem;
+      align-items: center;
     }
     .person-pick-btn {
       display: inline-flex;
@@ -2161,6 +2163,41 @@
       color: rgb(var(--harbor-text));
       border-color: var(--person-color, rgb(var(--harbor-primary)));
       background: color-mix(in srgb, var(--person-color, rgb(var(--harbor-primary))) 18%, transparent);
+    }
+    .person-pick-add {
+      border-style: dashed;
+      border-color: rgba(107, 191, 176, 0.45);
+      color: rgb(var(--harbor-primary-light));
+      background: rgba(47, 155, 140, 0.08);
+    }
+    .person-pick-add:active {
+      background: rgba(47, 155, 140, 0.18);
+    }
+    /* Add Event sheet: outer shell fixed height; inner body scrolls so custom duration is reachable */
+    #add-calendar-event-modal .modal-sheet-event {
+      display: flex;
+      flex-direction: column;
+      max-height: min(92vh, 100dvh);
+      max-height: min(92vh, 100svh);
+      padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
+      overflow: hidden;
+    }
+    #add-calendar-event-modal .modal-sheet-event-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      padding-bottom: 0.35rem;
+    }
+    #add-calendar-event-modal .modal-sheet-event-footer {
+      flex-shrink: 0;
+      padding-top: 0.75rem;
+      margin-top: 0.15rem;
+      border-top: 1px solid rgba(42, 79, 74, 0.55);
+      background: rgb(var(--harbor-surface));
     }
     .cal-event-row--person {
       border-left: 3px solid var(--person-color, rgb(var(--harbor-primary)));
@@ -3696,9 +3733,10 @@
       align-items: center;
       gap: 0.35rem;
       margin: 0 0 0.65rem;
-      padding: 0.35rem 0.15rem;
-      border: none;
-      background: transparent;
+      padding: 0.45rem 0.75rem;
+      border: 1px dashed rgba(107, 191, 176, 0.4);
+      border-radius: 999px;
+      background: rgba(47, 155, 140, 0.08);
       color: rgb(var(--harbor-primary-light));
       font-size: 0.72rem;
       font-weight: 600;
@@ -3708,13 +3746,17 @@
 
     .cal-duration-other-btn.is-open {
       color: rgb(var(--harbor-text));
+      border-style: solid;
+      border-color: rgb(var(--harbor-primary));
+      background: rgba(47, 155, 140, 0.15);
     }
 
     .cal-duration-custom-wrap {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
+      scroll-margin-bottom: 1.25rem;
     }
 
     .cal-duration-custom-wrap.hidden {
@@ -3884,9 +3926,22 @@
     .splash-screen-harbor {
       overflow: hidden;
       will-change: opacity, transform;
+      /* Dawn harbor gradient — bottom #d8e4de must match html/body underlay (no black gap) */
       background: linear-gradient(180deg, #0a3a38 0%, #1a5c56 38%, #6a9e96 72%, #d8e4de 100%);
       opacity: 1;
       transform: none;
+    }
+
+    /* Full-viewport cover so safe-area / home-indicator never shows app black under splash */
+    #splash-screen.splash-screen-harbor {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
+      z-index: 100;
     }
 
     .splash-screen-harbor.is-hidden {
@@ -4029,8 +4084,19 @@
       pointer-events: none;
     }
 
+    /* Match splash bottom mint so no black bar under waves / home indicator */
     body.is-splash-active {
-      background-color: var(--harbor-dawn, #0A3A38);
+      background-color: #d8e4de;
+      background-image: linear-gradient(180deg, #0a3a38 0%, #1a5c56 38%, #6a9e96 72%, #d8e4de 100%);
+    }
+
+    body.is-splash-active .site-root,
+    body.is-splash-active .app-frame {
+      background: transparent;
+    }
+
+    html.is-splash-active {
+      background-color: #d8e4de;
     }
 
     .app-content-wrap.splash-app-reveal {
@@ -5175,7 +5241,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v117';
+    const HARBOR_BUILD = 'v118';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -6864,7 +6930,8 @@
 
     function buildPersonPickerHtml(selectedId) {
       const people = getHouseholdProfiles();
-      const sel = selectedId || 'me';      return `<div class="person-pick-grid" id="cal-ev-person-picker" role="group" aria-label="Who is this for?">
+      const sel = selectedId || 'me';
+      return `<div class="person-pick-grid" id="cal-ev-person-picker" role="group" aria-label="Who is this for?">
         ${people.map(p => {
           const active = p.id === sel;
           return `<button type="button" class="person-pick-btn${active ? ' is-active' : ''}" data-person-id="${escapeBriefHtml(p.id)}"
@@ -6873,6 +6940,10 @@
             ${escapeBriefHtml(p.name)}
           </button>`;
         }).join('')}
+        <button type="button" class="person-pick-btn person-pick-add" id="cal-ev-add-person" title="Add household person">
+          <i class="fa-solid fa-plus text-[10px]" aria-hidden="true"></i>
+          Add person
+        </button>
       </div>`;
     }
 
@@ -6880,10 +6951,10 @@
       let selected = initialId || 'me';
       const grid = modal.querySelector('#cal-ev-person-picker');
       if (!grid) return () => selected;
-      grid.querySelectorAll('.person-pick-btn').forEach(btn => {
+      grid.querySelectorAll('.person-pick-btn[data-person-id]').forEach(btn => {
         btn.onclick = () => {
           selected = btn.dataset.personId || 'me';
-          grid.querySelectorAll('.person-pick-btn').forEach(b => {
+          grid.querySelectorAll('.person-pick-btn[data-person-id]').forEach(b => {
             const on = b.dataset.personId === selected;
             b.classList.toggle('is-active', on);
             b.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -7037,7 +7108,7 @@
         state.settings.householdProfiles = ensureHouseholdProfiles(people);
         saveState();
         editor.remove();
-        if (typeof onDone === 'function') onDone();
+        if (typeof onDone === 'function') onDone(next);
         renderSchedule();
         renderTodayFeed();
         showToast(`${name} saved`);
@@ -10934,7 +11005,6 @@
     function showAddCalendarEventModal(editEvent = null) {
       // Prefill-only objects (e.g. { date }) are not edits — only real stored events have ids.
       const isEdit = !!(editEvent && editEvent.id);
-      const now = new Date();
       const timeFormat = getEventTimeFormat();
       const eventDate = editEvent ? getEventDate(editEvent) : todayStr();
       const eventEnd = editEvent && editEvent.id ? getEventEndDate(editEvent) : eventDate;
@@ -10961,53 +11031,59 @@
       modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[92vh] overflow-y-auto">
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet modal-sheet-event relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm">
           <div class="modal-grab-pill" aria-hidden="true"></div>
-          <div class="font-semibold text-lg mb-3">${isEdit ? 'Edit Event' : 'Add Event'}</div>
+          <div class="font-semibold text-lg mb-3 flex items-center justify-between gap-2 flex-shrink-0">
+            <span>${isEdit ? 'Edit Event' : 'Add Event'}</span>
+            <button type="button" onclick="this.closest('#add-calendar-event-modal').remove()" class="modal-close-chip" aria-label="Close">Close</button>
+          </div>
 
-          <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5">Event</div>
-          <input id="cal-ev-title" type="text" placeholder="Coffee with a friend"
-            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-3 mb-3 outline-none text-harbor-text">
+          <div class="modal-sheet-event-body" id="cal-ev-sheet-scroll">
+            <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5">Event</div>
+            <input id="cal-ev-title" type="text" placeholder="Coffee with a friend"
+              class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-3 mb-3 outline-none text-harbor-text">
 
-          <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5">Date <span class="font-normal normal-case tracking-normal text-harbor-muted/80">(start → end)</span></div>
-          <div id="cal-ev-calendar" class="bg-harbor-raised border border-harbor-border rounded-2xl p-3 mb-3"></div>
+            <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5">Date <span class="font-normal normal-case tracking-normal text-harbor-muted/80">(start → end)</span></div>
+            <div id="cal-ev-calendar" class="bg-harbor-raised border border-harbor-border rounded-2xl p-3 mb-3"></div>
 
-          <div class="flex items-center justify-between mb-1.5">
-            <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold">Time</div>
-            <div class="flex gap-1.5" id="cal-ev-time-wrap">
-              <button type="button" class="cal-format-chip${timeFormat === '12h' ? ' is-active' : ''}" data-format="12h">12H</button>
-              <button type="button" class="cal-format-chip${timeFormat === '24h' ? ' is-active' : ''}" data-format="24h">24H</button>
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold">Time</div>
+              <div class="flex gap-1.5" id="cal-ev-time-wrap">
+                <button type="button" class="cal-format-chip${timeFormat === '12h' ? ' is-active' : ''}" data-format="12h">12H</button>
+                <button type="button" class="cal-format-chip${timeFormat === '24h' ? ' is-active' : ''}" data-format="24h">24H</button>
+              </div>
+            </div>
+            <div id="cal-ev-time-picker" class="mb-3"></div>
+
+            <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5">Who is this for?</div>
+            <div class="mb-2" id="cal-ev-person-wrap"></div>
+            <div class="text-[10px] text-harbor-muted mb-3 leading-snug">
+              Tag a household person so Schedule &amp; Summary color-code the event.
+              Tap <strong class="text-harbor-text font-semibold">Add person</strong> for spouse, kids, or others — or
+              <button type="button" class="text-harbor-primary-light font-semibold underline underline-offset-2" id="cal-ev-manage-household">manage household</button>.
+            </div>
+
+            <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5">Duration</div>
+            <div class="flex flex-wrap gap-1.5 mb-1.5" id="cal-ev-duration-chips">
+              ${DURATION_PRESETS.map(mins => `
+                <button type="button" data-duration="${mins}"
+                  class="cal-duration-chip px-3 py-1.5 rounded-full border text-xs font-semibold ${durationChipActive(mins)}">
+                  ${formatDurationShort(mins)}
+                </button>
+              `).join('')}
+            </div>
+            <button type="button" id="cal-ev-duration-other-btn" class="cal-duration-other-btn${initialIsCustom ? ' is-open' : ''}" aria-expanded="${initialIsCustom ? 'true' : 'false'}">
+              <i class="fa-solid fa-sliders text-[10px]"></i>
+              <span id="cal-ev-duration-other-label">${initialIsCustom ? `Custom · ${formatDurationShort(initialDuration)}` : 'Custom duration…'}</span>
+            </button>
+            <div id="cal-ev-duration-custom-wrap" class="cal-duration-custom-wrap${initialIsCustom ? '' : ' hidden'}">
+              <input id="cal-ev-duration" type="number" min="5" max="480" step="5" value="${initialDuration}" placeholder="Minutes"
+                class="bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 outline-none text-harbor-text" aria-label="Custom duration in minutes">
+              <span class="text-xs text-harbor-muted flex-shrink-0">min</span>
             </div>
           </div>
-          <div id="cal-ev-time-picker" class="mb-3"></div>
 
-          <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5">Who is this for?</div>
-          <div class="mb-3" id="cal-ev-person-wrap"></div>
-          <div class="text-[10px] text-harbor-muted mb-3 -mt-1.5 leading-snug">
-            Color-codes the event in Schedule &amp; Summary.
-            <button type="button" class="text-harbor-primary-light font-semibold underline-offset-2" id="cal-ev-manage-household">Manage household</button>
-          </div>
-
-          <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5">Duration</div>
-          <div class="flex flex-wrap gap-1.5 mb-1.5" id="cal-ev-duration-chips">
-            ${DURATION_PRESETS.map(mins => `
-              <button type="button" data-duration="${mins}"
-                class="cal-duration-chip px-3 py-1.5 rounded-full border text-xs font-semibold ${durationChipActive(mins)}">
-                ${formatDurationShort(mins)}
-              </button>
-            `).join('')}
-          </div>
-          <button type="button" id="cal-ev-duration-other-btn" class="cal-duration-other-btn${initialIsCustom ? ' is-open' : ''}" aria-expanded="${initialIsCustom ? 'true' : 'false'}">
-            <i class="fa-solid fa-sliders text-[10px]"></i>
-            <span id="cal-ev-duration-other-label">${initialIsCustom ? `Custom · ${formatDurationShort(initialDuration)}` : 'Set a different duration'}</span>
-          </button>
-          <div id="cal-ev-duration-custom-wrap" class="cal-duration-custom-wrap${initialIsCustom ? '' : ' hidden'}">
-            <input id="cal-ev-duration" type="number" min="5" max="480" step="5" value="${initialDuration}" placeholder="Minutes"
-              class="bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 outline-none text-harbor-text" aria-label="Custom duration in minutes">
-            <span class="text-xs text-harbor-muted flex-shrink-0">min</span>
-          </div>
-
-          <div class="flex gap-2 mt-2">
+          <div class="modal-sheet-event-footer flex gap-2">
             <button type="button" onclick="this.closest('#add-calendar-event-modal').remove()"
               class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold">Cancel</button>
             <button type="button" id="cal-ev-save-btn"
@@ -11029,6 +11105,20 @@
       const inactiveChipClass = 'cal-duration-chip px-3 py-1.5 rounded-full border text-xs font-semibold border-harbor-border bg-harbor-raised text-harbor-muted';
       const activeChipClass = 'cal-duration-chip px-3 py-1.5 rounded-full border text-xs font-semibold border-harbor-primary text-harbor-text bg-harbor-primary/15';
 
+      const sheetScroll = modal.querySelector('#cal-ev-sheet-scroll');
+      const scrollDurationIntoView = () => {
+        requestAnimationFrame(() => {
+          durationCustomWrap?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          // Fallback: ensure scroll container reaches the bottom when custom expands
+          if (sheetScroll && durationIsCustom) {
+            sheetScroll.scrollTop = Math.min(
+              sheetScroll.scrollHeight,
+              sheetScroll.scrollTop + 120
+            );
+          }
+        });
+      };
+
       const setDurationChipSelection = (mins, custom) => {
         durationIsCustom = !!custom;
         modal.querySelectorAll('.cal-duration-chip').forEach(c => {
@@ -11041,8 +11131,9 @@
         if (durationOtherLabel) {
           durationOtherLabel.textContent = custom
             ? `Custom · ${formatDurationShort(Math.min(480, Math.max(5, parseInt(durationInput?.value, 10) || mins || 30)))}`
-            : 'Set a different duration';
+            : 'Custom duration…';
         }
+        if (custom) scrollDurationIntoView();
       };
 
       modal.querySelectorAll('.cal-duration-chip').forEach(chip => {
@@ -11056,11 +11147,13 @@
       durationOtherBtn?.addEventListener('click', () => {
         if (durationIsCustom) {
           durationInput?.focus();
+          scrollDurationIntoView();
           return;
         }
         setDurationChipSelection(parseInt(durationInput?.value, 10) || initialDuration, true);
         durationInput?.focus();
         durationInput?.select?.();
+        scrollDurationIntoView();
       });
 
       durationInput?.addEventListener('input', () => {
@@ -11070,9 +11163,20 @@
           durationOtherLabel.textContent = `Custom · ${formatDurationShort(mins)}`;
         }
       });
+      durationInput?.addEventListener('focus', () => scrollDurationIntoView());
 
       let selectedPersonId = editEvent?.personId || 'me';
       let getSelectedPersonId = () => selectedPersonId;
+      const wireAddPersonBtn = () => {
+        modal.querySelector('#cal-ev-add-person')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openHouseholdPersonEditor(null, (saved) => {
+            if (!document.getElementById('add-calendar-event-modal')) return;
+            refreshPersonPicker(saved?.id || getSelectedPersonId());
+          });
+        });
+      };
       const refreshPersonPicker = (keepId) => {
         const personWrap = modal.querySelector('#cal-ev-person-wrap');
         if (!personWrap) return;
@@ -11087,6 +11191,7 @@
           selectedPersonId = orig() || 'me';
           return selectedPersonId;
         };
+        wireAddPersonBtn();
       };
       refreshPersonPicker(selectedPersonId);
       modal.querySelector('#cal-ev-manage-household')?.addEventListener('click', (e) => {
@@ -14375,7 +14480,9 @@
 
       const getScrollTop = () => {
         if (sheet.scrollTop > 0) return sheet.scrollTop;
-        const scroller = sheet.querySelector('.overflow-y-auto');
+        const scroller = sheet.querySelector(
+          '#cal-ev-sheet-scroll, .modal-sheet-event-body, .overflow-y-auto, [data-sheet-scroll]'
+        );
         return scroller ? scroller.scrollTop : 0;
       };
 
@@ -21699,6 +21806,12 @@
       document.getElementById('splash-brand')?.classList.remove('is-in');
       document.getElementById('splash-slogan')?.classList.remove('is-in');
       document.body.classList.remove('is-splash-active');
+      document.documentElement.classList.remove('is-splash-active');
+      try {
+        const theme = document.documentElement.getAttribute('data-theme') || 'harbor';
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) metaTheme.setAttribute('content', theme === 'dark' ? '#070707' : '#0A1F1E');
+      } catch (_) { /* ignore */ }
       const appWrap = document.querySelector('.app-content-wrap');
       if (appWrap) {
         appWrap.classList.remove('splash-app-reveal');
@@ -21800,6 +21913,12 @@
       const REVEAL_MS = 560;
 
       document.body.classList.add('is-splash-active');
+      document.documentElement.classList.add('is-splash-active');
+      // Match browser chrome / home-indicator to splash bottom mint (not app black)
+      try {
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) metaTheme.setAttribute('content', '#d8e4de');
+      } catch (_) { /* ignore */ }
 
       if (splash) {
         splash.classList.remove('is-hidden', 'is-revealing');
@@ -21831,6 +21950,12 @@
           appWrap.classList.add('splash-app-reveal');
         }
         document.body.classList.remove('is-splash-active');
+        document.documentElement.classList.remove('is-splash-active');
+        try {
+          const theme = document.documentElement.getAttribute('data-theme') || 'harbor';
+          const metaTheme = document.querySelector('meta[name="theme-color"]');
+          if (metaTheme) metaTheme.setAttribute('content', theme === 'dark' ? '#070707' : '#0A1F1E');
+        } catch (_) { /* ignore */ }
         finishBoot();
       };
 

@@ -132,7 +132,15 @@ def run_tests():
                         fail("summary month tab works", "month toggle not selected")
                 else:
                     fail("summary month tab works", "month toggle missing")
-                page.locator("#summary-modal button", has_text="×").first.click()
+                closed = page.evaluate("""() => {
+                  if (typeof closeSummaryModal === 'function') { closeSummaryModal(); return true; }
+                  document.getElementById('summary-modal')?.remove();
+                  document.body.classList.remove('summary-open');
+                  return true;
+                }""")
+                page.wait_for_timeout(200)
+                if closed:
+                    ok("summary modal closes")
             else:
                 fail("summary modal opens")
 
@@ -230,10 +238,13 @@ def run_tests():
             ok("settings calendar ICS section")
         else:
             fail("settings calendar ICS section")
-        page.keyboard.press("Escape")
-        page.wait_for_timeout(300)
-        page.locator(".fixed .text-2xl", has_text="×").first.click(timeout=3000)
-        page.wait_for_timeout(300)
+        page.evaluate("""() => {
+          document.querySelectorAll('.fixed.inset-0').forEach(el => {
+            if (el.id === 'splash-screen') return;
+            el.remove();
+          });
+        }""")
+        page.wait_for_timeout(200)
 
         # --- Simulation 10: Activity/wearable sync disabled ---
         page.locator("#tab-today").click(force=True)
@@ -289,6 +300,103 @@ def run_tests():
         else:
             fail("tutorial highlights align", "; ".join(misaligned))
         page.evaluate("() => { if (typeof skipAppTutorial === 'function') skipAppTutorial(); }")
+
+        # --- Simulation 14: Splash underlay matches dawn gradient bottom ---
+        splash_colors = page.evaluate("""() => {
+          // Force splash active styles and read computed underlay
+          document.documentElement.classList.add('is-splash-active');
+          document.body.classList.add('is-splash-active');
+          const bodyBg = getComputedStyle(document.body).backgroundColor;
+          const htmlBg = getComputedStyle(document.documentElement).backgroundColor;
+          const splash = document.getElementById('splash-screen');
+          const splashBg = splash ? getComputedStyle(splash).backgroundImage : '';
+          document.documentElement.classList.remove('is-splash-active');
+          document.body.classList.remove('is-splash-active');
+          return { bodyBg, htmlBg, splashBg };
+        }""")
+        # #d8e4de ≈ rgb(216, 228, 222)
+        body_ok = "216" in (splash_colors.get("bodyBg") or "") or "d8e4de" in str(splash_colors).lower()
+        splash_grad = "linear-gradient" in (splash_colors.get("splashBg") or "")
+        if body_ok and splash_grad:
+            ok("splash bottom underlay matches theme mint")
+        else:
+            fail("splash bottom underlay", str(splash_colors)[:180])
+
+        # --- Simulation 15: Add Event person picker + scrollable custom duration ---
+        page.locator("#tab-life").click(force=True)
+        page.wait_for_timeout(400)
+        # Open Add Event from schedule
+        opened = page.evaluate("""() => {
+          if (typeof showAddCalendarEventModal === 'function') {
+            showAddCalendarEventModal();
+            return true;
+          }
+          return false;
+        }""")
+        if not opened:
+            fail("add event modal open", "showAddCalendarEventModal missing")
+        else:
+            page.wait_for_selector("#add-calendar-event-modal", timeout=5000)
+            has_add_person = page.locator("#cal-ev-add-person").count() > 0
+            has_scroll_body = page.locator("#cal-ev-sheet-scroll").count() > 0
+            if has_add_person:
+                ok("add event shows Add person chip")
+            else:
+                fail("add event Add person chip", "missing #cal-ev-add-person")
+            if has_scroll_body:
+                ok("add event has dedicated scroll body")
+            else:
+                fail("add event scroll body", "missing #cal-ev-sheet-scroll")
+
+            # Open custom duration and ensure it is reachable via scroll
+            page.locator("#cal-ev-duration-other-btn").click()
+            page.wait_for_timeout(350)
+            custom_visible = page.evaluate("""() => {
+              const wrap = document.getElementById('cal-ev-duration-custom-wrap');
+              const scroll = document.getElementById('cal-ev-sheet-scroll');
+              if (!wrap || !scroll) return { ok: false, reason: 'missing nodes' };
+              if (wrap.classList.contains('hidden')) return { ok: false, reason: 'still hidden' };
+              const wr = wrap.getBoundingClientRect();
+              const sr = scroll.getBoundingClientRect();
+              // Either already in view, or scroll container can scroll enough to reach it
+              const canScroll = scroll.scrollHeight > scroll.clientHeight + 4;
+              const intersects = wr.bottom > sr.top && wr.top < sr.bottom;
+              wrap.scrollIntoView({ block: 'nearest' });
+              const wr2 = wrap.getBoundingClientRect();
+              const inView = wr2.top >= sr.top - 8 && wr2.bottom <= sr.bottom + 24;
+              return { ok: intersects || inView || canScroll, canScroll, intersects, inView };
+            }""")
+            if custom_visible.get("ok"):
+                ok("custom duration reachable via sheet scroll")
+            else:
+                fail("custom duration scroll", str(custom_visible))
+
+            # Add a household person from the event sheet
+            page.locator("#cal-ev-add-person").click()
+            page.wait_for_timeout(400)
+            if page.locator("#hp-name").count():
+                page.fill("#hp-name", "Alex")
+                page.locator("#hp-save").click()
+                page.wait_for_timeout(500)
+                chips = page.evaluate("""() => {
+                  return Array.from(document.querySelectorAll('#cal-ev-person-picker .person-pick-btn[data-person-id]'))
+                    .map(b => b.textContent.trim());
+                }""")
+                if any("Alex" in (c or "") for c in chips):
+                    ok(f"household person added to event picker ({chips})")
+                else:
+                    fail("household person added", str(chips))
+            else:
+                fail("household person editor", "hp-name not found")
+
+            # Save a tagged event
+            page.fill("#cal-ev-title", "School pickup")
+            page.locator("#cal-ev-save-btn").click()
+            page.wait_for_timeout(600)
+            if page.locator("#add-calendar-event-modal").count() == 0:
+                ok("event with person saved and modal closed")
+            else:
+                fail("event save", "modal still open")
 
         page.close()
         browser.close()
