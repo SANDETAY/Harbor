@@ -23,12 +23,12 @@ Edit **`index.html` only** — one responsive app powers web and mobile. Use `mo
 
 ### Option A — GitHub Pages (recommended if repo is on GitHub)
 
-Your repo: **https://github.com/SANDETAY/Rythm**
+Your repo: **https://github.com/SANDETAY/Harbor**
 
 1. On GitHub, open the repo → **Settings** → **Pages**
 2. Under **Build and deployment**, set **Source** to **GitHub Actions**
 3. Push to `main` — the workflow in `.github/workflows/deploy-pages.yml` deploys automatically
-4. After 1–2 minutes, share: **https://sandetay.github.io/Rythm/**
+4. After 1–2 minutes, share: **https://sandetay.github.io/Harbor/**
 
 Every `git push` to `main` updates the live site. Testers can also **Add to Home Screen** on iPhone/Android for a full-screen app experience.
 
