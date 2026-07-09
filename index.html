@@ -3360,6 +3360,25 @@
       background: rgba(47, 155, 140, 0.2);
     }
 
+    .tutorial-install-platform {
+      margin-bottom: 0.55rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 0.85rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgba(18, 28, 34, 0.45);
+    }
+
+    .tutorial-install-platform-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: rgb(var(--harbor-text));
+      margin-bottom: 0.35rem;
+    }
+
+    .tutorial-install-platform .tutorial-install-steps {
+      margin-bottom: 0;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .tutorial-card {
         transition: none;
@@ -5043,7 +5062,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v113';
+    const HARBOR_BUILD = 'v114';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -6385,42 +6404,32 @@
       const recent = collectMetricDataPoints(habit).slice(-5).reverse();
       const inputId = `proj-metric-${habit.id}`;
       const syncedToday = hasSyncedToday(habit.id);
-
-      // Physical activity: show recent logs only (wearable sync disabled for now)
-      if (isPhysicalActivity(habit)) {
-        if (!todayLog && !(FEATURE_ACTIVITY_SYNC && syncedToday) && !recent.length) return '';
-        return `
-          <div class="mt-4 pt-3 border-t border-harbor-border">
-            ${todayLog ? `<div class="text-[10px] text-harbor-muted">Today: <strong class="text-harbor-text">${todayLog.value} ${meta.unitLabel}</strong> <span class="opacity-70">(${todayLog.source || 'logged'})</span></div>` : ''}
-            ${FEATURE_ACTIVITY_SYNC && syncedToday ? `<div class="text-[10px] text-sky-300 mt-1">Device synced today</div>` : ''}
-            ${recent.length ? `
-              <div class="mt-2.5">
-                <div class="text-[10px] text-harbor-muted mb-1">Recent logs</div>
-                <div class="space-y-1">
-                  ${recent.map(e => `
-                    <div class="flex justify-between text-[10px] bg-harbor-raised/60 rounded-xl px-2.5 py-1.5">
-                      <span class="text-harbor-muted">${formatDateShort(e.date)}</span>
-                      <span class="font-semibold text-harbor-text tabular-nums">${e.value} ${meta.unitLabel}</span>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            ` : ''}
-          </div>
-        `;
-      }
+      const isFitness = isPhysicalActivity(habit);
+      const logLabel = isFitness
+        ? (meta.type === 'steps' ? 'Steps today' : meta.type === 'miles' ? 'Distance today' : `Today’s ${meta.unitLabel}`)
+        : 'Update total';
+      const helpText = isFitness
+        ? (meta.type === 'miles'
+          ? 'Log miles swam, run, biked, or hiked — projections use what you enter here.'
+          : `Record what you actually did — projections use your logged ${meta.unitLabel}.`)
+        : `Record what you actually did — projections use your logged ${meta.unitLabel}.`;
+      const placeholder = meta.type === 'miles' && /swim/i.test(habit.title || '')
+        ? '0.5'
+        : meta.placeholder;
 
       return `
         <div class="mt-4 pt-3 border-t border-harbor-border">
-          <label class="block text-xs font-medium text-harbor-text mb-1">Update total</label>
-          <div class="text-[10px] text-harbor-muted mb-2 leading-snug">Record what you actually did — projections use your logged ${meta.unitLabel}.</div>
+          <label class="block text-xs font-medium text-harbor-text mb-1" for="${inputId}">${logLabel}</label>
+          <div class="text-[10px] text-harbor-muted mb-2 leading-snug">${helpText}</div>
           <div class="flex gap-2">
-            <input id="${inputId}" type="number" min="0" step="${meta.step}" value="${todayLog?.value ?? ''}" placeholder="${meta.placeholder}"
+            <input id="${inputId}" type="number" min="0" step="${meta.step}" value="${todayLog?.value ?? ''}" placeholder="${placeholder}"
+              inputmode="decimal"
               class="flex-1 bg-harbor-raised border border-harbor-border focus:border-harbor-primary rounded-2xl px-3 py-2.5 text-sm outline-none text-harbor-text">
             <button type="button" data-save-metric="${habit.id}" data-metric-input="${inputId}"
               class="px-4 py-2.5 rounded-2xl bg-harbor-primary text-white text-xs font-semibold active:opacity-90">Save</button>
           </div>
           ${todayLog ? `<div class="text-[10px] text-harbor-muted mt-1.5">Today: <strong class="text-harbor-text">${todayLog.value} ${meta.unitLabel}</strong> <span class="opacity-70">(${todayLog.source || 'logged'})</span></div>` : ''}
+          ${FEATURE_ACTIVITY_SYNC && syncedToday ? `<div class="text-[10px] text-sky-300 mt-1">Device synced today</div>` : ''}
           ${recent.length ? `
             <div class="mt-2.5">
               <div class="text-[10px] text-harbor-muted mb-1">Recent logs</div>
@@ -7143,7 +7152,11 @@
       if (unit === 'pages' || unit === 'page') return 'pages';
 
       // Title heuristics — word boundaries only; never treat stretch/mobility/etc. as metrics
-      if (isPetWalkingActivity(habit) || /\b(run|running|mile|miles|jog|jogging|hike|hiking)\b/i.test(title)) return 'miles';
+      // Distance sports (log miles / distance swam, run, ridden…)
+      if (
+        isPetWalkingActivity(habit)
+        || /\b(run|running|mile|miles|jog|jogging|hike|hiking|swim|swimming|swam|bike|biking|cycle|cycling|row|rowing|kayak|paddle)\b/i.test(title)
+      ) return 'miles';
       if (titleLooksLikeStepWalk(habit.title) && !/dog|pet|puppy/.test(title)) return 'steps';
       if (/\b(save|saving|savings|money|budget|invest)\b/i.test(title)) return 'savings';
       // "read 10 pages" / "read" — not "ready", not random substrings
@@ -7488,21 +7501,98 @@
         result.equivalent = periodic
           ? `At ${formatVal(perPeriod)} ${formatIntervalLabel(habit.interval_days).toLowerCase()}, you're on track for ~${formatVal(projected30)} over the next 30 days (${cycles} cycle${cycles === 1 ? '' : 's'}).`
           : `At this pace you could save ~${formatVal(projected30)} over the next 30 days.`;
-      } else if (type === 'steps') {
-        const loggedCal = result.streakCalorieDetail;
-        result.equivalent = loggedCal?.totalCal
-          ? `~${loggedCal.totalCal.toLocaleString()} kcal burned from ${formatVal(totalLogged)} (${loggedCal.totalDistance.toFixed(1)} mi equivalent).`
-          : `That's roughly ${(projected30 / METRICS.stepsPerMile).toFixed(1)} miles over 30 days.`;
-      } else if (type === 'miles') {
-        const loggedCal = result.streakCalorieDetail;
-        result.equivalent = loggedCal?.totalCal
-          ? `~${loggedCal.totalCal.toLocaleString()} kcal burned from ${formatVal(totalLogged)} logged.`
-          : `About ${estimateCaloriesBurned(habit, projected30, (habit.est_minutes || 10) * 30).toLocaleString()} kcal projected over 30 days.`;
+      } else if (type === 'steps' || type === 'miles') {
+        result.equivalent = getFitnessFunProjection(habit, projected30, type, result.streakCalorieDetail);
+      } else if (type === 'pages') {
+        result.equivalent = getPagesFunProjection(projected30);
       } else {
         result.equivalent = `Based on your logged ${habit.unit || 'values'}, not streak guesses.`;
       }
 
       return result;
+    }
+
+    /** Clever, human 30-day “so what?” lines for fitness metrics. */
+    function getFitnessFunProjection(habit, projected30, type, loggedCal) {
+      const title = (habit.title || '').toLowerCase();
+      let miles = Number(projected30) || 0;
+      if (type === 'steps') miles = projected30 / (METRICS.stepsPerMile || 2000);
+      if (miles <= 0) {
+        return 'Log today’s distance (or steps) below to unlock a 30-day forecast with a little flair.';
+      }
+
+      const miLabel = miles >= 10 ? miles.toFixed(0) : miles.toFixed(1);
+      const calBit = loggedCal?.totalCal
+        ? ` You’ve already burned ~${loggedCal.totalCal.toLocaleString()} kcal in this window.`
+        : '';
+
+      // ── Swim ──────────────────────────────────────────────
+      if (/\b(swim|swimming|swam|laps?)\b/i.test(title)) {
+        const channelMi = 21; // Dover–Calais (classic Channel)
+        const crossings = miles / channelMi;
+        const olympicLengths = Math.round((miles * 1609.34) / 50); // 50 m pool
+        if (crossings >= 0.85) {
+          return `Thirty days in the water at this pace is about <strong>${miLabel} mi</strong> — roughly <strong>${crossings.toFixed(1)} English Channel crossings</strong> (Dover to Calais is ~${channelMi} mi). Your goggles would need a passport.${calBit}`;
+        }
+        return `Keep this up for 30 days and you’ll log around <strong>${miLabel} mi</strong> swimming — about <strong>${olympicLengths.toLocaleString()} lengths</strong> of an Olympic pool. The dolphins would be taking notes.${calBit}`;
+      }
+
+      // ── Run / jog ─────────────────────────────────────────
+      if (/\b(run|running|jog|jogging)\b/i.test(title)) {
+        const nyStateLength = 330; // approx N–S length of New York State (mi)
+        const manhattanLen = 13.4;
+        if (miles >= nyStateLength) {
+          return `Thirty days of running projects to ~<strong>${miLabel} mi</strong> — enough to cover the length of <strong>New York State</strong> (~${nyStateLength} mi) and still have leftover miles for a victory bagel.${calBit}`;
+        }
+        const manhattans = miles / manhattanLen;
+        const marathons = miles / 26.2;
+        if (manhattans >= 1.2) {
+          return `At this clip, 30 days is ~<strong>${miLabel} mi</strong> — about <strong>${manhattans.toFixed(1)} trips the length of Manhattan</strong>, or ~${marathons.toFixed(1)} marathons. The city that never sleeps… because you’re still on mile eight.${calBit}`;
+        }
+        return `Thirty days of running lands around <strong>${miLabel} mi</strong> — roughly <strong>${marathons.toFixed(1)} marathons</strong> stacked end to end. Future you is already lacing up.${calBit}`;
+      }
+
+      // ── Bike / cycle ──────────────────────────────────────
+      if (/\b(bike|biking|cycle|cycling|spin)\b/i.test(title)) {
+        const tourStage = 110; // typical TdF stage length (mi)
+        const stages = miles / tourStage;
+        if (stages >= 1) {
+          return `Thirty days on the bike is ~<strong>${miLabel} mi</strong> — about <strong>${stages.toFixed(1)} Tour de France stages</strong> (~${tourStage} mi each). Yellow jersey energy, no team car required.${calBit}`;
+        }
+        return `Keep pedaling and 30 days nets ~<strong>${miLabel} mi</strong> — enough to ride from the city to the countryside and back with stories to tell.${calBit}`;
+      }
+
+      // ── Hike ──────────────────────────────────────────────
+      if (/\b(hike|hiking|trail)\b/i.test(title)) {
+        const appalachianDay = 12; // rough long-day AT pace
+        const days = miles / appalachianDay;
+        return `Thirty days of trail time projects to ~<strong>${miLabel} mi</strong> — like <strong>${days.toFixed(1)} solid Appalachian Trail days</strong> (~${appalachianDay} mi each). The blisters would be legendary.${calBit}`;
+      }
+
+      // ── Walk / steps ──────────────────────────────────────
+      if (type === 'steps' || /\b(walk|walking|steps?)\b/i.test(title)) {
+        const earthMi = 24901;
+        const pctEarth = (miles / earthMi) * 100;
+        const footballFields = Math.round(miles / 0.0568); // ~100 yd field
+        if (type === 'steps') {
+          return `Thirty days of steps projects to ~<strong>${Math.round(projected30).toLocaleString()} steps</strong> (~${miLabel} mi) — about <strong>${footballFields.toLocaleString()} football fields</strong> of pavement. Your shoes are filing for overtime.${calBit}`;
+        }
+        return `Thirty days of walking is ~<strong>${miLabel} mi</strong> — roughly <strong>${footballFields.toLocaleString()} football fields</strong>${pctEarth >= 0.1 ? `, or ~${pctEarth.toFixed(2)}% of the way around Earth` : ''}. Sidewalks fear you.${calBit}`;
+      }
+
+      // ── Generic distance fitness ──────────────────────────
+      const marathons = miles / 26.2;
+      return `Over 30 days you’re on track for ~<strong>${miLabel} mi</strong> of movement — about <strong>${marathons.toFixed(1)} marathon distances</strong>. Future you is already proud.${calBit}`;
+    }
+
+    function getPagesFunProjection(projected30) {
+      const pages = Math.round(projected30);
+      if (pages <= 0) return 'Log pages as you go to unlock a 30-day reading forecast.';
+      const novels = pages / 300; // rough novel length
+      if (novels >= 1) {
+        return `Thirty days of reading projects to ~<strong>${pages.toLocaleString()} pages</strong> — about <strong>${novels.toFixed(1)} novels</strong> (at ~300 pages each). Your nightstand is clearing its schedule.`;
+      }
+      return `At this pace you’ll log ~<strong>${pages.toLocaleString()} pages</strong> in 30 days — a healthy stack of chapters. Bookmark that feeling.`;
     }
 
     // ==================== PRIORITIZATION BY ENERGY ====================
@@ -15256,41 +15346,46 @@
       let stepsHtml = '';
       if (platform === 'ios') {
         stepsHtml = `
-          <ol class="tutorial-install-steps">
-            <li>Open Harbor in <strong>Safari</strong> (not Chrome).</li>
-            <li>Tap <strong>Share</strong> <span class="tutorial-install-icon" aria-hidden="true">⬆️</span> at the bottom.</li>
-            <li>Scroll and tap <strong>Add to Home Screen</strong>.</li>
-            <li>Tap <strong>Add</strong> — then open Harbor from the new icon.</li>
-          </ol>`;
+          <div class="tutorial-install-platform">
+            <div class="tutorial-install-platform-title"><i class="fa-brands fa-apple mr-1"></i> iPhone / iPad</div>
+            <ol class="tutorial-install-steps">
+              <li>Stay in <strong>Safari</strong> (not Chrome).</li>
+              <li>Tap <strong>Share</strong> (the square with the ↑ arrow).</li>
+              <li>Choose <strong>Add to Home Screen</strong>, then <strong>Add</strong>.</li>
+            </ol>
+          </div>`;
       } else if (platform === 'android') {
         stepsHtml = `
-          <ol class="tutorial-install-steps">
-            <li>Open Harbor in <strong>Chrome</strong>.</li>
-            <li>Tap the <strong>⋮</strong> menu (top right).</li>
-            <li>Choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li>
-            <li>Confirm — then launch Harbor from your home screen.</li>
-          </ol>`;
+          <div class="tutorial-install-platform">
+            <div class="tutorial-install-platform-title"><i class="fa-brands fa-android mr-1"></i> Android</div>
+            <ol class="tutorial-install-steps">
+              <li>Tap <strong>Add Harbor to home screen</strong> below when you see it — or use Chrome’s menu → <strong>Add to Home screen</strong>.</li>
+              <li>You’re only <strong>pinning a shortcut</strong>, not installing a big store app. Harbor still runs in your browser, just full-screen and one tap away.</li>
+            </ol>
+          </div>`;
       } else {
         stepsHtml = `
-          <ol class="tutorial-install-steps">
-            <li><strong>iPhone:</strong> Safari → Share → Add to Home Screen.</li>
-            <li><strong>Android:</strong> Chrome → ⋮ menu → Install app / Add to Home screen.</li>
-            <li>Open the new icon for a full-screen app (no browser bar).</li>
-          </ol>`;
+          <div class="tutorial-install-platform">
+            <div class="tutorial-install-platform-title">Your phone</div>
+            <ol class="tutorial-install-steps">
+              <li><strong>Android:</strong> use <strong>Add to home screen</strong> — it’s a shortcut, not a heavy app install.</li>
+              <li><strong>iPhone:</strong> Safari → Share → <strong>Add to Home Screen</strong>.</li>
+            </ol>
+          </div>`;
       }
       return `
-        <p class="tutorial-install-lead">For the best feel — and so the browser bar doesn’t cover the <strong>Summary</strong> button — add Harbor to your home screen like a real app.</p>
+        <p class="tutorial-install-lead">Best experience: put Harbor on your home screen. Full screen, no browser bar covering the <strong>Summary</strong> button.</p>
         ${stepsHtml}
-        <p class="tutorial-install-note">You can reopen these steps anytime under <strong>Menu → Add to Home Screen</strong>.</p>
+        <p class="tutorial-install-note">You can open this again anytime under <strong>Menu → Add to Home Screen</strong>.</p>
         <button type="button" class="tutorial-install-cta" onclick="event.stopPropagation(); openInstallGuideFromTutorial()">
-          ${canNativePwaInstall() ? 'Install Harbor now' : 'Install / Add to Home Screen'}
+          ${canNativePwaInstall() ? 'Add Harbor to home screen' : 'Show me how'}
         </button>
         <p class="tutorial-install-note" style="margin-bottom:0">
           ${canNativePwaInstall()
-            ? 'Your browser can install Harbor in one tap.'
-            : getMobileInstallPlatform() === 'ios'
-              ? 'On iPhone, Safari requires the Share menu (Apple doesn’t allow one-tap install).'
-              : 'If one-tap isn’t ready yet, you’ll get simple steps for your phone.'}
+            ? 'One tap opens your browser’s “add to home screen” dialog — nothing shady, no app store download.'
+            : platform === 'ios'
+              ? 'Apple requires the Safari Share steps above (sites can’t add icons silently).'
+              : 'If a one-tap button isn’t ready yet, the guide will walk you through it.'}
         </p>`;
     }
 
