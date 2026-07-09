@@ -4095,7 +4095,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v85';
+    const HARBOR_BUILD = 'v86';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -11330,6 +11330,13 @@
       return mins >= 22 * 60 || mins < 6 * 60;
     }
 
+    /** "late" after 10pm, "early" before 6am */
+    function quietHoursWord(mins = getNowMinutes()) {
+      if (mins >= 22 * 60) return 'late';
+      if (mins < 6 * 60) return 'early';
+      return 'quiet';
+    }
+
     function isLateEvening(mins = getNowMinutes()) {
       return mins >= 20 * 60 && mins < 22 * 60;
     }
@@ -11385,7 +11392,7 @@
         }
         const top = tasks[0]?.habit;
         if (top && isQuietHours() && (typeof isOutdoorTask === 'function' ? isOutdoorTask(top) : false)) {
-          return `Quiet hours — save outdoor work for later. Try something calm indoors first.`;
+          return `It's ${quietHoursWord()} — save outdoor work for later. Try something calm indoors first.`;
         }
         if (top && ctx.energy === 1) {
           return `Low-energy day — if you do one thing, make it ${top.title.toLowerCase()}. Everything else can wait.`;
@@ -11427,7 +11434,7 @@
       const mins = getNowMinutes();
 
       if (mode === 'day' && isQuietHours(mins) && outdoor.length) {
-        parts.push(`It's late/early — outdoor tasks like ${outdoor[0].habit.title.toLowerCase()} can wait until daylight.`);
+        parts.push(`It's ${quietHoursWord(mins)} — outdoor tasks like ${outdoor[0].habit.title.toLowerCase()} can wait until daylight.`);
       } else if (mode === 'day' && outdoor.length && rainRisk?.risky) {
         parts.push(`Rain risk this afternoon — consider moving ${outdoor[0].habit.title.toLowerCase()} or tackling it early.`);
       } else if (mode === 'day' && ctx.freeTime >= 60 && !isQuietHours(mins)) {
@@ -12545,6 +12552,7 @@
 
       // Quiet hours: explicit indoor nudge so we never fall through to outdoor tips
       if (quietNow) {
+        const when = quietHoursWord();
         const calm = dueSensible.find(h =>
           /\b(read|stretch|meditat|journal|plan|bill|email|organize|budget|pay|review|mobility)\b/i.test(h.title || '')
         ) || dueSensible[0] || energyPool[0];
@@ -12554,7 +12562,7 @@
             type: 'habit',
             habit: calm,
             cta: 'Tap to start',
-            reason: `It's late/early — not a great time for a walk or yard work. ${formatTaskForSuggestion(calm.title)} is a better fit right now.`
+            reason: `It's ${when} — ${formatTaskForSuggestion(calm.title)} is a better fit right now.`
           });
         } else {
           candidates.push({
@@ -12562,7 +12570,7 @@
             type: 'tip',
             cta: 'Got it',
             action: 'none',
-            reason: `Quiet hours — outdoor walks and noisy chores can wait until morning. Rest, or pick something calm indoors.`
+            reason: `It's ${when} — outdoor walks and noisy chores can wait. Rest, or pick something calm indoors.`
           });
         }
       }
