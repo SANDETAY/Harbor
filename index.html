@@ -4095,7 +4095,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v83';
+    const HARBOR_BUILD = 'v84';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -11243,8 +11243,13 @@
         // Prefer chores/upcoming on week/month view slightly after true due-today items
         const choreBoostA = (mode === 'week' || mode === 'month') && isNonDailyRecurring(a.habit) ? 5 : 0;
         const choreBoostB = (mode === 'week' || mode === 'month') && isNonDailyRecurring(b.habit) ? 5 : 0;
-        const scoreA = (a.daysUntil <= 0 ? 0 : a.daysUntil <= 2 ? 1 : 2) * 100 + getEffectiveDifficulty(a.habit, currentEnergy) + choreBoostA;
-        const scoreB = (b.daysUntil <= 0 ? 0 : b.daysUntil <= 2 ? 1 : 2) * 100 + getEffectiveDifficulty(b.habit, currentEnergy) + choreBoostB;
+        // Time-of-day + weather: demote walks at 2am, outdoor chores in rain, etc.
+        const ctxA = getHabitContextPenalty(a.habit, mode);
+        const ctxB = getHabitContextPenalty(b.habit, mode);
+        const scoreA = (a.daysUntil <= 0 ? 0 : a.daysUntil <= 2 ? 1 : 2) * 100
+          + getEffectiveDifficulty(a.habit, currentEnergy) + choreBoostA + ctxA;
+        const scoreB = (b.daysUntil <= 0 ? 0 : b.daysUntil <= 2 ? 1 : 2) * 100
+          + getEffectiveDifficulty(b.habit, currentEnergy) + choreBoostB + ctxB;
         if (scoreA !== scoreB) return scoreA - scoreB;
         return a.date.localeCompare(b.date);
       });
@@ -11271,21 +11276,26 @@
     }
 
     function collectBriefEvents(mode) {
-      const cache = state.calendarCache || refreshCalendarCache();
+      // Always use the real event store (same as Life → Schedule) — not cache.weekAhead,
+      // which is only populated for simulated calendars and missed user-added events.
+      const allEvents = getAllCalendarEvents();
+
       if (mode === 'day') {
-        return (cache.events || []).slice().sort((a, b) => parseTimeMins(a.time) - parseTimeMins(b.time));
+        return allEvents
+          .filter(e => eventOccursOnDate(e, todayStr()))
+          .slice()
+          .sort((a, b) => parseTimeMins(a.time) - parseTimeMins(b.time));
       }
 
       if (mode === 'month') {
         const bounds = getBeyondWeekMonthBounds();
         if (bounds.empty) return [];
-        const all = getAllCalendarEvents().filter(e => {
+        const monthEvents = allEvents.filter(e => {
           const s = getEventDate(e);
           const en = getEventEndDate(e);
-          // Overlaps the post-week month window
           return s <= bounds.end && en >= bounds.start;
         });
-        const byDate = groupEventsByDate(all).filter(({ date }) => date >= bounds.start && date <= bounds.end);
+        const byDate = groupEventsByDate(monthEvents).filter(({ date }) => date >= bounds.start && date <= bounds.end);
         return byDate.map(({ date, events }) => ({
           date,
           label: formatBriefDateLabel(date),
@@ -11297,21 +11307,68 @@
         }));
       }
 
-      const weekDays = [];
-      const todayEvents = (cache.events || []).map(e => ({ ...e, dayLabel: 'Today' }));
-      if (todayEvents.length) {
-        weekDays.push({ date: todayStr(), label: 'Today', events: todayEvents });
-      }
-      (cache.weekAhead || []).forEach(day => {
-        const evs = (day.events || []).map(e => ({
+      // Week: same window as Life → Schedule "This week"
+      const weekEvents = filterEventsForWeek(allEvents);
+      return groupEventsByDate(weekEvents).map(({ date, events }) => ({
+        date,
+        label: formatBriefDateLabel(date),
+        events: events.map(e => ({
           time: e.time || '—',
-          title: typeof e === 'string' ? e : e.title,
-          durationMin: e.durationMin || 30,
-          dayLabel: day.dayLabel
-        }));
-        if (evs.length) weekDays.push({ date: '', label: day.dayLabel, events: evs });
-      });
-      return weekDays;
+          title: e.title,
+          durationMin: e.durationMin || 30
+        }))
+      }));
+    }
+
+    function getNowMinutes() {
+      const n = new Date();
+      return n.getHours() * 60 + n.getMinutes();
+    }
+
+    function isQuietHours(mins = getNowMinutes()) {
+      // Late night / early morning — poor time for outdoor or noisy work
+      return mins >= 22 * 60 || mins < 6 * 60;
+    }
+
+    function isLateEvening(mins = getNowMinutes()) {
+      return mins >= 20 * 60 && mins < 22 * 60;
+    }
+
+    function isDaylightHours(mins = getNowMinutes()) {
+      return mins >= 7 * 60 && mins < 19 * 60;
+    }
+
+    /** Higher = worse fit right now (demoted in Summary ranking). Day mode only for time; rain applies more broadly. */
+    function getHabitContextPenalty(habit, mode) {
+      if (!habit) return 0;
+      let penalty = 0;
+      const title = habit.title || '';
+      const outdoor = typeof isOutdoorTask === 'function' ? isOutdoorTask(habit) : false;
+      const physical = outdoor || /\b(walk|run|jog|gym|workout|exercise|swim|bike|hike)\b/i.test(title);
+      const noisy = /mow|vacuum|drill|leaf blower|pressure wash|hammer|power wash|weed.?whack/i.test(title);
+      const quietIndoor = /\b(read|stretch|meditat|journal|plan|bill|email|organize|budget|pay|review|stretch|mobility)\b/i.test(title);
+      const mins = getNowMinutes();
+      const rainRisk = typeof getAfternoonRainRisk === 'function' ? getAfternoonRainRisk() : null;
+
+      if (mode === 'day') {
+        if (isQuietHours(mins)) {
+          if (outdoor || physical) penalty += 90;
+          if (noisy) penalty += 50;
+          if (quietIndoor) penalty -= 25; // prefer calm indoor tasks at night
+        } else if (isLateEvening(mins)) {
+          if (outdoor || noisy) penalty += 35;
+          if (physical && !outdoor) penalty += 15;
+        } else if (!isDaylightHours(mins) && outdoor) {
+          // Early evening dusk — outdoor still ok but slightly demoted
+          penalty += 10;
+        }
+      }
+
+      if (outdoor && rainRisk?.risky) {
+        penalty += mode === 'day' ? 55 : 20;
+      }
+
+      return penalty;
     }
 
     function buildBriefHeadline(mode, ctx, tasks, bills, events) {
@@ -11327,13 +11384,16 @@
           return `${overdueBills} bill${overdueBills > 1 ? 's' : ''} need attention today, with ${taskCount} task${taskCount === 1 ? '' : 's'} queued for your ${energyWord} energy.`;
         }
         const top = tasks[0]?.habit;
+        if (top && isQuietHours() && (typeof isOutdoorTask === 'function' ? isOutdoorTask(top) : false)) {
+          return `Quiet hours — save outdoor work for later. Try something calm indoors first.`;
+        }
         if (top && ctx.energy === 1) {
           return `Low-energy day — if you do one thing, make it ${top.title.toLowerCase()}. Everything else can wait.`;
         }
-        if (events.length && ctx.bestGap?.minutes >= 20) {
+        if (events.length && ctx.bestGap?.minutes >= 20 && !isQuietHours()) {
           return `${events.length} event${events.length > 1 ? 's' : ''} on the calendar · ~${ctx.bestGap.minutes} min free${ctx.bestGap.beforeEvent ? ` before ${ctx.bestGap.beforeEvent}` : ''} for tasks.`;
         }
-        return `${taskCount} task${taskCount === 1 ? '' : 's'} sorted for your ${energyWord} energy — highest-impact items first.`;
+        return `${taskCount} task${taskCount === 1 ? '' : 's'} sorted for your ${energyWord} energy — timed for right now.`;
       }
 
       const byDay = {};
@@ -11362,12 +11422,15 @@
 
     function buildBriefInsight(mode, ctx, tasks, bills, grocery) {
       const parts = [];
-      const outdoor = tasks.filter(t => /outdoor|mow|lawn|yard|walk|pool/i.test(t.habit.title));
+      const outdoor = tasks.filter(t => typeof isOutdoorTask === 'function' ? isOutdoorTask(t.habit) : /outdoor|mow|lawn|yard|walk|pool/i.test(t.habit.title));
       const rainRisk = typeof getAfternoonRainRisk === 'function' ? getAfternoonRainRisk() : null;
+      const mins = getNowMinutes();
 
-      if (mode === 'day' && outdoor.length && rainRisk?.risky) {
+      if (mode === 'day' && isQuietHours(mins) && outdoor.length) {
+        parts.push(`It's late/early — outdoor tasks like ${outdoor[0].habit.title.toLowerCase()} can wait until daylight.`);
+      } else if (mode === 'day' && outdoor.length && rainRisk?.risky) {
         parts.push(`Rain risk this afternoon — consider moving ${outdoor[0].habit.title.toLowerCase()} or tackling it early.`);
-      } else if (mode === 'day' && ctx.freeTime >= 60) {
+      } else if (mode === 'day' && ctx.freeTime >= 60 && !isQuietHours(mins)) {
         parts.push(`~${ctx.freeTime} minutes of flexible time in your 7am–10pm window.`);
       }
 
@@ -12236,7 +12299,11 @@
     }
 
     function isOutdoorTask(habit) {
-      return /outdoor|park|pool|mow|lawn|fertiliz|yard|walk|fresh air|garden|wash car|pressure wash|aerat|overseed|pre-emergent/i.test(habit?.title || '');
+      const title = habit?.title || '';
+      // Real outdoor activities — not "walkways" edge/path work alone without yard context
+      if (/\bwalkways?\b/i.test(title) && !/mow|lawn|edge|yard|garden/i.test(title)) return false;
+      if (titleLooksLikeStepWalk(title) && !/dog|pet|puppy/i.test(title)) return true;
+      return /outdoor|park|pool|mow|lawn|fertiliz|yard|fresh air|garden|wash car|pressure wash|aerat|overseed|pre-emergent|edge lawn/i.test(title);
     }
 
     function formatTaskForSuggestion(title) {
