@@ -314,29 +314,40 @@
 
     .main-nav {
       position: relative;
-      gap: 0.15rem;
+      gap: 0.35rem;
+      padding-bottom: 0.15rem;
     }
 
     .main-nav-tab {
       flex: 1;
-      padding: 0.65rem 0.25rem 0.55rem;
+      padding: 0.7rem 0.3rem 0.65rem;
       border: none;
       background: transparent;
-      color: var(--rhythm-muted);
-      font-size: 0.8rem;
-      font-weight: 600;
+      color: rgba(154, 170, 178, 0.78);
+      font-size: 0.9rem;
+      font-weight: 650;
+      letter-spacing: -0.01em;
       cursor: pointer;
+      border-radius: 0.75rem 0.75rem 0 0;
       border-bottom: 3px solid transparent;
-      transition: color 0.2s ease, border-color 0.25s var(--rhythm-ease-out);
+      transition: color 0.2s ease, border-color 0.25s var(--rhythm-ease-out), background 0.2s ease, transform 0.12s ease;
     }
 
     .main-nav-tab:hover {
       color: var(--rhythm-text);
+      background: rgba(61, 154, 139, 0.06);
+    }
+
+    .main-nav-tab:active {
+      transform: scale(0.98);
     }
 
     .main-nav-tab.nav-active {
-      color: var(--rhythm-primary-light);
+      color: #dff7f1;
       border-bottom-color: var(--rhythm-primary);
+      background: linear-gradient(180deg, rgba(61, 154, 139, 0.16) 0%, rgba(61, 154, 139, 0.04) 100%);
+      font-weight: 750;
+      text-shadow: 0 0 18px rgba(91, 184, 168, 0.25);
     }
 
     .life-nav-tab {
@@ -573,17 +584,104 @@
     }
 
     .energy-btn {
-      min-height: 3.25rem;
-      font-size: 0.9rem;
-      transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.12s ease, box-shadow 0.22s ease;
+      --energy-accent: var(--rhythm-primary);
+      min-height: 3.45rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      border-radius: 1.05rem;
+      position: relative;
+      overflow: hidden;
+      transition:
+        background-color 0.22s ease,
+        border-color 0.22s ease,
+        color 0.22s ease,
+        transform 0.18s cubic-bezier(0.34, 1.4, 0.64, 1),
+        box-shadow 0.22s ease;
     }
 
-    .energy-btn.nav-active,
-    .energy-btn.bg-rhythm-low,
-    .energy-btn.bg-rhythm-med,
-    .energy-btn.bg-rhythm-high,
-    .energy-btn.bg-rhythm-primary {
-      box-shadow: var(--rhythm-glow-primary);
+    .energy-btn .energy-meter {
+      width: 1.35rem;
+      height: 1.35rem;
+      flex-shrink: 0;
+      display: block;
+    }
+
+    .energy-btn .energy-meter-shell {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      opacity: 0.9;
+    }
+
+    .energy-btn .energy-meter-tip {
+      fill: currentColor;
+      opacity: 0.9;
+    }
+
+    .energy-btn .energy-meter-fill {
+      fill: currentColor;
+      transform-origin: left center;
+      transition: transform 0.35s cubic-bezier(0.34, 1.25, 0.64, 1), opacity 0.2s ease;
+    }
+
+    .energy-btn.is-idle {
+      background: rgba(30, 41, 51, 0.72);
+      border: 1px solid var(--rhythm-border);
+      color: var(--rhythm-muted);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .energy-btn.is-idle:hover {
+      border-color: color-mix(in srgb, var(--energy-accent) 45%, var(--rhythm-border));
+      color: var(--rhythm-text);
+      background: rgba(36, 48, 58, 0.9);
+    }
+
+    .energy-btn.is-idle .energy-meter-fill {
+      opacity: 0.35;
+    }
+
+    .energy-btn.is-selected {
+      color: #fff;
+      border: 1px solid color-mix(in srgb, var(--energy-accent) 80%, #fff 10%);
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.22) 0%, transparent 42%),
+        linear-gradient(155deg, color-mix(in srgb, var(--energy-accent) 88%, #fff 12%) 0%, var(--energy-accent) 55%, color-mix(in srgb, var(--energy-accent) 75%, #000 25%) 100%);
+      box-shadow:
+        0 8px 20px color-mix(in srgb, var(--energy-accent) 35%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--energy-accent) 25%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      transform: translateY(-1px) scale(1.02);
+    }
+
+    .energy-btn.is-selected .energy-meter-fill {
+      opacity: 1;
+      animation: energyFillPop 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
+    }
+
+    .energy-btn.is-selected .energy-label-text {
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+    }
+
+    .energy-btn[data-energy="1"] { --energy-accent: #e08a6e; }
+    .energy-btn[data-energy="2"] { --energy-accent: #d4ae2e; }
+    .energy-btn[data-energy="3"] { --energy-accent: #3d9a8b; }
+
+    .energy-btn:active {
+      transform: scale(0.96) !important;
+    }
+
+    @keyframes energyFillPop {
+      0% { transform: scaleX(0.35); opacity: 0.5; }
+      60% { transform: scaleX(1.05); opacity: 1; }
+      100% { transform: scaleX(1); opacity: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .energy-btn.is-selected .energy-meter-fill {
+        animation: none;
+      }
     }
 
     .status-bar {
@@ -2988,28 +3086,35 @@
       }
 
       .energy-btn {
-        min-height: 2rem;
-        font-size: 0.72rem;
-        padding-top: 0.35rem !important;
-        padding-bottom: 0.35rem !important;
-        border-radius: 0.7rem !important;
-      }
-
-      .energy-btn span {
-        display: none;
-      }
-
-      .energy-btn i {
-        font-size: 0.9rem !important;
-      }
-
-      #energy-bar-section .flex.gap-x-2 {
+        min-height: 2.65rem;
+        font-size: 0.78rem;
+        padding-top: 0.45rem !important;
+        padding-bottom: 0.45rem !important;
+        border-radius: 0.85rem !important;
         gap: 0.35rem;
       }
 
+      .energy-btn .energy-meter {
+        width: 1.15rem;
+        height: 1.15rem;
+      }
+
+      .energy-btn .energy-label-text {
+        display: inline;
+      }
+
+      #energy-bar-section .flex.gap-x-2 {
+        gap: 0.4rem;
+      }
+
       .main-nav-tab {
-        font-size: 0.68rem;
-        padding: 0.38rem 0.12rem 0.32rem;
+        font-size: 0.8rem;
+        padding: 0.55rem 0.15rem 0.5rem;
+        font-weight: 650;
+      }
+
+      .main-nav-tab.nav-active {
+        font-weight: 750;
       }
 
       .quick-add-hint {
@@ -3457,20 +3562,17 @@
       <!-- Energy Bar -->
       <div id="energy-bar-section" class="px-5 pt-2 pb-2 bg-rhythm-bg" aria-label="Energy level">
         <div class="flex gap-x-2">
-          <button onclick="setEnergy(1)" id="energy-1"
-            class="energy-btn flex-1 py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-x-2 active:scale-[0.985] transition-all bg-rhythm-surface hover:bg-rhythm-raised border border-rhythm-border">
-            <i class="fa-solid fa-battery-quarter text-rhythm-low text-base"></i>
-            <span>Low</span>
+          <button type="button" onclick="setEnergy(1)" id="energy-1" data-energy="1"
+            class="energy-btn is-idle flex-1 py-3 flex items-center justify-center gap-x-2" aria-pressed="false">
+            <span class="energy-label-text">Low</span>
           </button>
-          <button onclick="setEnergy(2)" id="energy-2"
-            class="energy-btn flex-1 py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-x-2 active:scale-[0.985] transition-all bg-rhythm-primary text-white border border-rhythm-primary">
-            <i class="fa-solid fa-battery-half text-rhythm-med text-base"></i>
-            <span>Medium</span>
+          <button type="button" onclick="setEnergy(2)" id="energy-2" data-energy="2"
+            class="energy-btn is-idle flex-1 py-3 flex items-center justify-center gap-x-2" aria-pressed="false">
+            <span class="energy-label-text">Medium</span>
           </button>
-          <button onclick="setEnergy(3)" id="energy-3"
-            class="energy-btn flex-1 py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-x-2 active:scale-[0.985] transition-all bg-rhythm-surface hover:bg-rhythm-raised border border-rhythm-border">
-            <i class="fa-solid fa-battery-full text-rhythm-primary-light text-base"></i>
-            <span>High</span>
+          <button type="button" onclick="setEnergy(3)" id="energy-3" data-energy="3"
+            class="energy-btn is-idle flex-1 py-3 flex items-center justify-center gap-x-2" aria-pressed="false">
+            <span class="energy-label-text">High</span>
           </button>
         </div>
       </div>
@@ -3746,7 +3848,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v59';
+    const RHYTHM_BUILD = 'v60';
 
     // Fitness / wearable sync (Today “Done — sync”, device modal, etc.) — off until productized.
     const FEATURE_ACTIVITY_SYNC = false;
@@ -6513,30 +6615,46 @@
       setTimeout(() => titleInput.focus(), 80);
     }
 
+    function energyMeterSvg(level, selected) {
+      // Fill width maps to charge: low ~28%, med ~58%, high ~92%
+      const fills = { 1: 7.2, 2: 13.5, 3: 20.5 };
+      const w = fills[level] || 13.5;
+      return `
+        <svg class="energy-meter" viewBox="0 0 28 16" aria-hidden="true">
+          <rect class="energy-meter-shell" x="1.2" y="3.2" width="22.5" height="9.6" rx="2.4"/>
+          <rect class="energy-meter-tip" x="23.8" y="5.6" width="2.4" height="4.8" rx="0.9"/>
+          <rect class="energy-meter-fill" x="3.2" y="5.1" width="${w}" height="5.8" rx="1.3"
+            style="transform: scaleX(${selected ? 1 : 0.92})"/>
+        </svg>`;
+    }
+
     function setEnergy(level) {
       const prev = currentEnergy;
       currentEnergy = level;
       state.settings.energyToday = level;
       saveState();
-      
-      // Update UI buttons
-      const energyBase = 'energy-btn flex-1 py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-x-2 active:scale-[0.985] transition-all';
-      const energyIconTypes = { 1: 'fa-battery-quarter', 2: 'fa-battery-half', 3: 'fa-battery-full' };
-      const energyIconColors = { 1: 'text-rhythm-low', 2: 'text-rhythm-med', 3: 'text-rhythm-primary-light' };
+
       const energyLabels = { 1: 'Low', 2: 'Medium', 3: 'High' };
       [1, 2, 3].forEach(l => {
         const el = document.getElementById(`energy-${l}`);
         if (!el) return;
         const selected = l === level;
+        el.className = `energy-btn flex-1 py-3 flex items-center justify-center gap-x-2 ${selected ? 'is-selected' : 'is-idle'}`;
+        el.dataset.energy = String(l);
+        el.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        el.innerHTML = `${energyMeterSvg(l, selected)}<span class="energy-label-text">${energyLabels[l]}</span>`;
         if (selected) {
-          el.className = `${energyBase} ${l === 1 ? 'bg-rhythm-low text-white border border-rhythm-low' : l === 2 ? 'bg-rhythm-med text-white border border-rhythm-med' : 'bg-rhythm-high text-white border border-rhythm-high'}`;
-        } else {
-          el.className = `${energyBase} bg-rhythm-surface hover:bg-rhythm-raised border border-rhythm-border`;
+          // Restart fill animation on re-select
+          const fill = el.querySelector('.energy-meter-fill');
+          if (fill) {
+            fill.style.animation = 'none';
+            // force reflow
+            void fill.offsetWidth;
+            fill.style.animation = '';
+          }
         }
-        const iconColor = selected ? 'text-white' : energyIconColors[l];
-        el.innerHTML = `<i class="fa-solid ${energyIconTypes[l]} ${iconColor} text-base"></i><span>${energyLabels[l]}</span>`;
       });
-      
+
       // Always re-sort Today's list for the selected energy.
       renderTasks();
       updateHeaderContext();
