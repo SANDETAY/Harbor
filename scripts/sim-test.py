@@ -122,6 +122,16 @@ def run_tests():
             page.wait_for_selector("#summary-modal", timeout=5000)
             if page.locator("#summary-modal").is_visible():
                 ok("summary modal opens")
+                month_btn = page.locator("#summary-modal [data-brief-mode='month']")
+                if month_btn.count():
+                    month_btn.click()
+                    page.wait_for_timeout(300)
+                    if month_btn.first.get_attribute("aria-selected") == "true":
+                        ok("summary month tab works")
+                    else:
+                        fail("summary month tab works", "month toggle not selected")
+                else:
+                    fail("summary month tab works", "month toggle missing")
                 page.locator("#summary-modal button", has_text="×").first.click()
             else:
                 fail("summary modal opens")

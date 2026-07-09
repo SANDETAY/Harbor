@@ -1958,12 +1958,14 @@
 
     .summary-toggle-btn {
       flex: 1;
-      padding: 0.55rem 0.75rem;
+      min-width: 0;
+      padding: 0.5rem 0.4rem;
       border-radius: 999px;
-      font-size: 0.75rem;
+      font-size: clamp(0.65rem, 2.6vw, 0.75rem);
       font-weight: 650;
       border: none;
       cursor: pointer;
+      white-space: nowrap;
       transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
       background: transparent;
       color: var(--harbor-muted);
@@ -3968,7 +3970,7 @@
       </div>
       </div><!-- /app-scroll -->
 
-      <!-- Summary FAB — thumb zone, day/week digest -->
+      <!-- Summary FAB — thumb zone, day/week/month digest -->
       <button type="button" id="summary-launcher" class="summary-orb hidden"
         onclick="showSummaryModal()"
         aria-label="Open your Summary">
@@ -4042,7 +4044,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v79';
+    const HARBOR_BUILD = 'v80';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -10844,6 +10846,21 @@
       return { start: dateStrLocal(start), end: dateStrLocal(end) };
     }
 
+    function getMonthBounds(refDateStr) {
+      const d = new Date((refDateStr || todayStr()) + 'T12:00:00');
+      const start = new Date(d.getFullYear(), d.getMonth(), 1, 12, 0, 0);
+      const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 12, 0, 0);
+      return { start: dateStrLocal(start), end: dateStrLocal(end) };
+    }
+
+    function daysLeftInMonth(refDateStr) {
+      const today = refDateStr || todayStr();
+      const { end } = getMonthBounds(today);
+      const a = new Date(today + 'T12:00:00');
+      const b = new Date(end + 'T12:00:00');
+      return Math.max(0, Math.round((b - a) / 86400000));
+    }
+
     function formatBriefDateLabel(dateStr) {
       const d = new Date(dateStr + 'T12:00:00');
       const today = todayStr();
@@ -10851,6 +10868,18 @@
       const tomorrow = dateStrLocal(new Date(new Date(today + 'T12:00:00').getTime() + 86400000));
       if (dateStr === tomorrow) return 'Tomorrow';
       return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function formatMonthPeriodLabel(month) {
+      if (!month?.start) return 'This month';
+      const d = new Date(month.start + 'T12:00:00');
+      return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    }
+
+    function summaryFocusEyebrow(mode) {
+      if (mode === 'week') return 'Do first this week';
+      if (mode === 'month') return 'Do first this month';
+      return 'Do this next';
     }
 
     function isHabitScheduledOn(habit, dateStr) {
@@ -10873,6 +10902,15 @@
     function isSignificantBriefTask(habit, mode) {
       if (mode === 'day') return true;
       if (isTrivialBriefTask(habit)) return false;
+      // Month brief leans harder into bigger / less frequent work
+      if (mode === 'month') {
+        if ((habit.interval_days || 0) >= 14) return true;
+        if ((habit.est_minutes || 0) >= 40) return true;
+        if ((habit.difficulty || 2) >= 3) return true;
+        if (habit.is_pro_reminder) return true;
+        if (/maintenance|mow|lawn|yard|gutter|hvac|filter|service|deep clean|organize|declutter|annual|quarterly|semi/i.test(habit.title || '')) return true;
+        return false;
+      }
       if ((habit.interval_days || 0) >= 7) return true;
       if ((habit.est_minutes || 0) >= 30) return true;
       if ((habit.difficulty || 2) >= 3) return true;
@@ -10885,14 +10923,14 @@
       const doFirstIds = new Set(brief.doFirst.map(t => t.habit.id));
       let pool = brief.tasks.filter(t => !doFirstIds.has(t.habit.id));
 
-      if (brief.mode === 'week') {
+      if (brief.mode === 'week' || brief.mode === 'month') {
         const seen = new Set();
         pool = pool.filter(t => {
           if (seen.has(t.habit.id)) return false;
           seen.add(t.habit.id);
-          return isSignificantBriefTask(t.habit, 'week');
+          return isSignificantBriefTask(t.habit, brief.mode);
         });
-        return pool.slice(0, 8);
+        return pool.slice(0, brief.mode === 'month' ? 10 : 8);
       }
 
       return pool.slice(3, brief.mode === 'day' ? 8 : 12);
@@ -10906,6 +10944,38 @@
         // Day brief: only what is due today (matches Today tab focus)
         state.habits.forEach(h => {
           if (isDueToday(h)) items.push({ habit: h, date: today, daysUntil: 0 });
+        });
+      } else if (mode === 'month') {
+        // Month brief: rest of this month (today → month end) + recurring due in that window
+        const { start, end } = getMonthBounds(today);
+        const rangeStart = today > start ? today : start;
+        const cursor = new Date(rangeStart + 'T12:00:00');
+        const endDate = new Date(end + 'T12:00:00');
+        const seen = new Set();
+        const todayDate = new Date(today + 'T12:00:00');
+        while (cursor <= endDate) {
+          const ds = dateStrLocal(cursor);
+          state.habits.forEach(h => {
+            if (!isHabitScheduledOn(h, ds) || seen.has(h.id)) return;
+            // Skip pure daily habits on month view — too noisy; keep significant ones only
+            if (isDailyTask(h) && !isSignificantBriefTask(h, 'month') && !isOneOffTask(h) && !h.is_pro_reminder) return;
+            seen.add(h.id);
+            const daysUntil = Math.round((cursor - todayDate) / 86400000);
+            items.push({ habit: h, date: ds, daysUntil });
+          });
+          cursor.setDate(cursor.getDate() + 1);
+        }
+        const maxHorizon = daysLeftInMonth(today);
+        state.habits.forEach(h => {
+          if (seen.has(h.id) || !isNonDailyRecurring(h)) return;
+          const daysUntil = getDaysUntilHabitDue(h);
+          if (daysUntil < 0 || daysUntil > maxHorizon) return;
+          const d = new Date(today + 'T12:00:00');
+          d.setDate(d.getDate() + daysUntil);
+          const ds = dateStrLocal(d);
+          if (ds < rangeStart || ds > end) return;
+          seen.add(h.id);
+          items.push({ habit: h, date: ds, daysUntil });
         });
       } else {
         // Week brief: full week of scheduled tasks + upcoming weekly/monthly chores
@@ -10938,9 +11008,9 @@
       }
 
       return items.sort((a, b) => {
-        // Prefer chores/upcoming on week view slightly after true due-today items
-        const choreBoostA = mode === 'week' && isNonDailyRecurring(a.habit) ? 5 : 0;
-        const choreBoostB = mode === 'week' && isNonDailyRecurring(b.habit) ? 5 : 0;
+        // Prefer chores/upcoming on week/month view slightly after true due-today items
+        const choreBoostA = (mode === 'week' || mode === 'month') && isNonDailyRecurring(a.habit) ? 5 : 0;
+        const choreBoostB = (mode === 'week' || mode === 'month') && isNonDailyRecurring(b.habit) ? 5 : 0;
         const scoreA = (a.daysUntil <= 0 ? 0 : a.daysUntil <= 2 ? 1 : 2) * 100 + getEffectiveDifficulty(a.habit, currentEnergy) + choreBoostA;
         const scoreB = (b.daysUntil <= 0 ? 0 : b.daysUntil <= 2 ? 1 : 2) * 100 + getEffectiveDifficulty(b.habit, currentEnergy) + choreBoostB;
         if (scoreA !== scoreB) return scoreA - scoreB;
@@ -10949,12 +11019,15 @@
     }
 
     function collectBriefBills(mode) {
+      const monthHorizon = daysLeftInMonth();
       return state.bills
         .filter(b => {
           const status = getBillStatus(b);
           if (status === 'paid' || status === 'autopay') return false;
           const days = getDaysUntilBillDue(b);
-          return mode === 'day' ? days <= 0 || status === 'due_today' || status === 'overdue' : days <= 6;
+          if (mode === 'day') return days <= 0 || status === 'due_today' || status === 'overdue';
+          if (mode === 'month') return days <= monthHorizon || status === 'overdue' || status === 'due_today';
+          return days <= 6;
         })
         .sort((a, b) => getBillUrgency(a) - getBillUrgency(b));
     }
@@ -10964,6 +11037,27 @@
       if (mode === 'day') {
         return (cache.events || []).slice().sort((a, b) => parseTimeMins(a.time) - parseTimeMins(b.time));
       }
+
+      if (mode === 'month') {
+        const today = todayStr();
+        const { start, end } = getMonthBounds(today);
+        const rangeStart = today > start ? today : start;
+        const all = getAllCalendarEvents().filter(e => {
+          const d = getEventDate(e);
+          return d >= rangeStart && d <= end;
+        });
+        const byDate = groupEventsByDate(all);
+        return byDate.map(({ date, events }) => ({
+          date,
+          label: formatBriefDateLabel(date),
+          events: events.map(e => ({
+            time: e.time || '—',
+            title: e.title,
+            durationMin: e.durationMin || 30
+          }))
+        }));
+      }
+
       const weekDays = [];
       const todayEvents = (cache.events || []).map(e => ({ ...e, dayLabel: 'Today' }));
       if (todayEvents.length) {
@@ -10998,7 +11092,6 @@
           return `Low-energy day — if you do one thing, make it ${top.title.toLowerCase()}. Everything else can wait.`;
         }
         if (events.length && ctx.bestGap?.minutes >= 20) {
-          const ev = events[0];
           return `${events.length} event${events.length > 1 ? 's' : ''} on the calendar · ~${ctx.bestGap.minutes} min free${ctx.bestGap.beforeEvent ? ` before ${ctx.bestGap.beforeEvent}` : ''} for tasks.`;
         }
         return `${taskCount} task${taskCount === 1 ? '' : 's'} sorted for your ${energyWord} energy — highest-impact items first.`;
@@ -11007,10 +11100,27 @@
       const byDay = {};
       tasks.forEach(t => { byDay[t.date] = (byDay[t.date] || 0) + 1; });
       const busiest = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0];
+      const activeDays = Object.keys(byDay).length;
+      const eventDays = Array.isArray(events) ? events.length : 0;
+
+      if (mode === 'month') {
+        const left = daysLeftInMonth();
+        if (taskCount === 0 && !bills.length) {
+          return `Quiet month ahead — ${left} day${left === 1 ? '' : 's'} left to plan bigger home and life admin.`;
+        }
+        if (overdueBills > 0) {
+          return `${overdueBills} bill${overdueBills > 1 ? 's' : ''} overdue this month · ${taskCount} bigger item${taskCount === 1 ? '' : 's'} still on the radar.`;
+        }
+        if (busiest && busiest[1] >= 3) {
+          return `Heaviest day this month: ${formatBriefDateLabel(busiest[0])} (${busiest[1]} items). Spread work across quieter days.`;
+        }
+        return `${taskCount} priority item${taskCount === 1 ? '' : 's'} left in ${formatMonthPeriodLabel(getMonthBounds())} · ${left} day${left === 1 ? '' : 's'} remaining.`;
+      }
+
+      // week
       if (busiest && busiest[1] >= 3) {
         return `Busiest day: ${formatBriefDateLabel(busiest[0])} (${busiest[1]} tasks). Front-load groceries and bills earlier in the week.`;
       }
-      const activeDays = Object.keys(byDay).length;
       return `${taskCount} task${taskCount === 1 ? '' : 's'} across ${activeDays || 'the'} day${activeDays === 1 ? '' : 's'} — paced for a ${energyWord} week.`;
     }
 
@@ -11025,6 +11135,17 @@
         parts.push(`~${ctx.freeTime} minutes of flexible time in your 7am–10pm window.`);
       }
 
+      if (mode === 'month') {
+        const monthlyChores = tasks.filter(t => isNonDailyRecurring(t.habit) && (t.habit.interval_days || 0) >= 25).length;
+        if (monthlyChores) {
+          parts.push(`${monthlyChores} monthly+ chore${monthlyChores > 1 ? 's' : ''} still due before month-end.`);
+        }
+        const proBooks = tasks.filter(t => t.habit.is_pro_reminder).length;
+        if (proBooks) {
+          parts.push(`${proBooks} pro booking${proBooks > 1 ? 's' : ''} waiting on Today.`);
+        }
+      }
+
       if (bills.length) {
         const manual = bills.filter(b => !b.autopay);
         if (manual.length) parts.push(`${manual.length} bill${manual.length > 1 ? 's' : ''} to handle in Life → Bills.`);
@@ -11037,9 +11158,9 @@
       }
 
       if (!parts.length) {
-        return mode === 'day'
-          ? 'No urgent life-admin flags — focus on your task stack below.'
-          : 'Week looks steady — use daily Summary for day-of prioritization.';
+        if (mode === 'day') return 'No urgent life-admin flags — focus on your task stack below.';
+        if (mode === 'month') return 'Month looks steady — use Today and This week for day-to-day prioritization.';
+        return 'Week looks steady — use daily Summary for day-of prioritization.';
       }
       return parts.join(' ');
     }
@@ -11052,6 +11173,7 @@
       const events = collectBriefEvents(mode);
       const doFirst = tasks.slice(0, 3);
       const week = getWeekBounds(todayStr());
+      const month = getMonthBounds(todayStr());
 
       return {
         mode,
@@ -11059,10 +11181,11 @@
         tasks,
         doFirst,
         bills,
-        grocery: grocery.slice(0, mode === 'day' ? 6 : 8),
+        grocery: grocery.slice(0, mode === 'day' ? 6 : mode === 'month' ? 10 : 8),
         groceryTotal: grocery.length,
         events,
         week,
+        month,
         headline: buildBriefHeadline(mode, ctx, tasks, bills, mode === 'day' ? events : []),
         insight: buildBriefInsight(mode, ctx, tasks, bills, grocery)
       };
@@ -11094,7 +11217,7 @@
       const diff = getDifficultyLabel(h.difficulty);
       return `
         <div class="summary-focus">
-          <div class="summary-focus-eyebrow"><i class="fa-solid fa-bolt"></i> ${brief.mode === 'week' ? 'Do first this week' : 'Do this next'}</div>
+          <div class="summary-focus-eyebrow"><i class="fa-solid fa-bolt"></i> ${summaryFocusEyebrow(brief.mode)}</div>
           <div class="summary-focus-title">${escapeBriefHtml(h.title)}</div>
           <div class="summary-focus-meta">
             <span class="summary-chip${dueHot ? ' is-due' : ''}">${escapeBriefHtml(dueLabel)}</span>
@@ -11141,19 +11264,21 @@
               </div>`).join('')
           : '<div class="summary-empty">Open calendar — free block for chores or rest.</div>';
       } else {
-        const weekEvs = brief.events || [];
-        count = weekEvs.reduce((n, d) => n + (d.events?.length || 0), 0);
-        body = weekEvs.length
-          ? weekEvs.slice(0, 4).map(day => `
+        const multiEvs = brief.events || [];
+        count = multiEvs.reduce((n, d) => n + (d.events?.length || 0), 0);
+        const dayLimit = mode === 'month' ? 6 : 4;
+        const perDay = mode === 'month' ? 2 : 3;
+        body = multiEvs.length
+          ? multiEvs.slice(0, dayLimit).map(day => `
               <div class="mb-1.5">
                 <div class="text-[10px] font-bold uppercase tracking-wider text-harbor-primary-light/90 mb-0.5">${escapeBriefHtml(day.label)}</div>
-                ${(day.events || []).slice(0, 3).map(e => `
+                ${(day.events || []).slice(0, perDay).map(e => `
                   <div class="summary-timeline-row">
                     <div class="summary-time">${escapeBriefHtml(e.time || '—')}</div>
                     <div class="summary-time-title">${escapeBriefHtml(e.title)}</div>
                   </div>`).join('')}
               </div>`).join('')
-          : '<div class="summary-empty">No events loaded this week.</div>';
+          : `<div class="summary-empty">No events loaded this ${mode === 'month' ? 'month' : 'week'}.</div>`;
       }
 
       return `
@@ -11216,7 +11341,7 @@
       }
 
       if (!rows.length) {
-        rows.push('<div class="summary-empty">Bills, grocery &amp; weekly chores look clear.</div>');
+        rows.push(`<div class="summary-empty">Bills, grocery &amp; ${brief.mode === 'month' ? 'monthly' : 'weekly'} chores look clear.</div>`);
       }
 
       return `
@@ -11242,9 +11367,15 @@
         ? (brief.events?.length || 0)
         : (brief.events || []).reduce((n, d) => n + (d.events?.length || 0), 0);
 
-      const periodLabel = mode === 'day'
-        ? new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
-        : `${formatBriefDateLabel(brief.week.start)} – ${formatBriefDateLabel(brief.week.end)}`;
+      let periodLabel = '';
+      if (mode === 'day') {
+        periodLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+      } else if (mode === 'month') {
+        const left = daysLeftInMonth();
+        periodLabel = `${formatMonthPeriodLabel(brief.month)} · ${left} day${left === 1 ? '' : 's'} left`;
+      } else {
+        periodLabel = `${formatBriefDateLabel(brief.week.start)} – ${formatBriefDateLabel(brief.week.end)}`;
+      }
 
       const kpiTasksHot = taskN > 0;
       const kpiBillsHot = billN > 0;
@@ -11257,6 +11388,7 @@
         <div class="summary-toggle" role="tablist" aria-label="Summary range">
           <button type="button" class="summary-toggle-btn ${mode === 'day' ? 'is-active' : ''}" data-brief-mode="day" role="tab" aria-selected="${mode === 'day'}">Today</button>
           <button type="button" class="summary-toggle-btn ${mode === 'week' ? 'is-active' : ''}" data-brief-mode="week" role="tab" aria-selected="${mode === 'week'}">This week</button>
+          <button type="button" class="summary-toggle-btn ${mode === 'month' ? 'is-active' : ''}" data-brief-mode="month" role="tab" aria-selected="${mode === 'month'}">This month</button>
         </div>
 
         <div class="text-[11px] text-harbor-muted mb-2 font-medium tracking-wide">${escapeBriefHtml(periodLabel)}</div>
@@ -12391,7 +12523,7 @@
       {
         id: 'summary',
         title: 'Summary',
-        body: 'Tap the glowing <strong>Summary</strong> button (bottom right) for your day &amp; week at a glance. Weekly, monthly, and longer tasks show up here — along with schedule, bills, and grocery — so Today stays focused on what matters now.',
+        body: 'Tap the glowing <strong>Summary</strong> button (bottom right) for your day, week, and month at a glance. Weekly, monthly, and longer tasks show up here — along with schedule, bills, and grocery — so Today stays focused on what matters now.',
         target: () => document.getElementById('summary-launcher'),
         waitFor: 'summary-open',
         interactive: true,
