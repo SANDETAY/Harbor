@@ -2729,70 +2729,26 @@
       box-shadow: none;
     }
 
-    /* Quiet, clear key — sits under the grid without competing with it */
-    .summary-month-cal-legend {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.35rem 0.85rem;
+    /* One-line hint under month grid — keep secondary to the calendar */
+    .summary-month-cal-hint {
       margin-top: 0.55rem;
-      padding-top: 0.45rem;
+      padding-top: 0.4rem;
       border-top: 1px solid rgba(143, 184, 176, 0.1);
-      font-size: 0.56rem;
-      line-height: 1.25;
-      color: rgba(143, 168, 163, 0.72);
+      font-size: 0.58rem;
+      line-height: 1.35;
+      color: rgba(143, 168, 163, 0.7);
       font-weight: 500;
-      letter-spacing: 0.01em;
+      text-align: center;
     }
 
-    .summary-month-cal-legend-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-
-    .summary-month-cal-legend-item strong {
+    .summary-month-cal-hint strong {
+      color: rgba(200, 214, 210, 0.82);
       font-weight: 650;
-      color: rgba(200, 214, 210, 0.78);
     }
 
-    .summary-month-cal-swatch {
-      width: 0.58rem;
-      height: 0.58rem;
-      border-radius: 0.18rem;
-      border: 1px solid transparent;
-      flex-shrink: 0;
-      display: inline-block;
-      position: relative;
-      opacity: 0.9;
-    }
-
-    .summary-month-cal-swatch.is-today {
-      border-color: rgb(var(--harbor-primary-light));
-      background: rgba(47, 155, 140, 0.2);
-      box-shadow: 0 0 0 1px rgba(107, 191, 176, 0.2);
-    }
-
-    .summary-month-cal-swatch.is-week {
-      background: rgba(47, 155, 140, 0.1);
-      border-color: rgba(47, 155, 140, 0.22);
-    }
-
-    .summary-month-cal-swatch.is-event {
-      background: rgba(18, 40, 38, 0.65);
-      border-color: rgba(91, 184, 168, 0.55);
-    }
-
-    .summary-month-cal-swatch.is-event::after {
-      content: '';
-      width: 0.16rem;
-      height: 0.16rem;
-      border-radius: 999px;
-      background: rgb(var(--harbor-primary-light));
-      position: absolute;
-      left: 50%;
-      bottom: 0.08rem;
-      transform: translateX(-50%);
+    .summary-month-cal-day {
+      pointer-events: auto;
+      -webkit-tap-highlight-color: rgba(107, 191, 176, 0.25);
     }
 
     .summary-day-events-sheet {
@@ -4977,7 +4933,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v105';
+    const HARBOR_BUILD = 'v106';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -9865,13 +9821,28 @@
       }
     }
 
+    /** Remaining days in the current week from today → week end (drops Mon–yesterday). */
+    function getWeekRemainingBounds(anchorDate = todayStr()) {
+      const weekStart = getWeekStartDateStr(anchorDate);
+      const weekEnd = getWeekEndDateStr(anchorDate);
+      const today = todayStr();
+      const start = weekStart < today ? today : weekStart;
+      return {
+        start,
+        end: weekEnd,
+        empty: start > weekEnd,
+        weekStart,
+        weekEnd
+      };
+    }
+
     function filterEventsForWeek(events, anchorDate = todayStr()) {
-      const start = getWeekStartDateStr(anchorDate);
-      const end = getWeekEndDateStr(anchorDate);
+      // Only upcoming / remaining days this week — never past weekdays
+      const { start, end, empty } = getWeekRemainingBounds(anchorDate);
+      if (empty) return [];
       return (events || []).filter(e => {
         const s = getEventDate(e);
         const en = getEventEndDate(e);
-        // Overlaps week window
         return s <= end && en >= start;
       });
     }
@@ -9887,7 +9858,9 @@
       });
     }
 
-    function groupEventsByDate(events) {
+    function groupEventsByDate(events, options = {}) {
+      const minDate = options.minDate || null;
+      const maxDate = options.maxDate || null;
       const grouped = {};
       (events || []).forEach(ev => {
         const start = getEventDate(ev);
@@ -9897,10 +9870,12 @@
         const endD = new Date(end + 'T12:00:00');
         while (cursor <= endD) {
           const d = dateStrLocal(cursor);
-          if (!grouped[d]) grouped[d] = [];
-          // Avoid duplicating the same event id on a day
-          if (!grouped[d].some(x => (x.id || getStableCalendarEventId(x)) === (ev.id || getStableCalendarEventId(ev)))) {
-            grouped[d].push(ev);
+          if ((!minDate || d >= minDate) && (!maxDate || d <= maxDate)) {
+            if (!grouped[d]) grouped[d] = [];
+            // Avoid duplicating the same event id on a day
+            if (!grouped[d].some(x => (x.id || getStableCalendarEventId(x)) === (ev.id || getStableCalendarEventId(ev)))) {
+              grouped[d].push(ev);
+            }
           }
           cursor.setDate(cursor.getDate() + 1);
         }
@@ -10782,10 +10757,11 @@
       const allEvents = getAllCalendarEvents();
       const today = todayStr();
 
+      const weekRemaining = getWeekRemainingBounds(today);
       if (freeEl) {
         if (view === 'week') {
           const weekEvents = filterEventsForWeek(allEvents);
-          freeEl.textContent = `${weekEvents.length} event${weekEvents.length === 1 ? '' : 's'}`;
+          freeEl.textContent = `${weekEvents.length} upcoming event${weekEvents.length === 1 ? '' : 's'}`;
         } else if (view === 'month') {
           const monthEvents = filterEventsForMonth(allEvents);
           freeEl.textContent = `${monthEvents.length} event${monthEvents.length === 1 ? '' : 's'}`;
@@ -10795,7 +10771,9 @@
       }
       if (detailEl) {
         if (view === 'week') {
-          detailEl.textContent = `${formatEventDateLabel(getWeekStartDateStr(today))} – ${formatEventDateLabel(getWeekEndDateStr(today))}`;
+          detailEl.textContent = weekRemaining.empty
+            ? 'Week complete'
+            : `${formatEventDateLabel(weekRemaining.start)} – ${formatEventDateLabel(weekRemaining.end)}`;
         } else if (view === 'month') {
           const bounds = getBeyondWeekMonthBounds(today);
           detailEl.textContent = bounds.empty
@@ -10822,13 +10800,20 @@
       if (view === 'week') {
         const weekEvents = filterEventsForWeek(allEvents);
         if (!weekEvents.length) {
-          container.innerHTML = harborEmptyHtml('📅', 'Open week', 'No events this week. Tap + Add event or Import CSV.');
+          container.innerHTML = harborEmptyHtml(
+            '📅',
+            'Open week',
+            weekRemaining.empty
+              ? 'This week is done — nothing left on the calendar.'
+              : 'No upcoming events this week. Tap + Add event or Import CSV.'
+          );
           return;
         }
-        groupEventsByDate(weekEvents).forEach(({ date, events }) => {
-          container.appendChild(renderScheduleSectionHeader(formatEventDateLabel(date)));
-          events.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
-        });
+        groupEventsByDate(weekEvents, { minDate: weekRemaining.start, maxDate: weekRemaining.end })
+          .forEach(({ date, events }) => {
+            container.appendChild(renderScheduleSectionHeader(formatEventDateLabel(date)));
+            events.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
+          });
       } else if (view === 'month') {
         const bounds = getBeyondWeekMonthBounds(today);
         const monthEvents = filterEventsForMonth(allEvents);
@@ -12970,13 +12955,16 @@
         }));
       }
 
-      // Week: same window as Life → Schedule "This week"
+      // Week: remaining days only (today → week end) — same as Life → Schedule "This week"
+      const weekBounds = getWeekRemainingBounds();
+      if (weekBounds.empty) return [];
       const weekEvents = filterEventsForWeek(allEvents);
-      return groupEventsByDate(weekEvents).map(({ date, events }) => ({
-        date,
-        label: formatBriefDateLabel(date),
-        events: events.map(mapBriefEventLite)
-      }));
+      return groupEventsByDate(weekEvents, { minDate: weekBounds.start, maxDate: weekBounds.end })
+        .map(({ date, events }) => ({
+          date,
+          label: formatBriefDateLabel(date),
+          events: events.map(mapBriefEventLite)
+        }));
     }
 
     function getNowMinutes() {
@@ -13210,7 +13198,6 @@
     function renderSummaryMonthCalendar(brief) {
       const today = todayStr();
       const monthBounds = getMonthBounds(today);
-      const week = getWeekBounds(today);
       const monthStart = new Date(monthBounds.start + 'T12:00:00');
       const year = monthStart.getFullYear();
       const month = monthStart.getMonth();
@@ -13249,7 +13236,6 @@
         const ds = dateStrLocal(new Date(year, month, day));
         const isToday = ds === today;
         const isPast = ds < today;
-        const inWeek = ds >= week.start && ds <= week.end;
         const nEvents = eventCountByDate[ds] || 0;
         const hasEvent = nEvents > 0;
         const hasTask = taskDates.has(ds);
@@ -13262,28 +13248,28 @@
           'summary-month-cal-day',
           isPast ? 'is-past' : '',
           isToday ? 'is-today' : '',
-          !isPast && inWeek && !isToday ? 'is-week' : '',
           hasEvent ? 'has-event is-interactive' : 'is-interactive'
         ].filter(Boolean).join(' ');
 
         const titleBits = [];
         if (isToday) titleBits.push('Today');
-        else if (inWeek && !isPast) titleBits.push('This week');
-        if (hasEvent) titleBits.push(`${nEvents} event${nEvents === 1 ? '' : 's'} · tap to view`);
-        else titleBits.push('Tap to view day');
+        if (hasEvent) titleBits.push(`${nEvents} event${nEvents === 1 ? '' : 's'}`);
+        else titleBits.push('No events');
         if (hasTask) titleBits.push('Task due');
 
-        const ariaLabel = `${formatBriefDateLabel(ds)}${hasEvent ? `, ${nEvents} event${nEvents === 1 ? '' : 's'}` : ', no events'}`;
+        const ariaLabel = `${formatBriefDateLabel(ds)}${hasEvent ? `, ${nEvents} event${nEvents === 1 ? '' : 's'}` : ', no events'}. Tap to open.`;
 
+        // Inline onclick so day taps always work inside the Summary sheet (not blocked by swipe/backdrop wiring)
         cells += `<button type="button" class="${classes}" data-summary-day="${ds}" data-event-count="${nEvents}"
-          title="${escapeBriefHtml(titleBits.join(' · '))}" aria-label="${escapeBriefHtml(ariaLabel)}">
+          title="${escapeBriefHtml(titleBits.join(' · '))}" aria-label="${escapeBriefHtml(ariaLabel)}"
+          onclick="event.preventDefault(); event.stopPropagation(); showSummaryDayEvents('${ds}')">
           <span>${day}</span>
           ${hasEvent ? '<span class="summary-month-cal-dot" aria-hidden="true"></span>' : ''}
         </button>`;
       }
 
       const countLabel = eventDays
-        ? `${eventCount} event${eventCount === 1 ? '' : 's'} · ${eventDays} day${eventDays === 1 ? '' : 's'}`
+        ? `${eventCount} event${eventCount === 1 ? '' : 's'}`
         : '';
 
       return `
@@ -13292,22 +13278,11 @@
             <div class="summary-panel-title"><i class="fa-regular fa-calendar text-sky-400"></i> ${escapeBriefHtml(monthTitle)}</div>
             ${countLabel ? `<span class="summary-panel-count">${escapeBriefHtml(countLabel)}</span>` : ''}
           </div>
-          <div class="summary-month-cal" role="grid" aria-label="Calendar for ${escapeBriefHtml(monthTitle)}. Tap a day to see events.">
+          <div class="summary-month-cal" role="grid" aria-label="Calendar for ${escapeBriefHtml(monthTitle)}. Tap any day to see events.">
             ${cells}
           </div>
-          <div class="summary-month-cal-legend">
-            <span class="summary-month-cal-legend-item">
-              <i class="summary-month-cal-swatch is-today" aria-hidden="true"></i>
-              <span><strong>Today</strong> — outlined</span>
-            </span>
-            <span class="summary-month-cal-legend-item">
-              <i class="summary-month-cal-swatch is-week" aria-hidden="true"></i>
-              <span><strong>This week</strong> — soft teal</span>
-            </span>
-            <span class="summary-month-cal-legend-item">
-              <i class="summary-month-cal-swatch is-event" aria-hidden="true"></i>
-              <span><strong>Event day</strong> — dot · tap for details</span>
-            </span>
+          <div class="summary-month-cal-hint">
+            <strong>Today</strong> is outlined · days with a <strong>•</strong> have plans · <strong>tap a day</strong> to open it
           </div>
           <div class="summary-jump" onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('schedule'); setScheduleView('week')">Open full schedule <i class="fa-solid fa-arrow-right text-[9px]"></i></div>
         </div>`;
@@ -13893,17 +13868,22 @@
     }
 
     function wireSummaryModal(container) {
+      if (!container) return;
       container.querySelectorAll('[data-brief-mode]').forEach(btn => {
         btn.onclick = () => refreshSummaryModal(btn.dataset.briefMode);
       });
-      container.querySelectorAll('[data-summary-day]').forEach(dayEl => {
-        dayEl.addEventListener('click', (e) => {
+      // Delegated day taps (backup for inline onclick on month cells)
+      if (container.dataset.summaryDayWired !== '1') {
+        container.dataset.summaryDayWired = '1';
+        container.addEventListener('click', (e) => {
+          const dayEl = e.target.closest('[data-summary-day]');
+          if (!dayEl || !container.contains(dayEl)) return;
           e.preventDefault();
           e.stopPropagation();
           const ds = dayEl.getAttribute('data-summary-day');
           if (ds) showSummaryDayEvents(ds);
         });
-      });
+      }
     }
 
     function showSummaryModal(mode) {
@@ -13959,8 +13939,11 @@
         e.stopPropagation();
         closeSummaryModal();
       });
-      // Keep sheet taps from hitting backdrop
-      modal.querySelector('.summary-sheet')?.addEventListener('click', (e) => e.stopPropagation());
+      // Keep sheet taps from hitting backdrop (don't capture — day buttons need to fire)
+      modal.querySelector('.summary-sheet')?.addEventListener('click', (e) => {
+        if (e.target.closest('[data-summary-day]')) return;
+        e.stopPropagation();
+      });
 
       wireSummaryModal(modal.querySelector('#summary-body'));
       // Wire swipe after paint so open-tap doesn't start a dismiss gesture
