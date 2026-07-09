@@ -19108,8 +19108,8 @@
             ${already
               ? 'Harbor is already running as an installed app on this device.'
               : canNative
-                ? 'Your browser can install Harbor for you — one tap below.'
-                : 'Put Harbor on your phone like a real app — full screen, no browser bar covering the bottom buttons.'}
+                ? 'One tap pins Harbor to your home screen — full screen, no browser bar. You’re not downloading a store app.'
+                : 'Put Harbor on your home screen like a real app — full screen, no address bar covering the bottom buttons.'}
           </div>
 
           ${already ? `
@@ -19120,46 +19120,45 @@
           ` : canNative ? `
             <button type="button" id="pwa-native-install-btn"
               class="w-full mb-4 py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm active:opacity-90">
-              <i class="fa-solid fa-download mr-1.5"></i>Install Harbor now
+              <i class="fa-solid fa-mobile-screen-button mr-1.5"></i>Add Harbor to home screen
             </button>
-            <div class="text-[10px] text-harbor-muted text-center mb-4 -mt-2">Uses your browser’s official install dialog</div>
+            <div class="text-[10px] text-harbor-muted text-center mb-4 -mt-2 leading-snug">
+              Opens your browser’s official prompt. No app-store download — just a home-screen shortcut to this page.
+            </div>
           ` : dismissedNative ? `
             <div class="privacy-block mb-3">
-              <h4><i class="fa-solid fa-hand text-harbor-primary-light mr-1.5"></i>Install was canceled</h4>
-              <p>No problem — you can use the steps below, or try the install button again later from the menu.</p>
+              <h4><i class="fa-solid fa-hand text-harbor-primary-light mr-1.5"></i>Maybe later</h4>
+              <p>No problem — use the short steps below, or try again from the menu whenever you’re ready.</p>
             </div>
           ` : platform === 'ios' ? `
             <div class="privacy-block mb-3">
-              <h4><i class="fa-brands fa-apple text-harbor-text mr-1.5"></i>iPhone note</h4>
-              <p>Apple doesn’t let websites install themselves with one tap. Use Safari’s Share menu — it only takes a few seconds.</p>
+              <h4><i class="fa-brands fa-apple text-harbor-text mr-1.5"></i>iPhone / iPad</h4>
+              <p>Apple doesn’t allow websites to add icons with one tap. Safari’s Share menu is the official way — three quick steps below.</p>
             </div>
           ` : `
             <div class="privacy-block mb-3">
-              <h4><i class="fa-solid fa-circle-info text-harbor-primary-light mr-1.5"></i>One-tap install</h4>
-              <p>If your browser supports it, an <strong class="text-harbor-text">Install Harbor now</strong> button appears here after the app is ready (service worker + visit). Until then, use the steps below.</p>
+              <h4><i class="fa-solid fa-circle-info text-harbor-primary-light mr-1.5"></i>Android tip</h4>
+              <p>When ready, you’ll see <strong class="text-harbor-text">Add Harbor to home screen</strong> here. That only pins a shortcut — nothing heavy is “installed” from a store.</p>
             </div>
           `}
 
           <div class="space-y-3">
             <div class="privacy-block">
-              <h4><i class="fa-brands fa-apple text-harbor-text mr-1.5"></i>iPhone / iPad (Safari)</h4>
-              <p>1. Open Harbor in <strong class="text-harbor-text">Safari</strong> (not Chrome).</p>
-              <p>2. Tap the <strong class="text-harbor-text">Share</strong> button (square with an arrow up).</p>
-              <p>3. Scroll and tap <strong class="text-harbor-text">Add to Home Screen</strong>.</p>
-              <p>4. Name it <strong class="text-harbor-text">Harbor</strong> → tap <strong class="text-harbor-text">Add</strong>.</p>
-              <p class="mt-1">Open the new icon from your home screen. It runs full screen so the Summary button stays free.</p>
+              <h4><i class="fa-brands fa-apple text-harbor-text mr-1.5"></i>Safari (iPhone / iPad)</h4>
+              <p class="mb-2 text-harbor-muted">Clean and simple:</p>
+              <p><strong class="text-harbor-text">1.</strong> Open this page in <strong class="text-harbor-text">Safari</strong>.</p>
+              <p><strong class="text-harbor-text">2.</strong> Tap <strong class="text-harbor-text">Share</strong> (□ with ↑).</p>
+              <p><strong class="text-harbor-text">3.</strong> Tap <strong class="text-harbor-text">Add to Home Screen</strong> → <strong class="text-harbor-text">Add</strong>.</p>
+              <p class="mt-2">Next time, open the Harbor icon — full screen, no browser chrome in the way.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-brands fa-android text-emerald-400 mr-1.5"></i>Android (Chrome)</h4>
-              <p>When one-tap install is available, use <strong class="text-harbor-text">Install Harbor now</strong> above. Otherwise:</p>
-              <p>1. Open Harbor in <strong class="text-harbor-text">Chrome</strong>.</p>
-              <p>2. Tap the <strong class="text-harbor-text">⋮</strong> menu (top right).</p>
-              <p>3. Tap <strong class="text-harbor-text">Install app</strong> or <strong class="text-harbor-text">Add to Home screen</strong>.</p>
-              <p>4. Confirm <strong class="text-harbor-text">Install</strong> or <strong class="text-harbor-text">Add</strong>.</p>
+              <p class="mb-2">Prefer the button above when it appears. You’re only adding a home-screen shortcut — not installing a big Play Store app.</p>
+              <p><strong class="text-harbor-text">Manual path:</strong> Chrome → <strong class="text-harbor-text">⋮</strong> → <strong class="text-harbor-text">Add to Home screen</strong> / <strong class="text-harbor-text">Install app</strong> → confirm.</p>
             </div>
             <div class="privacy-block">
-              <h4><i class="fa-solid fa-lightbulb text-amber-300 mr-1.5"></i>Why this helps</h4>
-              <p>In a normal browser tab, the address bar can sit at the bottom and cover the Summary button. A home-screen app uses the whole screen, so controls stay where you expect.</p>
+              <h4><i class="fa-solid fa-lightbulb text-amber-300 mr-1.5"></i>Why bother?</h4>
+              <p>In a browser tab, the URL bar can sit on top of the Summary button. A home-screen icon uses the whole screen.</p>
             </div>
           </div>
 
