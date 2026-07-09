@@ -809,6 +809,71 @@
       font-size: 1.1rem;
     }
 
+    .onboarding-feature {
+      border: 1px solid var(--rhythm-border);
+      border-radius: 1.1rem;
+      padding: 0.85rem 0.95rem;
+      background: rgba(30, 41, 51, 0.45);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .onboarding-feature-icon {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: rgba(61, 154, 139, 0.14);
+      color: var(--rhythm-primary-light);
+      font-size: 0.9rem;
+    }
+
+    .onboarding-check {
+      width: 1.35rem;
+      height: 1.35rem;
+      border-radius: 0.45rem;
+      border: 1.5px solid var(--rhythm-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: transparent;
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+
+    .onboarding-card.is-selected .onboarding-check {
+      border-color: var(--rhythm-primary);
+      background: var(--rhythm-primary);
+      color: #fff;
+    }
+
+    .onboarding-primary-btn {
+      width: 100%;
+      background: var(--rhythm-primary);
+      color: #fff;
+      padding: 0.9rem 1rem;
+      border-radius: 1rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      box-shadow: var(--rhythm-glow-primary);
+      transition: background 0.15s ease, transform 0.12s ease;
+    }
+
+    .onboarding-primary-btn:active {
+      transform: scale(0.985);
+      background: var(--rhythm-primary-light);
+    }
+
+    .onboarding-primary-btn:disabled {
+      opacity: 0.45;
+      pointer-events: none;
+      box-shadow: none;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -2833,62 +2898,7 @@
 
       <!-- Onboarding (low-friction, first-run only) -->
       <div id="onboarding" class="absolute inset-0 z-50 flex flex-col p-5 overflow-hidden hidden">
-        <div class="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
-          <div class="onboarding-progress" aria-hidden="true">
-            <span class="onboarding-progress-dot is-active"></span>
-            <span class="onboarding-progress-dot"></span>
-            <span class="onboarding-progress-dot"></span>
-            <span class="onboarding-progress-dot"></span>
-          </div>
-
-          <div class="mb-4">
-            <div class="onboarding-step-label">Step 1 of 4</div>
-            <div class="onboarding-title">How structured is your routine?</div>
-            <div class="onboarding-subtitle">Pick a starting pace — you can always adjust later.</div>
-            
-            <div class="space-y-2.5 mt-4">
-              <div onclick="selectRoutineLevel('easy')" class="onboarding-option onboarding-card cursor-pointer">
-                <div class="flex items-center gap-3">
-                  <div class="onboarding-option-icon bg-emerald-900/40 text-emerald-300">😌</div>
-                  <div class="flex-1 min-w-0">
-                    <div class="font-semibold text-sm">Easy</div>
-                    <div class="text-xs text-rhythm-muted leading-snug">A few flexible things I naturally do most days.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1 font-medium">Save · Walk · Read</div>
-                  </div>
-                  <i class="fa-solid fa-chevron-right text-rhythm-muted/60 text-[10px]"></i>
-                </div>
-              </div>
-
-              <div onclick="selectRoutineLevel('moderate')" class="onboarding-option onboarding-card cursor-pointer">
-                <div class="flex items-center gap-3">
-                  <div class="onboarding-option-icon bg-sky-900/40 text-sky-300">🧘</div>
-                  <div class="flex-1 min-w-0">
-                    <div class="font-semibold text-sm">Moderate</div>
-                    <div class="text-xs text-rhythm-muted leading-snug">A reliable list of my usual daily tasks.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1 font-medium">Save · Walk · Read</div>
-                  </div>
-                  <i class="fa-solid fa-chevron-right text-rhythm-muted/60 text-[10px]"></i>
-                </div>
-              </div>
-
-              <div onclick="selectRoutineLevel('strict')" class="onboarding-option onboarding-card cursor-pointer">
-                <div class="flex items-center gap-3">
-                  <div class="onboarding-option-icon bg-amber-900/40 text-amber-300">⏰</div>
-                  <div class="flex-1 min-w-0">
-                    <div class="font-semibold text-sm">Strict</div>
-                    <div class="text-xs text-rhythm-muted leading-snug">Time-boxed schedule to stay on track.</div>
-                    <div class="text-[10px] text-rhythm-primary-light mt-1 font-medium">Save · Walk · Read</div>
-                  </div>
-                  <i class="fa-solid fa-chevron-right text-rhythm-muted/60 text-[10px]"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="text-center pt-1">
-            <button onclick="skipOnboarding()" class="text-xs text-rhythm-muted hover:text-rhythm-text underline underline-offset-2">Just explore</button>
-          </div>
-        </div>
+        <!-- Filled by renderOnboardingWelcome() / renderOnboardingStarters() -->
       </div>
 
       <div class="app-content-wrap">
@@ -3684,7 +3694,7 @@
       currentEnergy = 2;
       currentProjectionHabit = null;
       hourlyForecastCache = null;
-      selectedRoutineLevel = null;
+      selectedStarterKeys = STARTER_ROUTINE_TASKS.map(t => t.key);
       selectedMaintenancePref = 'mixed';
     }
 
@@ -3764,9 +3774,7 @@
       if (!state.settings.calendarSources) {
         state.settings.calendarSources = [];
       }
-      if (state.settings.routineLevel) {
-        selectedRoutineLevel = state.settings.routineLevel;
-      }
+      // routineLevel is legacy (pre-redesign onboarding); kept on settings for stored state only
       const today = todayStr();
       state.habits.forEach(h => {
         if (!h.added_at) h.added_at = today;
@@ -8850,9 +8858,9 @@
     function isSwipePassthroughTarget(e) {
       const t = e.target;
       if (!(t instanceof Element)) return false;
-      // Allow swipe from the whole card (including complete targets). Only block real controls.
+      // Don't start a swipe on real controls or the complete-tap circle (title text still swipes).
       return !!t.closest(
-        'button, a, input, textarea, select, [data-sync-health], .row-inline-actions, .swipe-action'
+        'button, a, input, textarea, select, [data-sync-health], .row-inline-actions, .swipe-action, .task-complete-hit'
       );
     }
 
@@ -9040,7 +9048,7 @@
       `;
 
       const contentHtml = `
-        <div onclick="completeHabit('${habit.id}', event)" class="touch-target w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-rhythm-border active:border-rhythm-primary flex items-center justify-center text-xl">
+        <div onclick="completeHabit('${habit.id}', event)" class="task-complete-hit touch-target w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-rhythm-border active:border-rhythm-primary flex items-center justify-center text-xl">
           <i class="fa-regular fa-circle text-rhythm-muted"></i>
         </div>
         <div class="flex-1 min-w-0" onclick="completeHabit('${habit.id}', event)">
@@ -10494,7 +10502,7 @@
       { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> with a master list and trip mode — add items by voice or keyboard and check them off while shopping.', cta: 'Open grocery', action: 'life-grocery' },
       { id: 'life-schedule', reason: '<strong>Life → Schedule</strong> holds appointments and events — block time so suggestions can find gaps between meetings.', cta: 'View schedule', action: 'life-schedule' },
       { id: 'calendar-sync', reason: 'Link Google, Outlook, Apple, or Samsung calendars in <strong>Settings</strong>, then import a <strong>.ics</strong> file — Rhythm reads free time and avoids suggesting tasks during busy blocks.', cta: 'Connect calendar', action: 'settings' },
-      { id: 'work-schedule', reason: 'Set your work hours during onboarding or in Settings — off-hours and weekends unlock different suggestion windows.', cta: 'Profile settings', action: 'settings' },
+      { id: 'work-schedule', reason: 'Set your work hours in <strong>Settings</strong> — off-hours and weekends unlock different suggestion windows.', cta: 'Profile settings', action: 'settings' },
       { id: 'weather-strip', reason: 'The hourly weather strip at the top forecasts the next 24 hours — tap it for the full pane through tomorrow when planning yard work or a walk.', cta: 'See forecast', action: 'weather' },
       { id: 'outdoor-rain', reason: 'Outdoor tasks get rain warnings when afternoon showers are likely — reschedule before you get caught in the weather.', cta: 'Check weather', action: 'weather' },
       { id: 'streaks-log', reason: '<strong>Streaks</strong> logs completions over time — tap a habit to see history and how consistent you have been.', cta: 'View streaks', action: 'streaks' },
@@ -10513,7 +10521,7 @@
       { id: 'health-sync', reason: 'Health-linked habits in the Library can sync step or workout data — check Streaks after you connect a tracker in production.', cta: 'Library health', action: 'library-health' },
       { id: 'dismiss-vs-mute', reason: '<strong>Dismiss</strong> hides one suggestion; <strong>Mute</strong> removes the panel entirely for more room. Re-enable anytime in Settings.', cta: 'Open settings', action: 'settings' },
       { id: 'tabs-overview', reason: '<strong>Today</strong> is your action list, <strong>Streaks</strong> tracks progress, <strong>Life</strong> holds bills & schedule, and <strong>Library</strong> is where tasks are sourced.', cta: 'Explore tabs', action: 'library' },
-      { id: 'onboarding-routine', reason: 'Missed picking a starter routine? Add a handful of Library tasks, set intervals, and you\'ll still get calendar-aware suggestions.', cta: 'Browse Library', action: 'library' }
+      { id: 'onboarding-routine', reason: 'Want a fuller Today list? Pull tasks from the <strong>Library</strong>, set intervals, and Rhythm will surface them when energy and free time line up.', cta: 'Browse Library', action: 'library' }
     ];
 
     function isRelevantContextualSuggestion(suggestion) {
@@ -13779,41 +13787,68 @@
       });
     }
 
-    // Low-friction routine templates (expert-inspired: start small, use defaults, tie to energy)
+    // Starter pack — small set that demos energy, streaks/metrics, and activity sync
     const STARTER_ROUTINE_TASKS = [
-      { title: "$5 in savings every day", category: "personal", est_minutes: 0, difficulty: 1, target_value: 5, unit: "dollars" },
-      { title: "Walk 5000 Steps", category: "health", est_minutes: 15, difficulty: 2, target_value: 5000, unit: "steps" },
-      { title: "Read 10 pages of a book", category: "mind", est_minutes: 15, difficulty: 2, target_value: 10, unit: "pages" }
+      {
+        key: 'save',
+        title: '$5 in savings every day',
+        blurb: 'Tracks a simple daily metric · opens Projected Wins',
+        category: 'personal',
+        est_minutes: 0,
+        difficulty: 1,
+        target_value: 5,
+        unit: 'dollars',
+        icon: 'fa-piggy-bank',
+        accent: 'text-emerald-300'
+      },
+      {
+        key: 'walk',
+        title: 'Walk 5000 Steps',
+        blurb: 'Health activity · complete, then sync fitness data',
+        category: 'health',
+        est_minutes: 15,
+        difficulty: 2,
+        target_value: 5000,
+        unit: 'steps',
+        icon: 'fa-person-walking',
+        accent: 'text-sky-300'
+      },
+      {
+        key: 'read',
+        title: 'Read 10 pages of a book',
+        blurb: 'Light daily habit · good for energy sorting',
+        category: 'mind',
+        est_minutes: 15,
+        difficulty: 2,
+        target_value: 10,
+        unit: 'pages',
+        icon: 'fa-book-open',
+        accent: 'text-amber-300'
+      }
     ];
 
-    const ROUTINE_TEMPLATES = {
-      easy: {
-        name: "Easy",
-        tasks: STARTER_ROUTINE_TASKS
-      },
-      moderate: {
-        name: "Moderate",
-        tasks: STARTER_ROUTINE_TASKS
-      },
-      strict: {
-        name: "Strict",
-        tasks: STARTER_ROUTINE_TASKS
-      }
-    };
+    let selectedStarterKeys = STARTER_ROUTINE_TASKS.map(t => t.key);
+    let selectedMaintenancePref = 'mixed';
+    let onboardingCalendarConnections = null;
 
-    function createStarterHabits() {
+    function createStarterHabits(keys) {
       const ts = Date.now();
-      return STARTER_ROUTINE_TASKS.map((t, i) => stampHabitMeta({
-        id: 'routine-' + ts + '-' + i,
-        title: t.title,
-        category: t.category || 'custom',
-        interval_days: null,
-        est_minutes: t.est_minutes ?? 10,
-        difficulty: t.difficulty ?? 2,
-        is_preset: false,
-        target_value: t.target_value,
-        unit: t.unit
-      }));
+      const allow = Array.isArray(keys) && keys.length
+        ? new Set(keys)
+        : new Set(STARTER_ROUTINE_TASKS.map(t => t.key));
+      return STARTER_ROUTINE_TASKS
+        .filter(t => allow.has(t.key))
+        .map((t, i) => stampHabitMeta({
+          id: 'routine-' + ts + '-' + i,
+          title: t.title,
+          category: t.category || 'custom',
+          interval_days: null,
+          est_minutes: t.est_minutes ?? 10,
+          difficulty: t.difficulty ?? 2,
+          is_preset: false,
+          target_value: t.target_value,
+          unit: t.unit
+        }));
     }
 
     function ensureStarterRoutineTasks() {
@@ -13846,10 +13881,6 @@
         saveState();
       }
     }
-
-    let selectedRoutineLevel = null;
-    let selectedMaintenancePref = 'mixed';
-    let onboardingCalendarConnections = null;
 
     const CALENDAR_PROVIDERS = [
       {
@@ -13922,8 +13953,9 @@
       }
     ];
 
-    function renderOnboardingProgress(step) {
-      const dots = [1, 2, 3, 4].map(n => {
+    function renderOnboardingProgress(step, total = 2) {
+      const dots = Array.from({ length: total }, (_, i) => {
+        const n = i + 1;
         const cls = n < step ? 'is-done' : (n === step ? 'is-active' : '');
         return `<span class="onboarding-progress-dot ${cls}"></span>`;
       }).join('');
@@ -14170,22 +14202,18 @@
       updateCalendarStatusUI();
     }
 
-    function handleCalendarConnect(providerId, isOnboarding) {
-      const conns = isOnboarding ? getOnboardingCalendarConnections() : getCalendarConnections();
+    function handleCalendarConnect(providerId, _isOnboarding) {
+      const conns = getCalendarConnections();
       const provider = CALENDAR_PROVIDERS.find(p => p.id === providerId);
       if (!provider) return;
 
       if (conns[providerId]?.connected) {
         conns[providerId] = { connected: false, email: null, connectedAt: null };
-        if (!isOnboarding) {
-          state.settings.calendarConnections = conns;
-          applyCalendarSync();
-          saveState();
-          showToast(`${provider.name} disconnected`);
-          refreshSettingsModal();
-        } else {
-          showCalendarConnectStep();
-        }
+        state.settings.calendarConnections = conns;
+        applyCalendarSync();
+        saveState();
+        showToast(`${provider.name} disconnected`);
+        refreshSettingsModal();
         return;
       }
 
@@ -14201,18 +14229,12 @@
         connectedAt: new Date().toISOString()
       };
 
-      if (isOnboarding) {
-        showToast(`✓ ${provider.name} linked — import .ics next`);
-        showCalendarConnectStep();
-        setTimeout(() => triggerCalendarICSImport(providerId), 400);
-      } else {
-        state.settings.calendarConnections = conns;
-        applyCalendarSync();
-        saveState();
-        showToast(`✓ ${provider.name} linked — import your .ics file`);
-        refreshSettingsModal();
-        setTimeout(() => triggerCalendarICSImport(providerId), 400);
-      }
+      state.settings.calendarConnections = conns;
+      applyCalendarSync();
+      saveState();
+      showToast(`✓ ${provider.name} linked — import your .ics file`);
+      refreshSettingsModal();
+      setTimeout(() => triggerCalendarICSImport(providerId), 400);
     }
 
     let settingsWasOpen = false;
@@ -14244,89 +14266,6 @@
       }
     }
 
-    function showCalendarConnectStep() {
-      const onboarding = document.getElementById('onboarding');
-      const conns = getOnboardingCalendarConnections();
-      const connectedCount = CALENDAR_PROVIDERS.filter(p => conns[p.id]?.connected).length;
-
-      onboarding.innerHTML = `
-        <div class="flex-1 flex flex-col justify-center max-w-md mx-auto w-full p-1 overflow-auto">
-          ${renderOnboardingProgress(3)}
-          <div class="text-center mb-4">
-            <div class="onboarding-step-label">Step 3 of 4</div>
-            <div class="onboarding-title">Connect your calendars</div>
-            <div class="onboarding-subtitle">Rhythm reads free time &amp; conflicts — never replaces your calendar app.</div>
-          </div>
-
-          <div class="space-y-2.5 mb-4">
-            ${CALENDAR_PROVIDERS.map(p => renderCalendarProviderCard(p, conns[p.id], { onboarding: true })).join('')}
-          </div>
-
-          ${connectedCount > 0 ? `
-            <div class="text-center text-[10px] text-rhythm-primary-light/90 mb-3">
-              <i class="fa-solid fa-bolt mr-1"></i> ${connectedCount} calendar${connectedCount > 1 ? 's' : ''} linked — smart gaps unlocked
-            </div>
-          ` : `
-            <div class="text-center text-[10px] text-rhythm-muted mb-3">Optional now — add anytime in Settings</div>
-          `}
-
-          <button onclick="showRoutinePreviewStep()"
-            class="w-full py-3.5 bg-rhythm-primary active:bg-rhythm-primary-light rounded-2xl font-semibold text-sm mb-2">
-            ${connectedCount > 0 ? 'Continue' : 'Continue without connecting'}
-          </button>
-          <button onclick="showMaintenancePreferenceStep()" class="text-xs text-rhythm-muted text-center underline">Back</button>
-        </div>
-      `;
-    }
-
-    function selectRoutineLevel(level) {
-      selectedRoutineLevel = level;
-      document.querySelectorAll('#onboarding .onboarding-card').forEach(card => {
-        card.classList.toggle('is-selected', card.getAttribute('onclick')?.includes(`'${level}'`));
-      });
-      setTimeout(showMaintenancePreferenceStep, 180);
-    }
-
-    function showMaintenancePreferenceStep() {
-      const onboarding = document.getElementById('onboarding');
-
-      onboarding.innerHTML = `
-        <div class="flex-1 flex flex-col justify-center max-w-md mx-auto w-full p-1 overflow-auto">
-          ${renderOnboardingProgress(2)}
-          <div class="text-center mb-4">
-            <div class="onboarding-step-label">Step 2 of 4</div>
-            <div class="onboarding-title">Home maintenance</div>
-            <div class="onboarding-subtitle">How do you usually handle upkeep? We'll tailor your library.</div>
-          </div>
-
-          <div class="space-y-2.5 mb-4">
-            ${MAINTENANCE_PREF_OPTIONS.map(opt => `
-              <div onclick="selectMaintenancePreference('${opt.id}')"
-                class="onboarding-option onboarding-card cursor-pointer${selectedMaintenancePref === opt.id ? ' is-selected' : ''}">
-                <div class="flex items-center gap-3">
-                  <div class="onboarding-option-icon bg-${opt.color}-900/35 text-${opt.color}-300">
-                    <i class="fa-solid ${opt.icon}"></i>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="font-semibold text-sm">${opt.title}</div>
-                    <div class="text-xs text-rhythm-muted leading-snug">${opt.subtitle}</div>
-                  </div>
-                  <i class="fa-solid fa-chevron-right text-rhythm-muted/60 text-[10px]"></i>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-
-          <button onclick="selectMaintenancePreference('mixed')" class="text-xs text-rhythm-muted text-center underline underline-offset-2 w-full">Skip — decide later</button>
-        </div>
-      `;
-    }
-
-    function selectMaintenancePreference(pref) {
-      selectedMaintenancePref = pref;
-      showCalendarConnectStep();
-    }
-
     function formatPreviewTaskMeta(task) {
       const parts = [];
       if (task.est_minutes) parts.push(`${task.est_minutes} min`);
@@ -14337,92 +14276,164 @@
       return parts.join(' · ') || 'Daily';
     }
 
-    function showRoutinePreviewStep() {
-      const template = ROUTINE_TEMPLATES[selectedRoutineLevel];
+    function renderOnboardingWelcome() {
       const onboarding = document.getElementById('onboarding');
+      if (!onboarding) return;
 
       onboarding.innerHTML = `
-        <div class="flex-1 flex flex-col justify-center max-w-md mx-auto w-full p-1">
-          ${renderOnboardingProgress(4)}
-          <div class="text-center mb-3">
-            <div class="onboarding-step-label">Step 4 of 4</div>
-            <div class="onboarding-title">${template.name} routine</div>
-            <div class="onboarding-subtitle">These four tasks land in <strong>Today</strong> — your guide for the quick tour after you start.</div>
+        <div class="flex-1 flex flex-col justify-center max-w-md mx-auto w-full overflow-auto">
+          ${renderOnboardingProgress(1, 2)}
+          <div class="text-center mb-5">
+            <div class="onboarding-step-label">Welcome</div>
+            <div class="onboarding-title">Your day, matched to your energy</div>
+            <div class="onboarding-subtitle">
+              Rhythm keeps tasks, life admin, and progress in one calm place — then orders Today by how you feel.
+            </div>
           </div>
-          
-          <div id="routine-preview" class="space-y-2 overflow-auto mb-4 max-h-[42vh]"></div>
-          
-          <button onclick="applyRoutineAndStart()" class="w-full bg-rhythm-primary active:bg-rhythm-primary-light py-3.5 rounded-2xl font-semibold shadow-[var(--rhythm-glow-primary)]">Start My Rhythm</button>
+
+          <div class="space-y-2.5 mb-6">
+            <div class="onboarding-feature">
+              <div class="onboarding-feature-icon"><i class="fa-solid fa-bolt"></i></div>
+              <div class="min-w-0">
+                <div class="text-sm font-semibold text-rhythm-text">Energy-aware Today</div>
+                <div class="text-xs text-rhythm-muted leading-snug mt-0.5">Set high, medium, or low energy — the list reorders so lighter work rises when you’re drained.</div>
+              </div>
+            </div>
+            <div class="onboarding-feature">
+              <div class="onboarding-feature-icon"><i class="fa-solid fa-layer-group"></i></div>
+              <div class="min-w-0">
+                <div class="text-sm font-semibold text-rhythm-text">Life in one tab</div>
+                <div class="text-xs text-rhythm-muted leading-snug mt-0.5">Bills, schedule, grocery, and subscriptions sit under Life — not scattered across apps.</div>
+              </div>
+            </div>
+            <div class="onboarding-feature">
+              <div class="onboarding-feature-icon"><i class="fa-solid fa-fire"></i></div>
+              <div class="min-w-0">
+                <div class="text-sm font-semibold text-rhythm-text">Streaks &amp; Cheat Day Fund</div>
+                <div class="text-xs text-rhythm-muted leading-snug mt-0.5">Completions build real progress — and points you can cash for a guilt-free break.</div>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" onclick="showOnboardingStarters()" class="onboarding-primary-btn mb-3">Continue</button>
+          <div class="text-center">
+            <button type="button" onclick="skipOnboarding()" class="text-xs text-rhythm-muted hover:text-rhythm-text underline underline-offset-2">Just explore</button>
+          </div>
+          <p class="text-[10px] text-rhythm-muted text-center mt-4 leading-relaxed px-2">
+            Calendar sync, DIY vs pro library preferences, and work hours live in <strong class="text-rhythm-text/80">Settings</strong> — set them when you’re ready.
+          </p>
         </div>
       `;
-
-      renderRoutinePreview(STARTER_ROUTINE_TASKS);
     }
 
-    function renderRoutinePreview(tasks) {
-      const container = document.getElementById('routine-preview');
-      if (!container) return;
-      container.innerHTML = '';
-      
-      tasks.forEach((task) => {
-        const div = document.createElement('div');
-        div.className = 'bg-rhythm-surface border border-rhythm-border rounded-2xl px-4 py-3 flex items-center gap-3';
-        div.innerHTML = `
-          <div class="w-9 h-9 rounded-xl bg-rhythm-primary/15 flex items-center justify-center flex-shrink-0">
-            <i class="fa-regular fa-circle text-rhythm-primary-light text-sm"></i>
+    function showOnboardingStarters() {
+      selectedStarterKeys = STARTER_ROUTINE_TASKS.map(t => t.key);
+      renderOnboardingStarters();
+    }
+
+    function toggleStarterTask(key) {
+      const set = new Set(selectedStarterKeys);
+      if (set.has(key)) set.delete(key);
+      else set.add(key);
+      selectedStarterKeys = STARTER_ROUTINE_TASKS.map(t => t.key).filter(k => set.has(k));
+      renderOnboardingStarters();
+    }
+
+    function renderOnboardingStarters() {
+      const onboarding = document.getElementById('onboarding');
+      if (!onboarding) return;
+      const selected = new Set(selectedStarterKeys);
+      const count = selectedStarterKeys.length;
+
+      onboarding.innerHTML = `
+        <div class="flex-1 flex flex-col justify-center max-w-md mx-auto w-full overflow-auto">
+          ${renderOnboardingProgress(2, 2)}
+          <div class="text-center mb-4">
+            <div class="onboarding-step-label">Step 2 of 2</div>
+            <div class="onboarding-title">Start with a few essentials</div>
+            <div class="onboarding-subtitle">
+              These land on <strong class="text-rhythm-text">Today</strong> so you can try energy sorting, streaks, and activity sync right away. Uncheck anything you don’t want.
+            </div>
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="font-medium">${task.title}</div>
-            <div class="text-xs text-rhythm-muted">${formatPreviewTaskMeta(task)}</div>
+
+          <div class="space-y-2.5 mb-5">
+            ${STARTER_ROUTINE_TASKS.map(task => {
+              const isOn = selected.has(task.key);
+              return `
+                <button type="button" onclick="toggleStarterTask('${task.key}')"
+                  class="onboarding-option onboarding-card w-full text-left${isOn ? ' is-selected' : ''}"
+                  aria-pressed="${isOn}">
+                  <div class="flex items-center gap-3">
+                    <div class="onboarding-option-icon bg-rhythm-surface ${task.accent}">
+                      <i class="fa-solid ${task.icon}"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="font-semibold text-sm">${task.title}</div>
+                      <div class="text-xs text-rhythm-muted leading-snug">${task.blurb}</div>
+                      <div class="text-[10px] text-rhythm-muted/90 mt-1">${formatPreviewTaskMeta(task)}</div>
+                    </div>
+                    <span class="onboarding-check" aria-hidden="true"><i class="fa-solid fa-check text-[10px]"></i></span>
+                  </div>
+                </button>
+              `;
+            }).join('')}
           </div>
-        `;
-        container.appendChild(div);
-      });
+
+          <button type="button" onclick="applyRoutineAndStart()" class="onboarding-primary-btn mb-2"
+            ${count === 0 ? 'disabled' : ''}>
+            ${count === 0 ? 'Pick at least one' : `Start My Rhythm · ${count}`}
+          </button>
+          <button type="button" onclick="renderOnboardingWelcome()" class="text-xs text-rhythm-muted text-center underline w-full mb-2">Back</button>
+          <div class="text-center">
+            <button type="button" onclick="skipOnboarding()" class="text-xs text-rhythm-muted hover:text-rhythm-text underline underline-offset-2">Just explore with all three</button>
+          </div>
+        </div>
+      `;
     }
 
     function hideOnboardingOverlay() {
       const onboarding = document.getElementById('onboarding');
-      if (onboarding) onboarding.style.display = 'none';
+      if (onboarding) {
+        onboarding.style.display = 'none';
+        onboarding.classList.add('hidden');
+      }
+    }
+
+    function finishOnboardingSession(habits, toastMsg) {
+      state.habits = habits;
+      if (!state.settings.maintenancePreference) {
+        state.settings.maintenancePreference = 'mixed';
+      }
+      state.settings.routineLevel = null;
+      state.settings.showWelcomeBanner = true;
+      state.settings.tutorialCompleted = false;
+      state.settings.tutorialActive = false;
+      state.settings.tutorialStep = 0;
+      saveState();
+
+      localStorage.setItem('rhythm_onboarded', '1');
+      hideOnboardingOverlay();
+      refreshAppAfterOnboarding();
+      if (toastMsg) showToast(toastMsg);
     }
 
     function applyRoutineAndStart() {
-      if (!selectedRoutineLevel) {
-        skipOnboarding();
+      if (!selectedStarterKeys.length) {
+        showToast('Pick at least one starter task — or Just explore');
         return;
       }
-
-      state.habits = createStarterHabits();
-      state.settings.routineLevel = selectedRoutineLevel;
-      state.settings.maintenancePreference = selectedMaintenancePref || 'mixed';
-      state.settings.showWelcomeBanner = true;
-      state.settings.tutorialCompleted = false;
-      state.settings.calendarConnections = JSON.parse(JSON.stringify(getOnboardingCalendarConnections()));
-      applyCalendarSync();
-      saveState();
-
-      localStorage.setItem('rhythm_onboarded', '1');
-      hideOnboardingOverlay();
-      refreshAppAfterOnboarding();
-
-      const calSummary = hasAnyCalendarConnected() ? ` · ${getConnectedCalendarsLabel()}` : '';
-      showToast(`Rhythm set · ${getMaintenancePrefLabel()}${calSummary}`);
+      const habits = createStarterHabits(selectedStarterKeys);
+      finishOnboardingSession(
+        habits,
+        `Welcome in · ${habits.length} task${habits.length === 1 ? '' : 's'} on Today. Tap Learn More for a quick tour.`
+      );
     }
 
     function skipOnboarding() {
-      ensureStarterRoutineTasks();
-
-      if (!state.settings.maintenancePreference) {
-        state.settings.maintenancePreference = selectedMaintenancePref || 'mixed';
-      }
-      state.settings.showWelcomeBanner = true;
-      state.settings.tutorialCompleted = false;
-      saveState();
-
-      localStorage.setItem('rhythm_onboarded', '1');
-      hideOnboardingOverlay();
-      refreshAppAfterOnboarding();
-
-      showToast('Your starter tasks are in Today — tap Learn More anytime for the guided tour.');
+      finishOnboardingSession(
+        createStarterHabits(),
+        'Your starter tasks are in Today — tap Learn More anytime for the guided tour.'
+      );
     }
 
     function hideSplash() {
@@ -14445,11 +14456,13 @@
     function showOnboarding() {
       const shell = document.getElementById('app-shell');
       if (shell) shell.style.display = 'none';
+      selectedStarterKeys = STARTER_ROUTINE_TASKS.map(t => t.key);
       const onboarding = document.getElementById('onboarding');
       if (onboarding) {
         onboarding.classList.remove('hidden');
         onboarding.style.display = 'flex';
       }
+      renderOnboardingWelcome();
     }
 
     function bootApp() {

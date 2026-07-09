@@ -199,7 +199,8 @@ def run_tests():
         page.locator("#tab-today").click()
         page.wait_for_timeout(400)
         dismiss_welcome_spotlight(page)
-        page.locator("#app-menu-trigger-mobile").click()
+        menu_trigger = page.locator("#app-menu-trigger-header, #app-menu-trigger-mobile").first
+        menu_trigger.click()
         page.wait_for_selector("#app-menu-sheet", timeout=5000)
         page.locator("#app-menu-sheet [data-app-menu-action='settings']").click()
         page.wait_for_timeout(600)
