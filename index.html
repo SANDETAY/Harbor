@@ -11909,8 +11909,14 @@
       } else if (type === 'event') {
         if (action === 'edit') {
           const ev = getCalendarEventById(id);
-          if (ev) showAddCalendarEventModal(ev);
-          else showToast('Event not found');
+          if (ev) {
+            const fromDay = row.dataset.summaryDayDate || null;
+            if (fromDay) {
+              window.__harborSummaryDayReturn = fromDay;
+              closeSummaryDayEventsModal();
+            }
+            showAddCalendarEventModal(ev);
+          } else showToast('Event not found');
         } else if (action === 'delete') {
           deleteCalendarEvent(id);
         }
