@@ -4292,7 +4292,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v88';
+    const HARBOR_BUILD = 'v89';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -15813,6 +15813,7 @@
       modal.className = `fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[60]`;
       
       const smartSuggestionsOn = !state.settings.smartSuggestionsMuted;
+      const darkModeOn = getAppTheme() === 'dark';
       const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
       const corsHelperOn = state.settings.calendarAllowCorsHelper === true;
       
@@ -15845,6 +15846,17 @@
               <button type="button" onclick="this.closest('.fixed').remove(); showFeedbackModal()"
                 class="flex-shrink-0 px-3 py-1.5 rounded-xl bg-harbor-raised border border-harbor-border text-xs font-medium text-harbor-primary-light">
                 Open
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 py-1">
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-harbor-text">Dark mode</div>
+                <div class="text-[10px] text-harbor-muted leading-snug">Deep harbor teal · off for light seafoam</div>
+              </div>
+              <button type="button" id="dark-mode-toggle" role="switch" aria-checked="${darkModeOn}"
+                class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${darkModeOn ? 'bg-harbor-primary' : 'bg-harbor-border'}">
+                <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${darkModeOn ? 'translate-x-5' : 'translate-x-0'}"></span>
               </button>
             </div>
 
@@ -15947,6 +15959,11 @@
       `;
       
       document.body.appendChild(modal);
+      wireSwitchToggle(modal.querySelector('#dark-mode-toggle'), (on) => {
+        applyAppTheme(on ? 'dark' : 'light');
+        saveState();
+        showToast(on ? 'Dark mode on' : 'Light mode on');
+      });
       wireSwitchToggle(modal.querySelector('#smart-suggestions-toggle'));
       wireSwitchToggle(modal.querySelector('#cheat-fund-toggle'));
       wireSwitchToggle(modal.querySelector('#calendar-cors-helper-toggle'), (on) => {
@@ -15995,6 +16012,10 @@
       const corsHelperToggle = modal.querySelector('#calendar-cors-helper-toggle');
       if (corsHelperToggle) {
         state.settings.calendarAllowCorsHelper = corsHelperToggle.getAttribute('aria-checked') === 'true';
+      }
+      const darkToggle = modal.querySelector('#dark-mode-toggle');
+      if (darkToggle) {
+        applyAppTheme(darkToggle.getAttribute('aria-checked') === 'true' ? 'dark' : 'light');
       }
       saveState();
       settingsWasOpen = false;
@@ -17222,6 +17243,7 @@
 
     function bootApp() {
         loadState();
+        applyAppTheme(state.settings?.theme || 'dark');
         repairOnboardedEmptyTodayList();
         loadCommonTasks();
         refreshCalendarCache();
