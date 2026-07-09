@@ -1075,23 +1075,32 @@
       .splash-slogan.is-visible,
       .splash-slogan.is-exiting,
       .splash-screen-v3.is-revealing,
-      .splash-screen-v3.is-active .splash-beam,
-      .splash-screen-v3.is-active .splash-motes,
       .splash-slogan.is-visible .splash-slogan-lit,
       .splash-slogan.is-visible .splash-slogan-base,
-      .splash-slogan.is-lit .splash-slogan-accent,
+      .splash-slogan.is-visible .splash-slogan-lit .splash-slogan-lead,
+      .splash-slogan.is-visible .splash-slogan-lit .splash-slogan-accent,
+      .splash-slogan.is-lit .splash-slogan-lit .splash-slogan-lead,
+      .splash-slogan.is-lit .splash-slogan-lit .splash-slogan-accent,
       .app-content-wrap.splash-app-reveal {
         animation: none !important;
       }
       .splash-slogan.is-visible,
       .splash-slogan.is-lit { opacity: 1; transform: none; }
-      .splash-slogan-base { opacity: 0.2; }
-      .splash-slogan-lit {
-        opacity: 1;
-        -webkit-mask-image: none;
-        mask-image: none;
+      .splash-slogan-base { opacity: 0.25; }
+      .splash-slogan-lit { opacity: 1; }
+      .splash-slogan-lit .splash-slogan-lead {
+        background: none;
+        color: var(--rhythm-text);
+        -webkit-text-fill-color: var(--rhythm-text);
+        filter: none;
       }
-      .splash-beam { opacity: 0.35; transform: translateX(-50%) translateY(-50%); left: 50%; }
+      .splash-slogan-lit .splash-slogan-accent {
+        background: linear-gradient(90deg, #5BB8A8 0%, #3D9A8B 45%, #00C4A0 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 0 12px rgba(91, 184, 168, 0.45));
+      }
       .splash-slogan.is-exiting { opacity: 0; transform: none; }
       .splash-screen-v3.is-revealing { opacity: 0; }
       .app-content-wrap.splash-app-reveal { opacity: 1; transform: none; }
@@ -2797,7 +2806,7 @@
     .rythm-lockup .rythm-title .ltr-h { color: #3D9A8B; -webkit-text-fill-color: #3D9A8B; }
     .rythm-lockup .rythm-title .ltr-m { color: #5B8FD9; -webkit-text-fill-color: #5B8FD9; }
 
-    /* ── Splash: black void + sweeping light that finds the slogan ── */
+    /* ── Splash: black void + letter-shaped neon sweep L→R ── */
     .splash-screen-v3 {
       background: #000;
       overflow: hidden;
@@ -2819,54 +2828,6 @@
       inset: 0;
       background: #000;
       pointer-events: none;
-    }
-
-    /* Soft stage beam that pans across the void */
-    .splash-beam {
-      position: absolute;
-      top: 50%;
-      left: 0;
-      width: min(72vw, 22rem);
-      height: min(72vw, 22rem);
-      transform: translate(-120%, -50%);
-      border-radius: 50%;
-      pointer-events: none;
-      opacity: 0;
-      background:
-        radial-gradient(circle at 50% 50%,
-          rgba(156, 240, 220, 0.28) 0%,
-          rgba(91, 184, 168, 0.16) 28%,
-          rgba(61, 154, 139, 0.06) 52%,
-          transparent 72%);
-      filter: blur(2px);
-      mix-blend-mode: screen;
-      z-index: 1;
-    }
-
-    .splash-screen-v3.is-active .splash-beam {
-      animation: splashBeamSweep 1.25s cubic-bezier(0.4, 0, 0.2, 1) 80ms forwards;
-    }
-
-    /* Dust motes drifting in the beam */
-    .splash-motes {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1;
-      opacity: 0;
-      background-image:
-        radial-gradient(1px 1px at 18% 42%, rgba(232, 237, 242, 0.55), transparent),
-        radial-gradient(1.5px 1.5px at 62% 38%, rgba(91, 184, 168, 0.65), transparent),
-        radial-gradient(1px 1px at 44% 58%, rgba(232, 237, 242, 0.4), transparent),
-        radial-gradient(1.5px 1.5px at 72% 52%, rgba(156, 240, 220, 0.5), transparent),
-        radial-gradient(1px 1px at 30% 64%, rgba(91, 184, 168, 0.45), transparent),
-        radial-gradient(1px 1px at 55% 48%, rgba(232, 237, 242, 0.35), transparent);
-      -webkit-mask-image: radial-gradient(ellipse 50% 40% at 50% 50%, #000 0%, transparent 75%);
-      mask-image: radial-gradient(ellipse 50% 40% at 50% 50%, #000 0%, transparent 75%);
-    }
-
-    .splash-screen-v3.is-active .splash-motes {
-      animation: splashMotesIn 1.4s ease 200ms forwards;
     }
 
     #splash-inner {
@@ -2902,7 +2863,7 @@
       margin: 0;
     }
 
-    /* Dimly lit base — barely readable in the dark */
+    /* Dim tube outline — same letter shapes, barely on */
     .splash-slogan-base {
       position: relative;
       z-index: 0;
@@ -2910,18 +2871,23 @@
 
     .splash-slogan-base .splash-slogan-lead {
       display: inline-block;
-      color: rgba(232, 237, 242, 0.12);
-      -webkit-text-fill-color: rgba(232, 237, 242, 0.12);
+      color: rgba(232, 237, 242, 0.1);
+      -webkit-text-fill-color: rgba(232, 237, 242, 0.1);
+      -webkit-text-stroke: 0.5px rgba(232, 237, 242, 0.14);
     }
 
     .splash-slogan-base .splash-slogan-accent {
       display: inline-block;
       background: none;
-      color: rgba(61, 154, 139, 0.18);
-      -webkit-text-fill-color: rgba(61, 154, 139, 0.18);
+      color: rgba(61, 154, 139, 0.14);
+      -webkit-text-fill-color: rgba(61, 154, 139, 0.14);
+      -webkit-text-stroke: 0.5px rgba(91, 184, 168, 0.18);
     }
 
-    /* Bright layer revealed by the sweeping light mask */
+    /*
+      Neon layer: light lives inside the glyphs (background-clip: text).
+      A bright hot-spot sweeps L→R along the letter shapes — dim at edges, peak at center.
+    */
     .splash-slogan-lit {
       position: absolute;
       left: 0;
@@ -2929,73 +2895,97 @@
       top: 0;
       z-index: 1;
       opacity: 0;
-      -webkit-mask-image: linear-gradient(
-        90deg,
-        transparent 0%,
-        transparent 38%,
-        #000 46%,
-        #000 54%,
-        transparent 62%,
-        transparent 100%
-      );
-      mask-image: linear-gradient(
-        90deg,
-        transparent 0%,
-        transparent 38%,
-        #000 46%,
-        #000 54%,
-        transparent 62%,
-        transparent 100%
-      );
-      -webkit-mask-size: 280% 100%;
-      mask-size: 280% 100%;
-      -webkit-mask-position: 100% 0;
-      mask-position: 100% 0;
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
     }
 
-    .splash-slogan-lit .splash-slogan-lead {
-      display: inline-block;
-      color: var(--rhythm-text);
-      -webkit-text-fill-color: var(--rhythm-text);
-      text-shadow: 0 0 24px rgba(232, 237, 242, 0.18);
-    }
-
+    .splash-slogan-lit .splash-slogan-lead,
     .splash-slogan-lit .splash-slogan-accent {
       display: inline-block;
-      position: relative;
-      background: linear-gradient(90deg, #5BB8A8 0%, #3D9A8B 45%, #00C4A0 100%);
       -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
       background-clip: text;
-      filter: drop-shadow(0 0 18px rgba(91, 184, 168, 0.45));
+      -webkit-text-fill-color: transparent;
+      background-repeat: no-repeat;
+      background-size: 240% 100%;
+      background-position: 100% 50%;
+    }
+
+    /* Soft silver/white neon for “Find Your” */
+    .splash-slogan-lit .splash-slogan-lead {
+      background-image: linear-gradient(
+        90deg,
+        rgba(140, 155, 170, 0.25) 0%,
+        rgba(180, 195, 210, 0.45) 28%,
+        rgba(232, 237, 242, 0.75) 40%,
+        #ffffff 48%,
+        #E8EDF2 52%,
+        rgba(232, 237, 242, 0.75) 60%,
+        rgba(180, 195, 210, 0.45) 72%,
+        rgba(140, 155, 170, 0.25) 100%
+      );
+    }
+
+    /* Teal neon tube for “Rhythm” — peak is icy mint/white-teal */
+    .splash-slogan-lit .splash-slogan-accent {
+      background-image: linear-gradient(
+        90deg,
+        rgba(30, 90, 80, 0.35) 0%,
+        #2d7a6e 22%,
+        #3D9A8B 34%,
+        #5BB8A8 42%,
+        #B8FFF0 48%,
+        #00E5B8 52%,
+        #5BB8A8 58%,
+        #3D9A8B 68%,
+        #2d7a6e 82%,
+        rgba(30, 90, 80, 0.35) 100%
+      );
     }
 
     .splash-slogan.is-visible .splash-slogan-lit {
       opacity: 1;
-      animation: splashLightReveal 1.25s cubic-bezier(0.4, 0, 0.2, 1) 80ms forwards;
+    }
+
+    .splash-slogan.is-visible .splash-slogan-lit .splash-slogan-lead {
+      animation: splashNeonSweepLead 1.45s cubic-bezier(0.4, 0, 0.2, 1) 60ms forwards;
+    }
+
+    .splash-slogan.is-visible .splash-slogan-lit .splash-slogan-accent {
+      animation: splashNeonSweepAccent 1.45s cubic-bezier(0.4, 0, 0.2, 1) 60ms forwards;
     }
 
     .splash-slogan.is-visible .splash-slogan-base {
-      animation: splashDimSettle 1.25s ease 80ms forwards;
+      animation: splashDimSettle 1.45s ease 60ms forwards;
     }
 
-    /* After the beam finds the words — hold with a soft pulse on Rhythm */
-    .splash-slogan.is-lit .splash-slogan-lit {
-      -webkit-mask-image: none;
-      mask-image: none;
-      opacity: 1;
-      animation: none;
-    }
-
+    /* Hold: fully on neon, soft pulse on Rhythm */
     .splash-slogan.is-lit .splash-slogan-base {
       opacity: 0;
       animation: none;
     }
 
+    .splash-slogan.is-lit .splash-slogan-lit {
+      opacity: 1;
+    }
+
+    .splash-slogan.is-lit .splash-slogan-lit .splash-slogan-lead {
+      animation: none;
+      background-image: none;
+      background-size: auto;
+      background-position: 0 0;
+      color: var(--rhythm-text);
+      -webkit-text-fill-color: var(--rhythm-text);
+      filter:
+        drop-shadow(0 0 1px rgba(255, 255, 255, 0.9))
+        drop-shadow(0 0 10px rgba(232, 237, 242, 0.35));
+    }
+
     .splash-slogan.is-lit .splash-slogan-lit .splash-slogan-accent {
-      animation: splashAccentGlow 1.1s ease-in-out infinite alternate;
+      animation: splashNeonPulse 1.15s ease-in-out infinite alternate;
+      background-image: linear-gradient(90deg, #5BB8A8 0%, #3D9A8B 45%, #00C4A0 100%);
+      background-size: 100% 100%;
+      background-position: 0 50%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .splash-slogan.is-exiting {
@@ -3006,64 +2996,76 @@
       animation: splashFadeIn 520ms ease forwards;
     }
 
-    @keyframes splashBeamSweep {
+    /* Sweep: hotspot travels through the glyph fill L→R; brightest mid-pass */
+    @keyframes splashNeonSweepLead {
       0% {
-        opacity: 0;
-        left: 0%;
-        transform: translate(-90%, -50%) scale(0.88);
+        background-position: 100% 50%;
+        filter:
+          brightness(0.45)
+          drop-shadow(0 0 2px rgba(232, 237, 242, 0.15))
+          drop-shadow(0 0 8px rgba(232, 237, 242, 0.08));
       }
-      14% {
-        opacity: 1;
-      }
-      72% {
-        opacity: 1;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(1.06);
+      48% {
+        background-position: 50% 50%;
+        filter:
+          brightness(1.45)
+          drop-shadow(0 0 2px rgba(255, 255, 255, 1))
+          drop-shadow(0 0 12px rgba(232, 237, 242, 0.75))
+          drop-shadow(0 0 28px rgba(200, 220, 235, 0.35));
       }
       100% {
-        opacity: 0.5;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(1.14);
+        background-position: 0% 50%;
+        filter:
+          brightness(1.05)
+          drop-shadow(0 0 1px rgba(255, 255, 255, 0.85))
+          drop-shadow(0 0 10px rgba(232, 237, 242, 0.4));
       }
     }
 
-    @keyframes splashMotesIn {
-      0% { opacity: 0; }
-      40% { opacity: 0.85; }
-      100% { opacity: 0.55; }
-    }
-
-    @keyframes splashLightReveal {
+    @keyframes splashNeonSweepAccent {
       0% {
-        -webkit-mask-position: 100% 0;
-        mask-position: 100% 0;
-        filter: brightness(0.7);
+        background-position: 100% 50%;
+        filter:
+          brightness(0.4)
+          drop-shadow(0 0 2px rgba(61, 154, 139, 0.2))
+          drop-shadow(0 0 10px rgba(61, 154, 139, 0.12));
       }
-      72% {
-        -webkit-mask-position: 0% 0;
-        mask-position: 0% 0;
-        filter: brightness(1.2);
+      48% {
+        background-position: 50% 50%;
+        filter:
+          brightness(1.55)
+          drop-shadow(0 0 2px #B8FFF0)
+          drop-shadow(0 0 14px rgba(91, 184, 168, 0.95))
+          drop-shadow(0 0 32px rgba(0, 196, 160, 0.55))
+          drop-shadow(0 0 48px rgba(61, 154, 139, 0.3));
       }
       100% {
-        -webkit-mask-image: linear-gradient(#000, #000);
-        mask-image: linear-gradient(#000, #000);
-        -webkit-mask-position: 0 0;
-        mask-position: 0 0;
-        filter: brightness(1);
+        background-position: 0% 50%;
+        filter:
+          brightness(1.1)
+          drop-shadow(0 0 2px rgba(91, 184, 168, 0.9))
+          drop-shadow(0 0 14px rgba(61, 154, 139, 0.55))
+          drop-shadow(0 0 28px rgba(0, 196, 160, 0.28));
       }
     }
 
     @keyframes splashDimSettle {
-      0%, 55% { opacity: 1; }
-      100% { opacity: 0.15; }
+      0%, 50% { opacity: 1; }
+      100% { opacity: 0.08; }
     }
 
-    @keyframes splashAccentGlow {
+    @keyframes splashNeonPulse {
       from {
-        filter: drop-shadow(0 0 14px rgba(91, 184, 168, 0.35));
+        filter:
+          drop-shadow(0 0 2px rgba(91, 184, 168, 0.7))
+          drop-shadow(0 0 12px rgba(61, 154, 139, 0.4))
+          drop-shadow(0 0 22px rgba(0, 196, 160, 0.2));
       }
       to {
-        filter: drop-shadow(0 0 28px rgba(0, 196, 160, 0.65));
+        filter:
+          drop-shadow(0 0 3px #B8FFF0)
+          drop-shadow(0 0 18px rgba(91, 184, 168, 0.75))
+          drop-shadow(0 0 36px rgba(0, 196, 160, 0.4));
       }
     }
 
