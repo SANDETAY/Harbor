@@ -4095,7 +4095,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v82';
+    const HARBOR_BUILD = 'v83';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -8387,7 +8387,7 @@
         title.textContent = view === 'week'
           ? "This Week's Schedule"
           : view === 'month'
-            ? "This Month's Schedule"
+            ? "Later This Month"
             : "Today's Schedule";
       }
     }
@@ -8404,11 +8404,13 @@
     }
 
     function filterEventsForMonth(events, anchorDate = todayStr()) {
-      const { start, end } = getMonthBounds(anchorDate);
+      // Beyond this week only — same partition as Summary "This month"
+      const bounds = getBeyondWeekMonthBounds(anchorDate);
+      if (bounds.empty) return [];
       return (events || []).filter(e => {
         const s = getEventDate(e);
         const en = getEventEndDate(e);
-        return s <= end && en >= start;
+        return s <= bounds.end && en >= bounds.start;
       });
     }
 
@@ -9262,8 +9264,10 @@
         if (view === 'week') {
           detailEl.textContent = `${formatEventDateLabel(getWeekStartDateStr(today))} – ${formatEventDateLabel(getWeekEndDateStr(today))}`;
         } else if (view === 'month') {
-          const { start, end } = getMonthBounds(today);
-          detailEl.textContent = `${formatEventDateLabel(start)} – ${formatEventDateLabel(end)}`;
+          const bounds = getBeyondWeekMonthBounds(today);
+          detailEl.textContent = bounds.empty
+            ? 'After this week · nothing left this month'
+            : `After this week · ${formatEventDateLabel(bounds.start)} – ${formatEventDateLabel(bounds.end)}`;
         } else {
           detailEl.textContent = avail.summary;
         }
@@ -9293,14 +9297,20 @@
           events.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
         });
       } else if (view === 'month') {
+        const bounds = getBeyondWeekMonthBounds(today);
         const monthEvents = filterEventsForMonth(allEvents);
-        if (!monthEvents.length) {
-          container.innerHTML = harborEmptyHtml('📅', 'Open month', 'No events this month. Tap + Event or Import CSV.');
+        if (bounds.empty || !monthEvents.length) {
+          container.innerHTML = harborEmptyHtml(
+            '📅',
+            'Later this month',
+            bounds.empty
+              ? 'Nothing after this week for the rest of the month — check This week for upcoming events.'
+              : 'No events after this week. Tap + Event or Import CSV to plan further out.'
+          );
           return;
         }
-        const { start, end } = getMonthBounds(today);
         groupEventsByDate(monthEvents)
-          .filter(({ date }) => date >= start && date <= end)
+          .filter(({ date }) => date >= bounds.start && date <= bounds.end)
           .forEach(({ date, events }) => {
             container.appendChild(renderScheduleSectionHeader(formatEventDateLabel(date)));
             events.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
@@ -11045,12 +11055,37 @@
       return { start: dateStrLocal(start), end: dateStrLocal(end) };
     }
 
+    /**
+     * Month preview = after the current week ends, through month-end.
+     * Avoids duplicating Today / This week items (e.g. the 11th while still in this week).
+     */
+    function getBeyondWeekMonthBounds(refDateStr) {
+      const today = refDateStr || todayStr();
+      const week = getWeekBounds(today);
+      const { end: monthEnd } = getMonthBounds(today);
+      const afterWeek = new Date(week.end + 'T12:00:00');
+      afterWeek.setDate(afterWeek.getDate() + 1);
+      let start = dateStrLocal(afterWeek);
+      // Never start before tomorrow if week already ended relative to today (safety)
+      if (start < today) start = today;
+      if (start > monthEnd) {
+        return { start: monthEnd, end: monthEnd, empty: true, weekEnd: week.end, monthEnd };
+      }
+      return { start, end: monthEnd, empty: false, weekEnd: week.end, monthEnd };
+    }
+
     function daysLeftInMonth(refDateStr) {
       const today = refDateStr || todayStr();
       const { end } = getMonthBounds(today);
       const a = new Date(today + 'T12:00:00');
       const b = new Date(end + 'T12:00:00');
       return Math.max(0, Math.round((b - a) / 86400000));
+    }
+
+    function daysUntilDateStr(dateStr, fromDateStr) {
+      const from = new Date((fromDateStr || todayStr()) + 'T12:00:00');
+      const to = new Date(dateStr + 'T12:00:00');
+      return Math.round((to - from) / 86400000);
     }
 
     function formatBriefDateLabel(dateStr) {
@@ -11063,14 +11098,19 @@
     }
 
     function formatMonthPeriodLabel(month) {
-      if (!month?.start) return 'This month';
-      const d = new Date(month.start + 'T12:00:00');
+      if (!month?.end && !month?.start) return 'This month';
+      const d = new Date((month.end || month.start) + 'T12:00:00');
       return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    }
+
+    function formatBeyondWeekMonthRangeLabel(bounds) {
+      if (!bounds || bounds.empty) return 'After this week · nothing left this month';
+      return `After this week · ${formatBriefDateLabel(bounds.start)} – ${formatBriefDateLabel(bounds.end)}`;
     }
 
     function summaryFocusEyebrow(mode) {
       if (mode === 'week') return 'Do first this week';
-      if (mode === 'month') return 'Do first this month';
+      if (mode === 'month') return 'Do first later this month';
       return 'Do this next';
     }
 
@@ -11138,37 +11178,37 @@
           if (isDueToday(h)) items.push({ habit: h, date: today, daysUntil: 0 });
         });
       } else if (mode === 'month') {
-        // Month brief: rest of this month (today → month end) + recurring due in that window
-        const { start, end } = getMonthBounds(today);
-        const rangeStart = today > start ? today : start;
-        const cursor = new Date(rangeStart + 'T12:00:00');
-        const endDate = new Date(end + 'T12:00:00');
-        const seen = new Set();
-        const todayDate = new Date(today + 'T12:00:00');
-        while (cursor <= endDate) {
-          const ds = dateStrLocal(cursor);
+        // Month brief: AFTER this week ends → month end (no overlap with Today / This week)
+        const bounds = getBeyondWeekMonthBounds(today);
+        if (!bounds.empty) {
+          const cursor = new Date(bounds.start + 'T12:00:00');
+          const endDate = new Date(bounds.end + 'T12:00:00');
+          const seen = new Set();
+          const todayDate = new Date(today + 'T12:00:00');
+          while (cursor <= endDate) {
+            const ds = dateStrLocal(cursor);
+            state.habits.forEach(h => {
+              if (!isHabitScheduledOn(h, ds) || seen.has(h.id)) return;
+              // Skip pure daily habits on month view — too noisy; keep significant ones only
+              if (isDailyTask(h) && !isSignificantBriefTask(h, 'month') && !isOneOffTask(h) && !h.is_pro_reminder) return;
+              seen.add(h.id);
+              const daysUntil = Math.round((cursor - todayDate) / 86400000);
+              items.push({ habit: h, date: ds, daysUntil });
+            });
+            cursor.setDate(cursor.getDate() + 1);
+          }
           state.habits.forEach(h => {
-            if (!isHabitScheduledOn(h, ds) || seen.has(h.id)) return;
-            // Skip pure daily habits on month view — too noisy; keep significant ones only
-            if (isDailyTask(h) && !isSignificantBriefTask(h, 'month') && !isOneOffTask(h) && !h.is_pro_reminder) return;
+            if (seen.has(h.id) || !isNonDailyRecurring(h)) return;
+            const daysUntil = getDaysUntilHabitDue(h);
+            if (daysUntil < 0) return;
+            const d = new Date(today + 'T12:00:00');
+            d.setDate(d.getDate() + daysUntil);
+            const ds = dateStrLocal(d);
+            if (ds < bounds.start || ds > bounds.end) return;
             seen.add(h.id);
-            const daysUntil = Math.round((cursor - todayDate) / 86400000);
             items.push({ habit: h, date: ds, daysUntil });
           });
-          cursor.setDate(cursor.getDate() + 1);
         }
-        const maxHorizon = daysLeftInMonth(today);
-        state.habits.forEach(h => {
-          if (seen.has(h.id) || !isNonDailyRecurring(h)) return;
-          const daysUntil = getDaysUntilHabitDue(h);
-          if (daysUntil < 0 || daysUntil > maxHorizon) return;
-          const d = new Date(today + 'T12:00:00');
-          d.setDate(d.getDate() + daysUntil);
-          const ds = dateStrLocal(d);
-          if (ds < rangeStart || ds > end) return;
-          seen.add(h.id);
-          items.push({ habit: h, date: ds, daysUntil });
-        });
       } else {
         // Week brief: full week of scheduled tasks + upcoming weekly/monthly chores
         const { start, end } = getWeekBounds(today);
@@ -11211,14 +11251,20 @@
     }
 
     function collectBriefBills(mode) {
-      const monthHorizon = daysLeftInMonth();
+      const monthBounds = getBeyondWeekMonthBounds();
+      const monthStartDays = monthBounds.empty ? Infinity : daysUntilDateStr(monthBounds.start);
+      const monthEndDays = monthBounds.empty ? -1 : daysUntilDateStr(monthBounds.end);
       return state.bills
         .filter(b => {
           const status = getBillStatus(b);
           if (status === 'paid' || status === 'autopay') return false;
           const days = getDaysUntilBillDue(b);
           if (mode === 'day') return days <= 0 || status === 'due_today' || status === 'overdue';
-          if (mode === 'month') return days <= monthHorizon || status === 'overdue' || status === 'due_today';
+          // Month: only bills due AFTER this week (not already covered by week view)
+          if (mode === 'month') {
+            if (monthBounds.empty) return false;
+            return days >= monthStartDays && days <= monthEndDays;
+          }
           return days <= 6;
         })
         .sort((a, b) => getBillUrgency(a) - getBillUrgency(b));
@@ -11231,15 +11277,15 @@
       }
 
       if (mode === 'month') {
-        const today = todayStr();
-        const { start, end } = getMonthBounds(today);
-        const rangeStart = today > start ? today : start;
+        const bounds = getBeyondWeekMonthBounds();
+        if (bounds.empty) return [];
         const all = getAllCalendarEvents().filter(e => {
           const s = getEventDate(e);
           const en = getEventEndDate(e);
-          return s <= end && en >= rangeStart;
+          // Overlaps the post-week month window
+          return s <= bounds.end && en >= bounds.start;
         });
-        const byDate = groupEventsByDate(all).filter(({ date }) => date >= rangeStart && date <= end);
+        const byDate = groupEventsByDate(all).filter(({ date }) => date >= bounds.start && date <= bounds.end);
         return byDate.map(({ date, events }) => ({
           date,
           label: formatBriefDateLabel(date),
@@ -11297,17 +11343,14 @@
       const eventDays = Array.isArray(events) ? events.length : 0;
 
       if (mode === 'month') {
-        const left = daysLeftInMonth();
-        if (taskCount === 0 && !bills.length) {
-          return `Quiet month ahead — ${left} day${left === 1 ? '' : 's'} left to plan bigger home and life admin.`;
-        }
-        if (overdueBills > 0) {
-          return `${overdueBills} bill${overdueBills > 1 ? 's' : ''} overdue this month · ${taskCount} bigger item${taskCount === 1 ? '' : 's'} still on the radar.`;
+        const bounds = getBeyondWeekMonthBounds();
+        if (bounds.empty || (taskCount === 0 && !bills.length && !eventDays)) {
+          return `Nothing after this week for the rest of ${formatMonthPeriodLabel(getMonthBounds())} — use This week for what's coming soon.`;
         }
         if (busiest && busiest[1] >= 3) {
-          return `Heaviest day this month: ${formatBriefDateLabel(busiest[0])} (${busiest[1]} items). Spread work across quieter days.`;
+          return `Heaviest day later this month: ${formatBriefDateLabel(busiest[0])} (${busiest[1]} items). Spread work across quieter days.`;
         }
-        return `${taskCount} priority item${taskCount === 1 ? '' : 's'} left in ${formatMonthPeriodLabel(getMonthBounds())} · ${left} day${left === 1 ? '' : 's'} remaining.`;
+        return `${taskCount} priority item${taskCount === 1 ? '' : 's'} after this week · ${formatBriefDateLabel(bounds.start)} – ${formatBriefDateLabel(bounds.end)}.`;
       }
 
       // week
@@ -11331,12 +11374,9 @@
       if (mode === 'month') {
         const monthlyChores = tasks.filter(t => isNonDailyRecurring(t.habit) && (t.habit.interval_days || 0) >= 25).length;
         if (monthlyChores) {
-          parts.push(`${monthlyChores} monthly+ chore${monthlyChores > 1 ? 's' : ''} still due before month-end.`);
+          parts.push(`${monthlyChores} monthly+ chore${monthlyChores > 1 ? 's' : ''} due after this week.`);
         }
-        const proBooks = tasks.filter(t => t.habit.is_pro_reminder).length;
-        if (proBooks) {
-          parts.push(`${proBooks} pro booking${proBooks > 1 ? 's' : ''} waiting on Today.`);
-        }
+        parts.push('This week’s items stay under Today / This week — not repeated here.');
       }
 
       if (bills.length) {
@@ -11352,7 +11392,7 @@
 
       if (!parts.length) {
         if (mode === 'day') return 'No urgent life-admin flags — focus on your task stack below.';
-        if (mode === 'month') return 'Month looks steady — use Today and This week for day-to-day prioritization.';
+        if (mode === 'month') return 'Clear after this week — use Today and This week for near-term prioritization.';
         return 'Week looks steady — use daily Summary for day-of prioritization.';
       }
       return parts.join(' ');
@@ -11366,7 +11406,7 @@
       const events = collectBriefEvents(mode);
       const doFirst = tasks.slice(0, 3);
       const week = getWeekBounds(todayStr());
-      const month = getMonthBounds(todayStr());
+      const month = getBeyondWeekMonthBounds(todayStr());
 
       return {
         mode,
@@ -11471,7 +11511,7 @@
                     <div class="summary-time-title">${escapeBriefHtml(e.title)}</div>
                   </div>`).join('')}
               </div>`).join('')
-          : `<div class="summary-empty">No events loaded this ${mode === 'month' ? 'month' : 'week'}.</div>`;
+          : `<div class="summary-empty">${mode === 'month' ? 'No events after this week for the rest of the month.' : 'No events loaded this week.'}</div>`;
       }
 
       return `
@@ -11564,8 +11604,7 @@
       if (mode === 'day') {
         periodLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
       } else if (mode === 'month') {
-        const left = daysLeftInMonth();
-        periodLabel = `${formatMonthPeriodLabel(brief.month)} · ${left} day${left === 1 ? '' : 's'} left`;
+        periodLabel = formatBeyondWeekMonthRangeLabel(brief.month || getBeyondWeekMonthBounds());
       } else {
         periodLabel = `${formatBriefDateLabel(brief.week.start)} – ${formatBriefDateLabel(brief.week.end)}`;
       }
