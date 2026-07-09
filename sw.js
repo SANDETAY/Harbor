@@ -1,12 +1,11 @@
-const CACHE_NAME = 'rhythm-preview-v71';
+const CACHE_NAME = 'harbor-preview-v72';
 const PRECACHE = [
-  './rhythm-favicon-32.png',
-  './rhythm-apple-touch.png',
-  './rhythm-icon-192.png',
-  './rhythm-icon-512.png',
-  './rythm-wordmark.png',
-  './rythm-splash-mark.svg',
-  './rythm-r-mark.png',
+  './harbor-favicon-32.png',
+  './harbor-apple-touch.png',
+  './harbor-icon-192.png',
+  './harbor-icon-512.png',
+  './harbor-mark.png',
+  './harbor-mark.svg',
   './manifest.webmanifest'
 ];
 
@@ -38,26 +37,41 @@ function isHtmlOrWorker(request, url) {
 }
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
+  const request = event.request;
+  if (request.method !== 'GET') return;
 
-  const url = new URL(event.request.url);
-  // Always hit the network for app shell so copy/UI fixes show immediately.
-  if (isHtmlOrWorker(event.request, url)) {
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  // HTML + SW: network-first so UI copy and shell updates ship immediately
+  if (isHtmlOrWorker(request, url)) {
     event.respondWith(
-      fetch(event.request, { cache: 'no-store' }).catch(() => caches.match('./index.html'))
+      fetch(request)
+        .then((response) => {
+          if (response && response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }
 
+  // Static assets: cache-first, refresh in background
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response && response.ok && url.origin === self.location.origin) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        }
-        return response;
-      })
-      .catch(() => caches.match(event.request))
+    caches.match(request).then((cached) => {
+      const network = fetch(request)
+        .then((response) => {
+          if (response && response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => cached);
+      return cached || network;
+    })
   );
 });

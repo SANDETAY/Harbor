@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rhythm webapp simulation tests — runs headless browser scenarios."""
+"""Harbor webapp simulation tests — runs headless browser scenarios."""
 
 import json
 import sys
@@ -72,8 +72,8 @@ def run_tests():
         page = context.new_page()
         page.goto(base, wait_until="domcontentloaded", timeout=60000)
         page.evaluate("""() => {
-          localStorage.removeItem('rhythm_onboarded');
-          localStorage.removeItem('rhythm_state_v1');
+          localStorage.removeItem('harbor_onboarded');
+          localStorage.removeItem('harbor_state_v1');
         }""")
         page.reload(wait_until="networkidle", timeout=60000)
         page.wait_for_timeout(3200)
@@ -111,20 +111,20 @@ def run_tests():
         if dismiss_welcome_spotlight(page):
             ok("welcome spotlight dismissible")
 
-        # --- Simulation 3: Rhythm Brief launcher ---
-        brief = page.locator("#rhythm-brief-launcher")
+        # --- Simulation 3: Summary launcher ---
+        brief = page.locator("#summary-launcher")
         page.wait_for_timeout(500)
         if not brief.is_visible():
-            fail("rhythm brief launcher", "hidden after onboarding")
+            fail("summary launcher", "hidden after onboarding")
         else:
-            ok("rhythm brief launcher visible")
+            ok("summary launcher visible")
             brief.click()
-            page.wait_for_selector("#rhythm-brief-modal", timeout=5000)
-            if page.locator("#rhythm-brief-modal").is_visible():
-                ok("rhythm brief modal opens")
-                page.locator("#rhythm-brief-modal button", has_text="×").first.click()
+            page.wait_for_selector("#summary-modal", timeout=5000)
+            if page.locator("#summary-modal").is_visible():
+                ok("summary modal opens")
+                page.locator("#summary-modal button", has_text="×").first.click()
             else:
-                fail("rhythm brief modal opens")
+                fail("summary modal opens")
 
         # --- Simulation 4: Energy reprioritization ---
         first_title = page.locator("#task-list .habit-card").first.locator(".font-medium, .leading-tight").first.inner_text()
@@ -177,15 +177,15 @@ def run_tests():
         # --- Simulation 7: Streaks + projections ---
         page.locator("#tab-streaks").click(force=True)
         page.wait_for_selector(
-            "#streaks-list .swipe-row, #streaks-list .rhythm-card, #streaks-list .habit-card",
+            "#streaks-list .swipe-row, #streaks-list .harbor-card, #streaks-list .habit-card",
             timeout=5000,
         )
         streak_cards = page.locator(
-            "#streaks-list .swipe-row, #streaks-list .rhythm-card, #streaks-list .habit-card"
+            "#streaks-list .swipe-row, #streaks-list .harbor-card, #streaks-list .habit-card"
         ).count()
         if streak_cards >= 1:
             ok(f"streaks render ({streak_cards})")
-            page.locator("#streaks-list .rhythm-card, #streaks-list .habit-card").first.click()
+            page.locator("#streaks-list .harbor-card, #streaks-list .habit-card").first.click()
             page.wait_for_timeout(500)
             proj = page.locator("#projection-content")
             if proj.is_visible():
@@ -243,15 +243,15 @@ def run_tests():
 
         # --- Simulation 12: Factory reset doesn't crash ---
         page.evaluate("""() => {
-          localStorage.setItem('rhythm_onboarded', '1');
-          if (window.RHYTHM) window.RHYTHM.state.habits = window.RHYTHM.state.habits.slice(0, 1);
+          localStorage.setItem('harbor_onboarded', '1');
+          if (window.HARBOR) window.HARBOR.state.habits = window.HARBOR.state.habits.slice(0, 1);
         }""")
-        ok("state manipulation via RHYTHM API")
+        ok("state manipulation via HARBOR API")
 
         # --- Simulation 13: Tutorial highlights align on mobile ---
         tutorial_steps = [0, 3, 4]  # today tab, life tab, streaks tab
         page.evaluate("""() => {
-          localStorage.setItem('rhythm_onboarded', '1');
+          localStorage.setItem('harbor_onboarded', '1');
           if (typeof startAppTutorial === 'function') startAppTutorial();
         }""")
         page.wait_for_timeout(900)
@@ -285,7 +285,7 @@ def run_tests():
 
 
 def main():
-    print("Rhythm simulation tests")
+    print("Harbor simulation tests")
     print(f"Serving {ROOT} on :{PORT}")
     httpd = start_server()
     time.sleep(0.3)

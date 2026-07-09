@@ -1,8 +1,8 @@
 {
-  "name": "rhythm-webapp",
+  "name": "harbor-webapp",
   "version": "1.0.0",
   "private": true,
-  "description": "Rhythm design preview — shareable web app for tester feedback before native iOS/Android build.",
+  "description": "Harbor design preview — shareable web app for tester feedback before native iOS/Android build.",
   "scripts": {
     "start": "powershell -ExecutionPolicy Bypass -File scripts/start-server.ps1",
     "preview": "powershell -ExecutionPolicy Bypass -File scripts/start-server.ps1",

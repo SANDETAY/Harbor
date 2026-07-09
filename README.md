@@ -1,6 +1,6 @@
-# Rhythm Web App (Design Preview)
+# Harbor Web App (Design Preview)
 
-Shareable **full-width responsive website** of **Rhythm** for design review and user testing before the native iOS/Android build. Fills your browser on desktop; still works great on phones.
+Shareable **full-width responsive website** of **Harbor** for design review and user testing before the native iOS/Android build. Fills your browser on desktop; still works great on phones.
 
 ## Quick Start (Local)
 
@@ -36,7 +36,7 @@ Every `git push` to `main` updates the live site. Testers can also **Add to Home
 
 ### Option B — Netlify Drop (fastest, no GitHub)
 
-1. Run `npm run zip` to create `rhythm-webapp-deploy.zip`
+1. Run `npm run zip` to create `harbor-webapp-deploy.zip`
 2. Go to [https://app.netlify.com/drop](https://app.netlify.com/drop)
 3. Drag the zip onto the page
 4. Copy the URL Netlify gives you and send it to testers
@@ -51,7 +51,7 @@ Every `git push` to `main` updates the live site. Testers can also **Add to Home
 
 1. Open the deployed URL in Safari
 2. Tap Share → **Add to Home Screen**
-3. Rhythm launches full-screen like a native app
+3. Harbor launches full-screen like a native app
 
 ## What Works in the Preview
 
@@ -79,7 +79,7 @@ py -m playwright install chromium
 py scripts\sim-test.py
 ```
 
-Runs headless mobile-browser scenarios (onboarding, smart suggestions, Rhythm Brief, energy sort, streaks, calendar ICS UI, fitness sync).
+Runs headless mobile-browser scenarios (onboarding, smart suggestions, Summary, energy sort, streaks, calendar ICS UI, fitness sync).
 
 ## Reset for Fresh Test
 
@@ -89,11 +89,11 @@ Settings → **Factory Reset** restores the first-time experience.
 
 ```
 webapp/
-  index.html              # Full Rhythm prototype
+  index.html              # Full Harbor prototype
   manifest.webmanifest    # PWA install config
   sw.js                   # Offline cache for assets
-  rythm-r-mark.png        # App icon
-  rythm-wordmark.png      # Onboarding wordmark
+  harbor-mark.svg         # Anchor mark (vector)
+  harbor-icon-*.png       # PWA / home-screen icons
   netlify.toml            # Deploy headers
   package.json            # Local dev server
   scripts/
