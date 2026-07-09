@@ -4095,7 +4095,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v84';
+    const HARBOR_BUILD = 'v85';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -12505,6 +12505,21 @@
       return getEnergyMatchedTasks(currentEnergy).length;
     }
 
+    /** False for walks/outdoor/noisy tasks during quiet hours (e.g. 2am). */
+    function isHabitSensibleNow(habit) {
+      if (!habit) return false;
+      return getHabitContextPenalty(habit, 'day') < 50;
+    }
+
+    function rankHabitsForNow(habits) {
+      return [...(habits || [])].sort((a, b) => {
+        const pa = getHabitContextPenalty(a, 'day');
+        const pb = getHabitContextPenalty(b, 'day');
+        if (pa !== pb) return pa - pb;
+        return getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy);
+      });
+    }
+
     function buildSmartSuggestion(ctx) {
       if (state.settings.showWelcomeBanner && !state.settings.tutorialCompleted) {
         return buildWelcomeSuggestion();
@@ -12519,13 +12534,41 @@
       }
 
       const due = state.habits.filter(h => isDueToday(h));
-      const energyPool = getEnergyMatchedTasks(ctx.energy);
+      const energyPoolRaw = getEnergyMatchedTasks(ctx.energy);
+      // Time-aware pools: don't recommend a walk at 2am
+      const energyPool = rankHabitsForNow(energyPoolRaw.filter(isHabitSensibleNow));
+      const dueSensible = rankHabitsForNow(due.filter(isHabitSensibleNow));
       const candidates = [];
-      const gapPool = energyPool.length ? energyPool : due;
-
-      // Rain warning for outdoor chores due today
+      const gapPool = energyPool.length ? energyPool : dueSensible;
+      const quietNow = isQuietHours();
       const rainRisk = getAfternoonRainRisk();
-      if (rainRisk?.risky) {
+
+      // Quiet hours: explicit indoor nudge so we never fall through to outdoor tips
+      if (quietNow) {
+        const calm = dueSensible.find(h =>
+          /\b(read|stretch|meditat|journal|plan|bill|email|organize|budget|pay|review|mobility)\b/i.test(h.title || '')
+        ) || dueSensible[0] || energyPool[0];
+        if (calm) {
+          candidates.push({
+            score: 97,
+            type: 'habit',
+            habit: calm,
+            cta: 'Tap to start',
+            reason: `It's late/early — not a great time for a walk or yard work. ${formatTaskForSuggestion(calm.title)} is a better fit right now.`
+          });
+        } else {
+          candidates.push({
+            score: 90,
+            type: 'tip',
+            cta: 'Got it',
+            action: 'none',
+            reason: `Quiet hours — outdoor walks and noisy chores can wait until morning. Rest, or pick something calm indoors.`
+          });
+        }
+      }
+
+      // Rain warning for outdoor chores due today (skip at night — already covered)
+      if (!quietNow && rainRisk?.risky) {
         const outdoorDue = due.filter(h => isOutdoorTask(h));
         outdoorDue.forEach(task => {
           const phrase = formatTaskForSuggestion(task.title);
@@ -12539,10 +12582,10 @@
         });
       }
 
-      // Energy-first suggestions with natural phrasing
-      if (energyPool.length > 0) {
+      // Energy-first suggestions with natural phrasing (time-filtered pool)
+      if (energyPool.length > 0 && !quietNow) {
         const best = energyPool[0];
-        const hardestDue = [...due].sort((a, b) => (b.difficulty || 2) - (a.difficulty || 2))[0];
+        const hardestDue = [...dueSensible].sort((a, b) => (b.difficulty || 2) - (a.difficulty || 2))[0];
         const bestPhrase = formatTaskForSuggestion(best.title);
         const hardPhrase = hardestDue ? formatTaskForSuggestion(hardestDue.title) : '';
 
@@ -12570,13 +12613,22 @@
             cta: 'Tap to start',
             reason: `You've got high energy — it's a great time to tackle ${bestPhrase}.`
           });
+        } else {
+          // Medium energy or no special case — still surface a sensible next task
+          candidates.push({
+            score: 86,
+            type: 'habit',
+            habit: best,
+            cta: 'Tap to start',
+            reason: `Good moment for ${bestPhrase}.`
+          });
         }
       }
 
-      // Calendar gap + energy-matched task
-      if (ctx.bestGap && ctx.bestGap.minutes >= 25 && gapPool.length > 0) {
+      // Calendar gap + energy-matched task (not during quiet hours outdoor-leaning)
+      if (!quietNow && ctx.bestGap && ctx.bestGap.minutes >= 25 && gapPool.length > 0) {
         const fit = findTaskForGap(ctx.bestGap, gapPool);
-        if (fit) {
+        if (fit && isHabitSensibleNow(fit)) {
           const phrase = formatTaskForSuggestion(fit.title);
           const until = ctx.bestGap.beforeEvent
             ? ` before ${ctx.bestGap.beforeEvent.toLowerCase()}`
@@ -12593,7 +12645,7 @@
 
       // Reschedule to a clearer day
       const reschedule = getRescheduleOpportunity();
-      if (reschedule) {
+      if (reschedule && !quietNow) {
         candidates.push({
           score: 88,
           type: 'reschedule',
@@ -12603,10 +12655,10 @@
         });
       }
 
-      // Clear weather — good outdoor window
+      // Clear weather — good outdoor window (daylight / non-quiet only)
       const weatherLow = (ctx.weather || '').toLowerCase();
-      if ((weatherLow.includes('sun') || weatherLow.includes('clear')) && !(rainRisk?.risky)) {
-        const outdoorPool = ctx.energy === 1 ? energyPool : due;
+      if (!quietNow && isDaylightHours() && (weatherLow.includes('sun') || weatherLow.includes('clear')) && !(rainRisk?.risky)) {
+        const outdoorPool = ctx.energy === 1 ? energyPool : dueSensible;
         const outdoor = outdoorPool.find(h =>
           isOutdoorTask(h) && (ctx.energy !== 1 || (h.difficulty || 2) <= 2)
         );
@@ -12632,15 +12684,17 @@
       }
 
       // Free block from calendar total
-      if (ctx.freeTime >= 40 && gapPool.length > 0) {
-        const match = [...gapPool].sort((a, b) => getEffectiveDifficulty(a, ctx.energy) - getEffectiveDifficulty(b, ctx.energy))[0];
-        candidates.push({
-          score: 74,
-          type: 'habit',
-          habit: match,
-          cta: 'Tap to start',
-          reason: `Your calendar has roughly ${ctx.freeTime} minutes free — ${formatTaskForSuggestion(match.title)} should fit.`
-        });
+      if (!quietNow && ctx.freeTime >= 40 && gapPool.length > 0) {
+        const match = rankHabitsForNow(gapPool)[0];
+        if (match) {
+          candidates.push({
+            score: 74,
+            type: 'habit',
+            habit: match,
+            cta: 'Tap to start',
+            reason: `Your calendar has roughly ${ctx.freeTime} minutes free — ${formatTaskForSuggestion(match.title)} should fit.`
+          });
+        }
       }
 
       // Bills: lower weight (nudge, not takeover)
