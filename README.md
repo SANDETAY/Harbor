@@ -64,7 +64,7 @@ Every `git push` to `main` updates the live site. Testers can also **Add to Home
 | Streaks & Cheat Day Fund | Live |
 | Weather (hourly forecast) | Live (uses device location) |
 | Voice commands | Chrome/Edge only |
-| Calendar (ICS URL + file import) | Live — paste iCal URL and/or upload .ics |
+| Calendar (ICS URL + file import) | Live — secret iCal URL and/or .ics file; direct fetch by default (optional network helper) |
 | Garmin / Apple Health sync | Simulated — UI placeholder |
 | Subscriptions tracker | Live (manual + CSV import) |
 

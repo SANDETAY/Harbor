@@ -3852,7 +3852,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v63';
+    const RHYTHM_BUILD = 'v64';
 
     // Fitness / wearable sync (Today “Done — sync”, device modal, etc.) — off until productized.
     const FEATURE_ACTIVITY_SYNC = false;
@@ -3911,7 +3911,9 @@
         smartSuggestionsMuted: false,
         tipIndex: 0,
         weatherUnit: 'fahrenheit',
-        cheatDayFundEnabled: true
+        cheatDayFundEnabled: true,
+        // Privacy: never send calendar feed URLs through third-party CORS proxies unless user opts in
+        calendarAllowCorsHelper: false
       }
     };
 
@@ -4318,7 +4320,8 @@
           weatherUnit: 'fahrenheit',
           calendarSources: [],
           routineLevel: null,
-          cheatDayFundEnabled: true
+          cheatDayFundEnabled: true,
+          calendarAllowCorsHelper: false
         }
       };
     }
@@ -4462,6 +4465,9 @@
       }
       if (!Array.isArray(state.settings.calendarFeeds)) {
         state.settings.calendarFeeds = [];
+      }
+      if (state.settings.calendarAllowCorsHelper !== true) {
+        state.settings.calendarAllowCorsHelper = false;
       }
       persistCalendarEventIds();
       if (!state.healthSyncs) state.healthSyncs = {};
@@ -14453,7 +14459,7 @@
     });
 
     // ==================== SETTINGS ====================
-    function wireSwitchToggle(el) {
+    function wireSwitchToggle(el, onChange) {
       if (!el) return;
       el.onclick = () => {
         const on = el.getAttribute('aria-checked') !== 'true';
@@ -14461,6 +14467,7 @@
         el.className = `smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${on ? 'bg-rhythm-primary' : 'bg-rhythm-border'}`;
         const knob = el.querySelector('span');
         if (knob) knob.className = `absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : 'translate-x-0'}`;
+        if (typeof onChange === 'function') onChange(on);
       };
     }
 
@@ -14472,6 +14479,7 @@
       
       const smartSuggestionsOn = !state.settings.smartSuggestionsMuted;
       const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
+      const corsHelperOn = state.settings.calendarAllowCorsHelper === true;
       
       modal.innerHTML = `
         <div onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="absolute inset-0"></div>
@@ -14530,18 +14538,19 @@
             <div>
               <label class="block text-xs mb-2 text-rhythm-muted">Calendar (ICS)</label>
               <div class="text-[10px] text-rhythm-muted mb-2 leading-relaxed">
-                Paste a <strong>secret/public iCal URL</strong> from Google, Outlook, or another calendar. Rhythm refreshes it when the app opens. File import stays as a backup.
+                Paste a <strong>secret iCal URL</strong> (ends with <strong>basic.ics</strong>). By default Rhythm only talks to that calendar host — never through public proxies. File import is the most private option.
               </div>
               <div id="settings-calendar-feeds" class="space-y-2 mb-2"></div>
               <div class="flex gap-2 mb-2">
                 <input id="settings-ics-url" type="url" placeholder="https://…/basic.ics"
-                  class="flex-1 min-w-0 bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5 text-xs text-rhythm-text outline-none focus:border-rhythm-primary">
+                  class="flex-1 min-w-0 bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5 text-xs text-rhythm-text outline-none focus:border-rhythm-primary"
+                  autocomplete="off" spellcheck="false">
                 <button type="button" id="settings-ics-add"
                   class="flex-shrink-0 px-3 py-2.5 rounded-2xl bg-rhythm-primary text-white text-xs font-semibold active:opacity-90">
                   Add
                 </button>
               </div>
-              <div class="flex gap-2">
+              <div class="flex gap-2 mb-2">
                 <button type="button" id="settings-ics-refresh"
                   class="flex-1 py-2.5 rounded-2xl bg-rhythm-raised border border-rhythm-border text-xs font-medium text-rhythm-text active:bg-rhythm-border">
                   <i class="fa-solid fa-rotate mr-1.5 text-rhythm-primary-light"></i>Refresh feeds
@@ -14551,8 +14560,20 @@
                   <i class="fa-solid fa-file-import mr-1.5 text-rhythm-primary-light"></i>Import file
                 </button>
               </div>
+              <div class="flex items-start justify-between gap-3 py-2 px-2.5 mb-1.5 rounded-2xl border border-rhythm-border bg-rhythm-raised/50">
+                <div class="min-w-0">
+                  <div class="text-xs font-medium text-rhythm-text">Allow network helper</div>
+                  <div class="text-[10px] text-rhythm-muted leading-snug mt-0.5">
+                    Off by default. When on, failed direct fetches may retry via a <strong>third-party</strong> CORS helper — that service can see your feed URL. Prefer <strong>Import file</strong> for max privacy.
+                  </div>
+                </div>
+                <button type="button" id="calendar-cors-helper-toggle" role="switch" aria-checked="${corsHelperOn}"
+                  class="smart-suggestions-toggle flex-shrink-0 w-11 h-6 rounded-full relative transition-colors ${corsHelperOn ? 'bg-rhythm-primary' : 'bg-rhythm-border'}">
+                  <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${corsHelperOn ? 'translate-x-5' : 'translate-x-0'}"></span>
+                </button>
+              </div>
               <div class="text-[10px] text-rhythm-muted mt-1.5 leading-relaxed">
-                Google: Settings → your calendar → <strong>Integrate calendar</strong> → copy <strong>Secret address in iCal format</strong> (must end with <strong>basic.ics</strong> — not the browser link with <span class="text-rhythm-text">?cid=</span>). Outlook: Share → Publish. Apple: published webcal link.
+                Google: Settings → your calendar → <strong>Integrate calendar</strong> → <strong>Secret address in iCal format</strong> (…/<strong>basic.ics</strong>, not <span class="text-rhythm-text">?cid=</span>). URLs are masked in the list; stored only on this device.
               </div>
             </div>
 
@@ -14593,6 +14614,16 @@
       document.body.appendChild(modal);
       wireSwitchToggle(modal.querySelector('#smart-suggestions-toggle'));
       wireSwitchToggle(modal.querySelector('#cheat-fund-toggle'));
+      wireSwitchToggle(modal.querySelector('#calendar-cors-helper-toggle'), (on) => {
+        state.settings.calendarAllowCorsHelper = on;
+        saveState();
+        showToast(
+          on
+            ? 'Network helper on — feed URLs may pass through a third-party service'
+            : 'Network helper off — direct calendar fetch only',
+          on ? 'warn' : 'info'
+        );
+      });
       renderCalendarFeedsList(modal.querySelector('#settings-calendar-feeds'));
       modal.querySelector('#settings-ics-add')?.addEventListener('click', async () => {
         const input = modal.querySelector('#settings-ics-url');
@@ -14625,6 +14656,10 @@
       const cheatFundToggle = modal.querySelector('#cheat-fund-toggle');
       if (cheatFundToggle) {
         state.settings.cheatDayFundEnabled = cheatFundToggle.getAttribute('aria-checked') === 'true';
+      }
+      const corsHelperToggle = modal.querySelector('#calendar-cors-helper-toggle');
+      if (corsHelperToggle) {
+        state.settings.calendarAllowCorsHelper = corsHelperToggle.getAttribute('aria-checked') === 'true';
       }
       saveState();
       settingsWasOpen = false;
@@ -15230,18 +15265,48 @@
       }
     }
 
+    /** Mask secret tokens / emails for display (full URL stays only in localStorage). */
+    function maskIcsFeedUrl(url) {
+      try {
+        const u = new URL(url);
+        const host = u.hostname.replace(/^www\./, '');
+        const segs = u.pathname.split('/').filter(Boolean);
+        const last = segs[segs.length - 1] || 'feed';
+        const safeLast = /\.ics$/i.test(last) ? last : 'feed';
+        return `${host}/…/${safeLast}`;
+      } catch {
+        return 'Hidden calendar URL';
+      }
+    }
+
+    function isCalendarCorsHelperAllowed() {
+      return state.settings.calendarAllowCorsHelper === true;
+    }
+
     async function fetchIcsText(url) {
       const tryFetch = async (target) => {
-        const res = await fetch(target, { method: 'GET', mode: 'cors', credentials: 'omit', cache: 'no-store' });
+        const res = await fetch(target, {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'omit',
+          cache: 'no-store',
+          referrerPolicy: 'no-referrer'
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.text();
       };
 
-      // Direct fetch first (works when the feed allows CORS)
+      // Privacy default: fetch only the calendar host (URL never leaves the device except to that host)
       try {
         return await tryFetch(url);
       } catch (directErr) {
-        // Static GitHub Pages can't proxy; public CORS helpers as fallback for secret ICS URLs
+        // Opt-in only: third-party CORS helpers can see the full secret feed URL
+        if (!isCalendarCorsHelperAllowed()) {
+          const err = new Error('DIRECT_FETCH_BLOCKED');
+          err.cause = directErr;
+          err.code = 'DIRECT_FETCH_BLOCKED';
+          throw err;
+        }
         const proxies = [
           `https://corsproxy.io/?${encodeURIComponent(url)}`,
           `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
@@ -15322,16 +15387,26 @@
         }
         return { ok: true, count };
       } catch (err) {
-        console.error('Calendar feed sync failed', err);
+        // Do not log the feed URL (may contain secret tokens)
+        console.error('Calendar feed sync failed', err?.code || err?.message || err);
         const msg = err?.message || 'Sync failed';
-        feed.lastError = /failed to fetch|networkerror|load failed/i.test(msg)
-          ? 'Could not reach feed (CORS/network). Use a …/basic.ics secret URL or file import.'
-          : msg;
+        const helperOff = !isCalendarCorsHelperAllowed();
+        if (err?.code === 'DIRECT_FETCH_BLOCKED' || /DIRECT_FETCH_BLOCKED/i.test(msg)) {
+          feed.lastError = helperOff
+            ? 'Direct fetch blocked. Import a .ics file, or enable Allow network helper (third-party).'
+            : 'Could not reach feed even with network helper.';
+        } else if (/failed to fetch|networkerror|load failed/i.test(msg)) {
+          feed.lastError = helperOff
+            ? 'Could not reach feed. Import a .ics file, or enable Allow network helper in Settings.'
+            : 'Could not reach feed (network/helper). Try file import.';
+        } else {
+          feed.lastError = msg;
+        }
         saveState();
         if (!silent) {
           const guide = getIcsUrlGuidance(feed.url);
           showToast(
-            guide || `Couldn’t sync ${feed.label}. Check the URL or use file import.`,
+            guide || feed.lastError || `Couldn’t sync ${feed.label}. Try file import.`,
             'warn'
           );
         }
@@ -15418,9 +15493,14 @@
       }
       applyCalendarSync();
       if (!options.silent) {
+        const helperHint = !anyOk && !isCalendarCorsHelperAllowed()
+          ? ' — try Import file, or enable Allow network helper in Settings'
+          : !anyOk
+            ? ' — try file import'
+            : '';
         showToast(anyOk
           ? `Calendar updated · ${total} event${total === 1 ? '' : 's'} from feeds`
-          : 'Calendar refresh failed — try file import', anyOk ? 'success' : 'warn');
+          : `Calendar refresh failed${helperHint}`, anyOk ? 'success' : 'warn');
       }
       return { ok: anyOk, count: total };
     }
@@ -15439,12 +15519,13 @@
         const status = f.lastError
           ? `<span class="text-rose-300">Error: ${escapeBriefHtml(f.lastError)}</span>`
           : `<span class="text-rhythm-primary-light">${f.lastEventCount || 0} events · ${escapeBriefHtml(when)}</span>`;
+        const masked = maskIcsFeedUrl(f.url);
         return `
           <div class="rounded-2xl border border-rhythm-border bg-rhythm-raised/70 px-3 py-2.5">
             <div class="flex items-start gap-2">
               <div class="flex-1 min-w-0">
                 <div class="text-sm font-semibold text-rhythm-text truncate">${escapeBriefHtml(f.label)}</div>
-                <div class="text-[10px] text-rhythm-muted truncate mt-0.5">${escapeBriefHtml(f.url)}</div>
+                <div class="text-[10px] text-rhythm-muted truncate mt-0.5" title="URL hidden for privacy">${escapeBriefHtml(masked)}</div>
                 <div class="text-[10px] mt-1">${status}</div>
               </div>
               <div class="flex flex-col gap-1 flex-shrink-0">
@@ -15483,18 +15564,20 @@
           <div class="flex items-center justify-between mb-3">
             <div>
               <div class="font-semibold text-lg">Calendar URL</div>
-              <div class="text-[11px] text-rhythm-muted mt-0.5">ICS feed · refreshes when Rhythm opens</div>
+              <div class="text-[11px] text-rhythm-muted mt-0.5">ICS feed · direct fetch only unless network helper is on</div>
             </div>
             <button type="button" onclick="this.closest('.fixed').remove()" class="text-rhythm-muted text-2xl leading-none">×</button>
           </div>
           <div id="schedule-calendar-feeds" class="space-y-2 mb-3"></div>
           <label class="block text-[10px] text-rhythm-muted mb-1">iCal / webcal URL</label>
           <input id="schedule-ics-url" type="url" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
-            class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5 text-xs mb-2 outline-none focus:border-rhythm-primary text-rhythm-text">
+            class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5 text-xs mb-2 outline-none focus:border-rhythm-primary text-rhythm-text"
+            autocomplete="off" spellcheck="false">
           <div class="flex gap-2 mb-2">
             <button type="button" id="schedule-ics-add" class="flex-1 py-3 rounded-2xl bg-rhythm-primary text-white font-semibold text-sm">Add & sync</button>
             <button type="button" id="schedule-ics-refresh" class="flex-1 py-3 rounded-2xl bg-rhythm-raised border border-rhythm-border text-sm font-medium">Refresh all</button>
           </div>
+          <p class="text-[10px] text-rhythm-muted mb-2 leading-relaxed">Feed URLs stay on this device and are masked in the list. If sync fails, use file import or Settings → Allow network helper.</p>
           <button type="button" onclick="this.closest('.fixed').remove(); showScheduleImportModal()"
             class="w-full py-2.5 rounded-2xl text-xs text-rhythm-primary-light font-medium">Or import an .ics file instead</button>
         </div>
