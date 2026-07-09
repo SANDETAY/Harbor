@@ -1355,6 +1355,60 @@
       z-index: 1;
     }
 
+    .rhythm-brief-fab-logo {
+      width: 1.9rem;
+      height: 1.9rem;
+      object-fit: contain;
+      position: relative;
+      z-index: 1;
+      pointer-events: none;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)) brightness(1.08);
+    }
+
+    .today-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.45rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .today-add-btn {
+      flex-shrink: 0;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.45rem 0.8rem;
+      border-radius: 0.75rem;
+      background: var(--rhythm-primary);
+      color: #fff;
+    }
+
+    .today-add-btn:active {
+      opacity: 0.9;
+    }
+
+    .today-voice-btn {
+      flex-shrink: 0;
+      width: 2.15rem;
+      height: 2.15rem;
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--rhythm-surface);
+      border: 1px solid var(--rhythm-border);
+      color: var(--rhythm-primary-light);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .today-voice-btn:active {
+      background: var(--rhythm-raised);
+    }
+
+    .today-voice-btn i {
+      font-size: 0.85rem;
+    }
+
     .rhythm-brief-fab::before {
       content: '';
       position: absolute;
@@ -2861,27 +2915,15 @@
         align-items: start;
       }
 
-      #tab-content-today:not(.hidden) > .flex.items-center.justify-between {
+      #tab-content-today:not(.hidden) > .today-toolbar {
         grid-column: 1 / -1;
       }
 
       #tab-content-today:not(.hidden) > #task-list {
-        grid-column: 1;
+        grid-column: 1 / -1;
         grid-row: 2;
         overflow-y: auto;
         max-height: calc(100vh - 16rem);
-      }
-
-      #tab-content-today:not(.hidden) > #quick-add-bar {
-        grid-column: 2;
-        grid-row: 2;
-        align-self: start;
-        position: sticky;
-        top: 0.5rem;
-        margin-top: 0;
-        padding-top: 0;
-        max-width: none;
-        width: 100%;
       }
 
       #task-list {
@@ -3022,44 +3064,18 @@
       <div id="app-scroll">
       <!-- TODAY TAB -->
       <div id="tab-content-today" class="tab-content px-5 pt-3 bg-rhythm-bg">
-        <div class="flex items-center justify-between mb-3 gap-2">
-          <div class="min-w-0">
-            <div class="section-header font-semibold text-rhythm-text">Today's Tasks</div>
-            <div class="text-[10px] text-rhythm-muted mt-0.5">Due today only · weekly chores live in Rhythm Brief</div>
-          </div>
-          <button type="button" onclick="showQuickTaskModal({ mode: 'habit' })"
-            class="flex-shrink-0 text-[11px] font-semibold px-3 py-1.5 rounded-xl bg-rhythm-primary text-white active:opacity-90">
+        <div class="today-toolbar">
+          <button type="button" onclick="showQuickTaskModal({ mode: 'habit' })" class="today-add-btn" id="today-add-btn">
             <i class="fa-solid fa-plus mr-1"></i>Add
+          </button>
+          <button type="button" onclick="startVoiceAdd()" class="today-voice-btn" id="today-voice-btn" aria-label="Add task by voice">
+            <i class="fa-solid fa-microphone"></i>
           </button>
         </div>
 
         <div id="task-swipe-hint" class="swipe-row-hint">Swipe a task left for Edit or Delete</div>
         <!-- Task List -->
         <div id="task-list" class="space-y-2"></div>
-
-        <!-- Quick Add -->
-        <div id="quick-add-bar" class="quick-add-bar">
-          <div class="flex gap-x-1.5 items-center">
-            <div class="quick-add-field flex-1 relative">
-              <input id="quick-add-input" type="text" spellcheck="true" autocapitalize="words"
-                class="quick-add-input input-polish w-full bg-rhythm-surface border border-rhythm-border focus:border-rhythm-primary placeholder:text-rhythm-muted outline-none"
-                placeholder="Quick add a task or habit…">
-              <button type="button" onclick="addHabitFromInput()"
-                class="quick-add-submit absolute bg-rhythm-primary hover:bg-rhythm-primary-light active:opacity-90 transition-colors text-white flex items-center justify-center"
-                aria-label="Add task">
-                <i class="fa-solid fa-plus"></i>
-              </button>
-            </div>
-            <button type="button" onclick="startVoiceAdd()"
-              class="quick-add-voice flex-shrink-0 bg-rhythm-surface hover:bg-rhythm-raised active:bg-rhythm-border transition-colors border border-rhythm-border flex items-center justify-center text-rhythm-primary-light"
-              aria-label="Add task by voice">
-              <i class="fa-solid fa-microphone"></i>
-            </button>
-          </div>
-          <div class="text-center min-w-0">
-            <span class="quick-add-hint text-rhythm-muted">Opens type picker · or say “add task walk the dog”</span>
-          </div>
-        </div>
       </div>
 
       <!-- LIFE TAB -->
@@ -3218,7 +3234,7 @@
         onclick="showRhythmBriefModal()"
         aria-label="Open your Rhythm Brief">
         <span id="rhythm-brief-fab-badge" class="rhythm-brief-fab-badge hidden" aria-hidden="true"></span>
-        <i class="fa-solid fa-wave-square" aria-hidden="true"></i>
+        <img src="./rythm-splash-mark.svg" alt="" class="rhythm-brief-fab-logo" aria-hidden="true">
       </button>
       </div><!-- /app-shell -->
       </div><!-- /app-content-wrap -->
@@ -3270,7 +3286,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v50';
+    const RHYTHM_BUILD = 'v51';
 
     let rhythmBriefMode = 'day';
     let state = {
@@ -8803,7 +8819,7 @@
       if (syncPending.length) {
         sections.push({ type: 'sync-pending', label: 'Done today — sync activity', items: syncPending, variant: 'completed' });
       }
-      sections.push({ type: 'habits', label: "Today's Tasks", items: active, variant: 'active' });
+      sections.push({ type: 'habits', label: '', items: active, variant: 'active' });
       return sections;
     }
 
@@ -9238,10 +9254,12 @@
 
       sections.forEach(section => {
         if (section.items.length === 0) return;
-        const hdr = document.createElement('div');
-        hdr.className = `feed-section-label font-semibold mb-2 mt-3 first:mt-0 ${section.variant === 'upcoming' ? 'text-[10px] uppercase tracking-wider text-rhythm-muted/70' : 'text-rhythm-muted'}`;
-        hdr.textContent = section.label;
-        container.appendChild(hdr);
+        if (section.label) {
+          const hdr = document.createElement('div');
+          hdr.className = `feed-section-label font-semibold mb-2 mt-3 first:mt-0 ${section.variant === 'upcoming' ? 'text-[10px] uppercase tracking-wider text-rhythm-muted/70' : 'text-rhythm-muted'}`;
+          hdr.textContent = section.label;
+          container.appendChild(hdr);
+        }
 
         section.items.forEach(item => {
           if (section.type === 'sync-pending') {
@@ -10581,7 +10599,7 @@
       { id: 'library-browse', reason: 'The <strong>Library</strong> is a catalog of chores and habits — tap any card to add it to your Rhythm without typing from scratch.', cta: 'Open Library', action: 'library' },
       { id: 'library-custom', reason: 'Built something unique? Use <strong>+ Yours</strong> in the Library to save custom tasks you can re-add anytime.', cta: 'Add custom task', action: 'library-custom' },
       { id: 'library-columns', reason: 'The <strong>Library</strong> is organized in columns — Daily Habits, Weekly Chores, Monthly Maintenance, and more. Use the search bar to narrow down fast.', cta: 'Browse Library', action: 'library' },
-      { id: 'quick-add', reason: 'Type in the quick-add bar on Today to spin up a one-off task — set difficulty and schedule before you save.', cta: 'Add a task', action: 'quick-add' },
+      { id: 'quick-add', reason: 'Tap <strong>Add</strong> on Today (or the mic) to spin up a task — set type, difficulty, and schedule before you save.', cta: 'Add a task', action: 'quick-add' },
       { id: 'schedule-interval', reason: 'When adding a task, <strong>Adjust schedule</strong> supports daily, weekly, biweekly, monthly, and custom intervals — chores can repeat on your cadence.', cta: 'Add scheduled task', action: 'quick-add' },
       { id: 'life-bills', reason: 'The <strong>Life</strong> tab tracks bills with due dates and overdue states — Rhythm can nudge you when something needs attention.', cta: 'View bills', action: 'life-bills' },
       { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> with a master list and trip mode — add items by voice or keyboard and check them off while shopping.', cta: 'Open grocery', action: 'life-grocery' },
@@ -10915,7 +10933,7 @@
       {
         id: 'today-intro',
         title: 'Today tab',
-        body: 'Your daily tasks will be shown here. Tasks for that day show up every morning.',
+        body: 'Your <strong>daily</strong> tasks show up here each morning. Weekly, monthly, and longer chores stay out of the way — they live in the <strong>Rhythm Brief</strong> instead.',
         target: () => document.getElementById('tab-today'),
         cardPlacement: 'below',
         prepare: () => switchTab('today')
@@ -11013,7 +11031,7 @@
       {
         id: 'rhythm-brief',
         title: 'Rhythm Brief',
-        body: 'Tap the glowing <strong>Rhythm Brief</strong> button (bottom right) for a smart day-at-a-glance — tasks, schedule, bills, and grocery sorted by priority.',
+        body: 'Tap the <strong>Rhythm logo</strong> (bottom right) for your day &amp; week at a glance. Weekly, monthly, and longer tasks show up here — along with schedule, bills, and grocery — so Today stays focused on what matters now.',
         target: () => document.getElementById('rhythm-brief-launcher'),
         waitFor: 'rhythm-brief-open',
         interactive: true,
@@ -11864,12 +11882,14 @@
       const voiceContext = getVoiceContext();
       
       if (!SpeechRec) {
-        const input = voiceContext === 'grocery'
-          ? document.getElementById('grocery-add-input')
-          : document.getElementById('quick-add-input');
-        if (input) {
-          input.focus();
-          input.placeholder = voiceContext === 'grocery' ? 'Voice not supported. Type item...' : 'Voice not supported here. Type instead.';
+        if (voiceContext === 'grocery') {
+          const input = document.getElementById('grocery-add-input');
+          if (input) {
+            input.focus();
+            input.placeholder = 'Voice not supported. Type item...';
+          }
+        } else {
+          showQuickTaskModal({ mode: 'habit' });
         }
         showToast("Voice recognition needs Chrome/Edge on desktop or Android");
         return;
@@ -13868,26 +13888,18 @@
     }
 
     function initQuickAddInput() {
-      const input = document.getElementById('quick-add-input');
-      if (!input || input.dataset.enterBound === '1') return;
-      input.dataset.enterBound = '1';
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          addHabitFromInput();
-        }
-      });
+      // Bottom quick-add field removed — Add opens the task modal; voice is on the Today toolbar.
     }
 
     function initEnergyButtons() {
       // Set initial button styles
       setEnergy(currentEnergy);
       
-      // Keyboard support hint
+      // Keyboard: "/" opens Add task modal
       document.addEventListener('keydown', (e) => {
         if (e.key === '/' && document.activeElement.tagName === 'BODY') {
           e.preventDefault();
-          document.getElementById('quick-add-input').focus();
+          if (currentTab === 'today') showQuickTaskModal({ mode: 'habit' });
         }
       });
     }
