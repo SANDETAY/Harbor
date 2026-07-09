@@ -64,7 +64,7 @@ Every `git push` to `main` updates the live site. Testers can also **Add to Home
 | Streaks & Cheat Day Fund | Live |
 | Weather (hourly forecast) | Live (uses device location) |
 | Voice commands | Chrome/Edge only |
-| Calendar sync (Google/Outlook/Apple) | Simulated — connects in UI, mock data |
+| Calendar (ICS URL + file import) | Live — paste iCal URL and/or upload .ics |
 | Garmin / Apple Health sync | Simulated — UI placeholder |
 | Subscriptions tracker | Live (manual + CSV import) |
 
@@ -79,7 +79,7 @@ py -m playwright install chromium
 py scripts\sim-test.py
 ```
 
-Runs 12 headless mobile-browser scenarios (onboarding, smart suggestions, Rhythm Brief, energy sort, streaks, calendar simulate, fitness sync).
+Runs headless mobile-browser scenarios (onboarding, smart suggestions, Rhythm Brief, energy sort, streaks, calendar ICS UI, fitness sync).
 
 ## Reset for Fresh Test
 

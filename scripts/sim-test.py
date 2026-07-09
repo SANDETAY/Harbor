@@ -216,10 +216,10 @@ def run_tests():
         page.wait_for_selector("#app-menu-sheet", timeout=5000)
         page.locator("#app-menu-sheet [data-app-menu-action='settings']").click()
         page.wait_for_timeout(600)
-        if page.locator("text=Google Calendar").count() > 0 or page.locator("text=Calendar").count() > 0:
-            ok("settings calendar section")
+        if page.locator("text=Calendar (ICS)").count() > 0 or page.locator("#settings-ics-url").count() > 0:
+            ok("settings calendar ICS section")
         else:
-            fail("settings calendar section")
+            fail("settings calendar ICS section")
         page.keyboard.press("Escape")
         page.wait_for_timeout(300)
         page.locator(".fixed .text-2xl", has_text="×").first.click(timeout=3000)

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rhythm-preview-v60';
+const CACHE_NAME = 'rhythm-preview-v61';
 const PRECACHE = [
   './rhythm-favicon-32.png',
   './rhythm-apple-touch.png',

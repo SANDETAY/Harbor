@@ -3665,8 +3665,10 @@
           <div class="flex gap-2">
             <button type="button" onclick="showScheduleImportModal()"
               class="flex-1 py-2.5 text-xs bg-rhythm-surface hover:bg-rhythm-border border border-rhythm-border rounded-2xl text-rhythm-text">Import file</button>
+            <button type="button" onclick="showCalendarFeedModal()"
+              class="flex-1 py-2.5 text-xs bg-rhythm-raised hover:bg-rhythm-border border border-rhythm-border rounded-2xl text-rhythm-primary-light font-medium">Calendar URL</button>
             <button type="button" onclick="showAddCalendarEventModal()"
-              class="flex-1 py-2.5 text-xs bg-rhythm-primary/90 hover:bg-rhythm-primary border border-rhythm-primary/50 rounded-2xl text-white font-medium">+ Add event</button>
+              class="flex-1 py-2.5 text-xs bg-rhythm-primary/90 hover:bg-rhythm-primary border border-rhythm-primary/50 rounded-2xl text-white font-medium">+ Event</button>
           </div>
         </div>
 
@@ -3850,7 +3852,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v60';
+    const RHYTHM_BUILD = 'v61';
 
     // Fitness / wearable sync (Today “Done — sync”, device modal, etc.) — off until productized.
     const FEATURE_ACTIVITY_SYNC = false;
@@ -3898,6 +3900,7 @@
           samsung: { connected: false, email: null, connectedAt: null }
         },
         importedCalendarEvents: [],
+        calendarFeeds: [], // { id, url, label, lastSyncedAt, lastEventCount, lastError }
         workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
         eventTimeFormat: '12h',
         scheduleView: 'today',
@@ -4302,6 +4305,7 @@
             samsung: { connected: false, email: null, connectedAt: null }
           },
           importedCalendarEvents: [],
+          calendarFeeds: [],
           workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
           eventTimeFormat: '12h',
           scheduleView: 'today',
@@ -4455,6 +4459,9 @@
       }
       if (!state.settings.importedCalendarEvents) {
         state.settings.importedCalendarEvents = [];
+      }
+      if (!Array.isArray(state.settings.calendarFeeds)) {
+        state.settings.calendarFeeds = [];
       }
       persistCalendarEventIds();
       if (!state.healthSyncs) state.healthSyncs = {};
@@ -8497,8 +8504,6 @@
         const when = formatEventDateLabel(eventDate);
         if (calState.editingId) {
           showToast(`Event updated: ${title} · ${when} ${formatScheduleEventTime(time)}`);
-        } else if (hasAnyCalendarConnected()) {
-          showToast(`Synced to ${getConnectedCalendarsLabel()}`);
         } else {
           showToast(`Event added: ${title} · ${when} ${formatScheduleEventTime(time)}`);
         }
@@ -8531,11 +8536,7 @@
       renderSchedule();
       renderTodayFeed();
       updateSmartBanner();
-      if (hasAnyCalendarConnected()) {
-        showToast(`Removed from ${getConnectedCalendarsLabel()}`);
-      } else {
-        showToast('Event removed');
-      }
+      showToast('Event removed');
     }
 
     function renderScheduleEventRow(ev, options = {}) {
@@ -11491,7 +11492,7 @@
       { id: 'life-bills', reason: 'The <strong>Life</strong> tab tracks bills with due dates and overdue states — Rhythm can nudge you when something needs attention.', cta: 'View bills', action: 'life-bills' },
       { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> with a master list and trip mode — add items by voice or keyboard and check them off while shopping.', cta: 'Open grocery', action: 'life-grocery' },
       { id: 'life-schedule', reason: '<strong>Life → Schedule</strong> holds appointments and events — block time so suggestions can find gaps between meetings.', cta: 'View schedule', action: 'life-schedule' },
-      { id: 'calendar-sync', reason: 'Link Google, Outlook, Apple, or Samsung calendars in <strong>Settings</strong>, then import a <strong>.ics</strong> file — Rhythm reads free time and avoids suggesting tasks during busy blocks.', cta: 'Connect calendar', action: 'settings' },
+      { id: 'calendar-sync', reason: 'Add a calendar <strong>ICS URL</strong> in Settings (or Life → Schedule → Calendar URL). Rhythm refreshes events when you open the app — file import works as a backup.', cta: 'Calendar settings', action: 'settings' },
       { id: 'work-schedule', reason: 'Set your work hours in <strong>Settings</strong> — off-hours and weekends unlock different suggestion windows.', cta: 'Profile settings', action: 'settings' },
       { id: 'weather-strip', reason: 'The hourly weather strip at the top forecasts the next 24 hours — tap it for the full pane through tomorrow when planning yard work or a walk.', cta: 'See forecast', action: 'weather' },
       { id: 'outdoor-rain', reason: 'Outdoor tasks get rain warnings when afternoon showers are likely — reschedule before you get caught in the weather.', cta: 'Check weather', action: 'weather' },
@@ -14469,7 +14470,6 @@
       const modal = document.createElement('div');
       modal.className = `fixed inset-0 bg-rhythm-bg/70 modal-overlay-blur flex items-end z-[60]`;
       
-      const conns = getCalendarConnections();
       const smartSuggestionsOn = !state.settings.smartSuggestionsMuted;
       const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
       
@@ -14528,16 +14528,31 @@
             </div>
 
             <div>
-              <label class="block text-xs mb-2 text-rhythm-muted">Calendars</label>
-              <div class="space-y-2">
-                ${CALENDAR_PROVIDERS.map(p => renderCalendarProviderCard(p, conns[p.id], { onboarding: false })).join('')}
+              <label class="block text-xs mb-2 text-rhythm-muted">Calendar (ICS)</label>
+              <div class="text-[10px] text-rhythm-muted mb-2 leading-relaxed">
+                Paste a <strong>secret/public iCal URL</strong> from Google, Outlook, or another calendar. Rhythm refreshes it when the app opens. File import stays as a backup.
               </div>
-              <button type="button" onclick="triggerCalendarICSImport('google')"
-                class="w-full mt-2 py-2.5 rounded-2xl bg-rhythm-raised border border-rhythm-border text-xs font-medium text-rhythm-text active:bg-rhythm-border">
-                <i class="fa-solid fa-file-import mr-1.5 text-rhythm-primary-light"></i> Import iCalendar file (.ics / .ical)
-              </button>
+              <div id="settings-calendar-feeds" class="space-y-2 mb-2"></div>
+              <div class="flex gap-2 mb-2">
+                <input id="settings-ics-url" type="url" placeholder="https://…/basic.ics"
+                  class="flex-1 min-w-0 bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5 text-xs text-rhythm-text outline-none focus:border-rhythm-primary">
+                <button type="button" id="settings-ics-add"
+                  class="flex-shrink-0 px-3 py-2.5 rounded-2xl bg-rhythm-primary text-white text-xs font-semibold active:opacity-90">
+                  Add
+                </button>
+              </div>
+              <div class="flex gap-2">
+                <button type="button" id="settings-ics-refresh"
+                  class="flex-1 py-2.5 rounded-2xl bg-rhythm-raised border border-rhythm-border text-xs font-medium text-rhythm-text active:bg-rhythm-border">
+                  <i class="fa-solid fa-rotate mr-1.5 text-rhythm-primary-light"></i>Refresh feeds
+                </button>
+                <button type="button" onclick="triggerCalendarICSImport()"
+                  class="flex-1 py-2.5 rounded-2xl bg-rhythm-raised border border-rhythm-border text-xs font-medium text-rhythm-text active:bg-rhythm-border">
+                  <i class="fa-solid fa-file-import mr-1.5 text-rhythm-primary-light"></i>Import file
+                </button>
+              </div>
               <div class="text-[10px] text-rhythm-muted mt-1.5 leading-relaxed">
-                Export from Apple, Google, or Outlook as an <strong>iCalendar File</strong> (.ics / .ical). Also under <strong>Life → Schedule → Import file</strong>.
+                Google: Calendar settings → Integrate calendar → <strong>Secret address in iCal format</strong>. Outlook: Share → Publish. Apple: often needs a published/shared webcal link.
               </div>
             </div>
 
@@ -14578,6 +14593,24 @@
       document.body.appendChild(modal);
       wireSwitchToggle(modal.querySelector('#smart-suggestions-toggle'));
       wireSwitchToggle(modal.querySelector('#cheat-fund-toggle'));
+      renderCalendarFeedsList(modal.querySelector('#settings-calendar-feeds'));
+      modal.querySelector('#settings-ics-add')?.addEventListener('click', async () => {
+        const input = modal.querySelector('#settings-ics-url');
+        const url = (input?.value || '').trim();
+        if (!url) {
+          showToast('Paste an iCal URL first', 'warn');
+          return;
+        }
+        const ok = await addCalendarFeedFromUrl(url);
+        if (ok && input) input.value = '';
+        renderCalendarFeedsList(modal.querySelector('#settings-calendar-feeds'));
+        updateCalendarStatusUI();
+      });
+      modal.querySelector('#settings-ics-refresh')?.addEventListener('click', async () => {
+        await refreshAllCalendarFeeds({ silent: false });
+        renderCalendarFeedsList(modal.querySelector('#settings-calendar-feeds'));
+        updateCalendarStatusUI();
+      });
     }
 
     function saveSettingsFromModal(btn) {
@@ -14603,7 +14636,7 @@
       if (reenabledSmartSuggestions) {
         showToast('Smart suggestions turned back on');
       } else {
-        showToast(`Settings saved · ${getConnectedCalendarsLabel()}`);
+        showToast(`Settings saved · ${getCalendarStatusLabel()}`);
       }
       
       if (currentProjectionHabit) {
@@ -14938,7 +14971,6 @@
 
     let selectedStarterKeys = STARTER_ROUTINE_TASKS.map(t => t.key);
     let selectedMaintenancePref = 'mixed';
-    let onboardingCalendarConnections = null;
 
     function createStarterHabits(keys) {
       const ts = Date.now();
@@ -14991,53 +15023,6 @@
       }
     }
 
-    const CALENDAR_PROVIDERS = [
-      {
-        id: 'google',
-        name: 'Google Calendar',
-        subtitle: 'Gmail, Workspace & Android',
-        icon: 'fa-google',
-        iconClass: 'fa-brands',
-        accent: 'text-red-400',
-        btnClass: 'bg-rhythm-raised hover:bg-rhythm-border border-rhythm-border',
-        defaultEmail: 'you@gmail.com',
-        icsHint: 'Google Calendar → Settings → Import & export → Export'
-      },
-      {
-        id: 'outlook',
-        name: 'Outlook',
-        subtitle: 'Microsoft 365, Hotmail & Teams',
-        icon: 'fa-microsoft',
-        iconClass: 'fa-brands',
-        accent: 'text-sky-400',
-        btnClass: 'bg-rhythm-raised hover:bg-rhythm-border border-rhythm-border',
-        defaultEmail: 'you@outlook.com',
-        icsHint: 'Outlook.com → Calendar → Share → Publish or export .ics'
-      },
-      {
-        id: 'apple',
-        name: 'Apple Calendar',
-        subtitle: 'iPhone, iPad & Mac',
-        icon: 'fa-apple',
-        iconClass: 'fa-brands',
-        accent: 'text-rhythm-text',
-        btnClass: 'bg-rhythm-raised hover:bg-rhythm-border border-rhythm-border',
-        defaultEmail: 'you@icloud.com',
-        icsHint: 'Mac Calendar → File → Export, or share calendar as .ics'
-      },
-      {
-        id: 'samsung',
-        name: 'Samsung Calendar',
-        subtitle: 'Galaxy phones & tablets (Google sync)',
-        icon: 'fa-calendar-days',
-        iconClass: 'fa-solid',
-        accent: 'text-indigo-300',
-        btnClass: 'bg-rhythm-raised hover:bg-rhythm-border border-rhythm-border',
-        defaultEmail: 'you@gmail.com',
-        icsHint: 'Samsung Calendar → Settings → Sync with Google, then export from Google Calendar'
-      }
-    ];
-
     const MAINTENANCE_PREF_OPTIONS = [
       {
         id: 'diy',
@@ -15080,15 +15065,6 @@
       const p = pref || getMaintenancePreference();
       const opt = MAINTENANCE_PREF_OPTIONS.find(o => o.id === p);
       return opt ? opt.title : 'Mix of Both';
-    }
-
-    function getCalendarConnections() {
-      return state.settings.calendarConnections || {
-        google: { connected: false, email: null },
-        outlook: { connected: false, email: null },
-        apple: { connected: false, email: null },
-        samsung: { connected: false, email: null }
-      };
     }
 
     function unfoldICSText(text) {
@@ -15186,30 +15162,300 @@
       return events.sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
     }
 
-    function importCalendarICSFromText(text, sourceLabel = 'iCalendar file') {
-      const events = parseICSContent(text);
-      state.settings.importedCalendarEvents = normalizeCalendarEvents(events);
+    function getCalendarFeeds() {
+      if (!Array.isArray(state.settings.calendarFeeds)) state.settings.calendarFeeds = [];
+      return state.settings.calendarFeeds;
+    }
+
+    function normalizeIcsFeedUrl(raw) {
+      let url = String(raw || '').trim();
+      if (!url) return '';
+      if (url.startsWith('webcal://')) url = 'https://' + url.slice('webcal://'.length);
+      if (url.startsWith('webcals://')) url = 'https://' + url.slice('webcals://'.length);
+      try {
+        const u = new URL(url);
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
+        return u.toString();
+      } catch {
+        return '';
+      }
+    }
+
+    function calendarFeedLabelFromUrl(url) {
+      try {
+        const host = new URL(url).hostname.replace(/^www\./, '');
+        if (/google/.test(host)) return 'Google Calendar';
+        if (/live\.com|office|outlook|microsoft/.test(host)) return 'Outlook';
+        if (/icloud|apple/.test(host)) return 'Apple Calendar';
+        return host || 'Calendar feed';
+      } catch {
+        return 'Calendar feed';
+      }
+    }
+
+    async function fetchIcsText(url) {
+      const tryFetch = async (target) => {
+        const res = await fetch(target, { method: 'GET', mode: 'cors', credentials: 'omit', cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.text();
+      };
+
+      // Direct fetch first (works when the feed allows CORS)
+      try {
+        return await tryFetch(url);
+      } catch (directErr) {
+        // Static GitHub Pages can't proxy; public CORS helpers as fallback for secret ICS URLs
+        const proxies = [
+          `https://corsproxy.io/?${encodeURIComponent(url)}`,
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+        ];
+        let lastErr = directErr;
+        for (const proxy of proxies) {
+          try {
+            return await tryFetch(proxy);
+          } catch (e) {
+            lastErr = e;
+          }
+        }
+        throw lastErr;
+      }
+    }
+
+    function mergeImportedEventsFromSource(sourceId, events, sourceLabel) {
+      const existing = Array.isArray(state.settings.importedCalendarEvents)
+        ? state.settings.importedCalendarEvents
+        : [];
+      const kept = existing.filter(e => e.calendarSource !== sourceId);
+      const tagged = normalizeCalendarEvents(events).map(e => ({
+        ...e,
+        calendarSource: sourceId,
+        calendarSourceLabel: sourceLabel
+      }));
+      state.settings.importedCalendarEvents = normalizeCalendarEvents([...kept, ...tagged]);
       if (!state.settings.mockCalendar) {
         state.settings.mockCalendar = { events: [], freeMinutes: 0, note: '', weekAhead: [] };
       }
-      state.settings.mockCalendar.note = events.length
-        ? `Imported from ${sourceLabel} — ${events.length} event${events.length === 1 ? '' : 's'}`
+      const n = state.settings.importedCalendarEvents.length;
+      state.settings.mockCalendar.note = n
+        ? `Calendar · ${n} event${n === 1 ? '' : 's'} loaded`
         : '';
+      return tagged.length;
+    }
+
+    function importCalendarICSFromText(text, sourceLabel = 'iCalendar file', options = {}) {
+      const sourceId = options.sourceId || 'file-import';
+      const events = parseICSContent(text);
+      const count = mergeImportedEventsFromSource(sourceId, events, sourceLabel);
       refreshCalendarCache();
       saveState();
       renderSchedule();
       renderTodayFeed();
       updateSmartBanner();
       updateCalendarStatusUI();
-      switchTab('life');
-      switchLifePanel('schedule');
-      if (events.length) {
-        showToast(`Imported ${events.length} event${events.length === 1 ? '' : 's'} from ${sourceLabel}`);
+      if (options.navigateToSchedule !== false) {
+        switchTab('life');
+        switchLifePanel('schedule');
       }
-      return events.length;
+      if (count && options.silent !== true) {
+        showToast(`Imported ${count} event${count === 1 ? '' : 's'} from ${sourceLabel}`);
+      }
+      return count;
     }
 
-    function triggerCalendarICSImport(providerId) {
+    async function syncCalendarFeed(feed, options = {}) {
+      const silent = options.silent === true;
+      try {
+        const text = await fetchIcsText(feed.url);
+        if (!/BEGIN:VCALENDAR/i.test(text)) {
+          throw new Error('Not a valid iCalendar feed');
+        }
+        const count = importCalendarICSFromText(text, feed.label || 'calendar feed', {
+          sourceId: feed.id,
+          silent: true,
+          navigateToSchedule: false
+        });
+        feed.lastSyncedAt = new Date().toISOString();
+        feed.lastEventCount = count;
+        feed.lastError = null;
+        saveState();
+        if (!silent) {
+          showToast(count
+            ? `Synced ${count} event${count === 1 ? '' : 's'} from ${feed.label}`
+            : `Feed synced — no upcoming events in ${feed.label}`);
+        }
+        return { ok: true, count };
+      } catch (err) {
+        console.error('Calendar feed sync failed', err);
+        feed.lastError = err?.message || 'Sync failed';
+        saveState();
+        if (!silent) {
+          showToast(`Couldn’t sync ${feed.label}. Check the URL or use file import.`, 'warn');
+        }
+        return { ok: false, error: feed.lastError };
+      }
+    }
+
+    async function addCalendarFeedFromUrl(rawUrl, options = {}) {
+      const url = normalizeIcsFeedUrl(rawUrl);
+      if (!url) {
+        showToast('Enter a valid http(s) or webcal calendar URL', 'warn');
+        return false;
+      }
+      const feeds = getCalendarFeeds();
+      if (feeds.some(f => f.url === url)) {
+        showToast('That calendar URL is already added');
+        const existing = feeds.find(f => f.url === url);
+        if (existing) await syncCalendarFeed(existing, { silent: options.silent });
+        return true;
+      }
+      const feed = {
+        id: 'feed-' + Date.now(),
+        url,
+        label: options.label || calendarFeedLabelFromUrl(url),
+        lastSyncedAt: null,
+        lastEventCount: 0,
+        lastError: null
+      };
+      feeds.push(feed);
+      saveState();
+      showToast(`Adding ${feed.label}…`);
+      const result = await syncCalendarFeed(feed, { silent: false });
+      applyCalendarSync();
+      return result.ok;
+    }
+
+    async function removeCalendarFeed(feedId) {
+      const feeds = getCalendarFeeds();
+      state.settings.calendarFeeds = feeds.filter(f => f.id !== feedId);
+      if (Array.isArray(state.settings.importedCalendarEvents)) {
+        state.settings.importedCalendarEvents = state.settings.importedCalendarEvents
+          .filter(e => e.calendarSource !== feedId);
+      }
+      refreshCalendarCache();
+      saveState();
+      renderSchedule();
+      updateSmartBanner();
+      updateCalendarStatusUI();
+      showToast('Calendar feed removed');
+    }
+
+    async function refreshAllCalendarFeeds(options = {}) {
+      const feeds = getCalendarFeeds();
+      if (!feeds.length) {
+        if (!options.silent) showToast('No calendar URLs yet — add one in Settings');
+        return { ok: true, count: 0 };
+      }
+      if (!options.silent) showToast(`Refreshing ${feeds.length} calendar feed${feeds.length === 1 ? '' : 's'}…`);
+      let total = 0;
+      let anyOk = false;
+      for (const feed of feeds) {
+        const res = await syncCalendarFeed(feed, { silent: true });
+        if (res.ok) {
+          anyOk = true;
+          total += res.count || 0;
+        }
+      }
+      applyCalendarSync();
+      if (!options.silent) {
+        showToast(anyOk
+          ? `Calendar updated · ${total} event${total === 1 ? '' : 's'} from feeds`
+          : 'Calendar refresh failed — try file import', anyOk ? 'success' : 'warn');
+      }
+      return { ok: anyOk, count: total };
+    }
+
+    function renderCalendarFeedsList(container) {
+      if (!container) return;
+      const feeds = getCalendarFeeds();
+      if (!feeds.length) {
+        container.innerHTML = `<div class="text-[11px] text-rhythm-muted px-1 py-2">No calendar URLs yet.</div>`;
+        return;
+      }
+      container.innerHTML = feeds.map(f => {
+        const when = f.lastSyncedAt
+          ? new Date(f.lastSyncedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+          : 'Not synced yet';
+        const status = f.lastError
+          ? `<span class="text-rose-300">Error: ${escapeBriefHtml(f.lastError)}</span>`
+          : `<span class="text-rhythm-primary-light">${f.lastEventCount || 0} events · ${escapeBriefHtml(when)}</span>`;
+        return `
+          <div class="rounded-2xl border border-rhythm-border bg-rhythm-raised/70 px-3 py-2.5">
+            <div class="flex items-start gap-2">
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-semibold text-rhythm-text truncate">${escapeBriefHtml(f.label)}</div>
+                <div class="text-[10px] text-rhythm-muted truncate mt-0.5">${escapeBriefHtml(f.url)}</div>
+                <div class="text-[10px] mt-1">${status}</div>
+              </div>
+              <div class="flex flex-col gap-1 flex-shrink-0">
+                <button type="button" data-feed-refresh="${f.id}" class="text-[10px] px-2 py-1 rounded-lg bg-rhythm-surface border border-rhythm-border text-rhythm-primary-light">Refresh</button>
+                <button type="button" data-feed-remove="${f.id}" class="text-[10px] px-2 py-1 rounded-lg text-rose-300/90">Remove</button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+
+      container.querySelectorAll('[data-feed-refresh]').forEach(btn => {
+        btn.onclick = async () => {
+          const feed = getCalendarFeeds().find(f => f.id === btn.dataset.feedRefresh);
+          if (!feed) return;
+          await syncCalendarFeed(feed, { silent: false });
+          applyCalendarSync();
+          renderCalendarFeedsList(container);
+          updateCalendarStatusUI();
+        };
+      });
+      container.querySelectorAll('[data-feed-remove]').forEach(btn => {
+        btn.onclick = async () => {
+          await removeCalendarFeed(btn.dataset.feedRemove);
+          renderCalendarFeedsList(container);
+        };
+      });
+    }
+
+    function showCalendarFeedModal() {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-rhythm-bg/70 modal-overlay-blur flex items-end z-[60]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-rhythm-surface border-t border-rhythm-border rounded-t-3xl p-5 text-sm max-h-[85vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="font-semibold text-lg">Calendar URL</div>
+              <div class="text-[11px] text-rhythm-muted mt-0.5">ICS feed · refreshes when Rhythm opens</div>
+            </div>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="text-rhythm-muted text-2xl leading-none">×</button>
+          </div>
+          <div id="schedule-calendar-feeds" class="space-y-2 mb-3"></div>
+          <label class="block text-[10px] text-rhythm-muted mb-1">iCal / webcal URL</label>
+          <input id="schedule-ics-url" type="url" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
+            class="w-full bg-rhythm-raised border border-rhythm-border rounded-2xl px-3 py-2.5 text-xs mb-2 outline-none focus:border-rhythm-primary text-rhythm-text">
+          <div class="flex gap-2 mb-2">
+            <button type="button" id="schedule-ics-add" class="flex-1 py-3 rounded-2xl bg-rhythm-primary text-white font-semibold text-sm">Add & sync</button>
+            <button type="button" id="schedule-ics-refresh" class="flex-1 py-3 rounded-2xl bg-rhythm-raised border border-rhythm-border text-sm font-medium">Refresh all</button>
+          </div>
+          <button type="button" onclick="this.closest('.fixed').remove(); showScheduleImportModal()"
+            class="w-full py-2.5 rounded-2xl text-xs text-rhythm-primary-light font-medium">Or import an .ics file instead</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      const list = modal.querySelector('#schedule-calendar-feeds');
+      renderCalendarFeedsList(list);
+      modal.querySelector('#schedule-ics-add').onclick = async () => {
+        const input = modal.querySelector('#schedule-ics-url');
+        const ok = await addCalendarFeedFromUrl(input?.value || '');
+        if (ok && input) input.value = '';
+        renderCalendarFeedsList(list);
+        updateCalendarStatusUI();
+      };
+      modal.querySelector('#schedule-ics-refresh').onclick = async () => {
+        await refreshAllCalendarFeeds({ silent: false });
+        renderCalendarFeedsList(list);
+        updateCalendarStatusUI();
+      };
+    }
+
+    function triggerCalendarICSImport() {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = '.ics,.ical,.ifb,text/calendar,application/ics';
@@ -15218,11 +15464,10 @@
         if (!file) return;
         try {
           const text = await file.text();
-          const provider = CALENDAR_PROVIDERS.find(p => p.id === providerId);
-          const label = provider?.name || 'calendar';
-          const count = importCalendarICSFromText(text, label);
+          const count = importCalendarICSFromText(text, file.name || 'iCalendar file', {
+            sourceId: 'file-import'
+          });
           applyCalendarSync();
-          refreshSettingsModal();
           if (!count) showToast('No upcoming events found — try exporting a fresh iCalendar file');
         } catch (err) {
           console.error('ICS import failed', err);
@@ -15232,77 +15477,32 @@
       input.click();
     }
 
-    function getOnboardingCalendarConnections() {
-      if (!onboardingCalendarConnections) {
-        onboardingCalendarConnections = JSON.parse(JSON.stringify(getCalendarConnections()));
+    function hasAnyCalendarConnected() {
+      return getCalendarFeeds().length > 0 || !!(state.settings.importedCalendarEvents?.length);
+    }
+
+    function getCalendarStatusLabel() {
+      const feeds = getCalendarFeeds();
+      const n = state.settings.importedCalendarEvents?.length || 0;
+      if (feeds.length && n) {
+        return feeds.length === 1
+          ? `${feeds[0].label} · ${n} events`
+          : `${feeds.length} feeds · ${n} events`;
       }
-      return onboardingCalendarConnections;
-    }
-
-    function hasAnyCalendarConnected(conns) {
-      const c = conns || getCalendarConnections();
-      return CALENDAR_PROVIDERS.some(p => c[p.id]?.connected);
-    }
-
-    function getConnectedCalendarsLabel(conns) {
-      const c = conns || getCalendarConnections();
-      const names = CALENDAR_PROVIDERS.filter(p => c[p.id]?.connected).map(p => p.name.replace(' Calendar', ''));
-      if (names.length === 0) return 'No calendars';
-      if (names.length === 1) return names[0];
-      if (names.length === 2) return `${names[0]} + ${names[1]}`;
-      return `${names.slice(0, -1).join(', ')} + ${names[names.length - 1]}`;
-    }
-
-    function renderCalendarProviderCard(provider, conn, options = {}) {
-      const connected = conn?.connected;
-      const isOnboarding = options.onboarding;
-      const action = connected ? 'disconnect' : 'connect';
-      const onclick = isOnboarding
-        ? `handleCalendarConnect('${provider.id}', true)`
-        : `handleCalendarConnect('${provider.id}', false)`;
-
-      return `
-        <div class="rounded-2xl border px-4 py-3 ${connected ? 'border-rhythm-primary/50 bg-rhythm-primary/15' : 'border-rhythm-border bg-rhythm-raised/80'}">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-rhythm-surface flex items-center justify-center flex-shrink-0">
-              <i class="${provider.iconClass} ${provider.icon} ${provider.accent} text-lg"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="font-semibold text-sm">${provider.name}</div>
-              <div class="text-[10px] text-rhythm-muted">${connected ? conn.email : provider.subtitle}</div>
-            </div>
-            ${connected
-              ? `<div class="text-right flex-shrink-0">
-                  <div class="text-[10px] text-rhythm-primary-light font-semibold mb-1"><i class="fa-solid fa-check"></i> Connected</div>
-                  <button type="button" onclick="${onclick}" class="text-[10px] text-rhythm-muted hover:text-rose-400">Disconnect</button>
-                </div>`
-              : `<button type="button" onclick="${onclick}"
-                  class="flex-shrink-0 px-3 py-1.5 rounded-xl text-[10px] font-semibold border ${provider.btnClass} text-rhythm-text">
-                  Connect
-                </button>`}
-          </div>
-        </div>
-      `;
+      if (feeds.length) {
+        return feeds.length === 1 ? feeds[0].label : `${feeds.length} calendar feeds`;
+      }
+      if (n) return `${n} imported event${n === 1 ? '' : 's'}`;
+      return 'No calendar';
     }
 
     function applyCalendarSync() {
-      const conns = getCalendarConnections();
-      const sources = CALENDAR_PROVIDERS.filter(p => conns[p.id]?.connected).map(p => p.id);
-      const hasImported = !!(state.settings.importedCalendarEvents?.length);
-
-      state.settings.calendarSources = sources;
+      const feeds = getCalendarFeeds();
+      state.settings.calendarSources = feeds.map(f => f.id);
       refreshCalendarCache();
 
-      if (sources.length === 0 && !hasImported) {
-        saveState();
-        return;
-      }
-
-      const sourceLabel = getConnectedCalendarsLabel(conns);
       if (state.calendarCache) {
-        state.calendarCache.note = sources.length
-          ? `Live sync from ${sourceLabel} — gap-aware suggestions on`
-          : (state.settings.mockCalendar?.note || '');
+        state.calendarCache.note = getCalendarStatusLabel();
         state.calendarCache.syncedAt = new Date().toISOString();
       }
 
@@ -15310,41 +15510,6 @@
       renderSchedule();
       updateSmartBanner();
       updateCalendarStatusUI();
-    }
-
-    function handleCalendarConnect(providerId, _isOnboarding) {
-      const conns = getCalendarConnections();
-      const provider = CALENDAR_PROVIDERS.find(p => p.id === providerId);
-      if (!provider) return;
-
-      if (conns[providerId]?.connected) {
-        conns[providerId] = { connected: false, email: null, connectedAt: null };
-        state.settings.calendarConnections = conns;
-        applyCalendarSync();
-        saveState();
-        showToast(`${provider.name} disconnected`);
-        refreshSettingsModal();
-        return;
-      }
-
-      const email = prompt(
-        `Link ${provider.name}\n\nLive OAuth sync needs the native app — this preview uses calendar file import.\n\nEnter your account email to link this calendar:`,
-        provider.defaultEmail
-      );
-      if (!email?.trim()) return;
-
-      conns[providerId] = {
-        connected: true,
-        email: email.trim(),
-        connectedAt: new Date().toISOString()
-      };
-
-      state.settings.calendarConnections = conns;
-      applyCalendarSync();
-      saveState();
-      showToast(`✓ ${provider.name} linked — import your .ics file`);
-      refreshSettingsModal();
-      setTimeout(() => triggerCalendarICSImport(providerId), 400);
     }
 
     let settingsWasOpen = false;
@@ -15358,14 +15523,18 @@
 
     function updateCalendarStatusUI() {
       const badge = document.getElementById('schedule-sync-badge');
-      const label = getConnectedCalendarsLabel();
-
-      if (badge) {
-        if (hasAnyCalendarConnected()) {
-          badge.innerHTML = `<i class="fa-solid fa-link text-rhythm-primary mr-1"></i> ${label} · <button onclick="showSettings()" class="text-rhythm-primary-light">manage</button>`;
-        } else {
-          badge.innerHTML = `<i class="fa-regular fa-calendar text-rhythm-muted mr-1"></i> <button onclick="showSettings()" class="text-sky-400">Connect a calendar</button> for smarter scheduling`;
-        }
+      if (!badge) return;
+      const feeds = getCalendarFeeds();
+      const n = state.settings.importedCalendarEvents?.length || 0;
+      if (feeds.length) {
+        const err = feeds.find(f => f.lastError);
+        badge.innerHTML = err
+          ? `<i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1"></i> Calendar feed issue · <button type="button" onclick="showCalendarFeedModal()" class="text-rhythm-primary-light">fix</button>`
+          : `<i class="fa-solid fa-link text-rhythm-primary mr-1"></i> ${escapeBriefHtml(getCalendarStatusLabel())} · <button type="button" onclick="refreshAllCalendarFeeds()" class="text-rhythm-primary-light">refresh</button>`;
+      } else if (n) {
+        badge.innerHTML = `<i class="fa-regular fa-calendar text-rhythm-primary-light mr-1"></i> ${n} imported event${n === 1 ? '' : 's'} · <button type="button" onclick="showCalendarFeedModal()" class="text-sky-400">add URL</button>`;
+      } else {
+        badge.innerHTML = `<i class="fa-regular fa-calendar text-rhythm-muted mr-1"></i> <button type="button" onclick="showCalendarFeedModal()" class="text-sky-400">Add calendar URL</button> or import a file`;
       }
     }
 
@@ -15570,8 +15739,17 @@
         repairOnboardedEmptyTodayList();
         loadCommonTasks();
         refreshCalendarCache();
-        if (hasAnyCalendarConnected()) applyCalendarSync();
+        applyCalendarSync();
         updateCalendarStatusUI();
+        // Refresh ICS URL feeds in the background (GitHub Pages web + mobile)
+        setTimeout(() => {
+          if (getCalendarFeeds().length) {
+            refreshAllCalendarFeeds({ silent: true }).then(() => {
+              applyCalendarSync();
+              updateCalendarStatusUI();
+            });
+          }
+        }, 800);
         
         const isFirstRun = !localStorage.getItem('rhythm_onboarded');
         
