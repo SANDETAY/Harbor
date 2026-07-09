@@ -5062,7 +5062,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v114';
+    const HARBOR_BUILD = 'v115';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -5540,7 +5540,9 @@
       calPerMile: 82,
       calPerStep: 0.04,
       milesPer5k: 5000 / 2200,
-      kcalPerLbFat: 3500
+      kcalPerLbFat: 3500,
+      yardsPerMile: 1760,
+      metersPerMile: 1609.344
     };
 
     // ==================== UTILITIES ====================
@@ -6344,22 +6346,93 @@
       return getHabitMetricType(habit) != null;
     }
 
+    function isSwimHabit(habit) {
+      return /\b(swim|swimming|swam|laps?)\b/i.test(habit?.title || '');
+    }
+
+    function normalizeDistanceUnit(unit) {
+      const u = String(unit || '').toLowerCase().trim();
+      if (u === 'yards' || u === 'yard' || u === 'yd' || u === 'yds' || u === 'y') return 'yards';
+      if (u === 'meters' || u === 'meter' || u === 'metre' || u === 'metres' || u === 'm') return 'meters';
+      if (u === 'miles' || u === 'mile' || u === 'mi') return 'miles';
+      if (u === 'km' || u === 'kilometers' || u === 'kilometres') return 'meters'; // treat km entry via separate path
+      return null;
+    }
+
+    function distanceToMiles(value, unit) {
+      const v = Number(value) || 0;
+      const u = normalizeDistanceUnit(unit) || 'miles';
+      if (u === 'yards') return v / METRICS.yardsPerMile;
+      if (u === 'meters') return v / METRICS.metersPerMile;
+      return v;
+    }
+
+    function milesToDistance(miles, unit) {
+      const m = Number(miles) || 0;
+      const u = normalizeDistanceUnit(unit) || 'miles';
+      if (u === 'yards') return m * METRICS.yardsPerMile;
+      if (u === 'meters') return m * METRICS.metersPerMile;
+      return m;
+    }
+
+    function formatDistanceAmount(value, unit) {
+      const u = normalizeDistanceUnit(unit) || 'miles';
+      const v = Number(value) || 0;
+      if (u === 'miles') return v >= 10 ? v.toFixed(1) : v.toFixed(2).replace(/\.?0+$/, '') || '0';
+      return Math.round(v).toLocaleString();
+    }
+
+    function getPreferredDistanceUnit(habit) {
+      if (!habit) return 'miles';
+      // Explicit swim preference on the habit
+      const fromHabit = normalizeDistanceUnit(habit.swimUnit || habit.distanceUnit || habit.unit);
+      if (fromHabit && (isSwimHabit(habit) || fromHabit !== 'miles' || habit.unit)) {
+        if (isSwimHabit(habit) && fromHabit) return fromHabit;
+        if (fromHabit === 'yards' || fromHabit === 'meters' || fromHabit === 'miles') {
+          if (isSwimHabit(habit) || fromHabit === 'miles') return fromHabit;
+        }
+      }
+      // Last log's unit
+      const logs = state.metricLogs?.[habit.id] || [];
+      for (let i = logs.length - 1; i >= 0; i--) {
+        const u = normalizeDistanceUnit(logs[i].unit);
+        if (u) return u;
+      }
+      // Swim defaults to yards (US pool standard); other distance sports stay miles
+      return isSwimHabit(habit) ? 'yards' : 'miles';
+    }
+
     function getMetricInputMeta(habit) {
       const type = getHabitMetricType(habit);
       if (!type) return null;
+      const swim = isSwimHabit(habit);
+      const distUnit = type === 'miles' ? getPreferredDistanceUnit(habit) : null;
       const unitLabels = {
-        miles: 'miles',
+        miles: distUnit === 'yards' ? 'yards' : distUnit === 'meters' ? 'meters' : 'miles',
         steps: 'steps',
         pages: 'pages',
         savings: 'dollars ($)',
         custom: habit.unit || 'units'
       };
-      const placeholders = { miles: '6', steps: '8000', pages: '15', savings: '25', custom: '10' };
+      const placeholders = {
+        miles: swim
+          ? (distUnit === 'yards' ? '500' : distUnit === 'meters' ? '400' : '0.3')
+          : '6',
+        steps: '8000',
+        pages: '15',
+        savings: '25',
+        custom: '10'
+      };
       return {
         type,
         unitLabel: unitLabels[type] || habit.unit || 'units',
+        distanceUnit: distUnit,
+        isSwim: swim,
+        allowUnitPick: swim && type === 'miles',
         placeholder: placeholders[type] || '10',
-        step: type === 'steps' ? '1' : type === 'savings' ? '1' : '0.1'
+        step: type === 'steps' || type === 'savings'
+          ? '1'
+          : (distUnit === 'yards' || distUnit === 'meters' ? '25' : '0.1')
       };
     }
 
@@ -6372,14 +6445,16 @@
       const meta = getMetricInputMeta(habit);
       if (!meta) return null;
       const todayLog = getTodaysMetricLog(habit);
-      const fallback = todayLog?.value ?? habit.target_value ?? meta.placeholder;
-      const v = prompt(`How many ${meta.unitLabel} for "${habit.title}" today?`, String(fallback));
+      const unit = meta.distanceUnit || meta.unitLabel;
+      const fallback = todayLog?.displayValue ?? todayLog?.value ?? habit.target_value ?? meta.placeholder;
+      const v = prompt(`How many ${unit} for "${habit.title}" today?`, String(fallback));
       if (v == null || v.trim() === '') return null;
       const num = parseFloat(v);
-      return isNaN(num) || num <= 0 ? null : num;
+      if (isNaN(num) || num <= 0) return null;
+      return { value: num, unit: meta.distanceUnit || null };
     }
 
-    function saveMetricFromStreaks(habitId, rawValue) {
+    function saveMetricFromStreaks(habitId, rawValue, unitOverride) {
       const habit = state.habits.find(h => h.id === habitId);
       if (!habit) return;
       const val = parseFloat(rawValue);
@@ -6387,10 +6462,21 @@
         showToast('Enter a valid amount');
         return;
       }
-      logMetricValue(habitId, val, 'manual');
+      const meta = getMetricInputMeta(habit);
+      let unit = unitOverride || meta?.distanceUnit || null;
+      if (meta?.type === 'miles' && isSwimHabit(habit)) {
+        unit = normalizeDistanceUnit(unit) || getPreferredDistanceUnit(habit);
+        habit.swimUnit = unit;
+      } else if (meta?.type === 'miles') {
+        unit = 'miles';
+      } else {
+        unit = null;
+      }
+      logMetricValue(habitId, val, 'manual', unit);
       saveState();
       showProjections(habitId);
-      showToast(`Logged ${val} ${getMetricInputMeta(habit)?.unitLabel || ''}`.trim());
+      const label = unit || meta?.unitLabel || '';
+      showToast(`Logged ${formatDistanceAmount(val, unit || 'miles')} ${label}`.trim());
     }
 
     function renderProjectionMetricLogger(habit) {
@@ -6405,30 +6491,54 @@
       const inputId = `proj-metric-${habit.id}`;
       const syncedToday = hasSyncedToday(habit.id);
       const isFitness = isPhysicalActivity(habit);
+      const unit = meta.distanceUnit || meta.unitLabel;
+      const displayToday = todayLog
+        ? (todayLog.displayValue != null ? todayLog.displayValue : todayLog.value)
+        : '';
+      const displayTodayUnit = todayLog?.displayUnit || unit;
       const logLabel = isFitness
         ? (meta.type === 'steps' ? 'Steps today' : meta.type === 'miles' ? 'Distance today' : `Today’s ${meta.unitLabel}`)
         : 'Update total';
-      const helpText = isFitness
-        ? (meta.type === 'miles'
-          ? 'Log miles swam, run, biked, or hiked — projections use what you enter here.'
-          : `Record what you actually did — projections use your logged ${meta.unitLabel}.`)
-        : `Record what you actually did — projections use your logged ${meta.unitLabel}.`;
-      const placeholder = meta.type === 'miles' && /swim/i.test(habit.title || '')
-        ? '0.5'
-        : meta.placeholder;
+      const helpText = meta.isSwim
+        ? 'Pool swimmers usually log <strong class="text-harbor-text">yards</strong> or <strong class="text-harbor-text">meters</strong>. Pick a unit, enter distance, Save.'
+        : isFitness
+          ? (meta.type === 'miles'
+            ? 'Log distance for today’s session — projections use what you enter here.'
+            : `Record what you actually did — projections use your logged ${meta.unitLabel}.`)
+          : `Record what you actually did — projections use your logged ${meta.unitLabel}.`;
+
+      const unitPicker = meta.allowUnitPick ? `
+        <div class="flex gap-1.5 mb-2" role="group" aria-label="Distance unit" id="proj-unit-picker-${habit.id}">
+          ${['yards', 'meters', 'miles'].map(u => {
+            const on = (meta.distanceUnit || 'yards') === u;
+            return `<button type="button" data-distance-unit="${u}"
+              class="proj-unit-chip flex-1 py-1.5 rounded-full text-[10px] font-semibold border transition-colors ${on
+                ? 'bg-harbor-primary border-harbor-primary text-white'
+                : 'bg-harbor-raised border-harbor-border text-harbor-muted'}">${u.charAt(0).toUpperCase() + u.slice(1)}</button>`;
+          }).join('')}
+        </div>
+      ` : '';
+
+      const formatLogLine = (e) => {
+        const shown = e.displayValue != null ? e.displayValue : e.value;
+        const u = e.displayUnit || meta.unitLabel;
+        return `${formatDistanceAmount(shown, u)} ${u}`;
+      };
 
       return `
         <div class="mt-4 pt-3 border-t border-harbor-border">
           <label class="block text-xs font-medium text-harbor-text mb-1" for="${inputId}">${logLabel}</label>
           <div class="text-[10px] text-harbor-muted mb-2 leading-snug">${helpText}</div>
+          ${unitPicker}
           <div class="flex gap-2">
-            <input id="${inputId}" type="number" min="0" step="${meta.step}" value="${todayLog?.value ?? ''}" placeholder="${placeholder}"
-              inputmode="decimal"
+            <input id="${inputId}" type="number" min="0" step="${meta.step}" value="${displayToday !== '' ? displayToday : ''}" placeholder="${meta.placeholder}"
+              inputmode="${meta.distanceUnit === 'miles' ? 'decimal' : 'numeric'}"
+              data-active-unit="${meta.distanceUnit || ''}"
               class="flex-1 bg-harbor-raised border border-harbor-border focus:border-harbor-primary rounded-2xl px-3 py-2.5 text-sm outline-none text-harbor-text">
             <button type="button" data-save-metric="${habit.id}" data-metric-input="${inputId}"
               class="px-4 py-2.5 rounded-2xl bg-harbor-primary text-white text-xs font-semibold active:opacity-90">Save</button>
           </div>
-          ${todayLog ? `<div class="text-[10px] text-harbor-muted mt-1.5">Today: <strong class="text-harbor-text">${todayLog.value} ${meta.unitLabel}</strong> <span class="opacity-70">(${todayLog.source || 'logged'})</span></div>` : ''}
+          ${todayLog ? `<div class="text-[10px] text-harbor-muted mt-1.5">Today: <strong class="text-harbor-text">${formatLogLine(todayLog)}</strong> <span class="opacity-70">(${todayLog.source || 'logged'})</span>${todayLog.miles != null && displayTodayUnit !== 'miles' ? ` <span class="opacity-60">· ${todayLog.miles.toFixed(2)} mi</span>` : ''}</div>` : ''}
           ${FEATURE_ACTIVITY_SYNC && syncedToday ? `<div class="text-[10px] text-sky-300 mt-1">Device synced today</div>` : ''}
           ${recent.length ? `
             <div class="mt-2.5">
@@ -6437,7 +6547,7 @@
                 ${recent.map(e => `
                   <div class="flex justify-between text-[10px] bg-harbor-raised/60 rounded-xl px-2.5 py-1.5">
                     <span class="text-harbor-muted">${formatDateShort(e.date)}</span>
-                    <span class="font-semibold text-harbor-text tabular-nums">${e.value} ${meta.unitLabel}</span>
+                    <span class="font-semibold text-harbor-text tabular-nums">${formatLogLine(e)}</span>
                   </div>
                 `).join('')}
               </div>
@@ -6448,27 +6558,60 @@
     }
 
     function bindProjectionMetricLogger(panel, habitId) {
+      const habit = state.habits.find(h => h.id === habitId);
+      const picker = panel.querySelector(`#proj-unit-picker-${habitId}`);
+      const input = panel.querySelector(`#proj-metric-${habitId}`);
+
+      const getSelectedUnit = () => {
+        const active = picker?.querySelector('[data-distance-unit].bg-harbor-primary');
+        return active?.dataset?.distanceUnit || input?.dataset?.activeUnit || getPreferredDistanceUnit(habit);
+      };
+
+      const applyUnitUi = (unit) => {
+        if (!picker || !input) return;
+        const u = normalizeDistanceUnit(unit) || 'yards';
+        picker.querySelectorAll('[data-distance-unit]').forEach(btn => {
+          const on = btn.dataset.distanceUnit === u;
+          btn.className = `proj-unit-chip flex-1 py-1.5 rounded-full text-[10px] font-semibold border transition-colors ${on
+            ? 'bg-harbor-primary border-harbor-primary text-white'
+            : 'bg-harbor-raised border-harbor-border text-harbor-muted'}`;
+        });
+        input.dataset.activeUnit = u;
+        input.step = (u === 'miles') ? '0.1' : '25';
+        input.placeholder = u === 'yards' ? '500' : u === 'meters' ? '400' : '0.3';
+        input.inputMode = u === 'miles' ? 'decimal' : 'numeric';
+      };
+
+      picker?.querySelectorAll('[data-distance-unit]').forEach(btn => {
+        btn.onclick = () => {
+          const u = btn.dataset.distanceUnit;
+          applyUnitUi(u);
+          if (habit && isSwimHabit(habit)) {
+            habit.swimUnit = u;
+            saveState();
+          }
+        };
+      });
+
       panel.querySelectorAll('[data-save-metric]').forEach(btn => {
         btn.onclick = () => {
           const inputId = btn.dataset.metricInput;
-          const input = document.getElementById(inputId);
-          saveMetricFromStreaks(btn.dataset.saveMetric, input?.value);
+          const el = document.getElementById(inputId);
+          const unit = getSelectedUnit();
+          saveMetricFromStreaks(btn.dataset.saveMetric, el?.value, unit);
         };
       });
       panel.querySelectorAll('[data-sync-activity]').forEach(btn => {
         btn.onclick = () => showDeviceSyncModal(btn.dataset.syncActivity);
       });
-      ['proj-metric', 'proj-manual'].forEach(prefix => {
-        const input = panel.querySelector(`#${prefix}-${habitId}`);
-        if (input) {
-          input.onkeydown = (e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              saveMetricFromStreaks(habitId, input.value);
-            }
-          };
-        }
-      });
+      if (input) {
+        input.onkeydown = (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            saveMetricFromStreaks(habitId, input.value, getSelectedUnit());
+          }
+        };
+      }
     }
 
     function getUserProfile() {
@@ -7185,12 +7328,14 @@
       return false;
     }
 
-    function logMetricValue(habitId, value, source) {
+    function logMetricValue(habitId, value, source, unit) {
       if (value == null || isNaN(value)) return;
       if (!state.metricLogs) state.metricLogs = {};
       if (!state.metricLogs[habitId]) state.metricLogs[habitId] = [];
       const today = todayStr();
       const entry = { date: today, value: Number(value), source: source || 'manual' };
+      const u = normalizeDistanceUnit(unit);
+      if (u) entry.unit = u;
       const idx = state.metricLogs[habitId].findIndex(e => e.date === today);
       if (idx >= 0) state.metricLogs[habitId][idx] = entry;
       else state.metricLogs[habitId].push(entry);
@@ -7213,12 +7358,19 @@
       if (type === 'steps' && synced?.steps != null) {
         logMetricValue(habit.id, synced.steps, 'device');
       } else if (type === 'miles' && synced?.distance != null) {
-        logMetricValue(habit.id, synced.distance, 'device');
-      } else if (habit.target_value != null) {
-        logMetricValue(habit.id, habit.target_value, 'completion');
+        logMetricValue(habit.id, synced.distance, 'device', 'miles');
+      } else if (habit.target_value != null && !isSwimHabit(habit)) {
+        logMetricValue(habit.id, habit.target_value, 'completion', type === 'miles' ? 'miles' : null);
       } else {
         const prompted = promptMetricValueForHabit(habit);
-        if (prompted != null) logMetricValue(habit.id, prompted, 'manual');
+        if (prompted != null) {
+          if (typeof prompted === 'object') {
+            logMetricValue(habit.id, prompted.value, 'manual', prompted.unit);
+            if (isSwimHabit(habit) && prompted.unit) habit.swimUnit = prompted.unit;
+          } else {
+            logMetricValue(habit.id, prompted, 'manual', type === 'miles' && isSwimHabit(habit) ? getPreferredDistanceUnit(habit) : (type === 'miles' ? 'miles' : null));
+          }
+        }
       }
     }
 
@@ -7229,28 +7381,69 @@
       const byDate = new Map();
       const sourceRank = { manual: 4, device: 3, completion: 1 };
 
-      const upsert = (date, value, source) => {
+      // value stored in canonical units for math: miles for distance sports, raw for others
+      const upsert = (date, value, source, opts = {}) => {
         if (!date || value == null || isNaN(value)) return;
         const rank = sourceRank[source] || 0;
         const prev = byDate.get(date);
         if (!prev || rank >= (prev.rank || 0)) {
-          byDate.set(date, { date, value: Number(value), source, rank });
+          byDate.set(date, {
+            date,
+            value: Number(value),
+            source,
+            rank,
+            displayValue: opts.displayValue != null ? Number(opts.displayValue) : Number(value),
+            displayUnit: opts.displayUnit || null,
+            miles: opts.miles != null ? Number(opts.miles) : (type === 'miles' ? Number(value) : null)
+          });
         }
       };
 
       (state.metricLogs?.[habit.id] || []).forEach(entry => {
-        upsert(entry.date, entry.value, entry.source || 'manual');
+        if (type === 'miles') {
+          const unit = normalizeDistanceUnit(entry.unit) || (isSwimHabit(habit) ? getPreferredDistanceUnit(habit) : 'miles');
+          // Legacy swim logs without unit: if value looks like pool yards (e.g. 200–10000), treat as yards
+          let useUnit = unit;
+          if (!entry.unit && isSwimHabit(habit) && entry.value >= 50 && entry.value <= 20000) {
+            useUnit = 'yards';
+          } else if (!entry.unit) {
+            useUnit = 'miles';
+          }
+          const miles = distanceToMiles(entry.value, useUnit);
+          upsert(entry.date, miles, entry.source || 'manual', {
+            displayValue: entry.value,
+            displayUnit: useUnit,
+            miles
+          });
+        } else {
+          upsert(entry.date, entry.value, entry.source || 'manual', {
+            displayValue: entry.value,
+            displayUnit: type === 'steps' ? 'steps' : type === 'pages' ? 'pages' : null
+          });
+        }
       });
 
       if (state.healthSyncs?.[habit.id]) {
         Object.entries(state.healthSyncs[habit.id]).forEach(([date, stats]) => {
-          if (type === 'steps' && stats.steps != null) upsert(date, stats.steps, 'device');
-          if (type === 'miles' && stats.distance != null) upsert(date, parseFloat(stats.distance), 'device');
+          if (type === 'steps' && stats.steps != null) {
+            upsert(date, stats.steps, 'device', { displayValue: stats.steps, displayUnit: 'steps' });
+          }
+          if (type === 'miles' && stats.distance != null) {
+            const mi = parseFloat(stats.distance);
+            upsert(date, mi, 'device', { displayValue: mi, displayUnit: 'miles', miles: mi });
+          }
         });
       }
 
       return [...byDate.values()]
-        .map(({ date, value, source }) => ({ date, value, source }))
+        .map(({ date, value, source, displayValue, displayUnit, miles }) => ({
+          date,
+          value,
+          source,
+          displayValue,
+          displayUnit,
+          miles
+        }))
         .sort((a, b) => a.date.localeCompare(b.date));
     }
 
@@ -7405,10 +7598,11 @@
       let totalDistance = 0;
       const perDay = [];
 
-      sample.forEach(({ date, value }) => {
+      sample.forEach((point) => {
+        const { date, value } = point;
         if (!value || value <= 0) return;
-        let miles = value;
-        if (type === 'steps') miles = value / METRICS.stepsPerMile;
+        // For miles-type logs, `value` is already canonical miles from collectMetricDataPoints
+        let miles = type === 'steps' ? value / METRICS.stepsPerMile : (point.miles != null ? point.miles : value);
         const duration = habit.est_minutes || Math.max(8, Math.round(miles * 10));
         const dayCal = estimateCaloriesBurned(habit, miles, duration);
         totalCal += dayCal;
