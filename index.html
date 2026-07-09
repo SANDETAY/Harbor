@@ -649,6 +649,8 @@
     .site-header {
       display: block;
       flex-shrink: 0;
+      position: relative;
+      z-index: 50; /* keep header menu above weather banner / chrome */
       border-bottom: 1px solid rgb(var(--harbor-border));
       background: linear-gradient(180deg, rgba(18, 46, 44, 0.94) 0%, rgba(10, 31, 30, 0.9) 100%);
       backdrop-filter: blur(12px);
@@ -1291,6 +1293,8 @@
       opacity: 0.92;
     }
     #app-weather-row {
+      position: relative;
+      z-index: 1; /* below site-header menu dropdown */
       width: 100%;
       padding-left: 1rem;
       padding-right: 1rem;
@@ -1609,6 +1613,7 @@
 
     .app-menu-wrap {
       position: relative;
+      z-index: 2;
     }
 
     .app-menu-dropdown {
@@ -1621,7 +1626,7 @@
       border-radius: 1rem;
       padding: 0.35rem;
       box-shadow: var(--harbor-shadow-md);
-      z-index: 120;
+      z-index: 200;
     }
 
     .app-menu-item {
@@ -4382,7 +4387,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v93';
+    const HARBOR_BUILD = 'v94';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
