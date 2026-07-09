@@ -1274,6 +1274,119 @@
       -webkit-backdrop-filter: blur(14px);
     }
 
+    /*
+     * Harbor modal stacking — app chrome sits at z~50–55 (header, FAB).
+     * Every body-level full-screen overlay must sit well above that with a
+     * solid scrim so weather / tabs never “show through”.
+     */
+    body > .fixed.inset-0 {
+      z-index: 300 !important;
+    }
+    body > .fixed.inset-0.modal-overlay-blur,
+    body > .fixed.inset-0[class*="bg-harbor-bg"] {
+      background-color: rgba(6, 14, 14, 0.88) !important;
+    }
+    html[data-theme="dark"] body > .fixed.inset-0.modal-overlay-blur,
+    html[data-theme="dark"] body > .fixed.inset-0[class*="bg-harbor-bg"] {
+      background-color: rgba(0, 0, 0, 0.9) !important;
+    }
+    /* Keep day-events sheet above Summary when both open */
+    body > #summary-day-events-modal {
+      z-index: 320 !important;
+    }
+    body > #summary-modal {
+      z-index: 300 !important;
+    }
+    body.harbor-modal-open #site-root {
+      pointer-events: none !important;
+    }
+    body.harbor-modal-open .summary-orb {
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    .platform-pick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+    }
+    @media (min-width: 420px) {
+      .platform-pick-grid { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .platform-pick-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.2rem;
+      text-align: left;
+      padding: 0.65rem 0.7rem;
+      border-radius: 0.85rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-text));
+      font-size: 0.72rem;
+      font-weight: 650;
+      line-height: 1.25;
+      transition: border-color 0.12s ease, background 0.12s ease;
+    }
+    .platform-pick-btn:hover,
+    .platform-pick-btn:active {
+      border-color: rgba(107, 191, 176, 0.45);
+      background: rgba(47, 155, 140, 0.12);
+    }
+    .platform-pick-btn i {
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.95rem;
+      margin-bottom: 0.15rem;
+    }
+    .platform-pick-btn .platform-pick-sub {
+      font-size: 0.58rem;
+      font-weight: 500;
+      color: rgb(var(--harbor-muted));
+    }
+    .platform-pick-btn .platform-pick-badge {
+      font-size: 0.52rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-primary-light));
+      margin-top: 0.15rem;
+    }
+    .sub-cancel-choice {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.85rem 1rem;
+      border-radius: 1rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      margin-bottom: 0.5rem;
+    }
+    .sub-cancel-choice:active {
+      background: rgba(47, 155, 140, 0.12);
+      border-color: rgba(107, 191, 176, 0.4);
+    }
+    .sub-cancel-choice .sub-cancel-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: rgb(var(--harbor-text));
+    }
+    .sub-cancel-choice .sub-cancel-desc {
+      font-size: 0.68rem;
+      color: rgb(var(--harbor-muted));
+      margin-top: 0.2rem;
+      line-height: 1.35;
+    }
+    .sub-tracked-cancel {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #fca5a5;
+      letter-spacing: 0.02em;
+    }
+    .sub-tracked-cancel:active {
+      color: #fecaca;
+    }
+
     .qt-recurrence-row {
       display: flex;
       gap: 0.35rem;
@@ -5062,7 +5175,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v115';
+    const HARBOR_BUILD = 'v116';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -5233,7 +5346,8 @@
 
     const SUBSCRIPTION_PRESETS = [
       {
-        id: 'netflix', name: 'Netflix', brandColor: '#E50914', matchPattern: /netflix/i,
+        id: 'netflix',
+        manageUrl: 'https://www.netflix.com/cancelplan', name: 'Netflix', brandColor: '#E50914', matchPattern: /netflix/i,
         tiers: [
           { id: 'ads', label: 'Standard with ads', amount: 7.99, cycle: 'monthly' },
           { id: 'standard', label: 'Standard', amount: 17.99, cycle: 'monthly' },
@@ -5241,7 +5355,8 @@
         ]
       },
       {
-        id: 'spotify', name: 'Spotify', brandColor: '#1DB954', matchPattern: /spotify/i,
+        id: 'spotify',
+        manageUrl: 'https://www.spotify.com/account/subscription/', name: 'Spotify', brandColor: '#1DB954', matchPattern: /spotify/i,
         tiers: [
           { id: 'student', label: 'Student', amount: 5.99, cycle: 'monthly' },
           { id: 'individual', label: 'Individual', amount: 11.99, cycle: 'monthly' },
@@ -5250,7 +5365,8 @@
         ]
       },
       {
-        id: 'disney-plus', name: 'Disney+', brandColor: '#113CCF', matchPattern: /disney\s*\+|disney plus/i,
+        id: 'disney-plus',
+        manageUrl: 'https://www.disneyplus.com/account', name: 'Disney+', brandColor: '#113CCF', matchPattern: /disney\s*\+|disney plus/i,
         tiers: [
           { id: 'basic-ads', label: 'Basic (with ads)', amount: 9.99, cycle: 'monthly' },
           { id: 'premium', label: 'Premium (no ads)', amount: 15.99, cycle: 'monthly' },
@@ -5258,7 +5374,8 @@
         ]
       },
       {
-        id: 'hulu', name: 'Hulu', brandColor: '#1CE783', matchPattern: /hulu/i,
+        id: 'hulu',
+        manageUrl: 'https://secure.hulu.com/account', name: 'Hulu', brandColor: '#1CE783', matchPattern: /hulu/i,
         tiers: [
           { id: 'ads', label: 'With ads', amount: 9.99, cycle: 'monthly' },
           { id: 'no-ads', label: 'No ads', amount: 18.99, cycle: 'monthly' },
@@ -5266,7 +5383,8 @@
         ]
       },
       {
-        id: 'max', name: 'Max', brandColor: '#002BE7', matchPattern: /hbo|max\.com/i,
+        id: 'max',
+        manageUrl: 'https://auth.max.com/product', name: 'Max', brandColor: '#002BE7', matchPattern: /hbo|max\.com/i,
         tiers: [
           { id: 'ads', label: 'With ads', amount: 9.99, cycle: 'monthly' },
           { id: 'ad-free', label: 'Ad-free', amount: 16.99, cycle: 'monthly' },
@@ -5274,14 +5392,16 @@
         ]
       },
       {
-        id: 'youtube-premium', name: 'YouTube Premium', brandColor: '#FF0000', matchPattern: /youtube|google\s*youtube/i,
+        id: 'youtube-premium',
+        manageUrl: 'https://www.youtube.com/paid_memberships', name: 'YouTube Premium', brandColor: '#FF0000', matchPattern: /youtube|google\s*youtube/i,
         tiers: [
           { id: 'individual', label: 'Individual', amount: 13.99, cycle: 'monthly' },
           { id: 'family', label: 'Family', amount: 22.99, cycle: 'monthly' }
         ]
       },
       {
-        id: 'apple-one', name: 'Apple One', brandColor: '#1D1D1F', matchPattern: /apple\.com\/bill|apple one/i,
+        id: 'apple-one',
+        manageUrl: 'https://www.apple.com/account/subscriptions/', name: 'Apple One', brandColor: '#1D1D1F', matchPattern: /apple\.com\/bill|apple one/i,
         tiers: [
           { id: 'individual', label: 'Individual', amount: 19.95, cycle: 'monthly' },
           { id: 'family', label: 'Family', amount: 25.95, cycle: 'monthly' },
@@ -5289,7 +5409,8 @@
         ]
       },
       {
-        id: 'icloud', name: 'iCloud+', brandColor: '#3693F3', matchPattern: /icloud/i,
+        id: 'icloud',
+        manageUrl: 'https://www.icloud.com/settings/', name: 'iCloud+', brandColor: '#3693F3', matchPattern: /icloud/i,
         tiers: [
           { id: '50gb', label: '50 GB', amount: 0.99, cycle: 'monthly' },
           { id: '200gb', label: '200 GB', amount: 2.99, cycle: 'monthly' },
@@ -5299,21 +5420,24 @@
         ]
       },
       {
-        id: 'amazon-prime', name: 'Amazon Prime', brandColor: '#00A8E1', matchPattern: /amazon prime|amzn\.com\/bill|prime video/i,
+        id: 'amazon-prime',
+        manageUrl: 'https://www.amazon.com/gp/primecentral', name: 'Amazon Prime', brandColor: '#00A8E1', matchPattern: /amazon prime|amzn\.com\/bill|prime video/i,
         tiers: [
           { id: 'monthly', label: 'Monthly', amount: 14.99, cycle: 'monthly' },
           { id: 'yearly', label: 'Annual', amount: 139, cycle: 'yearly' }
         ]
       },
       {
-        id: 'microsoft-365', name: 'Microsoft 365', brandColor: '#D83B01', matchPattern: /microsoft|office 365|msft/i,
+        id: 'microsoft-365',
+        manageUrl: 'https://account.microsoft.com/services', name: 'Microsoft 365', brandColor: '#D83B01', matchPattern: /microsoft|office 365|msft/i,
         tiers: [
           { id: 'personal', label: 'Personal', amount: 9.99, cycle: 'monthly' },
           { id: 'family', label: 'Family', amount: 12.99, cycle: 'monthly' }
         ]
       },
       {
-        id: 'adobe', name: 'Adobe Creative Cloud', brandColor: '#FF0000', matchPattern: /adobe/i,
+        id: 'adobe',
+        manageUrl: 'https://account.adobe.com/plans', name: 'Adobe Creative Cloud', brandColor: '#FF0000', matchPattern: /adobe/i,
         tiers: [
           { id: 'photography', label: 'Photography (1 TB)', amount: 22.99, cycle: 'monthly' },
           { id: 'single-app', label: 'Single App', amount: 22.99, cycle: 'monthly' },
@@ -5321,7 +5445,8 @@
         ]
       },
       {
-        id: 'gym', name: 'Gym', brandColor: '#FF6B35', matchPattern: /planet fitness|la fitness|equinox|ymca|gym/i,
+        id: 'gym',
+        manageUrl: 'https://www.google.com/search?q=cancel+gym+membership', name: 'Gym', brandColor: '#FF6B35', matchPattern: /planet fitness|la fitness|equinox|ymca|gym/i,
         tiers: [
           { id: 'pf-classic', label: 'Planet Fitness Classic', amount: 15, cycle: 'monthly' },
           { id: 'pf-black', label: 'Planet Fitness Black Card', amount: 24.99, cycle: 'monthly' },
@@ -5329,21 +5454,24 @@
         ]
       },
       {
-        id: 'peacock', name: 'Peacock', brandColor: '#000000', matchPattern: /peacock/i,
+        id: 'peacock',
+        manageUrl: 'https://www.peacocktv.com/account', name: 'Peacock', brandColor: '#000000', matchPattern: /peacock/i,
         tiers: [
           { id: 'premium', label: 'Premium', amount: 7.99, cycle: 'monthly' },
           { id: 'plus', label: 'Premium Plus', amount: 13.99, cycle: 'monthly' }
         ]
       },
       {
-        id: 'paramount', name: 'Paramount+', brandColor: '#0064FF', matchPattern: /paramount/i,
+        id: 'paramount',
+        manageUrl: 'https://www.paramountplus.com/account/', name: 'Paramount+', brandColor: '#0064FF', matchPattern: /paramount/i,
         tiers: [
           { id: 'essential', label: 'Essential', amount: 7.99, cycle: 'monthly' },
           { id: 'showtime', label: 'With Showtime', amount: 12.99, cycle: 'monthly' }
         ]
       },
       {
-        id: 'dropbox', name: 'Dropbox', brandColor: '#0061FF', matchPattern: /dropbox/i,
+        id: 'dropbox',
+        manageUrl: 'https://www.dropbox.com/account', name: 'Dropbox', brandColor: '#0061FF', matchPattern: /dropbox/i,
         tiers: [
           { id: 'plus', label: 'Plus', amount: 11.99, cycle: 'monthly' },
           { id: 'essentials', label: 'Essentials', amount: 19.99, cycle: 'monthly' },
@@ -5351,14 +5479,16 @@
         ]
       },
       {
-        id: 'chatgpt', name: 'ChatGPT', brandColor: '#412991', matchPattern: /openai|chatgpt/i,
+        id: 'chatgpt',
+        manageUrl: 'https://chatgpt.com/#settings', name: 'ChatGPT', brandColor: '#412991', matchPattern: /openai|chatgpt/i,
         tiers: [
           { id: 'plus', label: 'Plus', amount: 20, cycle: 'monthly' },
           { id: 'pro', label: 'Pro', amount: 200, cycle: 'monthly' }
         ]
       },
       {
-        id: 'claude', name: 'Claude', brandColor: '#D97757', matchPattern: /anthropic|claude/i,
+        id: 'claude',
+        manageUrl: 'https://claude.ai/settings', name: 'Claude', brandColor: '#D97757', matchPattern: /anthropic|claude/i,
         tiers: [
           { id: 'pro', label: 'Pro', amount: 20, cycle: 'monthly' },
           { id: 'max-5x', label: 'Max (5x)', amount: 100, cycle: 'monthly' },
@@ -5366,7 +5496,8 @@
         ]
       },
       {
-        id: 'grok', name: 'Grok', brandColor: '#1C1C1E', matchPattern: /xai|grok|supergrok/i,
+        id: 'grok',
+        manageUrl: 'https://x.com/settings', name: 'Grok', brandColor: '#1C1C1E', matchPattern: /xai|grok|supergrok/i,
         tiers: [
           { id: 'supergrok', label: 'SuperGrok', amount: 30, cycle: 'monthly' },
           { id: 'heavy', label: 'Heavy', amount: 300, cycle: 'monthly' }
@@ -11407,7 +11538,7 @@
         return false;
       }
       if (!state.subscriptions) state.subscriptions = [];
-      state.subscriptions.push({
+      state.subscriptions.unshift({
         id: 'sub-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
         name,
         amount: amount || 0,
@@ -11417,10 +11548,17 @@
         source: source || 'manual',
         presetId: presetId || null,
         tierId: tierId || null,
-        tierLabel: tierLabel || null
+        tierLabel: tierLabel || null,
+        addedAt: new Date().toISOString()
       });
       saveState();
       renderSubscriptions();
+      // Keep newly added sub visible at top of the tracked list
+      requestAnimationFrame(() => {
+        const list = document.getElementById('subscriptions-list');
+        if (list) list.scrollTop = 0;
+        document.getElementById('life-panel-subscriptions')?.scrollIntoView({ block: 'start' });
+      });
       return true;
     }
 
@@ -12024,25 +12162,105 @@
       sub.cancelTaskId = taskId;
     }
 
-    function toggleSubscriptionActive(subId) {
+    function getSubscriptionManageUrl(sub) {
+      if (!sub) return null;
+      if (sub.manageUrl) return sub.manageUrl;
+      const preset = resolveSubscriptionPreset(sub);
+      if (preset?.manageUrl) return preset.manageUrl;
+      // Safe fallback: search only (no auto-open of random domains)
+      const q = encodeURIComponent(`cancel ${sub.name} subscription`);
+      return `https://www.google.com/search?q=${q}`;
+    }
+
+    function openSubscriptionManageUrl(sub) {
+      const url = getSubscriptionManageUrl(sub);
+      if (!url) {
+        showToast('No cancel page on file for this service', 'warn');
+        return false;
+      }
+      // Open in a new tab — never send credentials; user completes cancel on the provider’s site
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return true;
+    }
+
+    function showCancelSubscriptionModal(subId) {
       const sub = state.subscriptions.find(s => s.id === subId);
       if (!sub) return;
-      const wasActive = sub.active !== false;
-      sub.active = !wasActive;
+      const preset = resolveSubscriptionPreset(sub);
+      const manageUrl = getSubscriptionManageUrl(sub);
+      const host = (() => {
+        try { return new URL(manageUrl).hostname.replace(/^www\./, ''); } catch { return 'the provider’s site'; }
+      })();
 
-      if (wasActive) {
-        createSubscriptionCancelTask(sub);
-        showToast(`Cancel reminder added to Today`);
-      } else {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-harbor-bg/80 modal-overlay-blur flex items-end z-[300] harbor-modal-overlay';
+      modal.innerHTML = `
+        <div class="absolute inset-0" data-close="1"></div>
+        <div class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm" onclick="event.stopPropagation()">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-lg mb-1 flex items-center justify-between gap-2">
+            <span>Cancel ${escapeSubscriptionHtml(sub.name)}?</span>
+            <button type="button" class="modal-close-chip" data-close="1" aria-label="Close">Close</button>
+          </div>
+          <div class="text-[11px] text-harbor-muted mb-4 leading-snug">
+            Harbor never cancels for you and never sends your login. You finish on the provider’s site — your choice, your privacy.
+          </div>
+          <button type="button" class="sub-cancel-choice" data-cancel-now="1">
+            <div class="sub-cancel-title"><i class="fa-solid fa-arrow-up-right-from-square text-rose-300 mr-1.5"></i>Cancel now</div>
+            <div class="sub-cancel-desc">Opens <strong class="text-harbor-text">${escapeSubscriptionHtml(host)}</strong> in a new tab so you can cancel in your account. We’ll mark it inactive here.</div>
+          </button>
+          <button type="button" class="sub-cancel-choice" data-cancel-later="1">
+            <div class="sub-cancel-title"><i class="fa-regular fa-clock text-amber-300 mr-1.5"></i>Schedule later</div>
+            <div class="sub-cancel-desc">Adds a “Cancel ${escapeSubscriptionHtml(sub.name)}” task to Today so you remember without leaving Harbor yet.</div>
+          </button>
+          <button type="button" class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold mt-1" data-close="1">Keep subscription</button>
+        </div>`;
+      document.body.appendChild(modal);
+      document.body.classList.add('harbor-modal-open');
+
+      const close = () => {
+        modal.remove();
+        if (!document.querySelector('.fixed.inset-0')) document.body.classList.remove('harbor-modal-open');
+      };
+      modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
+      modal.querySelector('[data-cancel-now]')?.addEventListener('click', () => {
+        openSubscriptionManageUrl(sub);
+        sub.active = false;
         removeSubscriptionCancelTask(sub);
-        showToast(`Resumed ${sub.name}`);
-      }
+        saveState();
+        renderSubscriptions();
+        renderTasks();
+        updateSmartBanner();
+        close();
+        showToast(`Opened cancel page · ${sub.name} marked inactive`);
+      });
+      modal.querySelector('[data-cancel-later]')?.addEventListener('click', () => {
+        createSubscriptionCancelTask(sub);
+        sub.active = false;
+        saveState();
+        renderSubscriptions();
+        renderTasks();
+        updateSmartBanner();
+        close();
+        showToast(`Cancel reminder added to Today`);
+      });
+    }
 
+    function toggleSubscriptionActive(subId) {
+      // Kept for older UI hooks — prefer showCancelSubscriptionModal
+      showCancelSubscriptionModal(subId);
+    }
+
+    function resumeSubscription(subId) {
+      const sub = state.subscriptions.find(s => s.id === subId);
+      if (!sub) return;
+      sub.active = true;
+      removeSubscriptionCancelTask(sub);
       saveState();
       renderSubscriptions();
       renderTasks();
-      renderStreaks();
       updateSmartBanner();
+      showToast(`Resumed ${sub.name}`);
     }
 
     function removeSubscription(subId) {
@@ -12087,7 +12305,15 @@
         }
       }
 
-      const filteredSubs = subs.filter(s => trackedSubscriptionMatchesSearch(s, subscriptionSearchQuery));
+      const filteredSubs = subs
+        .filter(s => trackedSubscriptionMatchesSearch(s, subscriptionSearchQuery))
+        .slice()
+        .sort((a, b) => {
+          const ta = a.addedAt || '';
+          const tb = b.addedAt || '';
+          if (ta && tb) return tb.localeCompare(ta);
+          return String(b.id || '').localeCompare(String(a.id || ''));
+        });
 
       if (subs.length === 0) {
         container.innerHTML = `
@@ -12125,7 +12351,7 @@
           </div>
           <div class="text-right flex-shrink-0">
             <div class="text-sm font-semibold tabular-nums">${formatSubscriptionAmount(sub.amount)}</div>
-            <button onclick="toggleSubscriptionActive('${sub.id}')" class="sub-tracked-pause mt-0.5">${active ? 'Pause' : 'Resume'}</button>
+            <button type="button" onclick="event.stopPropagation(); ${active ? `showCancelSubscriptionModal('${sub.id}')` : `resumeSubscription('${sub.id}')`}" class="sub-tracked-cancel mt-0.5">${active ? 'Cancel' : 'Resume'}</button>
           </div>
           <button onclick="removeSubscription('${sub.id}')" class="text-harbor-muted hover:text-rose-400 text-base leading-none px-0.5" aria-label="Remove subscription">×</button>
         `;
@@ -19284,89 +19510,282 @@
       closeAppMenu();
       const already = !!options.alreadyInstalled || isHarborRunningStandalone();
       const canNative = !!options.canRetryNative || canNativePwaInstall();
-      const platform = options.platform || getMobileInstallPlatform();
-      const dismissedNative = !!options.dismissedNative;
+      const preselect = options.platformId || null;
+
+      const PLATFORMS = [
+        {
+          id: 'auto',
+          name: 'This browser',
+          sub: 'Try one-tap when available',
+          icon: 'fa-bolt',
+          native: true,
+          steps: [
+            'If your browser supports it, Harbor can open the official “Add to Home Screen” dialog — no app store, no extra download.',
+            'Tap <strong>Add to home screen</strong> below when you see it.',
+            'Confirm in the system prompt. Your data stays on this device; Harbor never receives a copy of your logins.'
+          ]
+        },
+        {
+          id: 'chrome-android',
+          name: 'Chrome',
+          sub: 'Android',
+          icon: 'fa-chrome',
+          native: true,
+          steps: [
+            'Open Harbor in <strong>Chrome</strong> on Android.',
+            'Tap <strong>Add to home screen</strong> in Harbor (or Chrome menu ⋮ → <strong>Add to Home screen</strong> / <strong>Install app</strong>).',
+            'You’re only pinning a <strong>shortcut</strong> — not installing a Play Store package. Confirm, then open the new icon for full-screen Harbor.'
+          ]
+        },
+        {
+          id: 'chrome-desktop',
+          name: 'Chrome',
+          sub: 'Windows / Mac / Linux',
+          icon: 'fa-chrome',
+          native: true,
+          steps: [
+            'Open Harbor in <strong>Chrome</strong> on your computer.',
+            'Use Harbor’s <strong>Add to home screen</strong> button, or the install icon in the address bar, or menu ⋮ → <strong>Install Harbor</strong> / <strong>Cast, save, and share</strong> → Install.',
+            'Harbor opens in its own window without the browser toolbar.'
+          ]
+        },
+        {
+          id: 'edge',
+          name: 'Microsoft Edge',
+          sub: 'Windows / Mac / Android',
+          icon: 'fa-edge',
+          native: true,
+          steps: [
+            'Open Harbor in <strong>Edge</strong>.',
+            'Tap Harbor’s install button if shown, or menu ⋯ → <strong>Apps</strong> → <strong>Install this site as an app</strong>.',
+            'Confirm install. Edge uses the same secure web-app prompt as Chromium — no extra account required.'
+          ]
+        },
+        {
+          id: 'brave',
+          name: 'Brave',
+          sub: 'Mobile / Desktop',
+          icon: 'fa-shield-halved',
+          native: true,
+          steps: [
+            'Open Harbor in <strong>Brave</strong>.',
+            'Use Harbor’s one-tap button when available, or menu → <strong>Install</strong> / <strong>Add to Home screen</strong>.',
+            'Brave is Chromium-based; install is a local shortcut only.'
+          ]
+        },
+        {
+          id: 'samsung',
+          name: 'Samsung Internet',
+          sub: 'Galaxy phones',
+          icon: 'fa-mobile-screen',
+          native: true,
+          steps: [
+            'Open Harbor in <strong>Samsung Internet</strong>.',
+            'Menu → <strong>Add page to</strong> → <strong>Home screen</strong>, or use Harbor’s button if your browser offers a prompt.',
+            'Open from the home screen for a full-screen experience.'
+          ]
+        },
+        {
+          id: 'opera',
+          name: 'Opera',
+          sub: 'Mobile / Desktop',
+          icon: 'fa-opera',
+          native: true,
+          steps: [
+            'Open Harbor in <strong>Opera</strong>.',
+            'Menu → <strong>Add to</strong> → <strong>Home screen</strong> (mobile) or look for <strong>Install</strong> on desktop.',
+            'Confirm — this only creates a shortcut to this page on your device.'
+          ]
+        },
+        {
+          id: 'safari-ios',
+          name: 'Safari',
+          sub: 'iPhone / iPad',
+          icon: 'fa-safari',
+          native: false,
+          steps: [
+            'Open Harbor in <strong>Safari</strong> (not Chrome-on-iOS — Apple requires Safari for home-screen apps).',
+            'Tap <strong>Share</strong> (square with ↑).',
+            'Scroll and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.',
+            'Apple does not allow websites to do this with one automatic tap — the Share sheet is the secure, official path.'
+          ]
+        },
+        {
+          id: 'safari-mac',
+          name: 'Safari',
+          sub: 'Mac',
+          icon: 'fa-safari',
+          native: false,
+          steps: [
+            'Open Harbor in <strong>Safari</strong> on Mac.',
+            'File → <strong>Add to Dock</strong> (macOS Sonoma+) or Share → <strong>Add to Dock</strong> when available.',
+            'On older macOS, bookmark Harbor or use Chrome/Edge install if you prefer a windowed app.'
+          ]
+        },
+        {
+          id: 'firefox-android',
+          name: 'Firefox',
+          sub: 'Android',
+          icon: 'fa-firefox-browser',
+          native: false,
+          steps: [
+            'Open Harbor in <strong>Firefox</strong> on Android.',
+            'Menu ⋮ → <strong>Install</strong> or <strong>Add to Home screen</strong> (wording varies by version).',
+            'Firefox may not support the same one-tap prompt as Chrome; the menu path is normal and private to your device.'
+          ]
+        },
+        {
+          id: 'firefox-desktop',
+          name: 'Firefox',
+          sub: 'Desktop',
+          icon: 'fa-firefox-browser',
+          native: false,
+          steps: [
+            'Desktop Firefox has limited “install site as app” support compared with Chrome/Edge.',
+            'Bookmark Harbor, or use Chrome/Edge if you want a dedicated app window.',
+            'Your Harbor data still stays in the browser profile you use — nothing is uploaded to us.'
+          ]
+        },
+        {
+          id: 'duckduckgo',
+          name: 'DuckDuckGo',
+          sub: 'Mobile browser',
+          icon: 'fa-dove',
+          native: false,
+          steps: [
+            'Open Harbor in the <strong>DuckDuckGo</strong> browser.',
+            'Menu → <strong>Add to Home</strong> / <strong>Add to Home Screen</strong> (label varies).',
+            'DuckDuckGo does not always expose the Chromium install prompt; the menu path keeps the process under your control.'
+          ]
+        }
+      ];
 
       const modal = document.createElement('div');
-      // z-index high enough to sit above the in-app tutorial coachmark when opened mid-tour
-      modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[220]';
+      modal.id = 'install-guide-modal';
+      modal.className = 'fixed inset-0 bg-harbor-bg/85 modal-overlay-blur flex items-end harbor-modal-overlay';
       modal.innerHTML = `
-        <div class="absolute inset-0" onclick="this.closest('.fixed').remove()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[90vh] overflow-y-auto">
+        <div class="absolute inset-0" data-ig-close="1"></div>
+        <div class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[92vh] overflow-y-auto" data-ig-sheet="1">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1 flex items-center justify-between gap-2">
             <span>Add to Home Screen</span>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
+            <button type="button" class="modal-close-chip" data-ig-close="1" aria-label="Close">Close</button>
           </div>
-          <div class="text-[11px] text-harbor-muted mb-4 leading-snug">
-            ${already
-              ? 'Harbor is already running as an installed app on this device.'
-              : canNative
-                ? 'One tap pins Harbor to your home screen — full screen, no browser bar. You’re not downloading a store app.'
-                : 'Put Harbor on your home screen like a real app — full screen, no address bar covering the bottom buttons.'}
+          <div class="text-[11px] text-harbor-muted mb-3 leading-snug">
+            Harbor is local-first: pinning to your home screen only creates a shortcut on <strong class="text-harbor-text">your</strong> device. We never get your passwords or a remote install agent.
           </div>
-
-          ${already ? `
-            <div class="privacy-block mb-4">
-              <h4><i class="fa-solid fa-circle-check text-harbor-primary-light mr-1.5"></i>You’re all set</h4>
-              <p>Open Harbor from your home screen icon anytime. Data stays on this device.</p>
-            </div>
-          ` : canNative ? `
-            <button type="button" id="pwa-native-install-btn"
-              class="w-full mb-4 py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm active:opacity-90">
-              <i class="fa-solid fa-mobile-screen-button mr-1.5"></i>Add Harbor to home screen
-            </button>
-            <div class="text-[10px] text-harbor-muted text-center mb-4 -mt-2 leading-snug">
-              Opens your browser’s official prompt. No app-store download — just a home-screen shortcut to this page.
-            </div>
-          ` : dismissedNative ? `
-            <div class="privacy-block mb-3">
-              <h4><i class="fa-solid fa-hand text-harbor-primary-light mr-1.5"></i>Maybe later</h4>
-              <p>No problem — use the short steps below, or try again from the menu whenever you’re ready.</p>
-            </div>
-          ` : platform === 'ios' ? `
-            <div class="privacy-block mb-3">
-              <h4><i class="fa-brands fa-apple text-harbor-text mr-1.5"></i>iPhone / iPad</h4>
-              <p>Apple doesn’t allow websites to add icons with one tap. Safari’s Share menu is the official way — three quick steps below.</p>
-            </div>
-          ` : `
-            <div class="privacy-block mb-3">
-              <h4><i class="fa-solid fa-circle-info text-harbor-primary-light mr-1.5"></i>Android tip</h4>
-              <p>When ready, you’ll see <strong class="text-harbor-text">Add Harbor to home screen</strong> here. That only pins a shortcut — nothing heavy is “installed” from a store.</p>
-            </div>
-          `}
-
-          <div class="space-y-3">
-            <div class="privacy-block">
-              <h4><i class="fa-brands fa-apple text-harbor-text mr-1.5"></i>Safari (iPhone / iPad)</h4>
-              <p class="mb-2 text-harbor-muted">Clean and simple:</p>
-              <p><strong class="text-harbor-text">1.</strong> Open this page in <strong class="text-harbor-text">Safari</strong>.</p>
-              <p><strong class="text-harbor-text">2.</strong> Tap <strong class="text-harbor-text">Share</strong> (□ with ↑).</p>
-              <p><strong class="text-harbor-text">3.</strong> Tap <strong class="text-harbor-text">Add to Home Screen</strong> → <strong class="text-harbor-text">Add</strong>.</p>
-              <p class="mt-2">Next time, open the Harbor icon — full screen, no browser chrome in the way.</p>
-            </div>
-            <div class="privacy-block">
-              <h4><i class="fa-brands fa-android text-emerald-400 mr-1.5"></i>Android (Chrome)</h4>
-              <p class="mb-2">Prefer the button above when it appears. You’re only adding a home-screen shortcut — not installing a big Play Store app.</p>
-              <p><strong class="text-harbor-text">Manual path:</strong> Chrome → <strong class="text-harbor-text">⋮</strong> → <strong class="text-harbor-text">Add to Home screen</strong> / <strong class="text-harbor-text">Install app</strong> → confirm.</p>
-            </div>
-            <div class="privacy-block">
-              <h4><i class="fa-solid fa-lightbulb text-amber-300 mr-1.5"></i>Why bother?</h4>
-              <p>In a browser tab, the URL bar can sit on top of the Summary button. A home-screen icon uses the whole screen.</p>
-            </div>
-          </div>
-
-          <button type="button" onclick="this.closest('.fixed').remove()"
-            class="w-full mt-5 py-3 rounded-2xl ${canNative && !already ? 'bg-harbor-raised border border-harbor-border text-harbor-muted' : 'bg-harbor-primary text-white'} font-semibold">
-            ${already || !canNative ? 'Got it' : 'Not now'}
-          </button>
+          <div id="ig-view-root"></div>
         </div>`;
       document.body.appendChild(modal);
+      document.body.classList.add('harbor-modal-open');
 
-      modal.querySelector('#pwa-native-install-btn')?.addEventListener('click', async () => {
+      const root = modal.querySelector('#ig-view-root');
+      const close = () => {
         modal.remove();
-        await promptPwaInstall();
-      });
+        if (!document.querySelector('body > .fixed.inset-0')) document.body.classList.remove('harbor-modal-open');
+      };
+      modal.querySelectorAll('[data-ig-close]').forEach(el => el.addEventListener('click', close));
+      modal.querySelector('[data-ig-sheet]')?.addEventListener('click', (e) => e.stopPropagation());
+
+      const renderPicker = () => {
+        root.innerHTML = `
+          ${already ? `
+            <div class="privacy-block mb-3">
+              <h4><i class="fa-solid fa-circle-check text-harbor-primary-light mr-1.5"></i>Already on this device</h4>
+              <p>Harbor looks like it’s running as an installed app. You can still review platform steps below if you need them on another device.</p>
+            </div>` : canNative ? `
+            <button type="button" id="ig-native-btn"
+              class="w-full mb-3 py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm active:opacity-90">
+              <i class="fa-solid fa-mobile-screen-button mr-1.5"></i>Add to home screen (this browser)
+            </button>
+            <div class="text-[10px] text-harbor-muted text-center mb-3 -mt-1 leading-snug">
+              Official browser prompt when supported — shortcut only, no store download.
+            </div>` : ''}
+          <div class="text-xs font-semibold text-harbor-text mb-2">Select your platform</div>
+          <div class="platform-pick-grid mb-3">
+            ${PLATFORMS.map(p => `
+              <button type="button" class="platform-pick-btn" data-platform="${p.id}">
+                <i class="fa-brands ${p.icon} ${p.icon.startsWith('fa-') && !p.icon.includes('chrome') && !p.icon.includes('safari') && !p.icon.includes('firefox') && !p.icon.includes('edge') && !p.icon.includes('opera') ? '' : ''}"></i>
+                <span>${p.name}</span>
+                <span class="platform-pick-sub">${p.sub}</span>
+                ${p.native ? '<span class="platform-pick-badge">One-tap when available</span>' : '<span class="platform-pick-sub">Manual steps</span>'}
+              </button>
+            `).join('')}
+          </div>
+          <div class="privacy-block">
+            <h4><i class="fa-solid fa-shield-halved text-harbor-primary-light mr-1.5"></i>Privacy</h4>
+            <p>Harbor never auto-installs without your confirmation. One-tap only uses your browser’s built-in prompt. Manual steps stay entirely on your phone.</p>
+          </div>
+          <button type="button" class="w-full mt-4 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold" data-ig-close="1">Close</button>
+        `;
+        // Fix icons that aren't brands
+        root.querySelectorAll('.platform-pick-btn i').forEach(icon => {
+          const btn = icon.closest('[data-platform]');
+          const id = btn?.dataset?.platform;
+          const map = {
+            auto: 'fa-solid fa-bolt',
+            brave: 'fa-solid fa-shield-halved',
+            samsung: 'fa-solid fa-mobile-screen',
+            duckduckgo: 'fa-solid fa-dove',
+            'chrome-android': 'fa-brands fa-chrome',
+            'chrome-desktop': 'fa-brands fa-chrome',
+            edge: 'fa-brands fa-edge',
+            'safari-ios': 'fa-brands fa-safari',
+            'safari-mac': 'fa-brands fa-safari',
+            'firefox-android': 'fa-brands fa-firefox-browser',
+            'firefox-desktop': 'fa-brands fa-firefox-browser',
+            opera: 'fa-brands fa-opera'
+          };
+          if (map[id]) icon.className = map[id];
+        });
+
+        root.querySelector('#ig-native-btn')?.addEventListener('click', async () => {
+          close();
+          await promptPwaInstall({ forceGuide: false });
+        });
+        root.querySelectorAll('[data-platform]').forEach(btn => {
+          btn.addEventListener('click', () => renderDetail(btn.dataset.platform));
+        });
+        root.querySelectorAll('[data-ig-close]').forEach(el => el.addEventListener('click', close));
+      };
+
+      const renderDetail = (platformId) => {
+        const p = PLATFORMS.find(x => x.id === platformId) || PLATFORMS[0];
+        const showNative = p.native && canNativePwaInstall() && !already;
+        root.innerHTML = `
+          <button type="button" id="ig-back" class="text-[11px] text-harbor-primary-light font-semibold mb-3">
+            <i class="fa-solid fa-arrow-left mr-1"></i>All platforms
+          </button>
+          <div class="font-semibold text-base text-harbor-text mb-0.5">${p.name}</div>
+          <div class="text-[11px] text-harbor-muted mb-3">${p.sub}</div>
+          ${showNative ? `
+            <button type="button" id="ig-native-btn"
+              class="w-full mb-3 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">
+              Add to home screen (secure browser prompt)
+            </button>
+          ` : ''}
+          <div class="privacy-block mb-3">
+            <h4>Steps</h4>
+            <ol class="tutorial-install-steps" style="padding-left:1.1rem;margin:0.35rem 0 0">
+              ${p.steps.map(s => `<li style="margin-bottom:0.4rem">${s}</li>`).join('')}
+            </ol>
+          </div>
+          <div class="privacy-block mb-3">
+            <h4><i class="fa-solid fa-shield-halved text-harbor-primary-light mr-1.5"></i>Secure by design</h4>
+            <p>No Harbor server performs the install. Any one-tap action is your browser asking you to confirm a local shortcut.</p>
+          </div>
+          <button type="button" class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold" data-ig-close="1">Close</button>
+        `;
+        root.querySelector('#ig-back')?.addEventListener('click', renderPicker);
+        root.querySelector('#ig-native-btn')?.addEventListener('click', async () => {
+          close();
+          await promptPwaInstall({ forceGuide: false });
+        });
+        root.querySelectorAll('[data-ig-close]').forEach(el => el.addEventListener('click', close));
+      };
+
+      if (preselect) renderDetail(preselect);
+      else renderPicker();
     }
 
     function openAppMenuSheet() {
