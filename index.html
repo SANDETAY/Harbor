@@ -505,10 +505,6 @@
       position: relative;
       gap: 0.35rem;
       padding-bottom: 0.15rem;
-      /* Own horizontal gestures so chip swipe works on touch devices */
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
     }
 
     /* Sliding active chip on main tabs */
@@ -545,7 +541,6 @@
       border-radius: 0.75rem 0.75rem 0 0;
       border-bottom: 3px solid transparent;
       transition: color 0.25s ease, background 0.25s ease, transform 0.15s var(--harbor-ease-out);
-      touch-action: none;
     }
 
     .main-nav-tab:hover {
@@ -574,9 +569,6 @@
       border: 1px solid rgb(var(--harbor-border));
       background: rgba(22, 32, 38, 0.85);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
     }
 
     /* Sliding pill behind active Life chip */
@@ -617,7 +609,6 @@
       overflow: hidden;
       text-overflow: ellipsis;
       transition: color 0.25s ease, transform 0.15s var(--harbor-ease-out);
-      touch-action: none;
     }
 
     .life-nav-tab:hover {
@@ -4516,7 +4507,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v97';
+    const HARBOR_BUILD = 'v98';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -16668,173 +16659,183 @@
       }
     }
 
+    function isOverlayBlockingTabSwipe() {
+      return !!(
+        document.getElementById('summary-modal') ||
+        document.getElementById('app-menu-sheet') ||
+        document.querySelector('.modal-overlay-blur') ||
+        document.body.classList.contains('is-splash-active') ||
+        document.getElementById('onboarding')?.style?.display === 'flex'
+      );
+    }
+
+    /** Targets where horizontal pan should not change main tabs */
+    function isMainTabSwipeBlockedTarget(target) {
+      if (!(target instanceof Element)) return true;
+      if (target.closest([
+        'input', 'textarea', 'select', 'option',
+        '[contenteditable="true"]',
+        '.library-filters-scroll',
+        '#header-weather-hours',
+        '.weather-hour-chip',
+        '.summary-orb',
+        '#summary-modal',
+        '#app-menu-sheet',
+        '.modal-sheet',
+        '.app-menu-dropdown',
+        '.swipe-action',
+        '.life-subnav', // Life chips are tap-only
+        '[role="dialog"]',
+        '[role="slider"]'
+      ].join(','))) return true;
+
+      // Nested horizontal scrollers
+      let node = target;
+      const shell = document.getElementById('app-shell');
+      while (node && node !== shell) {
+        if (node instanceof HTMLElement) {
+          const ox = getComputedStyle(node).overflowX;
+          if ((ox === 'auto' || ox === 'scroll') && node.scrollWidth > node.clientWidth + 6) {
+            return true;
+          }
+        }
+        node = node.parentElement;
+      }
+      return false;
+    }
+
+    function navigateMainTabSwipe(dir) {
+      if (Date.now() < tabSwipeCooldownUntil) return false;
+      if (isOverlayBlockingTabSwipe()) return false;
+      if (document.querySelector('.swipe-row.is-swiping')) return false;
+
+      const i = MAIN_TAB_ORDER.indexOf(currentTab);
+      if (i < 0) return false;
+      const n = dir === 'next' ? i + 1 : i - 1;
+      if (n < 0 || n >= MAIN_TAB_ORDER.length) return false;
+
+      tabSwipeCooldownUntil = Date.now() + 340;
+      tabSwipeClickSuppressUntil = Date.now() + 420;
+      switchTab(MAIN_TAB_ORDER[n], { dir });
+      return true;
+    }
+
     /**
-     * Horizontal swipe on a chip strip only (main tabs / Life sub-tabs).
-     * Uses Pointer Events + setPointerCapture so touch and mouse both work.
+     * Swipe almost anywhere on the app shell to move main tabs.
+     * Life sub-tabs are tap-only. Task row left-swipe still owns Edit/Delete.
      */
-    function bindChipStripSwipe(stripEl, onSwipe) {
-      if (!stripEl || stripEl.dataset.chipSwipeBound === '1') return;
-      stripEl.dataset.chipSwipeBound = '1';
-      stripEl.style.touchAction = 'none';
+    function initTabSwipeNav() {
+      const root = document.getElementById('app-shell') || document.getElementById('app-scroll');
+      if (!root || root.dataset.tabSwipeInit === '1') return;
+      root.dataset.tabSwipeInit = '1';
+
+      ensureNavIndicator(document.getElementById('main-nav-bar'), 'main-nav-indicator');
+      ensureNavIndicator(document.querySelector('.life-subnav'), 'life-chip-indicator');
 
       let tracking = false;
-      let pointerId = null;
       let startX = 0;
       let startY = 0;
-      let axis = null; // null | 'x' | 'y'
-      let movedX = 0;
-      const THRESH = 28;
-      const AXIS_MIN = 8;
+      let axis = null;
+      let startedOnSwipeRow = false;
+      const THRESH = 56;
+      const AXIS_MIN = 12;
+      const AXIS_RATIO = 1.25;
 
-      const reset = () => {
-        tracking = false;
-        pointerId = null;
+      const begin = (x, y, target) => {
+        if (isOverlayBlockingTabSwipe()) return;
+        if (isMainTabSwipeBlockedTarget(target)) return;
+        tracking = true;
+        startX = x;
+        startY = y;
         axis = null;
-        movedX = 0;
+        startedOnSwipeRow = !!(target instanceof Element && target.closest('.swipe-row'));
       };
 
-      stripEl.addEventListener('pointerdown', (e) => {
-        if (e.isPrimary === false) return;
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
-        tracking = true;
-        pointerId = e.pointerId;
-        startX = e.clientX;
-        startY = e.clientY;
-        axis = null;
-        movedX = 0;
-        try { stripEl.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
-      });
-
-      stripEl.addEventListener('pointermove', (e) => {
-        if (!tracking || e.pointerId !== pointerId) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        movedX = dx;
-
+      const move = (x, y) => {
+        if (!tracking) return;
+        const dx = x - startX;
+        const dy = y - startY;
         if (!axis) {
           if (Math.abs(dx) < AXIS_MIN && Math.abs(dy) < AXIS_MIN) return;
-          // Prefer horizontal on chip strips (that's what they're for)
-          if (Math.abs(dx) >= Math.abs(dy) * 0.85) {
+          if (Math.abs(dx) > Math.abs(dy) * AXIS_RATIO && Math.abs(dx) > AXIS_MIN) {
             axis = 'x';
           } else {
             axis = 'y';
-            // Vertical intent — release and let the page behave normally
-            try { stripEl.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
-            reset();
-            return;
+            tracking = false;
           }
         }
-
-        if (axis === 'x' && e.cancelable) {
-          e.preventDefault();
-        }
-      });
-
-      const finish = (e) => {
-        if (!tracking || (pointerId != null && e.pointerId !== pointerId)) return;
-        const dx = (typeof e.clientX === 'number' ? e.clientX : startX + movedX) - startX;
-        const wasX = axis === 'x';
-        try { stripEl.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
-        reset();
-
-        if (!wasX || Math.abs(dx) < THRESH) return;
-        if (Date.now() < tabSwipeCooldownUntil) return;
-
-        // Block the synthetic click that would re-fire the chip under the finger
-        tabSwipeClickSuppressUntil = Date.now() + 500;
-        tabSwipeCooldownUntil = Date.now() + 300;
-        onSwipe(dx < 0 ? 'next' : 'prev');
       };
 
-      stripEl.addEventListener('pointerup', finish);
-      stripEl.addEventListener('pointercancel', (e) => {
-        if (pointerId != null && e.pointerId !== pointerId) return;
-        try { stripEl.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
-        reset();
-      });
-
-      // Fallback for older WebViews that are flaky with pointer events
-      let touchTracking = false;
-      let tStartX = 0;
-      let tStartY = 0;
-      let tAxis = null;
-      stripEl.addEventListener('touchstart', (e) => {
-        if (e.touches.length !== 1) return;
-        // Skip if pointer events already handling
-        if (window.PointerEvent && e.target?.hasPointerCapture?.(pointerId)) return;
-        touchTracking = true;
-        tStartX = e.touches[0].clientX;
-        tStartY = e.touches[0].clientY;
-        tAxis = null;
-      }, { passive: true });
-
-      stripEl.addEventListener('touchmove', (e) => {
-        if (!touchTracking || e.touches.length !== 1) return;
-        const dx = e.touches[0].clientX - tStartX;
-        const dy = e.touches[0].clientY - tStartY;
-        if (!tAxis) {
-          if (Math.abs(dx) < AXIS_MIN && Math.abs(dy) < AXIS_MIN) return;
-          tAxis = Math.abs(dx) >= Math.abs(dy) * 0.85 ? 'x' : 'y';
-          if (tAxis === 'y') {
-            touchTracking = false;
-            return;
-          }
+      const end = (x) => {
+        if (!tracking) {
+          axis = null;
+          return;
         }
-        if (tAxis === 'x' && e.cancelable) e.preventDefault();
-      }, { passive: false });
+        const dx = x - startX;
+        const wasX = axis === 'x';
+        tracking = false;
+        axis = null;
 
-      stripEl.addEventListener('touchend', (e) => {
-        if (!touchTracking) return;
-        const t = e.changedTouches[0];
-        const dx = t ? t.clientX - tStartX : 0;
-        const wasX = tAxis === 'x';
-        touchTracking = false;
-        tAxis = null;
-        // If pointer path already fired, cooldown will no-op this
         if (!wasX || Math.abs(dx) < THRESH) return;
-        if (Date.now() < tabSwipeCooldownUntil) return;
-        tabSwipeClickSuppressUntil = Date.now() + 500;
-        tabSwipeCooldownUntil = Date.now() + 300;
-        onSwipe(dx < 0 ? 'next' : 'prev');
+        // Task/grocery/event rows own their own horizontal swipe (Edit/Delete)
+        if (startedOnSwipeRow) return;
+        if (document.querySelector('.swipe-row.is-swiping')) return;
+
+        navigateMainTabSwipe(dx < 0 ? 'next' : 'prev');
+      };
+
+      const cancel = () => {
+        tracking = false;
+        axis = null;
+      };
+
+      // Touch path — primary for phones
+      root.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        begin(e.touches[0].clientX, e.touches[0].clientY, e.target);
       }, { passive: true });
-    }
 
-    function initTabSwipeNav() {
-      const mainNav = document.getElementById('main-nav-bar');
-      const lifeNav = document.querySelector('.life-subnav');
-      if (!mainNav && !lifeNav) return;
+      root.addEventListener('touchmove', (e) => {
+        if (!tracking || e.touches.length !== 1) return;
+        move(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
 
-      ensureNavIndicator(mainNav, 'main-nav-indicator');
-      ensureNavIndicator(lifeNav, 'life-chip-indicator');
+      root.addEventListener('touchend', (e) => {
+        const t = e.changedTouches[0];
+        if (t) end(t.clientX);
+        else cancel();
+      }, { passive: true });
 
-      // Swipe only on main tab chips → Today / Life / Streaks / Library
-      bindChipStripSwipe(mainNav, (dir) => {
-        const i = MAIN_TAB_ORDER.indexOf(currentTab);
-        if (i < 0) return;
-        const n = dir === 'next' ? i + 1 : i - 1;
-        if (n < 0 || n >= MAIN_TAB_ORDER.length) return;
-        switchTab(MAIN_TAB_ORDER[n], { dir });
+      root.addEventListener('touchcancel', cancel, { passive: true });
+
+      // Pointer path for touchscreens/pen on desktop (skip mouse drag — use taps for mouse)
+      let pointerId = null;
+      root.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' || e.pointerType === '') return;
+        if (e.isPrimary === false) return;
+        pointerId = e.pointerId;
+        begin(e.clientX, e.clientY, e.target);
+      });
+      root.addEventListener('pointermove', (e) => {
+        if (pointerId == null || e.pointerId !== pointerId) return;
+        move(e.clientX, e.clientY);
+      });
+      root.addEventListener('pointerup', (e) => {
+        if (pointerId == null || e.pointerId !== pointerId) return;
+        pointerId = null;
+        end(e.clientX);
+      });
+      root.addEventListener('pointercancel', (e) => {
+        if (pointerId == null || e.pointerId !== pointerId) return;
+        pointerId = null;
+        cancel();
       });
 
-      // Swipe only on Life sub-tab chips → Schedule / Grocery / Bills / Subscriptions
-      bindChipStripSwipe(lifeNav, (dir) => {
-        if (currentTab !== 'life') {
-          // If somehow Life chips are visible, still switch panels after ensuring Life is open
-          switchTab('life', { dir: null });
-        }
-        const i = LIFE_PANEL_ORDER.indexOf(currentLifePanel);
-        if (i < 0) return;
-        const n = dir === 'next' ? i + 1 : i - 1;
-        if (n < 0 || n >= LIFE_PANEL_ORDER.length) return;
-        switchLifePanel(LIFE_PANEL_ORDER[n], { dir });
-      });
-
-      if (!window.__harborChipClickGuard) {
-        window.__harborChipClickGuard = true;
+      // After a successful tab swipe, kill ghost clicks on whatever was under the thumb
+      if (!window.__harborTabSwipeClickGuard) {
+        window.__harborTabSwipeClickGuard = true;
         document.addEventListener('click', (e) => {
           if (Date.now() >= tabSwipeClickSuppressUntil) return;
-          if (!(e.target instanceof Element)) return;
-          if (!e.target.closest('#main-nav-bar, .life-subnav')) return;
           e.preventDefault();
           e.stopPropagation();
           e.stopImmediatePropagation();
@@ -16843,7 +16844,6 @@
 
       scheduleNavIndicators();
       window.addEventListener('resize', scheduleNavIndicators);
-      // After fonts / splash layout settle
       setTimeout(scheduleNavIndicators, 200);
       setTimeout(scheduleNavIndicators, 700);
       setTimeout(scheduleNavIndicators, 1400);
