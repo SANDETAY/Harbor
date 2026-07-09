@@ -3777,11 +3777,9 @@
         </div>
       </header>
 
-      <!-- Splash / Launch screen — black void, light finds the slogan -->
+      <!-- Splash / Launch screen — neon light sweeps through letter shapes -->
       <div id="splash-screen" class="absolute inset-0 z-[100] splash-screen-v3" aria-hidden="true">
         <div class="splash-void" aria-hidden="true"></div>
-        <div class="splash-beam" aria-hidden="true"></div>
-        <div class="splash-motes" aria-hidden="true"></div>
         <div id="splash-inner">
           <div id="splash-slogan" class="splash-slogan">
             <p class="splash-slogan-line splash-slogan-base">
@@ -4113,7 +4111,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v70';
+    const RHYTHM_BUILD = 'v71';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -16394,9 +16392,9 @@
       const appWrap = document.querySelector('.app-content-wrap');
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      // Beam sweep → full illuminate hold → soft exit
-      const LIGHT_MS = 1320;
-      const HOLD_MS = 720;
+      // Neon glyph sweep L→R → hold pulse → soft exit
+      const LIGHT_MS = 1520;
+      const HOLD_MS = 780;
       const REVEAL_MS = 560;
       const exitAt = LIGHT_MS + HOLD_MS;
 
