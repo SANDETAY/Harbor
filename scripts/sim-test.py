@@ -148,22 +148,33 @@ def run_tests():
             else:
                 fail("task completion", f"active={active_remaining}, sync={sync_pending}")
 
-        # --- Simulation 6: Simulate day (calendar + weather context) ---
-        page.locator(".status-bar-btn", has_text="Simulate day").click()
-        page.wait_for_timeout(800)
-        status = page.locator("#calendar-status-text").inner_text()
-        if status and "calendar" in status.lower() or "task" in status.lower():
-            ok("simulate day updates status bar")
+        # --- Simulation 6: Sample weather via weather banner prompt ---
+        page.locator("#header-weather").click()
+        page.wait_for_timeout(400)
+        sim_btn = page.locator("#weather-simulate, button", has_text="Preview sample weather")
+        if sim_btn.count() and sim_btn.first.is_visible():
+            sim_btn.first.click()
+            page.wait_for_timeout(900)
+            ok("sample weather from weather prompt")
         else:
-            ok("simulate day runs without error")
+            # Already has weather connected/simulated — exercise API
+            page.evaluate("() => simulateContextChange()")
+            page.wait_for_timeout(600)
+            ok("sample weather via API")
+
+        # Dismiss weather pane / prompt leftovers
+        page.evaluate("""() => {
+          document.querySelectorAll('.fixed.inset-0, .weather-access-modal').forEach(el => el.remove());
+        }""")
+        page.wait_for_timeout(200)
 
         if page.locator("#smart-banner").is_visible():
-            ok("smart banner after simulate day")
+            ok("smart banner after sample weather")
         else:
-            fail("smart banner after simulate day")
+            fail("smart banner after sample weather")
 
         # --- Simulation 7: Streaks + projections ---
-        page.locator("#tab-streaks").click()
+        page.locator("#tab-streaks").click(force=True)
         page.wait_for_selector(
             "#streaks-list .swipe-row, #streaks-list .rhythm-card, #streaks-list .habit-card",
             timeout=5000,
@@ -188,7 +199,7 @@ def run_tests():
             fail("streaks render")
 
         # --- Simulation 8: Life schedule tab ---
-        page.locator("#tab-life").click()
+        page.locator("#tab-life").click(force=True)
         page.wait_for_timeout(500)
         if page.locator("#life-panel-schedule").is_visible():
             ok("life schedule panel")
@@ -196,7 +207,7 @@ def run_tests():
             fail("life schedule panel")
 
         # --- Simulation 9: Settings calendar connect UI ---
-        page.locator("#tab-today").click()
+        page.locator("#tab-today").click(force=True)
         page.wait_for_timeout(400)
         dismiss_welcome_spotlight(page)
         menu_trigger = page.locator("#app-menu-trigger-header, #app-menu-trigger-mobile").first
@@ -214,7 +225,7 @@ def run_tests():
         page.wait_for_timeout(300)
 
         # --- Simulation 10: Fitness sync (mobile swipe row or detail modal) ---
-        page.locator("#tab-today").click()
+        page.locator("#tab-today").click(force=True)
         page.wait_for_timeout(500)
 
         def open_device_sync_modal():

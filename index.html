@@ -470,6 +470,7 @@
     }
 
     #app-shell {
+      position: relative;
       display: flex;
       flex-direction: column;
       flex: 1;
@@ -920,22 +921,60 @@
       -webkit-tap-highlight-color: transparent;
     }
     #header-weather:active {
-      opacity: 0.85;
+      opacity: 0.92;
     }
     #app-weather-row {
       width: 100%;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      padding-top: 0.45rem;
+      padding-bottom: 0.45rem;
+      background: transparent;
+      border-bottom: none;
+    }
+
+    #header-weather.weather-glass {
+      border-radius: 1.15rem;
+      border: 1px solid rgba(143, 184, 176, 0.16);
+      background:
+        linear-gradient(135deg, rgba(48, 72, 78, 0.55) 0%, rgba(30, 41, 51, 0.42) 48%, rgba(22, 36, 44, 0.5) 100%);
+      backdrop-filter: blur(16px) saturate(1.25);
+      -webkit-backdrop-filter: blur(16px) saturate(1.25);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 8px 22px rgba(0, 0, 0, 0.18);
+      padding: 0.55rem 0.65rem 0.6rem;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #header-weather.weather-glass:active {
+      border-color: rgba(91, 184, 168, 0.35);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        0 6px 16px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(61, 154, 139, 0.12);
     }
 
     #header-weather-hours {
       display: flex;
-      gap: 0.45rem;
-      overflow: hidden;
+      gap: 0.4rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 0.05rem;
+    }
+    #header-weather-hours::-webkit-scrollbar {
+      display: none;
     }
     .header-weather-chip {
-      flex: 1;
-      min-width: 58px;
-      min-height: 3.5rem;
-      min-width: 0;
+      flex: 1 0 auto;
+      min-width: 3.15rem;
+      min-height: 3.35rem;
+      border-radius: 0.85rem !important;
+      background: rgba(18, 28, 34, 0.35) !important;
+      border-color: rgba(143, 184, 176, 0.12) !important;
+      backdrop-filter: blur(6px);
     }
     .weather-pane-row {
       transition: background-color 0.15s ease;
@@ -1279,60 +1318,116 @@
       margin-bottom: 0.65rem;
     }
 
-    /* ── Rhythm Brief launcher (slimmer than smart banner) ── */
-    .rhythm-brief-launcher {
-      display: block;
-      cursor: pointer;
-      border-radius: 1rem;
-      border: 1px solid rgba(61, 154, 139, 0.3);
+    /* ── Rhythm Brief FAB (thumb-friendly, bottom-right) ── */
+    button.rhythm-brief-fab,
+    .rhythm-brief-fab {
+      position: fixed !important;
+      right: 1rem !important;
+      bottom: 1.25rem !important;
+      z-index: 55 !important;
+      width: 3.5rem !important;
+      height: 3.5rem !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border-radius: 999px !important;
+      border: 1px solid rgba(91, 184, 168, 0.45) !important;
       background:
-        linear-gradient(135deg, rgba(61, 154, 139, 0.1) 0%, rgba(30, 58, 74, 0.45) 48%, var(--rhythm-surface) 100%);
-      box-shadow: var(--rhythm-shadow-sm), 0 0 0 1px rgba(91, 184, 168, 0.06);
-      padding: 0.5rem 0.8rem;
-      transition: transform 0.16s var(--rhythm-ease-out), border-color 0.16s ease, box-shadow 0.16s ease;
+        radial-gradient(circle at 30% 25%, rgba(143, 212, 199, 0.55) 0%, transparent 42%),
+        linear-gradient(145deg, rgba(61, 154, 139, 0.95) 0%, rgba(30, 90, 88, 0.98) 55%, rgba(22, 48, 58, 0.98) 100%) !important;
+      color: #f0faf7 !important;
+      box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.35),
+        0 0 0 1px rgba(91, 184, 168, 0.12),
+        0 0 22px rgba(61, 154, 139, 0.28);
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
       -webkit-tap-highlight-color: transparent;
+      transition: transform 0.18s var(--rhythm-ease-out), box-shadow 0.18s ease;
+      animation: briefFabBreathe 3.2s ease-in-out infinite;
     }
 
-    .rhythm-brief-launcher:hover {
-      border-color: rgba(91, 184, 168, 0.5);
-      box-shadow: var(--rhythm-shadow-sm), var(--rhythm-glow-primary);
+    .rhythm-brief-fab i {
+      font-size: 1.05rem;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+      position: relative;
+      z-index: 1;
     }
 
-    .rhythm-brief-launcher:active {
-      transform: scale(0.985);
+    .rhythm-brief-fab::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: inherit;
+      border: 1px solid rgba(91, 184, 168, 0.28);
+      opacity: 0.85;
+      animation: briefFabRing 3.2s ease-in-out infinite;
+      pointer-events: none;
     }
 
-    .rhythm-brief-launcher:focus-visible {
+    .rhythm-brief-fab:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow:
+        0 14px 32px rgba(0, 0, 0, 0.4),
+        0 0 28px rgba(61, 154, 139, 0.4);
+    }
+
+    .rhythm-brief-fab:active {
+      transform: scale(0.96);
+      animation: none;
+    }
+
+    .rhythm-brief-fab:focus-visible {
       outline: 2px solid var(--rhythm-primary-light);
-      outline-offset: 2px;
+      outline-offset: 3px;
     }
 
-    .rhythm-brief-launcher-icon {
-      width: 1.75rem;
-      height: 1.75rem;
-      border-radius: 0.6rem;
-      background: rgba(61, 154, 139, 0.18);
+    button.rhythm-brief-fab.hidden,
+    .rhythm-brief-fab.hidden {
+      display: none !important;
+    }
+
+    .rhythm-brief-fab-badge {
+      position: absolute;
+      top: -0.15rem;
+      right: -0.15rem;
+      min-width: 1.15rem;
+      height: 1.15rem;
+      padding: 0 0.28rem;
+      border-radius: 999px;
+      background: #f0b429;
+      color: #1a1410;
+      font-size: 0.58rem;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
-      color: var(--rhythm-primary-light);
-      font-size: 0.75rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+      z-index: 2;
     }
 
-    .rhythm-brief-launcher-title {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--rhythm-text);
-      letter-spacing: -0.02em;
-      line-height: 1.2;
+    .rhythm-brief-fab-badge.hidden {
+      display: none !important;
     }
 
-    .rhythm-brief-launcher-sub {
-      font-size: 0.6rem;
-      color: var(--rhythm-muted);
-      line-height: 1.3;
-      margin-top: 0.1rem;
+    .tutorial-target-pulse.rhythm-brief-fab {
+      animation: briefFabPulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes briefFabBreathe {
+      0%, 100% { box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35), 0 0 18px rgba(61, 154, 139, 0.22); }
+      50% { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38), 0 0 28px rgba(91, 184, 168, 0.38); }
+    }
+
+    @keyframes briefFabRing {
+      0%, 100% { transform: scale(1); opacity: 0.75; }
+      50% { transform: scale(1.08); opacity: 0.35; }
+    }
+
+    @keyframes briefFabPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(91, 184, 168, 0.45); }
+      50% { box-shadow: 0 0 0 10px rgba(91, 184, 168, 0); }
     }
 
     .rhythm-brief-stat {
@@ -1348,22 +1443,6 @@
     .rhythm-brief-stat.is-urgent {
       background: rgba(251, 191, 36, 0.15);
       color: #fbbf24;
-    }
-
-    .rhythm-brief-chevron {
-      color: var(--rhythm-primary-light);
-      opacity: 0.7;
-      font-size: 0.7rem;
-      flex-shrink: 0;
-    }
-
-    .tutorial-target-pulse.rhythm-brief-launcher {
-      animation: briefLauncherPulse 1.4s ease-in-out infinite;
-    }
-
-    @keyframes briefLauncherPulse {
-      0%, 100% { box-shadow: var(--rhythm-shadow-sm), 0 0 0 0 rgba(91, 184, 168, 0.35); }
-      50% { box-shadow: var(--rhythm-shadow-sm), 0 0 0 6px rgba(91, 184, 168, 0); }
     }
 
     /* ── Rhythm Brief modal ── */
@@ -2160,35 +2239,32 @@
       to { opacity: 1; }
     }
 
-    .header-context {
+    .header-day-stack {
       min-width: 0;
       flex: 1;
-      line-height: 1.25;
+      line-height: 1.2;
+      text-align: left;
     }
 
-    .header-context-primary {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--rhythm-text);
-      letter-spacing: -0.02em;
-    }
-
-    .header-context-secondary {
-      font-size: 0.72rem;
-      color: var(--rhythm-muted);
-      margin-top: 0.15rem;
-    }
-
-    .header-date {
-      display: none;
-      flex-shrink: 0;
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--rhythm-text);
-      letter-spacing: -0.02em;
+    .header-date-line {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: rgba(196, 210, 206, 0.78);
+      letter-spacing: -0.015em;
       white-space: nowrap;
-      text-align: right;
-      line-height: 1.25;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-task-line {
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: rgba(91, 184, 168, 0.78);
+      margin-top: 0.14rem;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .quick-add-bar {
@@ -2264,12 +2340,20 @@
         gap: 0.5rem;
       }
 
-      .site-header-actions {
-        display: none;
+      .header-date-line {
+        font-size: 0.74rem;
       }
 
-      .header-date {
-        display: block;
+      .header-task-line {
+        font-size: 0.62rem;
+      }
+
+      button.rhythm-brief-fab,
+      .rhythm-brief-fab {
+        width: 3.6rem !important;
+        height: 3.6rem !important;
+        bottom: 1.35rem !important;
+        right: 0.95rem !important;
       }
 
       .app-menu-wrap--mobile {
@@ -2293,7 +2377,7 @@
         flex: 0 0 auto;
         display: flex;
         flex-direction: column;
-        max-height: 28vh;
+        max-height: none;
         min-height: 0;
       }
 
@@ -2308,23 +2392,32 @@
       }
 
       #app-weather-row {
-        padding-top: 0.3rem !important;
-        padding-bottom: 0.3rem !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+        padding-top: 0.35rem !important;
+        padding-bottom: 0.2rem !important;
+        padding-left: 0.85rem !important;
+        padding-right: 0.85rem !important;
       }
 
-      #app-weather-row .mb-1\.5 {
-        margin-bottom: 0 !important;
+      #header-weather.weather-glass {
+        padding: 0.5rem 0.55rem 0.55rem;
+        border-radius: 1rem;
       }
 
       #header-weather-summary {
-        font-size: 0.62rem !important;
-        line-height: 1.2 !important;
+        font-size: 0.68rem !important;
+        line-height: 1.25 !important;
+        color: rgba(214, 228, 224, 0.88) !important;
       }
 
       #header-weather-hours {
-        display: none;
+        display: flex !important;
+        margin-top: 0.35rem;
+      }
+
+      .header-weather-chip {
+        min-width: 2.9rem;
+        min-height: 3.15rem;
+        padding: 0.3rem 0.2rem !important;
       }
 
       #energy-bar-section {
@@ -2386,40 +2479,12 @@
         font-size: 0.52rem !important;
       }
 
-      #rhythm-brief-launcher {
-        padding: 0.32rem 0.5rem !important;
-        margin-top: 0 !important;
-        margin-bottom: 0.2rem !important;
-        border-radius: 0.7rem !important;
-      }
-
-      .rhythm-brief-launcher-icon {
-        width: 1.3rem !important;
-        height: 1.3rem !important;
-        font-size: 0.58rem !important;
-        border-radius: 0.45rem !important;
-      }
-
-      .rhythm-brief-launcher-title {
-        font-size: 0.62rem !important;
-      }
-
-      #rhythm-brief-preview-line,
-      #rhythm-brief-preview-stats {
-        display: none !important;
-      }
-
-      .rhythm-brief-chevron {
-        font-size: 0.55rem !important;
-      }
-
       .main-nav {
         padding-top: 0.3rem !important;
       }
 
       #app-chrome > div:nth-child(2),
       #smart-banner,
-      #rhythm-brief-launcher,
       .main-nav,
       .tab-content {
         padding-left: 1rem !important;
@@ -2427,11 +2492,6 @@
       }
 
       #smart-banner {
-        margin-left: 1rem !important;
-        margin-right: 1rem !important;
-      }
-
-      #rhythm-brief-launcher {
         margin-left: 1rem !important;
         margin-right: 1rem !important;
       }
@@ -2459,24 +2519,6 @@
       .main-nav-tab {
         font-size: 0.68rem;
         padding: 0.38rem 0.12rem 0.32rem;
-      }
-
-      .status-bar {
-        font-size: 0.68rem;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-        gap: 0.5rem;
-      }
-
-      .status-bar-btn {
-        font-size: 0.65rem;
-        padding: 0.3rem 0.6rem;
-        flex-shrink: 0;
-      }
-
-      #calendar-status-text {
-        font-size: 0.65rem;
-        line-height: 1.3;
       }
 
       .quick-add-hint {
@@ -2540,12 +2582,14 @@
 
     /* ── Responsive: full website layout (tablet+) ── */
     @media (min-width: 768px) {
-      .header-date {
-        display: none;
-      }
-
       .app-menu-wrap--mobile {
         display: none !important;
+      }
+
+      button.rhythm-brief-fab,
+      .rhythm-brief-fab {
+        bottom: 1.5rem !important;
+        right: 1.5rem !important;
       }
 
       body {
@@ -2857,11 +2901,10 @@
 
       <header id="site-header" class="site-header">
         <div class="site-header-inner">
-          <div class="header-context" id="header-context" aria-label="Today at a glance">
-            <div id="header-context-primary" class="header-context-primary"></div>
-            <div id="header-context-secondary" class="header-context-secondary"></div>
+          <div class="header-day-stack" id="header-day-stack" aria-label="Today at a glance" aria-live="polite">
+            <div id="header-date-line" class="header-date-line"></div>
+            <div id="header-task-line" class="header-task-line"></div>
           </div>
-          <div id="header-date" class="header-date" aria-live="polite"></div>
           <div class="site-header-actions flex items-center gap-1">
             <div class="app-menu-wrap app-menu-wrap--header">
               <button type="button" id="app-menu-trigger-header" class="app-menu-trigger touch-target"
@@ -2905,11 +2948,11 @@
       <div id="app-shell" class="flex flex-col flex-1 min-h-0">
       <div id="app-chrome">
                   <!-- Header -->
-      <div id="app-weather-row" class="px-5 pt-3 pb-2.5 bg-rhythm-bg border-b border-rhythm-border">
-        <div id="header-weather" class="w-full min-w-0" onclick="showOutdoorWeatherPane()">
-          <div class="flex items-center gap-1 mb-1.5 min-w-0">
-            <div id="header-weather-summary" class="text-[11px] text-rhythm-muted truncate leading-snug flex-1"></div>
-            <span class="text-[9px] text-rhythm-muted/70 flex-shrink-0">Details ›</span>
+      <div id="app-weather-row">
+        <div id="header-weather" class="weather-glass w-full min-w-0" onclick="showOutdoorWeatherPane()" role="button" tabindex="0" aria-label="Weather forecast" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showOutdoorWeatherPane();}">
+          <div class="flex items-center gap-1.5 min-w-0 mb-0.5">
+            <div id="header-weather-summary" class="text-[11px] text-rhythm-text/90 truncate leading-snug flex-1 font-medium"></div>
+            <span class="text-[9px] text-rhythm-primary-light/70 flex-shrink-0 tracking-wide">Details</span>
           </div>
           <div id="header-weather-hours"></div>
         </div>
@@ -2960,23 +3003,6 @@
               <div onclick="event.stopImmediatePropagation(); dismissSuggestion()" class="text-[10px] text-rhythm-primary-light/60 hover:text-rhythm-primary-light">Dismiss</div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Rhythm Brief — smart day/week digest -->
-      <div id="rhythm-brief-launcher" class="rhythm-brief-launcher mx-5 mt-0 mb-1 hidden" role="button" tabindex="0"
-        onclick="showRhythmBriefModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showRhythmBriefModal();}"
-        aria-label="Open your Rhythm Brief">
-        <div class="flex items-center gap-2.5">
-          <div class="rhythm-brief-launcher-icon" aria-hidden="true">
-            <i class="fa-solid fa-wand-magic-sparkles"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="rhythm-brief-launcher-title">Rhythm Brief</div>
-            <div id="rhythm-brief-preview-line" class="rhythm-brief-launcher-sub">Your smart day-at-a-glance</div>
-            <div id="rhythm-brief-preview-stats" class="flex flex-wrap gap-1 mt-1"></div>
-          </div>
-          <i class="fa-solid fa-chevron-right rhythm-brief-chevron" aria-hidden="true"></i>
         </div>
       </div>
 
@@ -3187,12 +3213,13 @@
       </div>
       </div><!-- /app-scroll -->
 
-      <!-- Bottom status / autonomy hint -->
-      <div class="status-bar px-5 py-2.5 border-t border-rhythm-border/80 text-xs flex items-center gap-x-2.5 text-rhythm-muted flex-shrink-0">
-        <i class="fa-solid fa-sparkles text-rhythm-primary-light/80"></i>
-        <span id="calendar-status-text" class="flex-1 leading-snug min-w-0">Task-first • Calendar-aware suggestions</span>
-        <button type="button" onclick="simulateContextChange()" class="status-bar-btn">Simulate day</button>
-      </div>
+      <!-- Rhythm Brief FAB — thumb zone, day/week digest -->
+      <button type="button" id="rhythm-brief-launcher" class="rhythm-brief-fab hidden"
+        onclick="showRhythmBriefModal()"
+        aria-label="Open your Rhythm Brief">
+        <span id="rhythm-brief-fab-badge" class="rhythm-brief-fab-badge hidden" aria-hidden="true"></span>
+        <i class="fa-solid fa-wave-square" aria-hidden="true"></i>
+      </button>
       </div><!-- /app-shell -->
       </div><!-- /app-content-wrap -->
     </div><!-- /app-frame -->
@@ -3243,7 +3270,7 @@
       appVersion: 'preview-1.2'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const RHYTHM_BUILD = 'v49';
+    const RHYTHM_BUILD = 'v50';
 
     let rhythmBriefMode = 'day';
     let state = {
@@ -9976,9 +10003,8 @@
 
     function updateRhythmBriefLauncher() {
       const el = document.getElementById('rhythm-brief-launcher');
-      const lineEl = document.getElementById('rhythm-brief-preview-line');
-      const statsEl = document.getElementById('rhythm-brief-preview-stats');
-      if (!el || !lineEl || !statsEl) return;
+      const badge = document.getElementById('rhythm-brief-fab-badge');
+      if (!el) return;
 
       const showOnToday = currentTab === 'today';
       const onboarded = !!localStorage.getItem('rhythm_onboarded');
@@ -9991,27 +10017,22 @@
       const weekBrief = buildRhythmBrief('week');
       const taskN = brief.tasks.length;
       const billN = brief.bills.length;
-      const evN = brief.events.length;
-      const groceryN = brief.groceryTotal;
       const weekChoreN = weekBrief.tasks.filter(t => isNonDailyRecurring(t.habit)).length;
+      const badgeCount = taskN + billN + weekChoreN;
 
-      if (taskN === 0 && billN === 0 && evN === 0 && weekChoreN === 0) {
-        lineEl.textContent = 'Tap for your smart day brief';
-      } else if (brief.doFirst[0]) {
-        lineEl.textContent = `Start with ${brief.doFirst[0].habit.title}${taskN > 1 ? ` · ${taskN} due today` : ''}`;
-      } else if (weekChoreN) {
-        lineEl.textContent = `${weekChoreN} chore${weekChoreN === 1 ? '' : 's'} coming this week — open Brief`;
-      } else {
-        lineEl.textContent = `${taskN} task${taskN === 1 ? '' : 's'} prioritized for today`;
+      if (badge) {
+        if (badgeCount > 0) {
+          badge.textContent = badgeCount > 9 ? '9+' : String(badgeCount);
+          badge.classList.remove('hidden');
+        } else {
+          badge.textContent = '';
+          badge.classList.add('hidden');
+        }
       }
 
-      const chips = [];
-      if (taskN) chips.push(`<span class="rhythm-brief-stat">${taskN} today</span>`);
-      if (weekChoreN) chips.push(`<span class="rhythm-brief-stat">${weekChoreN} this week</span>`);
-      if (evN) chips.push(`<span class="rhythm-brief-stat">${evN} event${evN === 1 ? '' : 's'}</span>`);
-      if (billN) chips.push(`<span class="rhythm-brief-stat${billN ? ' is-urgent' : ''}">${billN} bill${billN === 1 ? '' : 's'}</span>`);
-      if (groceryN) chips.push(`<span class="rhythm-brief-stat">${groceryN} grocery</span>`);
-      statsEl.innerHTML = chips.join('') || '<span class="rhythm-brief-stat">All clear</span>';
+      el.setAttribute('aria-label', badgeCount
+        ? `Open Rhythm Brief · ${badgeCount} item${badgeCount === 1 ? '' : 's'}`
+        : 'Open your Rhythm Brief');
     }
 
     // ==================== SMART BANNER / CONTEXT ====================
@@ -10282,6 +10303,10 @@
       return true;
     }
 
+    function isLiveWeatherConnected() {
+      return state.settings.weatherSource === 'live';
+    }
+
     function renderHeaderWeather() {
       const summaryEl = document.getElementById('header-weather-summary');
       const hoursEl = document.getElementById('header-weather-hours');
@@ -10289,17 +10314,27 @@
 
       ensureHourlyForecastSpan();
       hourlyForecastCache = buildHourlyForecastPaneData();
-      const items = (hourlyForecastCache?.items || []).slice(0, HEADER_WEATHER_HOURS);
+      const hourCount = window.innerWidth < 768 ? 8 : HEADER_WEATHER_HOURS;
+      const items = (hourlyForecastCache?.items || []).slice(0, hourCount);
 
       if (!items.length) {
-        summaryEl.textContent = 'Hourly forecast';
-        hoursEl.innerHTML = `<span class="text-[10px] text-rhythm-muted whitespace-nowrap py-1">Loading weather…</span>`;
+        if (isLiveWeatherConnected()) {
+          summaryEl.textContent = 'Updating forecast…';
+          hoursEl.innerHTML = `<span class="text-[10px] text-rhythm-muted whitespace-nowrap py-1">Loading weather…</span>`;
+        } else {
+          summaryEl.textContent = '⛅ Tap for weather';
+          hoursEl.innerHTML = `
+            <div class="text-[10px] text-rhythm-muted/90 py-1.5 px-0.5 leading-snug">
+              Connect location for live hourly forecast — or preview sample weather
+            </div>`;
+        }
         return;
       }
 
       const mockDesc = state.settings.mockWeather || items[0].wDesc || 'clear';
       const label = formatWeatherCondition(mockDesc);
-      summaryEl.textContent = `${getWeatherIcon(mockDesc)} ${formatWeatherTemp(items[0].temp)} · ${label}`;
+      const sourceHint = isLiveWeatherConnected() ? '' : ' · sample';
+      summaryEl.textContent = `${getWeatherIcon(mockDesc)} ${formatWeatherTemp(items[0].temp)} · ${label}${sourceHint}`;
 
       hoursEl.innerHTML = items.map(it => `
         <div class="weather-hour-chip header-weather-chip px-1 py-1 rounded-lg border text-center ${it.chipCls}">
@@ -10311,11 +10346,64 @@
       `).join('');
     }
 
+    function showWeatherAccessPrompt() {
+      const existing = document.querySelector('.weather-access-modal');
+      if (existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.className = 'weather-access-modal fixed inset-0 bg-rhythm-bg/75 flex items-end sm:items-center justify-center z-[60]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
+        <div onclick="event.stopImmediatePropagation()"
+          class="relative w-full sm:max-w-md bg-rhythm-surface border border-rhythm-border sm:rounded-3xl rounded-t-3xl p-5 shadow-xl">
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <div class="text-xs uppercase tracking-wider text-rhythm-muted font-semibold">Weather</div>
+              <div class="text-base font-semibold text-rhythm-text mt-1">See your local forecast</div>
+            </div>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="text-rhythm-muted text-2xl leading-none px-1">×</button>
+          </div>
+          <p class="text-xs text-rhythm-muted leading-relaxed mb-4">
+            Connect location for live hourly weather that helps Rhythm time outdoor tasks.
+            Or preview a sample day so you can explore the app.
+          </p>
+          <div class="space-y-2">
+            <button type="button" id="weather-enable-location"
+              class="w-full py-3 rounded-2xl bg-rhythm-primary text-white text-sm font-semibold active:opacity-90">
+              <i class="fa-solid fa-location-crosshairs mr-1.5"></i>Use my location
+            </button>
+            <button type="button" id="weather-simulate"
+              class="w-full py-3 rounded-2xl bg-rhythm-raised border border-rhythm-border text-sm font-medium text-rhythm-text active:bg-rhythm-border">
+              <i class="fa-solid fa-cloud-sun mr-1.5 text-rhythm-primary-light"></i>Preview sample weather
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.querySelector('#weather-enable-location').onclick = () => {
+        modal.remove();
+        fetchRealWeather({ openPane: true });
+      };
+      modal.querySelector('#weather-simulate').onclick = () => {
+        modal.remove();
+        simulateContextChange({ openWeatherPane: true });
+      };
+    }
+
     function showOutdoorWeatherPane() {
+      if (!isLiveWeatherConnected() && state.settings.weatherSource !== 'simulated') {
+        showWeatherAccessPrompt();
+        return;
+      }
+
       const data = hourlyForecastCache || buildHourlyForecastPaneData();
-      if (!data) {
-        showToast('Allow location for live weather');
-        fetchRealWeather();
+      if (!data || !(data.items || []).length) {
+        if (isLiveWeatherConnected()) {
+          showToast('Updating weather…');
+          fetchRealWeather({ openPane: true });
+        } else {
+          showWeatherAccessPrompt();
+        }
         return;
       }
 
@@ -10925,14 +11013,16 @@
       {
         id: 'rhythm-brief',
         title: 'Rhythm Brief',
-        body: 'Tap <strong>Rhythm Brief</strong> for a smart day-at-a-glance — tasks, schedule, bills, and grocery sorted by priority.',
+        body: 'Tap the glowing <strong>Rhythm Brief</strong> button (bottom right) for a smart day-at-a-glance — tasks, schedule, bills, and grocery sorted by priority.',
         target: () => document.getElementById('rhythm-brief-launcher'),
         waitFor: 'rhythm-brief-open',
         interactive: true,
-        cardPlacement: 'below',
+        cardPlacement: 'above',
         prepare: () => {
           switchTab('today');
           updateRhythmBriefLauncher();
+          const fab = document.getElementById('rhythm-brief-launcher');
+          if (fab) fab.classList.remove('hidden');
           requestAnimationFrame(() => requestAnimationFrame(() => hideTutorialSmartBanner()));
         }
       }
@@ -11069,8 +11159,11 @@
       const maxRight = vv.left + vv.width - margin;
       const maxBottom = vv.top + vv.height - margin;
 
-      top = Math.max(minTop, top);
+      // Prefer shifting the ring instead of crushing small targets (e.g. Brief FAB)
+      if (left + width > maxRight) left = Math.max(minLeft, maxRight - width);
+      if (top + height > maxBottom) top = Math.max(minTop, maxBottom - height);
       left = Math.max(minLeft, left);
+      top = Math.max(minTop, top);
       if (left + width > maxRight) width = Math.max(24, maxRight - left);
       if (top + height > maxBottom) height = Math.max(24, maxBottom - top);
 
@@ -13102,9 +13195,14 @@
     }
 
     // ==================== WEATHER + REAL CONTEXT (lightweight) ====================
-    async function fetchRealWeather() {
-      if (!navigator.geolocation) return;
-      
+    async function fetchRealWeather(options = {}) {
+      const { openPane = false } = options;
+      if (!navigator.geolocation) {
+        showToast('Location is not available on this device', 'warn');
+        if (!isLiveWeatherConnected()) showWeatherAccessPrompt();
+        return;
+      }
+
       navigator.geolocation.getCurrentPosition(async (pos) => {
         try {
           const { latitude, longitude } = pos.coords;
@@ -13112,17 +13210,17 @@
           const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=weather_code&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&temperature_unit=fahrenheit&timezone=auto&forecast_days=2`;
           const res = await fetch(url);
           const data = await res.json();
-          
+
           const code = data.current?.weather_code || 0;
           let desc = "clear";
           if (code >= 1 && code <= 3) desc = "partly cloudy";
           else if (code >= 45 && code <= 48) desc = "foggy";
           else if (code >= 51 && code <= 67) desc = "rainy";
           else if (code >= 80) desc = "showers";
-          
+
           state.settings.mockWeather = desc;
-          
-          // Store hourly for timeline
+          state.settings.weatherSource = 'live';
+
           if (data.hourly) {
             state.settings.hourlyForecast = {
               time: data.hourly.time,
@@ -13133,16 +13231,19 @@
             };
           }
           saveState();
-          
-          // refresh banner, icons, and timeline
+
           updateSmartBanner();
           renderTasks();
           renderHeaderWeather();
           showToast(`Weather: ${desc}`);
+          if (openPane) showOutdoorWeatherPane();
         } catch (err) {
           console.log('Weather fetch failed', err);
+          showToast('Could not load live weather', 'warn');
         }
-      }, () => {});
+      }, () => {
+        showToast('Location permission needed for live weather', 'warn');
+      });
     }
 
     // ==================== CALENDAR MOCK + SIMULATOR ====================
@@ -13171,17 +13272,19 @@
       };
     }
 
-    function simulateContextChange() {
-      const options = [
+    function simulateContextChange(options = {}) {
+      const { openWeatherPane = false } = options;
+      const scenarios = [
         { weather: "sunny", freeMinutes: 95, note: "Got off work early" },
         { weather: "rainy", freeMinutes: 25, note: "Long day at work" },
         { weather: "clear", freeMinutes: 50, note: "Normal schedule" },
         { weather: "sunny", freeMinutes: 120, note: "Day off — lots of time" }
       ];
       
-      const choice = options[Math.floor(Math.random() * options.length)];
+      const choice = scenarios[Math.floor(Math.random() * scenarios.length)];
       
       state.settings.mockWeather = choice.weather;
+      state.settings.weatherSource = 'simulated';
       const sampleEvents = normalizeCalendarEvents(
         choice.freeMinutes >= 90
           ? [{ time: "10:00", title: "Morning coffee", durationMin: 30 }, { time: "14:00", title: "Free block", durationMin: 60 }]
@@ -13240,12 +13343,14 @@
       renderTasks();
       renderSchedule();
       renderHeaderWeather();
+      updateHeaderContext();
       
-      showToast(`Simulated: ${choice.note} + ${choice.weather}`);
+      showToast(`Sample weather: ${choice.note} · ${choice.weather}`);
       
       setTimeout(() => {
         updateSmartBanner();
         renderTasks();
+        if (openWeatherPane) showOutdoorWeatherPane();
       }, 300);
     }
 
@@ -14248,7 +14353,6 @@
 
     function updateCalendarStatusUI() {
       const badge = document.getElementById('schedule-sync-badge');
-      const statusBar = document.getElementById('calendar-status-text');
       const label = getConnectedCalendarsLabel();
 
       if (badge) {
@@ -14257,12 +14361,6 @@
         } else {
           badge.innerHTML = `<i class="fa-regular fa-calendar text-rhythm-muted mr-1"></i> <button onclick="showSettings()" class="text-sky-400">Connect a calendar</button> for smarter scheduling`;
         }
-      }
-
-      if (statusBar) {
-        statusBar.textContent = hasAnyCalendarConnected()
-          ? `Calendar: ${label}`
-          : 'Task-first • Connect calendar in Settings';
       }
     }
 
@@ -14572,31 +14670,17 @@
     }
 
     function updateHeaderContext() {
-      const primary = document.getElementById('header-context-primary');
-      const secondary = document.getElementById('header-context-secondary');
-      const headerDate = document.getElementById('header-date');
-      if (!primary || !secondary) return;
+      const dateLine = document.getElementById('header-date-line');
+      const taskLine = document.getElementById('header-task-line');
+      if (!dateLine || !taskLine) return;
 
       const d = new Date();
       const taskCount = getTodayVisibleTaskCount();
-      const isMobile = window.matchMedia('(max-width: 767px)').matches;
 
-      if (headerDate) {
-        headerDate.textContent = formatHeaderDate(d);
-      }
-
-      if (isMobile) {
-        primary.textContent = taskCount === 0
-          ? 'No tasks for today'
-          : `${taskCount} task${taskCount === 1 ? '' : 's'}`;
-      } else {
-        primary.textContent = d.toLocaleDateString(undefined, { weekday: 'long' });
-        if (taskCount === 0) {
-          secondary.textContent = 'No tasks for today';
-        } else {
-          secondary.textContent = `${taskCount} task${taskCount === 1 ? '' : 's'}`;
-        }
-      }
+      dateLine.textContent = formatHeaderDate(d);
+      taskLine.textContent = taskCount === 0
+        ? 'Nothing due today'
+        : `${taskCount} task${taskCount === 1 ? '' : 's'} today`;
     }
 
     async function init() {
