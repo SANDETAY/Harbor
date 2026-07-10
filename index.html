@@ -1705,6 +1705,172 @@
       opacity: 0.9;
     }
 
+    /* Metric log sheet — steps / pages / distance / savings */
+    #metric-input-modal .metric-sheet {
+      background:
+        linear-gradient(165deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 42%, rgb(var(--harbor-surface)) 100%);
+      border-top: 1px solid rgba(47, 155, 140, 0.18);
+      box-shadow:
+        0 -8px 32px rgba(18, 48, 44, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+    }
+    html[data-theme="dark"] #metric-input-modal .metric-sheet {
+      background:
+        linear-gradient(165deg, rgba(28, 48, 44, 0.95) 0%, rgb(var(--harbor-surface)) 55%);
+      border-top-color: rgba(72, 178, 162, 0.16);
+      box-shadow: 0 -12px 40px rgba(0, 8, 6, 0.55), 0 0 0 1px rgba(154, 214, 202, 0.06) inset;
+    }
+    #metric-input-modal .metric-icon-badge {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      color: #fff;
+      background: linear-gradient(155deg, #56C4B4 0%, #2F9B8C 55%, #1A6B61 100%);
+      box-shadow:
+        0 6px 18px rgba(47, 155, 140, 0.32),
+        0 0 0 1px rgba(255, 255, 255, 0.22) inset;
+    }
+    #metric-input-modal .metric-input-wrap {
+      display: flex;
+      align-items: stretch;
+      border-radius: 1.15rem;
+      border: 1.5px solid rgba(47, 155, 140, 0.22);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-raised)) 100%);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 4px 14px rgba(18, 48, 44, 0.05);
+      overflow: hidden;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    html[data-theme="dark"] #metric-input-modal .metric-input-wrap {
+      border-color: rgba(72, 178, 162, 0.22);
+      background: linear-gradient(180deg, rgba(28, 48, 44, 0.9) 0%, rgb(var(--harbor-raised)) 100%);
+      box-shadow: 0 1px 0 rgba(154, 214, 202, 0.06) inset, 0 6px 16px rgba(0, 8, 6, 0.35);
+    }
+    #metric-input-modal .metric-input-wrap:focus-within {
+      border-color: rgba(47, 155, 140, 0.55);
+      box-shadow:
+        0 0 0 3px rgba(47, 155, 140, 0.16),
+        0 1px 0 rgba(255, 255, 255, 0.4) inset;
+    }
+    #metric-input-modal .metric-input-field {
+      flex: 1 1 auto;
+      min-width: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      padding: 0.95rem 0.35rem 0.95rem 1.1rem;
+      font-size: 1.35rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      color: rgb(var(--harbor-text));
+      font-variant-numeric: tabular-nums;
+      font-family: var(--harbor-font);
+    }
+    #metric-input-modal .metric-input-field::placeholder {
+      color: rgb(var(--harbor-muted) / 0.55);
+      font-weight: 500;
+      font-size: 1.05rem;
+    }
+    #metric-input-modal .metric-unit-suffix {
+      display: flex;
+      align-items: center;
+      padding: 0 1rem 0 0.35rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: rgb(var(--harbor-primary-light));
+      text-transform: lowercase;
+      white-space: nowrap;
+    }
+    #metric-input-modal .metric-unit-chip {
+      flex: 1;
+      min-height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+    #metric-input-modal .metric-unit-chip.is-on {
+      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 3px 12px rgba(47, 155, 140, 0.28);
+    }
+    #metric-input-modal .metric-save-btn {
+      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      color: #fff;
+      box-shadow:
+        0 4px 16px rgba(47, 155, 140, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+    }
+    #metric-input-modal .metric-save-btn:active {
+      opacity: 0.92;
+      transform: scale(0.99);
+    }
+    /* Inline logger on Projected Wins — match the same calm mint field */
+    .proj-metric-panel {
+      margin-top: 1rem;
+      padding: 0.9rem 0.95rem 0.95rem;
+      border-radius: 1.15rem;
+      border: 1px solid rgba(47, 155, 140, 0.16);
+      background:
+        linear-gradient(155deg, rgba(47, 155, 140, 0.07) 0%, rgb(var(--harbor-raised) / 0.55) 100%);
+    }
+    html[data-theme="dark"] .proj-metric-panel {
+      border-color: rgba(72, 178, 162, 0.14);
+      background: linear-gradient(155deg, rgba(47, 155, 140, 0.1) 0%, rgb(var(--harbor-raised) / 0.45) 100%);
+    }
+    .proj-metric-panel .proj-metric-input-wrap {
+      display: flex;
+      align-items: stretch;
+      border-radius: 0.95rem;
+      border: 1.5px solid rgba(47, 155, 140, 0.2);
+      background: rgb(var(--harbor-surface));
+      overflow: hidden;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .proj-metric-panel .proj-metric-input-wrap:focus-within {
+      border-color: rgba(47, 155, 140, 0.5);
+      box-shadow: 0 0 0 3px rgba(47, 155, 140, 0.12);
+    }
+    .proj-metric-panel .proj-metric-input-wrap input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      padding: 0.7rem 0.85rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: rgb(var(--harbor-text));
+    }
+    .proj-metric-panel .proj-metric-input-wrap input::placeholder {
+      color: rgb(var(--harbor-muted) / 0.6);
+      font-weight: 500;
+    }
+    .proj-metric-panel .proj-metric-save {
+      border: none;
+      padding: 0 1rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #fff;
+      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      white-space: nowrap;
+    }
+
     /* Stylish small close control (replaces × on sheets) */
     .modal-close-chip {
       display: inline-flex;
@@ -7103,7 +7269,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v168';
+    const HARBOR_BUILD = 'v169';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -8681,17 +8847,171 @@
       return collectMetricDataPoints(habit).find(p => p.date === today) || null;
     }
 
+    function getMetricTypeVisual(type, habit) {
+      const swim = habit && isSwimHabit(habit);
+      if (type === 'steps') return { icon: 'fa-shoe-prints', label: 'Steps today', hint: 'How many steps did you get?' };
+      if (type === 'miles') {
+        if (swim) return { icon: 'fa-person-swimming', label: 'Distance swam', hint: 'Log today’s pool or open-water distance.' };
+        return { icon: 'fa-route', label: 'Distance today', hint: 'Log what you covered this session.' };
+      }
+      if (type === 'pages') return { icon: 'fa-book-open', label: 'Pages today', hint: 'How many pages did you read?' };
+      if (type === 'savings') return { icon: 'fa-piggy-bank', label: 'Saved today', hint: 'How much did you put aside?' };
+      return { icon: 'fa-chart-line', label: 'Log progress', hint: 'Record today’s amount.' };
+    }
+
+    function closeMetricInputModal(result) {
+      const modal = document.getElementById('metric-input-modal');
+      if (!modal) return;
+      const resolve = modal._metricResolve;
+      modal._metricResolve = null;
+      modal.remove();
+      if (!document.querySelector('body > .fixed.inset-0')) {
+        document.body.classList.remove('harbor-modal-open');
+      }
+      if (typeof resolve === 'function') resolve(result ?? null);
+    }
+
+    /**
+     * Harbor-styled metric entry (replaces browser prompt()).
+     * Resolves to { value, unit } or null if skipped/cancelled.
+     */
+    function showMetricInputModal(habit, options = {}) {
+      return new Promise((resolve) => {
+        const meta = getMetricInputMeta(habit) || options.meta;
+        if (!meta) {
+          resolve(null);
+          return;
+        }
+        closeMetricInputModal(null);
+
+        const todayLog = getTodaysMetricLog(habit);
+        const visual = getMetricTypeVisual(meta.type, habit);
+        const fallback = options.defaultValue ?? todayLog?.displayValue ?? todayLog?.value ?? habit?.target_value ?? meta.placeholder ?? '';
+        let selectedUnit = meta.distanceUnit || (meta.type === 'miles' && isSwimHabit(habit) ? getPreferredDistanceUnit(habit) : null);
+        const unitLabel = () => selectedUnit || meta.unitLabel || 'units';
+        const safeTitle = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(habit?.title || 'this habit') : (habit?.title || 'this habit');
+
+        const modal = document.createElement('div');
+        modal.id = 'metric-input-modal';
+        modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end sm:items-center justify-center harbor-modal-overlay';
+        modal._metricResolve = resolve;
+
+        const unitPicker = meta.allowUnitPick ? `
+          <div class="flex gap-1.5 mb-3" role="group" aria-label="Distance unit" id="metric-unit-picker">
+            ${['yards', 'meters', 'miles'].map(u => {
+              const on = (selectedUnit || 'yards') === u;
+              return `<button type="button" data-distance-unit="${u}" class="metric-unit-chip${on ? ' is-on' : ''}">${u.charAt(0).toUpperCase() + u.slice(1)}</button>`;
+            }).join('')}
+          </div>
+        ` : '';
+
+        modal.innerHTML = `
+          <div class="absolute inset-0" data-metric-dismiss="1"></div>
+          <div class="modal-sheet metric-sheet relative w-full sm:max-w-md bg-harbor-surface border-t sm:border border-harbor-border rounded-t-3xl sm:rounded-3xl p-5 text-sm mb-[max(0.35rem,env(keyboard-inset-height,0px))]"
+            role="dialog" aria-modal="true" aria-labelledby="metric-input-title" onclick="event.stopPropagation()">
+            <div class="modal-grab-pill" aria-hidden="true"></div>
+            <div class="flex items-start gap-3 mb-4">
+              <div class="metric-icon-badge" aria-hidden="true"><i class="fa-solid ${visual.icon}"></i></div>
+              <div class="min-w-0 flex-1">
+                <div id="metric-input-title" class="font-semibold text-base text-harbor-text leading-tight">${visual.label}</div>
+                <div class="text-[11px] text-harbor-muted mt-0.5 truncate">${safeTitle}</div>
+                <div class="text-[11px] text-harbor-muted/90 mt-1.5 leading-snug">${visual.hint}</div>
+              </div>
+              <button type="button" class="modal-close-chip" data-metric-dismiss="1" aria-label="Close">Close</button>
+            </div>
+            ${unitPicker}
+            <label class="sr-only" for="metric-input-field">Amount</label>
+            <div class="metric-input-wrap mb-4">
+              <input id="metric-input-field" class="metric-input-field" type="number" min="0" step="${meta.step || '1'}"
+                value="${fallback !== '' && fallback != null ? String(fallback).replace(/"/g, '') : ''}"
+                placeholder="${meta.placeholder || '0'}"
+                inputmode="${(selectedUnit === 'miles' || meta.step === '0.1') ? 'decimal' : 'numeric'}"
+                autocomplete="off" enterkeyhint="done">
+              <span class="metric-unit-suffix" id="metric-unit-suffix">${unitLabel()}</span>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" data-metric-dismiss="1"
+                class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold text-sm active:bg-harbor-border">
+                Skip
+              </button>
+              <button type="button" id="metric-save-btn"
+                class="metric-save-btn flex-[1.35] py-3 rounded-2xl font-semibold text-sm active:opacity-90">
+                Save
+              </button>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(modal);
+        document.body.classList.add('harbor-modal-open');
+
+        const input = modal.querySelector('#metric-input-field');
+        const suffix = modal.querySelector('#metric-unit-suffix');
+        const picker = modal.querySelector('#metric-unit-picker');
+
+        const applyUnit = (u) => {
+          selectedUnit = normalizeDistanceUnit(u) || u;
+          if (suffix) suffix.textContent = selectedUnit || meta.unitLabel;
+          if (input) {
+            input.step = selectedUnit === 'miles' ? '0.1' : (selectedUnit === 'yards' || selectedUnit === 'meters' ? '25' : (meta.step || '1'));
+            input.inputMode = selectedUnit === 'miles' ? 'decimal' : 'numeric';
+            if (!input.value) {
+              input.placeholder = selectedUnit === 'yards' ? '500' : selectedUnit === 'meters' ? '400' : selectedUnit === 'miles' ? '0.3' : (meta.placeholder || '0');
+            }
+          }
+          picker?.querySelectorAll('[data-distance-unit]').forEach(btn => {
+            btn.classList.toggle('is-on', btn.dataset.distanceUnit === selectedUnit);
+          });
+        };
+
+        picker?.querySelectorAll('[data-distance-unit]').forEach(btn => {
+          btn.addEventListener('click', () => applyUnit(btn.dataset.distanceUnit));
+        });
+
+        const submit = () => {
+          const raw = (input?.value || '').trim();
+          if (!raw) {
+            showToast('Enter an amount', 'warn');
+            input?.focus();
+            return;
+          }
+          const num = parseFloat(raw);
+          if (isNaN(num) || num <= 0) {
+            showToast('Enter a valid amount', 'warn');
+            input?.focus();
+            return;
+          }
+          closeMetricInputModal({
+            value: num,
+            unit: meta.allowUnitPick || meta.type === 'miles' ? (selectedUnit || meta.distanceUnit || 'miles') : null
+          });
+        };
+
+        modal.querySelectorAll('[data-metric-dismiss]').forEach(el => {
+          el.addEventListener('click', () => closeMetricInputModal(null));
+        });
+        modal.querySelector('#metric-save-btn')?.addEventListener('click', submit);
+        input?.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            submit();
+          } else if (e.key === 'Escape') {
+            closeMetricInputModal(null);
+          }
+        });
+
+        requestAnimationFrame(() => {
+          input?.focus();
+          input?.select?.();
+        });
+      });
+    }
+
+    /** @deprecated sync browser prompt — use showMetricInputModal */
     function promptMetricValueForHabit(habit) {
-      const meta = getMetricInputMeta(habit);
-      if (!meta) return null;
-      const todayLog = getTodaysMetricLog(habit);
-      const unit = meta.distanceUnit || meta.unitLabel;
-      const fallback = todayLog?.displayValue ?? todayLog?.value ?? habit.target_value ?? meta.placeholder;
-      const v = prompt(`How many ${unit} for "${habit.title}" today?`, String(fallback));
-      if (v == null || v.trim() === '') return null;
-      const num = parseFloat(v);
-      if (isNaN(num) || num <= 0) return null;
-      return { value: num, unit: meta.distanceUnit || null };
+      // Kept as sync fallback only if a caller still expects a return value immediately.
+      // Prefer showMetricInputModal (async) for UI.
+      return null;
     }
 
     function saveMetricFromStreaks(habitId, rawValue, unitOverride) {
@@ -8766,26 +9086,26 @@
       };
 
       return `
-        <div class="mt-4 pt-3 border-t border-harbor-border">
-          <label class="block text-xs font-medium text-harbor-text mb-1" for="${inputId}">${logLabel}</label>
-          <div class="text-[10px] text-harbor-muted mb-2 leading-snug">${helpText}</div>
+        <div class="proj-metric-panel">
+          <label class="block text-xs font-semibold text-harbor-text mb-0.5" for="${inputId}">${logLabel}</label>
+          <div class="text-[10px] text-harbor-muted mb-2.5 leading-snug">${helpText}</div>
           ${unitPicker}
-          <div class="flex gap-2">
+          <div class="proj-metric-input-wrap">
             <input id="${inputId}" type="number" min="0" step="${meta.step}" value="${displayToday !== '' ? displayToday : ''}" placeholder="${meta.placeholder}"
               inputmode="${meta.distanceUnit === 'miles' ? 'decimal' : 'numeric'}"
               data-active-unit="${meta.distanceUnit || ''}"
-              class="flex-1 bg-harbor-raised border border-harbor-border focus:border-harbor-primary rounded-2xl px-3 py-2.5 text-sm outline-none text-harbor-text">
+              aria-label="${logLabel}">
             <button type="button" data-save-metric="${habit.id}" data-metric-input="${inputId}"
-              class="px-4 py-2.5 rounded-2xl bg-harbor-primary text-white text-xs font-semibold active:opacity-90">Save</button>
+              class="proj-metric-save">Save</button>
           </div>
-          ${todayLog ? `<div class="text-[10px] text-harbor-muted mt-1.5">Today: <strong class="text-harbor-text">${formatLogLine(todayLog)}</strong> <span class="opacity-70">(${todayLog.source || 'logged'})</span>${todayLog.miles != null && displayTodayUnit !== 'miles' ? ` <span class="opacity-60">· ${todayLog.miles.toFixed(2)} mi</span>` : ''}</div>` : ''}
+          ${todayLog ? `<div class="text-[10px] text-harbor-muted mt-2">Today: <strong class="text-harbor-text">${formatLogLine(todayLog)}</strong> <span class="opacity-70">(${todayLog.source || 'logged'})</span>${todayLog.miles != null && displayTodayUnit !== 'miles' ? ` <span class="opacity-60">· ${todayLog.miles.toFixed(2)} mi</span>` : ''}</div>` : ''}
           ${FEATURE_ACTIVITY_SYNC && syncedToday ? `<div class="text-[10px] text-sky-300 mt-1">Device synced today</div>` : ''}
           ${recent.length ? `
             <div class="mt-2.5">
-              <div class="text-[10px] text-harbor-muted mb-1">Recent logs</div>
+              <div class="text-[10px] text-harbor-muted mb-1 font-medium">Recent logs</div>
               <div class="space-y-1">
                 ${recent.map(e => `
-                  <div class="flex justify-between text-[10px] bg-harbor-raised/60 rounded-xl px-2.5 py-1.5">
+                  <div class="flex justify-between text-[10px] bg-harbor-surface/80 border border-harbor-border/60 rounded-xl px-2.5 py-1.5">
                     <span class="text-harbor-muted">${formatDateShort(e.date)}</span>
                     <span class="font-semibold text-harbor-text tabular-nums">${formatLogLine(e)}</span>
                   </div>
@@ -9608,37 +9928,54 @@
       else state.metricLogs[habitId].push(entry);
     }
 
+    /**
+     * Auto-log metric when possible; otherwise open the Harbor metric sheet.
+     * Returns a Promise (safe to fire-and-forget from completeHabit).
+     */
     function logMetricOnComplete(habit) {
       const type = getHabitMetricType(habit);
-      if (!type) return;
+      if (!type) return Promise.resolve();
+
+      const finishManual = (prompted) => {
+        if (!prompted || prompted.value == null) return;
+        const unit = prompted.unit
+          || (type === 'miles' && isSwimHabit(habit) ? getPreferredDistanceUnit(habit) : null)
+          || (type === 'miles' ? 'miles' : null);
+        logMetricValue(habit.id, prompted.value, 'manual', unit);
+        if (isSwimHabit(habit) && prompted.unit) habit.swimUnit = prompted.unit;
+        saveState();
+        if (currentTab === 'streaks' && currentProjectionHabit === habit.id) {
+          try { showProjections(habit.id); } catch (_) { /* ignore */ }
+        }
+        const meta = getMetricInputMeta(habit);
+        const label = unit || meta?.unitLabel || '';
+        showToast(`Logged ${formatDistanceAmount(prompted.value, unit || 'miles')} ${label}`.trim());
+      };
+
       if (type === 'savings') {
         if (habit.target_value != null) {
           logMetricValue(habit.id, habit.target_value, 'completion');
-        } else {
-          const v = prompt('How much did you save today ($)?', '10');
-          if (v) logMetricValue(habit.id, parseFloat(v), 'manual');
+          return Promise.resolve();
         }
-        return;
+        return showMetricInputModal(habit, { defaultValue: 10 }).then(finishManual);
       }
+
       const today = todayStr();
       const synced = state.healthSyncs?.[habit.id]?.[today];
       if (type === 'steps' && synced?.steps != null) {
         logMetricValue(habit.id, synced.steps, 'device');
-      } else if (type === 'miles' && synced?.distance != null) {
-        logMetricValue(habit.id, synced.distance, 'device', 'miles');
-      } else if (habit.target_value != null && !isSwimHabit(habit)) {
-        logMetricValue(habit.id, habit.target_value, 'completion', type === 'miles' ? 'miles' : null);
-      } else {
-        const prompted = promptMetricValueForHabit(habit);
-        if (prompted != null) {
-          if (typeof prompted === 'object') {
-            logMetricValue(habit.id, prompted.value, 'manual', prompted.unit);
-            if (isSwimHabit(habit) && prompted.unit) habit.swimUnit = prompted.unit;
-          } else {
-            logMetricValue(habit.id, prompted, 'manual', type === 'miles' && isSwimHabit(habit) ? getPreferredDistanceUnit(habit) : (type === 'miles' ? 'miles' : null));
-          }
-        }
+        return Promise.resolve();
       }
+      if (type === 'miles' && synced?.distance != null) {
+        logMetricValue(habit.id, synced.distance, 'device', 'miles');
+        return Promise.resolve();
+      }
+      if (habit.target_value != null && !isSwimHabit(habit)) {
+        logMetricValue(habit.id, habit.target_value, 'completion', type === 'miles' ? 'miles' : null);
+        return Promise.resolve();
+      }
+
+      return showMetricInputModal(habit).then(finishManual);
     }
 
     function collectMetricDataPoints(habit) {
