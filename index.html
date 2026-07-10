@@ -3212,6 +3212,16 @@
       padding: 0.18rem 0.55rem;
       line-height: 1.25;
     }
+    .schedule-free-pill--hero {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: rgb(var(--harbor-text));
+      padding: 0.32rem 0.7rem;
+      background: rgba(255, 255, 255, 0.55);
+      border-color: rgba(47, 155, 140, 0.18);
+      box-shadow: var(--harbor-shadow-sm);
+    }
     .schedule-free-pill:empty {
       display: none;
     }
@@ -3219,8 +3229,35 @@
       background: rgba(72, 178, 162, 0.12);
       border-color: rgba(72, 178, 162, 0.2);
     }
+    html[data-theme="dark"] .schedule-free-pill--hero {
+      color: rgb(var(--harbor-text));
+      background: rgba(24, 42, 38, 0.75);
+      border-color: rgba(72, 178, 162, 0.2);
+    }
     .schedule-sync-quiet:empty {
       display: none;
+    }
+    /* Compact work-hours control in the schedule toolbar */
+    .work-hours-chip {
+      gap: 0.35rem;
+      max-width: 7.5rem;
+    }
+    .work-hours-chip i {
+      font-size: 0.72rem;
+      opacity: 0.9;
+    }
+    .work-hours-chip #work-schedule-chip-label,
+    .work-hours-chip span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 5.2rem;
+    }
+    .work-hours-chip.is-set {
+      border-color: rgba(47, 155, 140, 0.35);
+      background: rgba(47, 155, 140, 0.1);
+      color: rgb(var(--harbor-primary-light));
+      font-weight: 700;
     }
     /* Minutes chips in Add Task */
     .qt-minutes-row {
@@ -6287,10 +6324,15 @@
         <div id="life-panel-schedule" class="life-panel">
           <div class="panel-head">
             <div class="min-w-0 flex-1">
-              <div class="section-header font-semibold text-harbor-text">Schedule</div>
-              <div id="schedule-free-time" class="schedule-free-pill mt-1" aria-live="polite"></div>
+              <!-- Event / free-time counter only — Life tab already says Schedule -->
+              <div id="schedule-free-time" class="schedule-free-pill schedule-free-pill--hero" aria-live="polite"></div>
             </div>
             <div class="panel-toolbar panel-toolbar-cluster">
+              <button type="button" id="work-schedule-chip" onclick="showWorkScheduleModal()"
+                class="chip-tool-btn work-hours-chip" aria-label="Set work hours">
+                <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                <span id="work-schedule-chip-label">Hours</span>
+              </button>
               <button type="button" onclick="showScheduleImportModal()" class="chip-tool-btn" id="schedule-import-btn" aria-label="Import calendar file">
                 Import File
               </button>
@@ -6310,15 +6352,6 @@
             <button type="button" role="tab" data-schedule-view="month" onclick="setScheduleView('month')"
               class="cal-format-chip">This Month</button>
           </div>
-          <button type="button" id="work-schedule-chip" onclick="showWorkScheduleModal()" class="work-hours-card" aria-label="Set Your Work Hours">
-            <div class="work-hours-icon" aria-hidden="true"><i class="fa-regular fa-clock"></i></div>
-            <div class="flex-1 min-w-0">
-              <div class="text-[12px] font-semibold text-harbor-text leading-tight">Set Your Work Hours</div>
-              <div id="work-schedule-chip-label" class="text-[11px] text-harbor-primary-light font-medium mt-0.5 truncate">Flexible · not set yet</div>
-              <div class="text-[10px] text-harbor-muted leading-snug mt-0.5">Helps free-time estimates and Smart Suggestions fit your day</div>
-            </div>
-            <span class="work-hours-cta">Edit</span>
-          </button>
           <div id="schedule-section-title" class="hidden" aria-hidden="true"></div>
           <div id="schedule-availability" class="hidden" aria-hidden="true"></div>
           <div id="schedule-sync-badge" class="schedule-sync-quiet text-[10px] text-harbor-muted/80 mb-1.5"></div>
@@ -6495,7 +6528,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v146';
+    const HARBOR_BUILD = 'v147';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -13092,15 +13125,25 @@
         }
       }
       const chipLabelEl = document.getElementById('work-schedule-chip-label');
+      const workLabel = avail.workLabel || 'Flexible';
+      const isUnset = /flexible/i.test(workLabel);
       if (chipLabelEl) {
-        const workLabel = avail.workLabel || 'Flexible';
-        const isUnset = /flexible/i.test(workLabel);
-        chipLabelEl.textContent = isUnset
-          ? 'Flexible · tap Edit to set hours'
-          : workLabel;
+        // Compact toolbar label: short hours or "Hours" when unset
+        if (isUnset) {
+          chipLabelEl.textContent = 'Hours';
+        } else {
+          // Prefer a short time range if present, else trim long labels
+          const short = String(workLabel).replace(/\s*·\s*/g, ' · ').trim();
+          chipLabelEl.textContent = short.length > 14 ? short.slice(0, 12) + '…' : short;
+        }
       }
       if (chipEl) {
-        chipEl.classList.toggle('work-hours-card--set', !/flexible/i.test(avail.workLabel || 'Flexible'));
+        chipEl.classList.toggle('is-set', !isUnset);
+        chipEl.classList.toggle('work-hours-card--set', !isUnset);
+        chipEl.setAttribute('aria-label', isUnset ? 'Set work hours' : `Work hours: ${workLabel}`);
+        chipEl.title = isUnset
+          ? 'Set work hours for free-time estimates'
+          : `Work hours: ${workLabel}`;
       }
 
       container.innerHTML = '';
@@ -17057,7 +17100,7 @@
       { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> with themed dinners and a master list — tap <strong>Add</strong> or the mic to stock items, then check them off while shopping.', cta: 'Open grocery', action: 'life-grocery' },
       { id: 'life-schedule', reason: '<strong>Life → Schedule</strong> holds appointments and events — block time so suggestions can find gaps between meetings.', cta: 'View schedule', action: 'life-schedule' },
       { id: 'calendar-sync', reason: 'Add a calendar <strong>ICS URL</strong> in Settings (or Life → Schedule → Calendar URL). Harbor refreshes events when you open the app — file import works as a backup.', cta: 'Calendar settings', action: 'settings' },
-      { id: 'work-schedule', reason: 'On <strong>Life → Schedule</strong>, tap <strong>Set your work hours</strong> so free-time estimates and smart suggestions match your real day.', cta: 'Open schedule', action: 'life-schedule' },
+      { id: 'work-schedule', reason: 'On <strong>Life → Schedule</strong>, tap the small <strong>Hours</strong> chip (clock) so free-time estimates match your real day.', cta: 'Open schedule', action: 'life-schedule' },
       { id: 'weather-strip', reason: 'The hourly weather strip at the top forecasts the next 24 hours — tap it for the full pane through tomorrow when planning yard work or a walk.', cta: 'See forecast', action: 'weather' },
       { id: 'outdoor-rain', reason: 'Outdoor tasks get rain warnings when afternoon showers are likely — reschedule before you get caught in the weather.', cta: 'Check weather', action: 'weather' },
       { id: 'streaks-log', reason: '<strong>Streaks</strong> logs completions over time — tap a habit to see history and how consistent you have been.', cta: 'View streaks', action: 'streaks' },
@@ -23645,15 +23688,16 @@
       if (!badge) return;
       const feeds = getCalendarFeeds();
       const n = state.settings.importedCalendarEvents?.length || 0;
+      // Only surface status when something is connected/imported — no empty-state CTA under work hours
       if (feeds.length) {
         const err = feeds.find(f => f.lastError);
         badge.innerHTML = err
           ? `<i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1"></i> Calendar feed issue · <button type="button" onclick="showCalendarFeedModal()" class="text-harbor-primary-light">fix</button>`
           : `<i class="fa-solid fa-link text-harbor-primary mr-1"></i> ${escapeBriefHtml(getCalendarStatusLabel())} · <button type="button" onclick="refreshAllCalendarFeeds()" class="text-harbor-primary-light">refresh</button>`;
       } else if (n) {
-        badge.innerHTML = `<i class="fa-regular fa-calendar text-harbor-primary-light mr-1"></i> ${n} imported event${n === 1 ? '' : 's'} · <button type="button" onclick="showCalendarFeedModal()" class="text-sky-400">add URL</button>`;
+        badge.innerHTML = `<i class="fa-regular fa-calendar text-harbor-primary-light mr-1"></i> ${n} imported event${n === 1 ? '' : 's'}`;
       } else {
-        badge.innerHTML = `<i class="fa-regular fa-calendar text-harbor-muted mr-1"></i> <button type="button" onclick="showCalendarFeedModal()" class="text-sky-400">Add calendar URL</button> or import a file`;
+        badge.innerHTML = '';
       }
     }
 
