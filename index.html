@@ -4494,29 +4494,6 @@
       40% { transform: scale(1.01); }
       100% { transform: scale(1); }
     }
-    .cheat-fund-reward-chip {
-      flex-shrink: 0;
-      padding: 0.45rem 0.65rem;
-      border-radius: 1rem;
-      border: 1px solid rgb(var(--harbor-border));
-      background: rgb(var(--harbor-raised));
-      text-align: center;
-      min-width: 4.5rem;
-      transition: border-color 0.2s, background 0.2s, transform 0.15s;
-    }
-    .cheat-fund-reward-chip.is-ready {
-      border-color: rgba(47, 155, 140, 0.5);
-      background: rgba(47, 155, 140, 0.12);
-    }
-    .cheat-fund-reward-chip:active { transform: scale(0.97); }
-    .cheat-fund-rewards-row {
-      display: flex;
-      gap: 0.5rem;
-      overflow-x: auto;
-      padding-bottom: 0.25rem;
-      scrollbar-width: none;
-    }
-    .cheat-fund-rewards-row::-webkit-scrollbar { display: none; }
     .cheat-confetti-layer {
       position: fixed;
       inset: 0;
@@ -5755,7 +5732,7 @@
           </button>
         </div>
 
-        <div id="task-swipe-hint" class="swipe-row-hint">Swipe a task left to Edit or Delete</div>
+        <div id="task-swipe-hint" class="swipe-row-hint">Swipe left to Edit or Delete</div>
         <!-- Task List -->
         <div id="task-list" class="space-y-2"></div>
       </div>
@@ -6006,7 +5983,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v135';
+    const HARBOR_BUILD = 'v136';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -18669,19 +18646,18 @@
     function triggerCheatFundEarnAnimation() {
       const panel = document.getElementById('reward-bank-panel');
       if (!panel) return;
-      panel.classList.remove('cheat-fund-earn-pop');
-      void panel.offsetWidth;
-      panel.classList.add('cheat-fund-earn-pop');
+      const card = panel.querySelector('.harbor-day-card') || panel;
+      card.classList.remove('is-earning', 'cheat-fund-earn-pop');
+      void card.offsetWidth;
+      card.classList.add('is-earning');
       const jar = panel.querySelector('.cheat-fund-jar');
       if (jar) {
         jar.classList.add('is-earning');
-        setTimeout(() => jar.classList.remove('is-earning'), 550);
+        setTimeout(() => {
+          jar.classList.remove('is-earning');
+          card.classList.remove('is-earning');
+        }, 500);
       }
-    }
-
-    function getNextSmallReward() {
-      // Passes are streak-milestone earned now — no points shop
-      return null;
     }
 
     function lightenHexColor(hex, amount = 0.28) {
@@ -21453,7 +21429,7 @@
               </div>
             </section>
 
-            <div class="settings-build-meta">Harbor ${HARBOR_BUILD} · Prototype Build</div>
+            <div class="settings-build-meta">Harbor ${HARBOR_BUILD}</div>
           </div>
 
           <div class="settings-sheet-footer flex gap-x-3">
@@ -23045,14 +23021,14 @@
       const habits = createStarterHabits(selectedStarterKeys);
       finishOnboardingSession(
         habits,
-        `Welcome in · ${habits.length} task${habits.length === 1 ? '' : 's'} on Today. Replay the tour anytime from Menu → Tutorial.`
+        `Welcome in · ${habits.length} task${habits.length === 1 ? '' : 's'} on Today.`
       );
     }
 
     function skipOnboarding() {
       finishOnboardingSession(
         createStarterHabits(),
-        'Starter tasks are on Today — open Menu → Tutorial anytime for the guided tour.'
+        'Starter tasks are on Today. Tour is in Menu anytime.'
       );
     }
 
