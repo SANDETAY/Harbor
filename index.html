@@ -1938,7 +1938,6 @@
       .splash-slogan-letter,
       .splash-slogan-rule,
       .splash-wave-layer,
-      .splash-mark-draw,
       .app-content-wrap.splash-app-reveal {
         animation: none !important;
       }
@@ -1949,7 +1948,6 @@
       .splash-slogan { opacity: 1; transform: none; }
       .splash-slogan-letter { opacity: 1; transform: none; filter: none; }
       .splash-slogan-rule { opacity: 0.55; transform: scaleX(1); }
-      .splash-mark-draw { stroke-dashoffset: 0; }
       .splash-screen-harbor.is-revealing { opacity: 0; transform: none; }
       .app-content-wrap.splash-app-reveal { opacity: 1; transform: none; }
       .splash-wave-layer { opacity: 0.35; }
@@ -4575,14 +4573,13 @@
     }
 
     .splash-mark {
-      width: clamp(5.25rem, 18vw, 6.5rem);
-      height: clamp(5.25rem, 18vw, 6.5rem);
-      color: #f0ebe3;
+      width: clamp(5.6rem, 20vw, 7rem);
+      height: clamp(5.6rem, 20vw, 7rem);
       opacity: 0;
       transform: translateY(10px) scale(0.92);
       filter:
-        drop-shadow(0 0 22px rgba(107, 191, 176, 0.35))
-        drop-shadow(0 8px 24px rgba(4, 28, 26, 0.35));
+        drop-shadow(0 0 22px rgba(107, 191, 176, 0.32))
+        drop-shadow(0 8px 24px rgba(4, 28, 26, 0.32));
     }
 
     .splash-mark.is-in {
@@ -4591,38 +4588,15 @@
         splashMarkBob 4s ease-in-out 780ms infinite;
     }
 
-    .splash-mark svg {
+    .splash-mark-img {
       width: 100%;
       height: 100%;
       display: block;
-      overflow: visible;
-    }
-
-    /* Stroke-draw reveal on key anchor paths */
-    .splash-mark-draw {
-      fill: none;
-      stroke: currentColor;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      stroke-dasharray: 280;
-      stroke-dashoffset: 280;
-    }
-
-    .splash-mark.is-in .splash-mark-draw {
-      animation: splashStrokeDraw 1.05s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-
-    .splash-mark.is-in .splash-mark-draw.d2 { animation-delay: 0.12s; }
-    .splash-mark.is-in .splash-mark-draw.d3 { animation-delay: 0.22s; }
-    .splash-mark.is-in .splash-mark-draw.d4 { animation-delay: 0.32s; }
-
-    .splash-mark-fill {
-      fill: currentColor;
-      opacity: 0;
-    }
-
-    .splash-mark.is-in .splash-mark-fill {
-      animation: splashFillIn 420ms ease 0.55s forwards;
+      object-fit: contain;
+      object-position: center center;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
     }
 
     .splash-wordmark {
@@ -4739,15 +4713,6 @@
     @keyframes splashMarkBob {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-5px); }
-    }
-
-    @keyframes splashStrokeDraw {
-      to { stroke-dashoffset: 0; }
-    }
-
-    @keyframes splashFillIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
     }
 
     @keyframes splashWordIn {
@@ -5484,29 +5449,7 @@
         <div id="splash-inner">
           <div id="splash-brand" class="splash-brand">
             <div id="splash-mark" class="splash-mark" aria-hidden="true">
-              <!-- High-detail minimalist anchor: ring, stock, stock-cap, arms, flukes, crown -->
-              <svg viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle class="splash-mark-draw d1" cx="64" cy="64" r="52" stroke-width="2.25" opacity="0.55"/>
-                <circle class="splash-mark-draw d2" cx="64" cy="64" r="46" stroke-width="1.15" opacity="0.28"/>
-                <!-- Ring -->
-                <circle class="splash-mark-draw d2" cx="64" cy="28" r="9.5" stroke-width="3.6"/>
-                <circle class="splash-mark-fill" cx="64" cy="28" r="3.2"/>
-                <!-- Stock cap + crossbar -->
-                <path class="splash-mark-draw d3" stroke-width="3.8" d="M44 42.5h40"/>
-                <path class="splash-mark-draw d3" stroke-width="2.2" opacity="0.55" d="M48 46.5h32"/>
-                <!-- Shank -->
-                <path class="splash-mark-draw d3" stroke-width="4.4" d="M64 37v52"/>
-                <!-- Arms -->
-                <path class="splash-mark-draw d4" stroke-width="4.2" d="M64 84c-10 4-20 12-28 22"/>
-                <path class="splash-mark-draw d4" stroke-width="4.2" d="M64 84c10 4 20 12 28 22"/>
-                <!-- Flukes -->
-                <path class="splash-mark-draw d4" stroke-width="3.4" d="M36 106l-9-1 5-10"/>
-                <path class="splash-mark-draw d4" stroke-width="3.4" d="M92 106l9-1-5-10"/>
-                <!-- Crown tip -->
-                <path class="splash-mark-fill" d="M64 86.5l-3.2 7h6.4L64 86.5z" opacity="0.95"/>
-                <!-- Soft water arc under arms -->
-                <path class="splash-mark-draw d4" stroke-width="1.4" opacity="0.35" d="M38 114c8 5 16 7 26 7s18-2 26-7"/>
-              </svg>
+              <img class="splash-mark-img" src="harbor-splash-anchor.png" width="512" height="512" alt="" decoding="async">
             </div>
             <div id="splash-wordmark" class="splash-wordmark">Harbor</div>
           </div>
@@ -5859,7 +5802,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v125';
+    const HARBOR_BUILD = 'v126';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
