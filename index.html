@@ -3868,6 +3868,12 @@
       line-height: 1.4;
       margin-top: 0.2rem;
     }
+    .install-home-banner-cta {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: rgb(var(--harbor-primary-light));
+      margin-top: 0.35rem;
+    }
     .install-home-banner-dismiss {
       appearance: none;
       border: none;
@@ -3881,6 +3887,23 @@
       -webkit-tap-highlight-color: transparent;
     }
     .install-home-banner-dismiss:active {
+      color: rgb(var(--harbor-text));
+    }
+    .ig-brand-chip {
+      appearance: none;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      border-radius: 999px;
+      padding: 0.35rem 0.7rem;
+      font-size: 0.68rem;
+      font-weight: 650;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ig-brand-chip.is-active {
+      border-color: rgba(47, 155, 140, 0.5);
+      background: rgba(47, 155, 140, 0.14);
       color: rgb(var(--harbor-text));
     }
 
@@ -8138,6 +8161,7 @@
           <div class="flex-1 min-w-0">
             <div class="install-home-banner-title">Add Harbor to your Home Screen</div>
             <div id="install-home-how" class="install-home-banner-how"></div>
+            <div class="install-home-banner-cta">Tap for steps · works on iPhone, Pixel, Samsung &amp; more</div>
           </div>
           <button type="button" class="install-home-banner-dismiss" onclick="dismissInstallHomeBanner()"
             aria-label="Dismiss">×</button>
@@ -8456,7 +8480,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 201;
+    const HARBOR_BUILD_NUMBER = 202;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -22853,55 +22877,171 @@
       }
     ];
 
-    function getMobileInstallPlatform() {
+    /**
+     * Detect phone brand + browser for plain-English install help.
+     * One-tap install only works on Chromium browsers (Chrome, Edge, Samsung Internet, Brave…).
+     * iPhone/iPad always need manual Share → Add to Home Screen (Apple rule).
+     */
+    function detectInstallDeviceProfile() {
       const ua = navigator.userAgent || '';
-      if (/iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
-        return 'ios';
+      const iPadOS = navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1;
+      const isIOS = /iPhone|iPad|iPod/i.test(ua) || iPadOS;
+      const isAndroid = /Android/i.test(ua);
+      const isSamsungBrowser = /SamsungBrowser/i.test(ua);
+      const isSamsungDevice = isSamsungBrowser || /SM-[A-Z0-9]|Samsung|Galaxy/i.test(ua);
+      const isPixel = /Pixel/i.test(ua);
+      const isEdge = /Edg\//i.test(ua) || /EdgiOS/i.test(ua);
+      const isFirefox = /Firefox|FxiOS/i.test(ua);
+      const isOpera = /OPR\/|Opera/i.test(ua);
+      const isChromeAndroid = isAndroid && /Chrome\//i.test(ua) && !isEdge && !isOpera && !isSamsungBrowser && !isFirefox;
+      const isSafariIOS = isIOS && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
+      const isChromeIOS = isIOS && /CriOS/i.test(ua);
+
+      if (isIOS) {
+        return {
+          id: 'iphone',
+          brandLabel: iPadOS || /iPad/i.test(ua) ? 'iPad' : 'iPhone',
+          family: 'ios',
+          canOneTap: false,
+          browserNote: isSafariIOS ? 'Safari' : (isChromeIOS ? 'Chrome on iPhone' : 'this browser'),
+          shortHow: 'Tap Share, then Add to Home Screen. Open Harbor from the new icon next time — this note will disappear.',
+          menuHint: 'Simple Safari steps'
+        };
       }
-      if (/Android/i.test(ua)) return 'android';
+
+      if (isAndroid) {
+        if (isPixel) {
+          return {
+            id: 'pixel',
+            brandLabel: 'Google Pixel',
+            family: 'android',
+            canOneTap: true,
+            browserNote: isChromeAndroid ? 'Chrome' : 'your browser',
+            shortHow: 'Tap Add to Home Screen below (or Chrome menu ⋮ → Install app). Open from the icon and this note goes away.',
+            menuHint: 'One-tap when Chrome allows it'
+          };
+        }
+        if (isSamsungDevice) {
+          return {
+            id: 'samsung',
+            brandLabel: 'Samsung Galaxy',
+            family: 'android',
+            canOneTap: true,
+            browserNote: isSamsungBrowser ? 'Samsung Internet' : (isChromeAndroid ? 'Chrome' : 'your browser'),
+            shortHow: isSamsungBrowser
+              ? 'Menu → Add page to → Home screen. Or tap Add to Home Screen if you see the button.'
+              : 'Tap Add to Home Screen, or browser menu ⋮ → Add to Home screen / Install app.',
+            menuHint: 'Galaxy steps + one-tap when available'
+          };
+        }
+        return {
+          id: 'android',
+          brandLabel: 'Android phone',
+          family: 'android',
+          canOneTap: true,
+          browserNote: isChromeAndroid ? 'Chrome' : (isSamsungBrowser ? 'Samsung Internet' : (isFirefox ? 'Firefox' : 'your browser')),
+          shortHow: 'Tap Add to Home Screen if shown, or browser menu (⋮) → Add to Home screen / Install app.',
+          menuHint: 'Works on most Android browsers'
+        };
+      }
+
+      return {
+        id: 'desktop',
+        brandLabel: 'Computer',
+        family: 'desktop',
+        canOneTap: true,
+        browserNote: isEdge ? 'Edge' : (/Chrome\//i.test(ua) ? 'Chrome' : 'your browser'),
+        shortHow: 'Use Install / Add to Home Screen in the browser menu or address bar when available.',
+        menuHint: 'Install as an app window'
+      };
+    }
+
+    function getMobileInstallPlatform() {
+      const p = detectInstallDeviceProfile();
+      if (p.family === 'ios') return 'ios';
+      if (p.family === 'android') return 'android';
       return 'generic';
     }
 
+    function getInstallStepsForProfile(profileId) {
+      const id = profileId || detectInstallDeviceProfile().id;
+      const guides = {
+        iphone: {
+          title: 'iPhone or iPad',
+          blurb: 'Apple requires a couple of taps — there is no automatic button.',
+          steps: [
+            'Open Harbor in <strong>Safari</strong> (the compass icon). Chrome on iPhone cannot add web apps the same way.',
+            'Tap the <strong>Share</strong> button at the bottom (square with an arrow pointing up).',
+            'Scroll the list and tap <strong>Add to Home Screen</strong>.',
+            'Tap <strong>Add</strong> in the top right. Next time, open Harbor from the new icon.'
+          ]
+        },
+        pixel: {
+          title: 'Google Pixel',
+          blurb: 'On Pixel phones, Chrome can often add Harbor with one tap.',
+          steps: [
+            'Stay in <strong>Chrome</strong> on your Pixel.',
+            'Tap the green <strong>Add to Home Screen</strong> button below if it appears.',
+            'If not, tap the three dots <strong>⋮</strong> → <strong>Add to Home screen</strong> or <strong>Install app</strong>.',
+            'Confirm, then open Harbor from the home screen icon.'
+          ]
+        },
+        samsung: {
+          title: 'Samsung Galaxy',
+          blurb: 'Works in Chrome or Samsung Internet.',
+          steps: [
+            'In <strong>Chrome</strong>: tap <strong>Add to Home Screen</strong> below if shown, or menu <strong>⋮</strong> → <strong>Add to Home screen</strong> / <strong>Install app</strong>.',
+            'In <strong>Samsung Internet</strong>: menu → <strong>Add page to</strong> → <strong>Home screen</strong>.',
+            'Confirm, then open Harbor from the new icon for the full-screen app feel.'
+          ]
+        },
+        android: {
+          title: 'Android phone',
+          blurb: 'Most Android phones use Chrome or a similar browser menu.',
+          steps: [
+            'Tap the green <strong>Add to Home Screen</strong> button below when available.',
+            'Or open the browser menu (three dots <strong>⋮</strong>) and choose <strong>Add to Home screen</strong> or <strong>Install app</strong>.',
+            'Confirm, then launch Harbor from the icon on your home screen.'
+          ]
+        },
+        desktop: {
+          title: 'Computer',
+          blurb: 'Chrome and Edge can install Harbor like a small app window.',
+          steps: [
+            'In <strong>Chrome</strong> or <strong>Edge</strong>, look for an install icon in the address bar, or menu → <strong>Install Harbor</strong> / <strong>Install this site as an app</strong>.',
+            'You can also use Harbor’s install button when the browser offers one.',
+            'Confirm — this only creates a shortcut on your computer.'
+          ]
+        }
+      };
+      return guides[id] || guides.android;
+    }
+
     function getInstallTutorialBody() {
-      const platform = getMobileInstallPlatform();
-      let stepsHtml = '';
-      if (platform === 'ios') {
-        stepsHtml = `
-          <ol class="tutorial-install-steps">
-            <li>In <strong>Safari</strong>, tap <strong>Share</strong>.</li>
-            <li>Tap <strong>Add to Home Screen</strong>.</li>
-          </ol>`;
-      } else if (platform === 'android') {
-        stepsHtml = `
-          <ol class="tutorial-install-steps">
-            <li>Tap the button below, or Chrome menu → <strong>Add to Home screen</strong>.</li>
-            <li>It’s a shortcut — not a store download.</li>
-          </ol>`;
-      } else {
-        stepsHtml = `
-          <ol class="tutorial-install-steps">
-            <li><strong>Phone:</strong> browser menu → Add to Home Screen.</li>
-            <li>You’ll get a full-screen icon on your home screen.</li>
-          </ol>`;
-      }
+      const profile = detectInstallDeviceProfile();
+      const guide = getInstallStepsForProfile(profile.id);
+      const canTap = canNativePwaInstall();
       return `
-        <p class="tutorial-install-lead">Add Harbor to your home screen for one-tap access.</p>
-        ${stepsHtml}
+        <p class="tutorial-install-lead">Add Harbor to your home screen so it’s one tap away — like a regular app.</p>
+        <div class="tutorial-install-platform">
+          <div class="tutorial-install-platform-title">${guide.title}</div>
+          <ol class="tutorial-install-steps">
+            ${guide.steps.slice(0, 3).map(s => `<li>${s}</li>`).join('')}
+          </ol>
+        </div>
         <button type="button" class="tutorial-install-cta" onclick="event.stopPropagation(); openInstallGuideFromTutorial()">
-          ${canNativePwaInstall() ? 'Add to Home Screen' : 'Show me how'}
+          ${canTap ? 'Add to Home Screen' : 'Show me how'}
         </button>
         <p class="tutorial-install-note" style="margin-bottom:0">
-          You can do this later from <strong>Menu → Add to Home Screen</strong>. Your data stays on this device.
+          You can also open <strong>Menu → Add to Home Screen</strong> anytime. Your data stays on this device.
         </p>`;
     }
 
     function getPrototypeTutorialBody() {
-      // Legacy name — install tour copy (not a “prototype” product label)
       return `<p class="tutorial-install-lead">Harbor keeps your data on this device. Thanks for trying it.</p>`;
     }
 
     function openInstallGuideFromTutorial() {
-      // Try the browser install prompt first; fall back to the step-by-step guide
       promptPwaInstall();
     }
 
@@ -26972,7 +27112,7 @@
           ${appMenuItemHtml('whats-new', 'fa-solid fa-gift', "What's New", 'Release notes and recent changes')}
           ${appMenuItemHtml('tutorial', 'fa-solid fa-graduation-cap', 'Quick tour', 'A short walkthrough of the basics')}
           ${appMenuItemHtml('overview', 'fa-solid fa-book-open', 'Feature Overview', 'What each tab is for')}
-          ${appMenuItemHtml('install', 'fa-solid fa-mobile-screen-button', 'Add to Home Screen', 'Keep Harbor one tap away')}
+          ${appMenuItemHtml('install', 'fa-solid fa-mobile-screen-button', 'Add to Home Screen', (typeof detectInstallDeviceProfile === 'function' ? detectInstallDeviceProfile().menuHint : 'Keep Harbor one tap away'))}
           ${appMenuItemHtml('feedback', 'fa-regular fa-comment-dots', 'Send Feedback', 'Share a bug or a kind idea')}
         </div>
         <div class="app-menu-version-foot">
@@ -27067,156 +27207,38 @@
 
     function showAddToHomeScreenGuide(options = {}) {
       closeAppMenu();
-      const already = !!options.alreadyInstalled || isHarborRunningStandalone();
-      const canNative = !!options.canRetryNative || canNativePwaInstall();
-      const preselect = options.platformId || null;
+      const already = !!options.alreadyInstalled
+        || (typeof isHarborRunningStandalone === 'function' && isHarborRunningStandalone())
+        || (typeof isRunningAsInstalledPwa === 'function' && isRunningAsInstalledPwa());
+      const profile = detectInstallDeviceProfile();
+      let activeId = options.platformId || profile.id;
 
-      const PLATFORMS = [
-        {
-          id: 'auto',
-          name: 'This browser',
-          sub: 'Try one-tap when available',
-          icon: 'fa-bolt',
-          native: true,
-          steps: [
-            'If your browser supports it, Harbor can open the official “Add to Home Screen” dialog — no app store, no extra download.',
-            'Tap <strong>Add to home screen</strong> below when you see it.',
-            'Confirm in the system prompt. Your data stays on this device; Harbor never receives a copy of your logins.'
-          ]
-        },
-        {
-          id: 'chrome-android',
-          name: 'Chrome',
-          sub: 'Android',
-          icon: 'fa-chrome',
-          native: true,
-          steps: [
-            'Open Harbor in <strong>Chrome</strong> on Android.',
-            'Tap <strong>Add to home screen</strong> in Harbor (or Chrome menu ⋮ → <strong>Add to Home screen</strong> / <strong>Install app</strong>).',
-            'You’re only pinning a <strong>shortcut</strong> — not installing a Play Store package. Confirm, then open the new icon for full-screen Harbor.'
-          ]
-        },
-        {
-          id: 'chrome-desktop',
-          name: 'Chrome',
-          sub: 'Windows / Mac / Linux',
-          icon: 'fa-chrome',
-          native: true,
-          steps: [
-            'Open Harbor in <strong>Chrome</strong> on your computer.',
-            'Use Harbor’s <strong>Add to home screen</strong> button, or the install icon in the address bar, or menu ⋮ → <strong>Install Harbor</strong> / <strong>Cast, save, and share</strong> → Install.',
-            'Harbor opens in its own window — cleaner, faster to reopen, more like a real app.'
-          ]
-        },
-        {
-          id: 'edge',
-          name: 'Microsoft Edge',
-          sub: 'Windows / Mac / Android',
-          icon: 'fa-edge',
-          native: true,
-          steps: [
-            'Open Harbor in <strong>Edge</strong>.',
-            'Tap Harbor’s install button if shown, or menu ⋯ → <strong>Apps</strong> → <strong>Install this site as an app</strong>.',
-            'Confirm. Edge uses the same secure web-app prompt as Chromium — no extra account required.'
-          ]
-        },
-        {
-          id: 'brave',
-          name: 'Brave',
-          sub: 'Mobile / Desktop',
-          icon: 'fa-shield-halved',
-          native: true,
-          steps: [
-            'Open Harbor in <strong>Brave</strong>.',
-            'Use Harbor’s one-tap button when available, or menu → <strong>Install</strong> / <strong>Add to Home screen</strong>.',
-            'Brave is Chromium-based; install is a local shortcut only.'
-          ]
-        },
-        {
-          id: 'samsung',
-          name: 'Samsung Internet',
-          sub: 'Galaxy phones',
-          icon: 'fa-mobile-screen',
-          native: true,
-          steps: [
-            'Open Harbor in <strong>Samsung Internet</strong>.',
-            'Menu → <strong>Add page to</strong> → <strong>Home screen</strong>, or use Harbor’s button if your browser offers a prompt.',
-            'Open from the home screen for a full-screen experience.'
-          ]
-        },
-        {
-          id: 'opera',
-          name: 'Opera',
-          sub: 'Mobile / Desktop',
-          icon: 'fa-opera',
-          native: true,
-          steps: [
-            'Open Harbor in <strong>Opera</strong>.',
-            'Menu → <strong>Add to</strong> → <strong>Home screen</strong> (mobile) or look for <strong>Install</strong> on desktop.',
-            'Confirm — this only creates a shortcut to this page on your device.'
-          ]
-        },
-        {
-          id: 'safari-ios',
-          name: 'Safari',
-          sub: 'iPhone / iPad',
-          icon: 'fa-safari',
-          native: false,
-          steps: [
-            'Open Harbor in <strong>Safari</strong> (not Chrome-on-iOS — Apple requires Safari for home-screen apps).',
-            'Tap <strong>Share</strong> (square with ↑).',
-            'Scroll and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.',
-            'Apple does not allow websites to do this with one automatic tap — the Share sheet is the secure, official path.'
-          ]
-        },
-        {
-          id: 'safari-mac',
-          name: 'Safari',
-          sub: 'Mac',
-          icon: 'fa-safari',
-          native: false,
-          steps: [
-            'Open Harbor in <strong>Safari</strong> on Mac.',
-            'File → <strong>Add to Dock</strong> (macOS Sonoma+) or Share → <strong>Add to Dock</strong> when available.',
-            'On older macOS, bookmark Harbor or use Chrome/Edge install if you prefer a windowed app.'
-          ]
-        },
-        {
-          id: 'firefox-android',
-          name: 'Firefox',
-          sub: 'Android',
-          icon: 'fa-firefox-browser',
-          native: false,
-          steps: [
-            'Open Harbor in <strong>Firefox</strong> on Android.',
-            'Menu ⋮ → <strong>Install</strong> or <strong>Add to Home screen</strong> (wording varies by version).',
-            'Firefox may not support the same one-tap prompt as Chrome; the menu path is normal and private to your device.'
-          ]
-        },
-        {
-          id: 'firefox-desktop',
-          name: 'Firefox',
-          sub: 'Desktop',
-          icon: 'fa-firefox-browser',
-          native: false,
-          steps: [
-            'Desktop Firefox has limited “install site as app” support compared with Chrome/Edge.',
-            'Bookmark Harbor, or use Chrome/Edge if you want a dedicated app window.',
-            'Your Harbor data still stays in the browser profile you use — nothing is uploaded to us.'
-          ]
-        },
-        {
-          id: 'duckduckgo',
-          name: 'DuckDuckGo',
-          sub: 'Mobile browser',
-          icon: 'fa-dove',
-          native: false,
-          steps: [
-            'Open Harbor in the <strong>DuckDuckGo</strong> browser.',
-            'Menu → <strong>Add to Home</strong> / <strong>Add to Home Screen</strong> (label varies).',
-            'DuckDuckGo does not always expose the Chromium install prompt; the menu path keeps the process under your control.'
-          ]
-        }
+      const idMap = {
+        auto: profile.id,
+        'chrome-android': profile.id === 'pixel' ? 'pixel' : (profile.id === 'samsung' ? 'samsung' : 'android'),
+        'safari-ios': 'iphone',
+        'firefox-android': 'android',
+        samsung: 'samsung',
+        'chrome-desktop': 'desktop',
+        edge: 'desktop',
+        brave: 'android',
+        opera: 'android',
+        duckduckgo: 'android',
+        'safari-mac': 'desktop',
+        'firefox-desktop': 'desktop',
+        generic: 'android'
+      };
+      if (idMap[activeId]) activeId = idMap[activeId];
+      if (!['iphone', 'pixel', 'samsung', 'android', 'desktop'].includes(activeId)) {
+        activeId = profile.id;
+      }
+
+      const brandChips = [
+        { id: 'iphone', label: 'iPhone' },
+        { id: 'pixel', label: 'Pixel' },
+        { id: 'samsung', label: 'Samsung' },
+        { id: 'android', label: 'Other Android' },
+        { id: 'desktop', label: 'Computer' }
       ];
 
       const modal = document.createElement('div');
@@ -27231,7 +27253,7 @@
             <button type="button" class="modal-close-chip" data-ig-close="1" aria-label="Close">Close</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-3 leading-snug">
-            Harbor is local-first: pinning to your home screen only creates a shortcut on <strong class="text-harbor-text">your</strong> device. We never get your passwords or a remote install agent.
+            This puts a Harbor icon on your phone — like an app. <strong class="text-harbor-text">Nothing is downloaded from an app store</strong>, and your data stays on this device.
           </div>
           <div id="ig-view-root"></div>
         </div>`;
@@ -27246,105 +27268,80 @@
       modal.querySelectorAll('[data-ig-close]').forEach(el => el.addEventListener('click', close));
       modal.querySelector('[data-ig-sheet]')?.addEventListener('click', (e) => e.stopPropagation());
 
-      const renderPicker = () => {
+      const render = () => {
+        const guide = getInstallStepsForProfile(activeId);
+        const canTap = canNativePwaInstall() && !already && activeId !== 'iphone';
+        const detected = detectInstallDeviceProfile();
+        const isDetected = activeId === detected.id
+          || (activeId === 'android' && detected.family === 'android' && detected.id !== 'pixel' && detected.id !== 'samsung');
+
         root.innerHTML = `
           ${already ? `
             <div class="privacy-block mb-3">
-              <h4><i class="fa-solid fa-circle-check text-harbor-primary-light mr-1.5"></i>Already on this device</h4>
-              <p>Harbor looks like it’s running as an installed app. You can still review platform steps below if you need them on another device.</p>
-            </div>` : canNative ? `
-            <button type="button" id="ig-native-btn"
-              class="w-full mb-3 py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm active:opacity-90">
-              <i class="fa-solid fa-mobile-screen-button mr-1.5"></i>Add to home screen (this browser)
-            </button>
-            <div class="text-[10px] text-harbor-muted text-center mb-3 -mt-1 leading-snug">
-              Official browser prompt when supported — shortcut only, no store download.
+              <h4><i class="fa-solid fa-circle-check text-harbor-primary-light mr-1.5"></i>Already installed</h4>
+              <p>Harbor is running like an app on this device. You’re all set — open it from the home screen icon anytime.</p>
             </div>` : ''}
-          <div class="text-xs font-semibold text-harbor-text mb-2">Select your platform</div>
-          <div class="platform-pick-grid mb-3">
-            ${PLATFORMS.map(p => `
-              <button type="button" class="platform-pick-btn" data-platform="${p.id}">
-                <i class="fa-brands ${p.icon} ${p.icon.startsWith('fa-') && !p.icon.includes('chrome') && !p.icon.includes('safari') && !p.icon.includes('firefox') && !p.icon.includes('edge') && !p.icon.includes('opera') ? '' : ''}"></i>
-                <span>${p.name}</span>
-                <span class="platform-pick-sub">${p.sub}</span>
-                ${p.native ? '<span class="platform-pick-badge">One-tap when available</span>' : '<span class="platform-pick-sub">Manual steps</span>'}
+
+          ${!already ? `
+            <div class="privacy-block mb-3">
+              <h4><i class="fa-solid fa-mobile-screen-button text-harbor-primary-light mr-1.5"></i>${guide.title}</h4>
+              <p>${guide.blurb}${isDetected ? ' <span class="text-harbor-primary-light">(looks like this is your device)</span>' : ''}</p>
+            </div>
+
+            ${canTap ? `
+              <button type="button" id="ig-native-btn"
+                class="w-full mb-2 py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm active:opacity-90">
+                <i class="fa-solid fa-plus mr-1.5" aria-hidden="true"></i>Add to Home Screen
               </button>
+              <div class="text-[10px] text-harbor-muted text-center mb-3 leading-snug">
+                One tap opens your phone’s official install prompt — no store, no extra download.
+              </div>
+            ` : activeId === 'iphone' ? `
+              <div class="text-[11px] text-harbor-muted mb-3 leading-snug px-0.5">
+                On iPhone, Apple requires the Share button — there is no automatic install button. Follow the steps below (about 10 seconds).
+              </div>
+            ` : `
+              <div class="text-[11px] text-harbor-muted mb-3 leading-snug px-0.5">
+                Your browser didn’t offer a one-tap button yet — that’s OK. Use the simple steps below.
+              </div>
+            `}
+
+            <div class="privacy-block mb-3">
+              <h4>Easy steps</h4>
+              <ol class="tutorial-install-steps" style="padding-left:1.15rem;margin:0.4rem 0 0">
+                ${guide.steps.map(s => `<li style="margin-bottom:0.45rem">${s}</li>`).join('')}
+              </ol>
+            </div>
+          ` : ''}
+
+          <div class="text-[10px] font-semibold uppercase tracking-wider text-harbor-muted mb-1.5 px-0.5">Not your phone?</div>
+          <div class="flex flex-wrap gap-1.5 mb-3" role="group" aria-label="Choose phone type">
+            ${brandChips.map(c => `
+              <button type="button" class="ig-brand-chip${c.id === activeId ? ' is-active' : ''}" data-ig-brand="${c.id}">${c.label}</button>
             `).join('')}
           </div>
-          <div class="privacy-block">
-            <h4><i class="fa-solid fa-shield-halved text-harbor-primary-light mr-1.5"></i>Privacy</h4>
-            <p>Harbor never auto-installs without your confirmation. One-tap only uses your browser’s built-in prompt. Manual steps stay entirely on your phone.</p>
+
+          <div class="privacy-block mb-3">
+            <h4><i class="fa-solid fa-shield-halved text-harbor-primary-light mr-1.5"></i>Safe &amp; simple</h4>
+            <p>Harbor never installs itself without you confirming. You’re only creating a shortcut on <strong class="text-harbor-text">your</strong> phone.</p>
           </div>
-          <button type="button" class="w-full mt-4 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold" data-ig-close="1">Close</button>
+          <button type="button" class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold" data-ig-close="1">Done</button>
         `;
-        // Fix icons that aren't brands
-        root.querySelectorAll('.platform-pick-btn i').forEach(icon => {
-          const btn = icon.closest('[data-platform]');
-          const id = btn?.dataset?.platform;
-          const map = {
-            auto: 'fa-solid fa-bolt',
-            brave: 'fa-solid fa-shield-halved',
-            samsung: 'fa-solid fa-mobile-screen',
-            duckduckgo: 'fa-solid fa-dove',
-            'chrome-android': 'fa-brands fa-chrome',
-            'chrome-desktop': 'fa-brands fa-chrome',
-            edge: 'fa-brands fa-edge',
-            'safari-ios': 'fa-brands fa-safari',
-            'safari-mac': 'fa-brands fa-safari',
-            'firefox-android': 'fa-brands fa-firefox-browser',
-            'firefox-desktop': 'fa-brands fa-firefox-browser',
-            opera: 'fa-brands fa-opera'
-          };
-          if (map[id]) icon.className = map[id];
-        });
 
         root.querySelector('#ig-native-btn')?.addEventListener('click', async () => {
           close();
           await promptPwaInstall({ forceGuide: false });
         });
-        root.querySelectorAll('[data-platform]').forEach(btn => {
-          btn.addEventListener('click', () => renderDetail(btn.dataset.platform));
+        root.querySelectorAll('[data-ig-brand]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            activeId = btn.getAttribute('data-ig-brand') || 'android';
+            render();
+          });
         });
         root.querySelectorAll('[data-ig-close]').forEach(el => el.addEventListener('click', close));
       };
 
-      const renderDetail = (platformId) => {
-        const p = PLATFORMS.find(x => x.id === platformId) || PLATFORMS[0];
-        const showNative = p.native && canNativePwaInstall() && !already;
-        root.innerHTML = `
-          <button type="button" id="ig-back" class="text-[11px] text-harbor-primary-light font-semibold mb-3">
-            <i class="fa-solid fa-arrow-left mr-1"></i>All platforms
-          </button>
-          <div class="font-semibold text-base text-harbor-text mb-0.5">${p.name}</div>
-          <div class="text-[11px] text-harbor-muted mb-3">${p.sub}</div>
-          ${showNative ? `
-            <button type="button" id="ig-native-btn"
-              class="w-full mb-3 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">
-              Add to home screen (secure browser prompt)
-            </button>
-          ` : ''}
-          <div class="privacy-block mb-3">
-            <h4>Steps</h4>
-            <ol class="tutorial-install-steps" style="padding-left:1.1rem;margin:0.35rem 0 0">
-              ${p.steps.map(s => `<li style="margin-bottom:0.4rem">${s}</li>`).join('')}
-            </ol>
-          </div>
-          <div class="privacy-block mb-3">
-            <h4><i class="fa-solid fa-shield-halved text-harbor-primary-light mr-1.5"></i>Secure by design</h4>
-            <p>No Harbor server performs the install. Any one-tap action is your browser asking you to confirm a local shortcut.</p>
-          </div>
-          <button type="button" class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold" data-ig-close="1">Close</button>
-        `;
-        root.querySelector('#ig-back')?.addEventListener('click', renderPicker);
-        root.querySelector('#ig-native-btn')?.addEventListener('click', async () => {
-          close();
-          await promptPwaInstall({ forceGuide: false });
-        });
-        root.querySelectorAll('[data-ig-close]').forEach(el => el.addEventListener('click', close));
-      };
-
-      if (preselect) renderDetail(preselect);
-      else renderPicker();
+      render();
     }
 
     function openAppMenuSheet() {
@@ -29329,14 +29326,12 @@
     }
 
     function getInstallHomeHowText() {
-      const ua = navigator.userAgent || '';
-      if (/iPhone|iPad|iPod/i.test(ua)) {
-        return 'Tap the Share button, then Add to Home Screen. Next time open Harbor from that icon — this note will disappear.';
+      try {
+        const profile = detectInstallDeviceProfile();
+        return profile.shortHow || 'Add Harbor to your Home Screen, then open it from the icon — this note will go away.';
+      } catch (_) {
+        return 'Add Harbor to your Home Screen, then open it from the icon — this note will go away.';
       }
-      if (/Android/i.test(ua)) {
-        return 'Open your browser menu and choose Add to Home screen (or Install app). Launch from the icon and this note goes away.';
-      }
-      return 'Add this page to your Home Screen, then open Harbor from the icon — this note will go away.';
     }
 
     function shouldShowInstallHomeBanner() {
@@ -29367,6 +29362,17 @@
       if (show) {
         const how = document.getElementById('install-home-how');
         if (how) how.textContent = getInstallHomeHowText();
+        // Whole banner opens the simple guide (except dismiss)
+        if (el.dataset.igWired !== '1') {
+          el.dataset.igWired = '1';
+          el.style.cursor = 'pointer';
+          el.addEventListener('click', (e) => {
+            if (e.target.closest('.install-home-banner-dismiss')) return;
+            e.preventDefault();
+            if (typeof promptPwaInstall === 'function') promptPwaInstall();
+            else if (typeof showAddToHomeScreenGuide === 'function') showAddToHomeScreenGuide();
+          });
+        }
       }
     }
 
@@ -29377,7 +29383,7 @@
       const el = document.getElementById('install-home-banner');
       if (el) el.classList.add('hidden');
       if (typeof showToast === 'function') {
-        showToast('Tip hidden — add to Home Screen anytime from your browser menu');
+        showToast('Tip hidden — find steps anytime in Menu → Add to Home Screen');
       }
     }
 
