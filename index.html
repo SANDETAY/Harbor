@@ -8123,7 +8123,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 190;
+    const HARBOR_BUILD_NUMBER = 191;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -8155,6 +8155,7 @@
           'Seasonal chores (heating tune-up, leaf raking, spring lawn care, etc.) only show when that season is near',
           'Heavy maintenance (pressure wash, aerate lawn, dryer vent…) lives in Summary → When You Can — Add to Today when you’re ready',
           'Comprehensive “plan ahead” detection: travel (cabin, mountains, out of town), long blocks, projects, big errands, life events — freeform titles included',
+          'Fixed blank splash (script crash from a duplicated constant)',
           'Today stays a lighter, achievable list; bigger work doesn’t pile on until you pull it over',
           'Library default task names use Title Case, with small words like and / or / at left lower mid-phrase',
           'Bills support weekly, biweekly, monthly, quarterly, and yearly cadence',
@@ -9318,7 +9319,7 @@
     /** Title Case for library defaults — small words stay lower unless first/last. */
     const TITLE_CASE_SMALL_WORDS = new Set([
       'a', 'an', 'the', 'and', 'or', 'but', 'for', 'nor', 'on', 'at', 'to', 'by',
-      'of', 'in', 'as', 'vs', 'via', 'per', 'from', 'with', 'into', 'onto', 'over'
+      'of', 'in', 'up', 'as', 'vs', 'via', 'per', 'from', 'with', 'into', 'onto', 'over'
     ]);
 
     function toHarborTitleCase(input) {
@@ -12499,10 +12500,6 @@
       [/\bhouseplnat\b/gi, 'houseplant'],
       [/\bhouseplnats\b/gi, 'houseplants']
     ];
-
-    const TITLE_CASE_SMALL_WORDS = new Set([
-      'a', 'an', 'the', 'and', 'or', 'but', 'for', 'nor', 'on', 'at', 'to', 'by', 'of', 'in', 'up', 'as', 'per', 'vs'
-    ]);
 
     function normalizeUserText(input) {
       let text = (input || '').trim().replace(/\s+/g, ' ');
