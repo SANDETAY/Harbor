@@ -5766,6 +5766,85 @@
       color: rgb(var(--harbor-primary-light));
     }
 
+    /* Bills monthly spend summary — clear, calm planning strip */
+    .bills-spend-card {
+      border-radius: 1.1rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background:
+        linear-gradient(160deg, rgba(47, 155, 140, 0.08) 0%, rgb(var(--harbor-raised)) 55%);
+      box-shadow: var(--harbor-shadow-sm);
+      padding: 0.85rem 0.95rem 0.8rem;
+    }
+    html[data-theme="dark"] .bills-spend-card {
+      background:
+        linear-gradient(160deg, rgba(47, 155, 140, 0.12) 0%, rgb(var(--harbor-raised)) 60%);
+    }
+    .bills-spend-top {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.7rem;
+    }
+    .bills-spend-label {
+      font-size: 0.62rem;
+      font-weight: 750;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+      margin-bottom: 0.15rem;
+    }
+    .bills-spend-value {
+      font-size: 1.45rem;
+      font-weight: 750;
+      letter-spacing: -0.03em;
+      color: rgb(var(--harbor-text));
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+    .bills-spend-meta {
+      font-size: 0.62rem;
+      color: rgb(var(--harbor-muted));
+      text-align: right;
+      line-height: 1.35;
+      max-width: 9.5rem;
+    }
+    .bills-spend-halves {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+    .bills-spend-half {
+      border-radius: 0.85rem;
+      border: 1px solid rgb(var(--harbor-border) / 0.9);
+      background: rgb(var(--harbor-surface) / 0.72);
+      padding: 0.55rem 0.65rem 0.5rem;
+      min-width: 0;
+    }
+    .bills-spend-half-label {
+      font-size: 0.58rem;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+    }
+    .bills-spend-half-days {
+      font-size: 0.58rem;
+      color: rgb(var(--harbor-muted) / 0.9);
+      margin-top: 0.08rem;
+    }
+    .bills-spend-half-val {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: rgb(var(--harbor-text));
+      margin-top: 0.28rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .bills-spend-half.is-heavier .bills-spend-half-val {
+      color: rgb(var(--harbor-primary-light));
+    }
+
     .cal-duration-other-btn {
       display: inline-flex;
       align-items: center;
@@ -8093,7 +8172,7 @@
           <div class="text-[10px] text-harbor-muted leading-snug mb-2 px-0.5">
             Rent, utilities, loans — due dates you <strong class="text-harbor-text">pay</strong>. Streaming and memberships belong under <strong class="text-harbor-primary-light">Subscriptions</strong>.
           </div>
-          <div id="bills-monthly-total" class="hidden text-[10px] text-harbor-muted mb-2"></div>
+          <div id="bills-monthly-total" class="hidden bills-spend-card mb-3" aria-live="polite"></div>
           <div id="bills-list" class="space-y-2"></div>
         </div>
 
@@ -8252,7 +8331,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 197;
+    const HARBOR_BUILD_NUMBER = 198;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -9340,6 +9419,8 @@
         if (!b.dueDays || !b.dueDays.length) {
           b.dueDays = b.dueDay ? [b.dueDay] : [1];
         }
+        // Keep multi-pay bills consistent: per payment × due days = period total
+        if (typeof normalizeBillAmountFields === 'function') normalizeBillAmountFields(b);
       });
       if (!state.grocery) state.grocery = [];
       if (!state.groceryMaster || state.groceryMaster.length === 0) {
@@ -13720,22 +13801,6 @@
       return '/mo';
     }
 
-    /** Convert a bill's stored period total into a monthly-equivalent for spend summaries. */
-    function getBillMonthlyEquivalent(bill) {
-      if (!bill || bill.amount == null || isNaN(bill.amount)) return 0;
-      const amt = Number(bill.amount) || 0;
-      const rec = bill.recurrence || 'monthly';
-      if (rec === 'weekly') return amt * (52 / 12);
-      if (rec === 'biweekly') return amt * (26 / 12);
-      if (rec === 'quarterly') return amt / 3;
-      if (rec === 'yearly') return amt / 12;
-      return amt;
-    }
-
-    function getMonthlyBillsTotal() {
-      return (state.bills || []).reduce((sum, bill) => sum + getBillMonthlyEquivalent(bill), 0);
-    }
-
     /**
      * Amount entered is per pay date. Multiple due days → period total = amount × day count.
      * Returns { amountPerPayment, amount } where amount is the full period total stored on the bill.
@@ -13749,6 +13814,135 @@
       const multiplier = Math.max(1, days || 1);
       const total = Math.round(per * multiplier * 100) / 100;
       return { amountPerPayment: per, amount: total };
+    }
+
+    /**
+     * Normalize amount fields so multi-pay bills always store:
+     * amountPerPayment = each charge, amount = period total (per × due-day count).
+     * Legacy multi-day bills often only had amount = one payment → undercounted monthly totals.
+     */
+    function normalizeBillAmountFields(bill) {
+      if (!bill) return bill;
+      const days = getBillDueDays(bill);
+      const n = Math.max(1, days.length);
+      const hasAmt = bill.amount != null && !isNaN(Number(bill.amount));
+      const hasPer = bill.amountPerPayment != null && !isNaN(Number(bill.amountPerPayment));
+      if (!hasAmt && !hasPer) return bill;
+
+      if (hasPer) {
+        const per = Math.round(Number(bill.amountPerPayment) * 100) / 100;
+        bill.amountPerPayment = per;
+        bill.amount = Math.round(per * n * 100) / 100;
+        return bill;
+      }
+
+      // amount only
+      const amt = Math.round(Number(bill.amount) * 100) / 100;
+      if (n > 1) {
+        // Treat stored amount as per pay date (what users enter), then expand
+        bill.amountPerPayment = amt;
+        bill.amount = Math.round(amt * n * 100) / 100;
+      } else {
+        bill.amountPerPayment = amt;
+        bill.amount = amt;
+      }
+      return bill;
+    }
+
+    /** Dollars charged on each pay date. */
+    function getBillPerPaymentAmount(bill) {
+      if (!bill) return 0;
+      normalizeBillAmountFields(bill);
+      if (bill.amountPerPayment != null && !isNaN(Number(bill.amountPerPayment))) {
+        return Number(bill.amountPerPayment) || 0;
+      }
+      return Number(bill.amount) || 0;
+    }
+
+    /** Full amount for one recurrence period (e.g. all monthly pay dates). */
+    function getBillPeriodTotal(bill) {
+      if (!bill) return 0;
+      normalizeBillAmountFields(bill);
+      if (bill.amount != null && !isNaN(Number(bill.amount))) {
+        return Number(bill.amount) || 0;
+      }
+      const per = getBillPerPaymentAmount(bill);
+      return per * Math.max(1, getBillDueDays(bill).length);
+    }
+
+    /**
+     * Convert a bill into a monthly-equivalent for spend summaries.
+     * Monthly + 2 due days (e.g. $1,200 on the 1st and 15th) → $2,400/mo.
+     */
+    function getBillMonthlyEquivalent(bill) {
+      if (!bill) return 0;
+      const per = getBillPerPaymentAmount(bill);
+      if (!per) return 0;
+      const rec = bill.recurrence || 'monthly';
+      const periodTotal = getBillPeriodTotal(bill);
+
+      if (rec === 'weekly') return per * (52 / 12);
+      if (rec === 'biweekly') return per * (26 / 12);
+      if (rec === 'quarterly') return periodTotal / 3;
+      if (rec === 'yearly') return periodTotal / 12;
+      // monthly (and default): period total already includes every pay date in the month
+      return periodTotal;
+    }
+
+    function getMonthlyBillsTotal() {
+      return (state.bills || []).reduce((sum, bill) => sum + getBillMonthlyEquivalent(bill), 0);
+    }
+
+    /**
+     * Cash-flow style split for planning: which half of the month payments land in.
+     * First half = due days 1–15, Second half = 16–31.
+     * Weekly/biweekly smoothed evenly; quarterly/yearly land on their due-day half (as monthly eq).
+     */
+    function getBillHalfMonthTotals() {
+      let first = 0;
+      let second = 0;
+      (state.bills || []).forEach(bill => {
+        const per = getBillPerPaymentAmount(bill);
+        if (!per) return;
+        const rec = bill.recurrence || 'monthly';
+        const days = getBillDueDays(bill);
+        const monthlyEq = getBillMonthlyEquivalent(bill);
+
+        if (rec === 'weekly' || rec === 'biweekly') {
+          first += monthlyEq / 2;
+          second += monthlyEq / 2;
+          return;
+        }
+
+        if (rec === 'quarterly' || rec === 'yearly') {
+          // Spread monthly equivalent into the half of the primary due day
+          const d = days[0] || 1;
+          if (d <= 15) first += monthlyEq;
+          else second += monthlyEq;
+          return;
+        }
+
+        // monthly: each pay date contributes one full payment to its half
+        days.forEach(d => {
+          if (d <= 15) first += per;
+          else second += per;
+        });
+      });
+      return {
+        first: Math.round(first * 100) / 100,
+        second: Math.round(second * 100) / 100,
+        total: Math.round((first + second) * 100) / 100
+      };
+    }
+
+    function formatBillAmountPrecise(amount) {
+      if (amount == null || isNaN(amount)) return '';
+      const n = Number(amount);
+      const hasCents = Math.round(n * 100) % 100 !== 0;
+      return '$' + n.toLocaleString(undefined, {
+        minimumFractionDigits: hasCents ? 2 : 0,
+        maximumFractionDigits: 2
+      });
     }
 
     function getBillDueDate(bill, refDate) {
@@ -14082,26 +14276,65 @@
       updateSmartBanner();
     }
 
+    function renderBillsSpendSummary(totalEl) {
+      if (!totalEl) return;
+      (state.bills || []).forEach(normalizeBillAmountFields);
+      const monthlyTotal = getMonthlyBillsTotal();
+      const halves = getBillHalfMonthTotals();
+      const billsWithAmount = (state.bills || []).filter(b => getBillPerPaymentAmount(b) > 0).length;
+
+      if (!(monthlyTotal > 0) && !(halves.first > 0 || halves.second > 0)) {
+        totalEl.classList.add('hidden');
+        totalEl.innerHTML = '';
+        return;
+      }
+
+      const heavier = halves.first === halves.second
+        ? null
+        : (halves.first > halves.second ? 'first' : 'second');
+
+      totalEl.classList.remove('hidden');
+      totalEl.innerHTML = `
+        <div class="bills-spend-top">
+          <div class="min-w-0">
+            <div class="bills-spend-label">Monthly total</div>
+            <div class="bills-spend-value">${formatBillAmountPrecise(monthlyTotal)}</div>
+          </div>
+          <div class="bills-spend-meta">
+            ${billsWithAmount} bill${billsWithAmount === 1 ? '' : 's'} with amounts
+            <br>Multi-pay bills count every due date
+          </div>
+        </div>
+        <div class="bills-spend-halves" role="group" aria-label="Half-month bill totals">
+          <div class="bills-spend-half${heavier === 'first' ? ' is-heavier' : ''}">
+            <div class="bills-spend-half-label">First half</div>
+            <div class="bills-spend-half-days">Days 1–15</div>
+            <div class="bills-spend-half-val">${formatBillAmountPrecise(halves.first)}</div>
+          </div>
+          <div class="bills-spend-half${heavier === 'second' ? ' is-heavier' : ''}">
+            <div class="bills-spend-half-label">Second half</div>
+            <div class="bills-spend-half-days">Days 16–end</div>
+            <div class="bills-spend-half-val">${formatBillAmountPrecise(halves.second)}</div>
+          </div>
+        </div>
+      `;
+    }
+
     function renderBills() {
       const container = document.getElementById('bills-list');
       const totalEl = document.getElementById('bills-monthly-total');
       if (!container) return;
       container.innerHTML = '';
 
-      const monthlyTotal = getMonthlyBillsTotal();
-      const billsWithAmount = state.bills.filter(b => b.amount > 0).length;
-      if (totalEl) {
-        if (monthlyTotal > 0) {
-          totalEl.textContent = `${formatBillAmount(monthlyTotal)}/mo equivalent · ${billsWithAmount} bill${billsWithAmount === 1 ? '' : 's'}`;
-          totalEl.classList.remove('hidden');
-        } else {
-          totalEl.classList.add('hidden');
-        }
-      }
+      renderBillsSpendSummary(totalEl);
 
       const sorted = [...state.bills].sort((a, b) => getBillUrgency(a) - getBillUrgency(b));
 
       if (sorted.length === 0) {
+        if (totalEl) {
+          totalEl.classList.add('hidden');
+          totalEl.innerHTML = '';
+        }
         container.innerHTML = harborEmptyHtml(
           '💳',
           'No bills yet',
@@ -14139,10 +14372,13 @@
           : days === 1 ? `Due tomorrow (${dueDates})` : `Due in ${days} days (${dueDates})`;
         const recLabel = formatBillRecurrenceLabel(bill.recurrence || 'monthly');
         const payDays = getBillDueDays(bill);
-        const amountLabel = bill.amount != null
-          ? (payDays.length > 1 && bill.amountPerPayment != null
-            ? `${formatBillAmount(bill.amount)}${formatBillRecurrenceShort(bill.recurrence)} (${formatBillAmount(bill.amountPerPayment)} × ${payDays.length})`
-            : `${formatBillAmount(bill.amount)}${formatBillRecurrenceShort(bill.recurrence)}`)
+        normalizeBillAmountFields(bill);
+        const perPay = getBillPerPaymentAmount(bill);
+        const periodTotal = getBillPeriodTotal(bill);
+        const amountLabel = periodTotal > 0
+          ? (payDays.length > 1 && perPay > 0
+            ? `${formatBillAmountPrecise(periodTotal)}${formatBillRecurrenceShort(bill.recurrence)} · ${formatBillAmountPrecise(perPay)} × ${payDays.length}`
+            : `${formatBillAmountPrecise(periodTotal)}${formatBillRecurrenceShort(bill.recurrence)}`)
           : '';
 
         const card = document.createElement('div');
