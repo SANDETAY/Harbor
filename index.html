@@ -6162,6 +6162,84 @@
       transform: scale(0.99);
     }
 
+    /* Generic Harbor text / choice sheets (replaces browser prompt()) */
+    #harbor-text-modal .harbor-prompt-sheet,
+    #harbor-choice-modal .harbor-prompt-sheet {
+      background:
+        linear-gradient(165deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 40%, rgb(var(--harbor-surface)) 100%);
+      border-top: 1px solid rgba(47, 155, 140, 0.18);
+    }
+    html[data-theme="dark"] #harbor-text-modal .harbor-prompt-sheet,
+    html[data-theme="dark"] #harbor-choice-modal .harbor-prompt-sheet {
+      background: linear-gradient(165deg, rgba(28, 48, 44, 0.95) 0%, rgb(var(--harbor-surface)) 55%);
+      border-top-color: rgba(72, 178, 162, 0.16);
+    }
+    #harbor-text-modal,
+    #harbor-choice-modal {
+      padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
+      box-sizing: border-box;
+      align-items: flex-end !important;
+    }
+    @media (min-width: 768px) {
+      #harbor-text-modal,
+      #harbor-choice-modal {
+        align-items: center !important;
+        padding: 1.5rem;
+      }
+    }
+    #harbor-text-modal .harbor-prompt-sheet,
+    #harbor-choice-modal .harbor-prompt-sheet {
+      max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 0.75rem);
+      max-height: calc(100svh - env(safe-area-inset-top, 0px) - 0.75rem);
+      padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important;
+    }
+    #harbor-text-modal .harbor-prompt-field {
+      width: 100%;
+      border-radius: 1rem;
+      border: 1.5px solid rgba(47, 155, 140, 0.2);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgb(var(--harbor-raised)) 100%);
+      padding: 0.85rem 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: rgb(var(--harbor-text));
+      outline: none;
+      font-family: var(--harbor-font);
+    }
+    html[data-theme="dark"] #harbor-text-modal .harbor-prompt-field {
+      border-color: rgba(72, 178, 162, 0.2);
+      background: linear-gradient(180deg, rgba(28, 48, 44, 0.9) 0%, rgb(var(--harbor-raised)) 100%);
+    }
+    #harbor-text-modal .harbor-prompt-field:focus {
+      border-color: rgba(47, 155, 140, 0.5);
+      box-shadow: 0 0 0 3px rgba(47, 155, 140, 0.14);
+    }
+    #harbor-choice-modal .harbor-choice-chip {
+      flex: 1;
+      min-height: 3rem;
+      border-radius: 1rem;
+      border: 1.5px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      font-size: 0.82rem;
+      font-weight: 700;
+      font-family: var(--harbor-font);
+      transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+    }
+    #harbor-choice-modal .harbor-choice-chip.is-on {
+      border-color: transparent;
+      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      color: #fff;
+      box-shadow: 0 3px 12px rgba(47, 155, 140, 0.28);
+    }
+    #harbor-text-modal .harbor-prompt-save,
+    #harbor-choice-modal .harbor-prompt-save {
+      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(47, 155, 140, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+    }
+
     .proj-milestone {
       margin-top: 0.65rem;
       font-size: 0.72rem;
@@ -7690,7 +7768,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v178';
+    const HARBOR_BUILD = 'v179';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -10181,13 +10259,59 @@
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-trash-can text-harbor-primary-light mr-1.5"></i>Your control</h4>
-              <p>Factory reset clears Harbor data from this browser. Clearing site data in browser settings does the same. You can export a backup anytime before resetting.</p>
+              <p>Factory reset clears Harbor data from this browser. Clearing site data in browser settings does the same. Export a backup from <strong class="text-harbor-text">Menu → Share Profile</strong> anytime before resetting.</p>
+            </div>
+            <div class="privacy-block">
+              <h4><i class="fa-solid fa-scale-balanced text-harbor-primary-light mr-1.5"></i>Full policy</h4>
+              <p>The complete policy (for store listings and legal detail) lives at <button type="button" class="text-harbor-primary-light font-semibold underline underline-offset-2" onclick="openHarborPrivacyPolicyPage()">privacy.html</button> on this site. Build <strong class="text-harbor-text">${typeof HARBOR_BUILD !== 'undefined' ? HARBOR_BUILD : ''}</strong>.</p>
             </div>
           </div>
 
           <button type="button" onclick="this.closest('.fixed').remove()"
             class="w-full mt-5 py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Got it</button>
           <div class="text-[10px] text-center text-harbor-muted mt-3">Harbor ${typeof HARBOR_BUILD !== 'undefined' ? HARBOR_BUILD : ''} · local-first · your device</div>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+
+    function openHarborPrivacyPolicyPage() {
+      try {
+        const url = new URL('privacy.html', location.href).href;
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } catch (_) {
+        location.href = 'privacy.html';
+      }
+    }
+
+    function showAboutHarbor() {
+      closeAppMenu();
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[62]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.closest('.fixed').remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-lg mb-1 flex items-center justify-between">
+            <span>About Harbor</span>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
+          </div>
+          <p class="text-[12px] text-harbor-muted leading-relaxed mb-4">Calm life management — tasks, bills, grocery, streaks, and schedule. Data stays on this device in v1.</p>
+          <div class="privacy-block mb-3">
+            <h4>Build</h4>
+            <p class="tabular-nums">${typeof HARBOR_BUILD !== 'undefined' ? HARBOR_BUILD : '—'} · local-first</p>
+          </div>
+          <div class="privacy-block mb-3">
+            <h4>Support</h4>
+            <p>Use <strong class="text-harbor-text">Menu → Send Feedback</strong> for bugs and ideas. Do not include secret calendar links or passwords.</p>
+          </div>
+          <div class="flex flex-col gap-2 mt-4">
+            <button type="button" onclick="this.closest('.fixed').remove(); showPrivacyStatement()"
+              class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-text font-semibold text-sm">Privacy summary</button>
+            <button type="button" onclick="openHarborPrivacyPolicyPage()"
+              class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">Full privacy policy</button>
+            <button type="button" onclick="this.closest('.fixed').remove()"
+              class="w-full py-3 rounded-2xl text-harbor-muted font-semibold text-sm">Close</button>
+          </div>
         </div>`;
       document.body.appendChild(modal);
     }
@@ -11487,12 +11611,156 @@
       return pool.sort((a, b) => getEffectiveDifficulty(a, energy) - getEffectiveDifficulty(b, energy));
     }
 
+    /** Energy picker (replaces browser prompt). Returns Promise of 1|2|3 or null. */
     function promptCustomDifficulty(defaultVal) {
-      const diffStr = prompt('Energy required for this task?\n1 = Low (quick, tired days)\n2 = Medium\n3 = High (physical/long)', String(defaultVal || 2));
-      if (diffStr === null) return null;
-      const diff = parseInt(diffStr, 10);
-      if (diff >= 1 && diff <= 3) return diff;
-      return defaultVal || 2;
+      return showHarborEnergyModal(defaultVal || 2);
+    }
+
+    function closeHarborTextModal(result) {
+      const modal = document.getElementById('harbor-text-modal');
+      if (!modal) return;
+      const resolve = modal._resolve;
+      modal._resolve = null;
+      modal.remove();
+      if (!document.querySelector('body > .fixed.inset-0')) document.body.classList.remove('harbor-modal-open');
+      if (typeof resolve === 'function') resolve(result ?? null);
+    }
+
+    function closeHarborChoiceModal(result) {
+      const modal = document.getElementById('harbor-choice-modal');
+      if (!modal) return;
+      const resolve = modal._resolve;
+      modal._resolve = null;
+      modal.remove();
+      if (!document.querySelector('body > .fixed.inset-0')) document.body.classList.remove('harbor-modal-open');
+      if (typeof resolve === 'function') resolve(result ?? null);
+    }
+
+    /** Harbor text field sheet — resolves to string or null (cancel). */
+    function showHarborTextModal(options = {}) {
+      return new Promise((resolve) => {
+        closeHarborTextModal(null);
+        const title = options.title || 'Enter a value';
+        const subtitle = options.subtitle || '';
+        const label = options.label || 'Name';
+        const placeholder = options.placeholder || '';
+        const confirmLabel = options.confirmLabel || 'Save';
+        const cancelLabel = options.cancelLabel || 'Cancel';
+        const maxLength = options.maxLength != null ? options.maxLength : 80;
+        const defaultValue = options.defaultValue != null ? String(options.defaultValue) : '';
+        const safeDefault = typeof escapeBriefHtml === 'function'
+          ? escapeBriefHtml(defaultValue).replace(/"/g, '&quot;')
+          : defaultValue.replace(/"/g, '&quot;');
+
+        const modal = document.createElement('div');
+        modal.id = 'harbor-text-modal';
+        modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end sm:items-center justify-center harbor-modal-overlay';
+        modal._resolve = resolve;
+        modal.innerHTML = `
+          <div class="absolute inset-0" data-ht-dismiss="1"></div>
+          <div class="modal-sheet harbor-prompt-sheet relative w-full sm:max-w-md bg-harbor-surface border-t sm:border border-harbor-border rounded-t-3xl sm:rounded-3xl px-5 pt-3 pb-5 text-sm"
+            role="dialog" aria-modal="true" aria-labelledby="harbor-text-title" onclick="event.stopPropagation()">
+            <div class="modal-grab-pill" aria-hidden="true"></div>
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <div class="min-w-0">
+                <div id="harbor-text-title" class="font-semibold text-base text-harbor-text">${title}</div>
+                ${subtitle ? `<div class="text-[11px] text-harbor-muted mt-1 leading-snug">${subtitle}</div>` : ''}
+              </div>
+              <button type="button" class="modal-close-chip" data-ht-dismiss="1" aria-label="Close">Close</button>
+            </div>
+            <label class="block text-[11px] font-semibold text-harbor-muted uppercase tracking-wider mb-1.5" for="harbor-text-field">${label}</label>
+            <input id="harbor-text-field" class="harbor-prompt-field mb-5" type="text" maxlength="${maxLength}"
+              value="${safeDefault}" placeholder="${placeholder.replace(/"/g, '&quot;')}"
+              autocomplete="off" enterkeyhint="done" spellcheck="true" autocapitalize="sentences">
+            <div class="flex gap-2">
+              <button type="button" data-ht-dismiss="1"
+                class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold text-sm">${cancelLabel}</button>
+              <button type="button" id="harbor-text-save"
+                class="harbor-prompt-save flex-[1.35] py-3 rounded-2xl font-semibold text-sm">${confirmLabel}</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        document.body.classList.add('harbor-modal-open');
+        const input = modal.querySelector('#harbor-text-field');
+        const submit = () => {
+          const v = (input?.value || '').trim();
+          if (!v && options.allowEmpty !== true) {
+            showToast(options.emptyToast || 'Enter a value', 'warn');
+            input?.focus();
+            return;
+          }
+          closeHarborTextModal(v);
+        };
+        modal.querySelectorAll('[data-ht-dismiss]').forEach(el => el.addEventListener('click', () => closeHarborTextModal(null)));
+        modal.querySelector('#harbor-text-save')?.addEventListener('click', submit);
+        input?.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); submit(); }
+          else if (e.key === 'Escape') closeHarborTextModal(null);
+        });
+        requestAnimationFrame(() => { input?.focus(); if (defaultValue) input?.select?.(); });
+      });
+    }
+
+    /** Energy Low / Medium / High — resolves to 1|2|3 or null. */
+    function showHarborEnergyModal(defaultVal = 2) {
+      return new Promise((resolve) => {
+        closeHarborChoiceModal(null);
+        let selected = Math.min(3, Math.max(1, parseInt(defaultVal, 10) || 2));
+        const modal = document.createElement('div');
+        modal.id = 'harbor-choice-modal';
+        modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end sm:items-center justify-center harbor-modal-overlay';
+        modal._resolve = resolve;
+        const chip = (n, label, hint) => `
+          <button type="button" data-energy-choice="${n}"
+            class="harbor-choice-chip${selected === n ? ' is-on' : ''}"
+            aria-pressed="${selected === n ? 'true' : 'false'}">
+            <div>${label}</div>
+            <div class="text-[10px] font-medium opacity-80 mt-0.5">${hint}</div>
+          </button>`;
+        modal.innerHTML = `
+          <div class="absolute inset-0" data-hc-dismiss="1"></div>
+          <div class="modal-sheet harbor-prompt-sheet relative w-full sm:max-w-md bg-harbor-surface border-t sm:border border-harbor-border rounded-t-3xl sm:rounded-3xl px-5 pt-3 pb-5 text-sm"
+            role="dialog" aria-modal="true" aria-labelledby="harbor-choice-title" onclick="event.stopPropagation()">
+            <div class="modal-grab-pill" aria-hidden="true"></div>
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div>
+                <div id="harbor-choice-title" class="font-semibold text-base text-harbor-text">Energy for this task</div>
+                <div class="text-[11px] text-harbor-muted mt-1">How demanding is it?</div>
+              </div>
+              <button type="button" class="modal-close-chip" data-hc-dismiss="1" aria-label="Close">Close</button>
+            </div>
+            <div class="flex gap-2 mb-5">
+              ${chip(1, 'Low', 'Quick · tired days')}
+              ${chip(2, 'Medium', 'Typical')}
+              ${chip(3, 'High', 'Physical · long')}
+            </div>
+            <div class="flex gap-2">
+              <button type="button" data-hc-dismiss="1"
+                class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold text-sm">Cancel</button>
+              <button type="button" id="harbor-choice-save"
+                class="harbor-prompt-save flex-[1.35] py-3 rounded-2xl font-semibold text-sm">Save</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        document.body.classList.add('harbor-modal-open');
+        const paint = () => {
+          modal.querySelectorAll('[data-energy-choice]').forEach(btn => {
+            const on = parseInt(btn.dataset.energyChoice, 10) === selected;
+            btn.classList.toggle('is-on', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+        };
+        modal.querySelectorAll('[data-energy-choice]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            selected = parseInt(btn.dataset.energyChoice, 10);
+            paint();
+          });
+        });
+        modal.querySelectorAll('[data-hc-dismiss]').forEach(el => el.addEventListener('click', () => closeHarborChoiceModal(null)));
+        modal.querySelector('#harbor-choice-save')?.addEventListener('click', () => closeHarborChoiceModal(selected));
+      });
     }
 
     function parseTitleAmount(title) {
@@ -13310,19 +13578,31 @@
       const items = getActiveGroceryItems();
       const item = items.find(g => g.id === itemId);
       if (!item) return;
-      const next = prompt('Item name', item.name);
-      if (next == null) return;
-      const name = normalizeUserText(next);
-      if (!name) {
-        showToast('Enter a name', 'warn');
-        return;
-      }
-      item.name = name;
-      setActiveGroceryItems(items);
-      if (isGroceryMealView()) syncMealPresetItemsFromTrip();
-      saveState();
-      renderGrocery();
-      showToast('Item updated');
+      showHarborTextModal({
+        title: 'Rename item',
+        subtitle: 'Update what shows on your shopping list.',
+        label: 'Item name',
+        defaultValue: item.name,
+        placeholder: 'e.g. Milk',
+        confirmLabel: 'Save',
+        maxLength: 60
+      }).then((next) => {
+        if (next == null) return;
+        const name = normalizeUserText(next);
+        if (!name) {
+          showToast('Enter a name', 'warn');
+          return;
+        }
+        const list = getActiveGroceryItems();
+        const row = list.find(g => g.id === itemId);
+        if (!row) return;
+        row.name = name;
+        setActiveGroceryItems(list);
+        if (isGroceryMealView()) syncMealPresetItemsFromTrip();
+        saveState();
+        renderGrocery();
+        showToast('Item updated');
+      });
     }
 
     function selectMealGroceryList(mealId) {
@@ -19920,7 +20200,7 @@
     }
 
     function getPrototypeTutorialBody() {
-      // Kept for any legacy callers; tour no longer uses a separate prototype step
+      // Legacy name — install tour copy (not a “prototype” product label)
       return `<p class="tutorial-install-lead">Harbor keeps your data on this device. Thanks for trying it.</p>`;
     }
 
@@ -21153,11 +21433,25 @@
       // Add bill: "add bill rent due on the 1st"
       if (/add\s+bill/.test(lower)) {
         const nameMatch = transcript.match(/bill\s+(.+?)(?:\s+due|\s+on|$)/i);
-        const name = nameMatch ? nameMatch[1].trim() : prompt('Bill name:', '');
-        if (!name) return;
         const dayMatch = lower.match(/(?:due\s+on\s+(?:the\s+)?|day\s+)(\d{1,2})/);
-        const dueDay = dayMatch ? parseInt(dayMatch[1]) : 1;
-        addBill(name, [dueDay], null, false);
+        const dueDay = dayMatch ? parseInt(dayMatch[1], 10) : 1;
+        const finishBill = (name) => {
+          const clean = normalizeUserText(name || '');
+          if (!clean) return;
+          addBill(clean, [dueDay], null, false);
+        };
+        if (nameMatch?.[1]?.trim()) {
+          finishBill(nameMatch[1].trim());
+        } else {
+          showHarborTextModal({
+            title: 'Bill name',
+            subtitle: 'What should we track?',
+            label: 'Name',
+            placeholder: 'e.g. Rent, Electric',
+            confirmLabel: 'Add bill',
+            maxLength: 48
+          }).then(finishBill);
+        }
         return;
       }
 
@@ -21308,7 +21602,7 @@
             <div>
               <div class="text-[10px] uppercase tracking-wider text-sky-400 font-semibold">Sync activity</div>
               <div class="font-semibold text-base text-harbor-text mt-0.5">${habit.title}</div>
-              <div class="text-xs text-harbor-muted mt-1">Choose a source — full OAuth linking ships in a future update.</div>
+              <div class="text-xs text-harbor-muted mt-1">Preview only — live device linking is not enabled in this build.</div>
             </div>
             <button type="button" onclick="this.closest('#device-sync-modal').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
@@ -21330,7 +21624,7 @@
             `).join('')}
           </div>
           <div class="text-[10px] text-harbor-muted text-center mt-4 leading-relaxed px-2">
-            On mobile, Apple Health and Health Connect work natively. Garmin, Fitbit, and Strava connect through their apps or web APIs.
+            Numbers from this screen are <strong class="text-harbor-text">sample stats for layout testing</strong>, not real Apple Health / Garmin data. Real sync is planned later.
           </div>
         </div>
       `;
@@ -21369,10 +21663,15 @@
       if (currentTab === 'streaks' && currentProjectionHabit === habitId) {
         showProjections(habitId);
       }
-      showToast(`Synced from ${device.name}: ${stats.steps} steps · ${stats.distance} mi · ${stats.duration} min`);
+      showToast(`Sample stats from ${device.name}: ${stats.steps} steps · ${stats.distance} mi · ${stats.duration} min`, 'info');
     }
 
     function mockSyncHealth(habitId) {
+      // Wearable integration is off (FEATURE_ACTIVITY_SYNC). Keep name for old callers.
+      if (!FEATURE_ACTIVITY_SYNC) {
+        showToast('Device sync is not available in this build', 'info');
+        return;
+      }
       showDeviceSyncModal(habitId);
     }
 
@@ -23963,9 +24262,11 @@
           ${appMenuItemHtml('settings', 'fa-solid fa-sliders', 'Settings', 'Theme, features, and calendar', { primary: true })}
         </div>
 
-        <div class="app-menu-section-label">Privacy</div>
+        <div class="app-menu-section-label">Privacy &amp; legal</div>
         <div class="app-menu-group">
           ${appMenuItemHtml('privacy', 'fa-solid fa-shield-halved', 'Privacy', 'How your data stays on this device')}
+          ${appMenuItemHtml('privacy-full', 'fa-solid fa-file-lines', 'Full privacy policy', 'Store listing & legal detail')}
+          ${appMenuItemHtml('about', 'fa-solid fa-circle-info', 'About Harbor', 'Build version and support')}
         </div>
 
         <div class="app-menu-section-label">Help</div>
@@ -23993,6 +24294,8 @@
       else if (action === 'import-profile') triggerHarborProfileImport();
       else if (action === 'export-profile') exportHarborProfile();
       else if (action === 'privacy') showPrivacyStatement();
+      else if (action === 'privacy-full') openHarborPrivacyPolicyPage();
+      else if (action === 'about') showAboutHarbor();
       else if (action === 'household') showHouseholdProfilesModal();
       else if (action === 'overview') showFeatureOverview();
       else if (action === 'install') promptPwaInstall();
