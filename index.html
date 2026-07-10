@@ -864,12 +864,16 @@
       color: rgb(var(--harbor-muted));
     }
 
-    .main-nav {
+    .main-nav,
+    #main-nav-bar {
       position: relative;
       gap: 0.35rem;
       padding-bottom: 0.15rem;
-      border-bottom-color: rgba(47, 155, 140, 0.1) !important;
+      border-bottom: none !important;
+      border-bottom-width: 0 !important;
+      border-bottom-color: transparent !important;
       background: transparent !important;
+      box-shadow: none;
     }
 
     /* Sliding active chip on main tabs */
@@ -4420,15 +4424,26 @@
       margin-bottom: 0.85rem;
     }
 
+    .summary-when-you-can .summary-panel-hdr {
+      margin-bottom: 0.4rem;
+    }
+
+    .summary-when-blurb {
+      font-size: 0.62rem;
+      color: rgb(var(--harbor-muted));
+      line-height: 1.35;
+      margin-bottom: 0.55rem;
+    }
+
     .summary-when-row {
       display: flex;
       align-items: center;
-      gap: 0.55rem;
-      padding: 0.55rem 0.65rem;
-      border-radius: 0.85rem;
+      gap: 0.5rem;
+      padding: 0.42rem 0.55rem;
+      border-radius: 0.75rem;
       border: 1px solid rgb(var(--harbor-border));
       background: rgb(var(--harbor-raised));
-      margin-bottom: 0.4rem;
+      margin-bottom: 0.32rem;
     }
 
     .summary-when-row:last-child {
@@ -4441,16 +4456,47 @@
     }
 
     .summary-when-title {
-      font-size: 0.84rem;
+      font-size: 0.78rem;
       font-weight: 650;
       color: rgb(var(--harbor-text));
-      line-height: 1.25;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .summary-when-meta {
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       color: rgb(var(--harbor-muted));
-      margin-top: 0.15rem;
+      margin-top: 0.1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .summary-when-more {
+      display: block;
+      width: 100%;
+      margin-top: 0.55rem;
+      padding: 0.4rem 0.35rem 0.15rem;
+      border: none;
+      background: transparent;
+      text-align: left;
+      font-size: 0.62rem;
+      font-weight: 550;
+      line-height: 1.4;
+      color: rgb(var(--harbor-muted));
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .summary-when-more strong {
+      font-weight: 700;
+      color: rgb(var(--harbor-primary-light));
+    }
+
+    .summary-when-more:active {
+      opacity: 0.85;
     }
 
     .summary-pull-today-btn {
@@ -5057,28 +5103,43 @@
       margin-top: 0.1rem;
     }
 
-    .summary-life-row {
-      display: flex;
-      align-items: center;
-      gap: 0.55rem;
+    .summary-life-blurb {
+      font-size: 0.6rem;
+      color: rgb(var(--harbor-muted));
+      line-height: 1.35;
+      margin: -0.2rem 0 0.55rem;
+    }
+
+    .summary-life-section {
       padding: 0.45rem 0;
       border-top: 1px solid rgb(var(--harbor-border) / 0.75);
     }
 
-    .summary-life-row:first-of-type {
+    .summary-life-section:first-of-type {
       border-top: none;
       padding-top: 0;
     }
 
+    .summary-life-section:last-of-type {
+      padding-bottom: 0.1rem;
+    }
+
+    .summary-life-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.55rem;
+    }
+
     .summary-life-icon {
-      width: 1.85rem;
-      height: 1.85rem;
-      border-radius: 0.55rem;
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 0.5rem;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      font-size: 0.72rem;
+      font-size: 0.68rem;
+      margin-top: 0.05rem;
     }
 
     .summary-life-icon.is-bill {
@@ -5091,9 +5152,9 @@
       color: #0e7490;
     }
 
-    .summary-life-icon.is-chore {
-      background: rgba(47, 155, 140, 0.12);
-      color: rgb(var(--harbor-primary-light));
+    .summary-life-icon.is-sub {
+      background: rgba(124, 58, 237, 0.1);
+      color: #7c3aed;
     }
 
     .summary-life-main {
@@ -5101,22 +5162,37 @@
       flex: 1;
     }
 
+    .summary-life-label {
+      font-size: 0.62rem;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+      margin-bottom: 0.12rem;
+    }
+
     .summary-life-title {
       font-size: 0.78rem;
       font-weight: 600;
       color: rgb(var(--harbor-text));
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.25;
     }
 
     .summary-life-meta {
       font-size: 0.6rem;
       color: rgb(var(--harbor-muted));
-      margin-top: 0.08rem;
+      margin-top: 0.12rem;
+      line-height: 1.35;
+    }
+
+    .summary-life-meta-line {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .summary-life-meta-line + .summary-life-meta-line {
+      margin-top: 0.06rem;
     }
 
     .summary-empty {
@@ -7826,7 +7902,7 @@
       </div>
 
       <!-- Tab Navigation -->
-      <div id="main-nav-bar" class="main-nav px-5 pt-2 flex border-b border-harbor-border" role="tablist" aria-label="Main navigation">
+      <div id="main-nav-bar" class="main-nav px-5 pt-2 flex" role="tablist" aria-label="Main navigation">
         <button type="button" role="tab" aria-selected="true" onclick="switchTab('today')" id="tab-today"
           class="main-nav-tab nav-active">Today</button>
         <button type="button" role="tab" aria-selected="false" onclick="switchTab('life')" id="tab-life"
@@ -8123,7 +8199,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 191;
+    const HARBOR_BUILD_NUMBER = 195;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -19142,33 +19218,40 @@
           if (isDueToday(h)) items.push({ habit: h, date: today, daysUntil: 0 });
         });
       } else if (mode === 'month') {
-        // Month brief: full remaining month (today → month-end), including this week
+        // Month brief: looking ahead through month-end.
+        // Due today / overdue belong on Today & This Week — they need action now, not a month glance.
         const bounds = getRemainingMonthBounds(today);
         if (!bounds.empty) {
-          const cursor = new Date(bounds.start + 'T12:00:00');
+          const todayDate = new Date(today + 'T12:00:00');
+          const cursor = new Date(todayDate);
+          cursor.setDate(cursor.getDate() + 1); // start tomorrow
           const endDate = new Date(bounds.end + 'T12:00:00');
           const seen = new Set();
-          const todayDate = new Date(today + 'T12:00:00');
           while (cursor <= endDate) {
             const ds = dateStrLocal(cursor);
             state.habits.forEach(h => {
               if (!isHabitScheduledOn(h, ds) || seen.has(h.id)) return;
               // Skip pure daily habits on month view — too noisy; keep significant ones only
               if (isDailyTask(h) && !isSignificantBriefTask(h, 'month') && !isOneOffTask(h) && !h.is_pro_reminder) return;
-              seen.add(h.id);
+              // Safety: never surface due-now work on the month board
+              if (isDueToday(h) || isHabitOverdue(h)) return;
               const daysUntil = Math.round((cursor - todayDate) / 86400000);
+              if (daysUntil <= 0) return;
+              seen.add(h.id);
               items.push({ habit: h, date: ds, daysUntil });
             });
             cursor.setDate(cursor.getDate() + 1);
           }
           state.habits.forEach(h => {
             if (seen.has(h.id) || !isNonDailyRecurring(h)) return;
+            // Active this period / overdue → Today or This Week, not month
+            if (isDueToday(h) || isHabitOverdue(h)) return;
             const daysUntil = getDaysUntilHabitDue(h);
-            if (daysUntil < 0) return;
+            if (daysUntil <= 0) return;
             const d = new Date(today + 'T12:00:00');
             d.setDate(d.getDate() + daysUntil);
             const ds = dateStrLocal(d);
-            if (ds < bounds.start || ds > bounds.end) return;
+            if (ds <= today || ds > bounds.end) return;
             seen.add(h.id);
             items.push({ habit: h, date: ds, daysUntil });
           });
@@ -19787,68 +19870,106 @@
         </div>`;
     }
 
+    /**
+     * Household panel — intentional Life-tab admin only (bills, grocery, subscriptions).
+     * Tasks and chores live in Focus / When You Can / the Tasks KPI, not here.
+     */
     function renderBriefLifePanel(brief) {
       const bills = brief.bills || [];
-      const deck = getBriefAlsoOnDeck(brief);
       const groceryN = brief.groceryTotal || 0;
-      const rows = [];
+      const groceryNames = (brief.grocery || []).slice(0, 4).map(g => g.name).filter(Boolean);
+      const subs = (state.subscriptions || []).filter(s => s.active !== false);
+      const subCount = subs.length;
+      const subsMonthly = typeof getSubscriptionsMonthlyTotal === 'function' ? getSubscriptionsMonthlyTotal() : 0;
+      const sections = [];
 
       if (bills.length) {
-        bills.slice(0, 2).forEach(b => {
+        const urgentN = bills.filter(b => {
+          const st = getBillStatus(b);
+          return st === 'overdue' || st === 'due_today';
+        }).length;
+        const billLines = bills.slice(0, 2).map(b => {
           const st = getBillStatus(b);
           const urgent = st === 'overdue' || st === 'due_today';
           const days = getDaysUntilBillDue(b);
-          rows.push(`
+          const when = urgent ? (st === 'overdue' ? 'overdue' : 'due today') : `in ${days}d`;
+          const auto = b.autopay ? ' · autopay' : '';
+          return `${b.name}${b.amount != null ? ` ${formatBillAmount(b.amount)}` : ''} · ${when}${auto}`;
+        });
+        const moreBills = bills.length > 2 ? bills.length - 2 : 0;
+        const headline = urgentN > 0
+          ? (urgentN === 1 ? '1 bill needs attention' : `${urgentN} bills need attention`)
+          : (bills.length === 1 ? '1 upcoming' : `${bills.length} upcoming`);
+        sections.push(`
+          <div class="summary-life-section">
             <div class="summary-life-row">
               <div class="summary-life-icon is-bill"><i class="fa-solid fa-receipt"></i></div>
               <div class="summary-life-main">
-                <div class="summary-life-title">${escapeBriefHtml(b.name)} ${formatBillAmount(b.amount)}</div>
-                <div class="summary-life-meta">${urgent ? 'Due now' : `Due in ${days}d`}${b.autopay ? ' · autopay' : ''}</div>
+                <div class="summary-life-label">Bills</div>
+                <div class="summary-life-title">${escapeBriefHtml(headline)}</div>
+                <div class="summary-life-meta">
+                  ${billLines.map(line => `<div class="summary-life-meta-line">${escapeBriefHtml(line)}</div>`).join('')}
+                  ${moreBills ? `<div class="summary-life-meta-line">+${moreBills} more on Bills</div>` : ''}
+                </div>
               </div>
-            </div>`);
-        });
-      }
-
-      if (groceryN > 0) {
-        const names = (brief.grocery || []).slice(0, 3).map(g => g.name).join(', ');
-        rows.push(`
-          <div class="summary-life-row">
-            <div class="summary-life-icon is-cart"><i class="fa-solid fa-cart-shopping"></i></div>
-            <div class="summary-life-main">
-              <div class="summary-life-title">${groceryN} grocery item${groceryN === 1 ? '' : 's'}</div>
-              <div class="summary-life-meta">${escapeBriefHtml(names || 'On your list')}</div>
             </div>
           </div>`);
       }
 
-      if (deck.length) {
-        deck.slice(0, 3).forEach(item => {
-          const due = item.daysUntil <= 0 ? 'Due' : item.daysUntil === 1 ? 'Tomorrow' : formatBriefDateLabel(item.date);
-          rows.push(`
+      if (groceryN > 0) {
+        const preview = groceryNames.join(', ');
+        sections.push(`
+          <div class="summary-life-section">
             <div class="summary-life-row">
-              <div class="summary-life-icon is-chore"><i class="fa-solid fa-list-check"></i></div>
+              <div class="summary-life-icon is-cart"><i class="fa-solid fa-cart-shopping"></i></div>
               <div class="summary-life-main">
-                <div class="summary-life-title">${escapeBriefHtml(item.habit.title)}</div>
-                <div class="summary-life-meta">${escapeBriefHtml(due)}${item.habit.interval_days >= 7 ? ' · recurring' : ''}</div>
+                <div class="summary-life-label">Grocery</div>
+                <div class="summary-life-title">${groceryN} item${groceryN === 1 ? '' : 's'} on your list</div>
+                <div class="summary-life-meta">
+                  <div class="summary-life-meta-line">${escapeBriefHtml(preview || 'Open Grocery to review')}</div>
+                </div>
               </div>
-            </div>`);
-        });
+            </div>
+          </div>`);
       }
 
-      if (!rows.length) {
-        rows.push(`<div class="summary-empty">Bills, grocery &amp; ${brief.mode === 'month' ? 'monthly' : 'weekly'} chores look clear.</div>`);
+      if (subCount > 0) {
+        const monthlyLabel = subsMonthly > 0
+          ? `${formatSubscriptionAmount(subsMonthly)}/mo`
+          : `${subCount} active`;
+        const sample = subs.slice(0, 3).map(s => s.name || s.service || 'Subscription').filter(Boolean);
+        sections.push(`
+          <div class="summary-life-section">
+            <div class="summary-life-row">
+              <div class="summary-life-icon is-sub"><i class="fa-solid fa-arrows-rotate"></i></div>
+              <div class="summary-life-main">
+                <div class="summary-life-label">Subscriptions</div>
+                <div class="summary-life-title">${escapeBriefHtml(monthlyLabel)}${subsMonthly > 0 ? ` · ${subCount} active` : ''}</div>
+                <div class="summary-life-meta">
+                  <div class="summary-life-meta-line">${escapeBriefHtml(sample.join(', ') || 'Tracked renewals')}</div>
+                </div>
+              </div>
+            </div>
+          </div>`);
       }
+
+      const count = bills.length + (groceryN > 0 ? 1 : 0) + (subCount > 0 ? 1 : 0);
+      const body = sections.length
+        ? sections.join('')
+        : `<div class="summary-empty">No bills, grocery items, or subscriptions need a look right now.</div>`;
 
       return `
-        <div class="summary-panel">
+        <div class="summary-panel" aria-label="Household — bills, grocery, and subscriptions">
           <div class="summary-panel-hdr">
-            <div class="summary-panel-title"><i class="fa-solid fa-layer-group text-amber-300"></i> Life</div>
-            <span class="summary-panel-count">${bills.length + groceryN + deck.length}</span>
+            <div class="summary-panel-title"><i class="fa-solid fa-house text-amber-300"></i> Household</div>
+            ${count ? `<span class="summary-panel-count">${count}</span>` : ''}
           </div>
-          ${rows.join('')}
+          <div class="summary-life-blurb">Money and lists from the Life tab — not your day-to-day tasks.</div>
+          ${body}
           <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1">
             <div class="summary-jump" onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('bills')">Bills</div>
             <div class="summary-jump" onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('grocery')">Grocery</div>
+            <div class="summary-jump" onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('subscriptions')">Subs</div>
           </div>
         </div>`;
     }
@@ -19924,16 +20045,24 @@
         isParkedForSummary(t.habit) && !isPulledToToday(t.habit)
       );
       if (!parked.length) return '';
-      const show = parked.slice(0, 6);
+      const PREVIEW = 5;
+      const show = parked.slice(0, PREVIEW);
       const more = parked.length - show.length;
+      const moreFooter = more > 0
+        ? `<button type="button" class="summary-when-more"
+            onclick="event.preventDefault(); event.stopPropagation(); showSummaryKpiDetail('tasks')"
+            aria-label="Open full task list">
+            Showing ${PREVIEW} of ${parked.length}. For the complete list, tap <strong>Tasks</strong> at the top left of Summary.
+          </button>`
+        : '';
       return `
         <div class="summary-panel summary-when-you-can" aria-label="Bigger tasks when you have time">
           <div class="summary-panel-hdr">
             <div class="summary-panel-title"><i class="fa-solid fa-screwdriver-wrench text-harbor-primary-light"></i> When You Can</div>
             <span class="summary-panel-count">${parked.length}</span>
           </div>
-          <div class="text-[10px] text-harbor-muted leading-snug mb-2">
-            Bigger or seasonal work stays here so Today stays light. Pull one on when you have the time and energy.
+          <div class="summary-when-blurb">
+            Heavier work stays here so Today stays light. Add one when you have the time and energy.
           </div>
           ${show.map(item => {
             const h = item.habit;
@@ -19957,7 +20086,7 @@
                 </button>
               </div>`;
           }).join('')}
-          ${more > 0 ? `<div class="text-[10px] text-harbor-muted mt-1.5">+${more} more — open Tasks above for the full list</div>` : ''}
+          ${moreFooter}
         </div>`;
     }
 
