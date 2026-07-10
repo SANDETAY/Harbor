@@ -611,6 +611,56 @@
       transform: scale(0.94);
     }
 
+    /* Multi-log (e.g. feed dogs 2×/day) — compact 1/2 in the complete hit */
+    #task-list .task-complete-hit.is-multi {
+      border-color: rgba(47, 155, 140, 0.35);
+      background: rgba(47, 155, 140, 0.06);
+    }
+    #task-list .task-complete-hit.is-multi.is-partial {
+      border-color: rgba(47, 155, 140, 0.55);
+      background: rgba(47, 155, 140, 0.14);
+    }
+    #task-list .habit-hit-frac {
+      font-size: 0.72rem;
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      color: rgb(var(--harbor-primary-light));
+      line-height: 1;
+    }
+    #task-list .task-complete-hit.is-multi:not(.is-partial) .habit-hit-frac {
+      color: rgb(var(--harbor-muted));
+      font-weight: 700;
+    }
+    .habit-multi-pill {
+      font-size: 0.62rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+      color: rgb(var(--harbor-primary-light));
+      background: rgba(47, 155, 140, 0.12);
+      padding: 0.1rem 0.4rem;
+      border-radius: 999px;
+      line-height: 1.25;
+    }
+    .task-complete-hit.is-tick {
+      animation: multiTick 0.28s var(--harbor-ease-out);
+    }
+    @keyframes multiTick {
+      0% { transform: scale(1); }
+      45% { transform: scale(0.9); }
+      100% { transform: scale(1); }
+    }
+    .qt-times-chip {
+      min-width: 2.35rem;
+      justify-content: center;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.42rem 0.55rem;
+    }
+
     #task-list .habit-card .font-medium {
       font-size: 0.95rem;
       letter-spacing: -0.015em;
@@ -3817,6 +3867,9 @@
     }
     .qt-times-chip {
       appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       border: 1px solid rgb(var(--harbor-border));
       background: rgb(var(--harbor-raised));
       color: rgb(var(--harbor-muted));
@@ -8331,7 +8384,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 199;
+    const HARBOR_BUILD_NUMBER = 200;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -12503,7 +12556,8 @@
       if (energy === 1) {
         const extras = state.habits.filter(h => {
           if (pool.some(p => p.id === h.id)) return false;
-          if ((getCompletions(h.id) || []).includes(today)) return false;
+          // Multi-log (e.g. 2×/day): stay available until all completions are logged
+          if (isCompletedToday(h.id)) return false;
           const isEasy = (h.difficulty || 2) <= 1 && (h.est_minutes || 10) <= 15;
           if (!isEasy) return false;
           const daysUntil = getDaysUntilHabitDue(h);
@@ -13233,12 +13287,12 @@
         sec.classList.toggle('hidden', !show);
         if (!show) return;
         const options = [
-          { n: 1, label: 'Once' },
-          { n: 2, label: 'Twice' },
-          { n: 3, label: '3 times' }
+          { n: 1, label: '1' },
+          { n: 2, label: '2' },
+          { n: 3, label: '3' }
         ];
         row.innerHTML = options.map(o =>
-          `<button type="button" class="qt-times-chip ${selectedTimesPerDay === o.n ? 'is-active' : ''}" data-times="${o.n}">${o.label}</button>`
+          `<button type="button" class="qt-times-chip ${selectedTimesPerDay === o.n ? 'is-active' : ''}" data-times="${o.n}" aria-label="${o.n} time${o.n === 1 ? '' : 's'} per day">${o.label}</button>`
         ).join('');
         row.querySelectorAll('.qt-times-chip').forEach(btn => {
           btn.onclick = () => {
@@ -15207,11 +15261,10 @@
     }
 
     function getTodayIncompleteTaskMinutes() {
-      const today = todayStr();
       return state.habits.reduce((sum, h) => {
         if (!isDueToday(h)) return sum;
-        if ((getCompletions(h.id) || []).includes(today)) return sum;
-        if (getHabitSkips(h.id).includes(today)) return sum;
+        // isDueToday already requires multi-log tasks not fully done
+        if (getHabitSkips(h.id).includes(todayStr())) return sum;
         return sum + (h.est_minutes || 10);
       }, 0);
     }
@@ -17947,8 +18000,8 @@
       const active = [];
 
       state.habits.forEach(h => {
-        const comps = getCompletions(h.id) || [];
-        if (comps.includes(today)) return;
+        // Multi-log (times_per_day > 1): stay until all completions for today are done
+        if (isCompletedToday(h.id)) return;
         if (getHabitSkips(h.id).includes(today)) return;
         if (!belongsOnTodayTab(h)) return;
         active.push(h);
@@ -17991,7 +18044,8 @@
       const today = todayStr();
       const comps = getCompletions(habit.id);
 
-      if (comps.includes(today)) return false;
+      // Fully done for today (respects times_per_day, e.g. Feed Dogs 2×)
+      if (isCompletedToday(habit.id)) return false;
       if (getHabitSkips(habit.id).includes(today)) return false;
       if (getHabitPasses(habit.id).includes(today)) return false;
 
@@ -18586,17 +18640,24 @@
 
       const timesNeed = typeof getTimesPerDay === 'function' ? getTimesPerDay(habit) : 1;
       const timesDone = typeof countCompletionsOnDate === 'function' ? countCompletionsOnDate(habit.id, todayStr()) : 0;
-      const multiProgress = timesNeed > 1
-        ? `<span class="text-harbor-primary-light text-xs px-1.5 rounded bg-harbor-primary/15 font-semibold tabular-nums">${timesDone}/${timesNeed} today</span>`
+      const isMulti = timesNeed > 1;
+      // Minimal multi-log UI: fraction lives on the complete control (0/2 → 1/2 → done)
+      const hitClasses = 'task-complete-hit touch-target w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-harbor-border active:border-harbor-primary flex items-center justify-center text-xl'
+        + (isMulti ? ' is-multi' : '')
+        + (isMulti && timesDone > 0 ? ' is-partial' : '');
+      const hitInner = isMulti
+        ? `<span class="habit-hit-frac" aria-hidden="true">${timesDone}/${timesNeed}</span>`
+        : `<i class="fa-regular fa-circle text-harbor-muted"></i>`;
+      const multiPill = isMulti
+        ? `<span class="habit-multi-pill" title="${timesDone} of ${timesNeed} today">${timesDone}/${timesNeed}</span>`
         : '';
-      const freqChip = timesNeed > 1
-        ? (timesNeed === 2 ? 'Twice a day' : `${timesNeed} times a day`)
-        : (isRecurring ? formatIntervalLabel(habit.interval_days) : '');
+      const freqChip = !isMulti && isRecurring ? formatIntervalLabel(habit.interval_days) : '';
 
       const safeTitle = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(habit.title) : habit.title;
       const contentHtml = `
-        <div onclick="completeHabit('${habit.id}', event)" class="task-complete-hit touch-target w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-harbor-border active:border-harbor-primary flex items-center justify-center text-xl">
-          <i class="fa-regular fa-circle text-harbor-muted"></i>
+        <div onclick="completeHabit('${habit.id}', event)" class="${hitClasses}" role="button"
+          aria-label="${isMulti ? `${safeTitle}, ${timesDone} of ${timesNeed} today` : `Complete ${safeTitle}`}">
+          ${hitInner}
         </div>
         <div class="flex-1 min-w-0">
           <div class="font-medium leading-tight habit-title-text${showMuted ? ' text-harbor-muted' : ''}"
@@ -18607,8 +18668,8 @@
             ${habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))
               ? `<span class="text-sky-300 text-xs px-1.5 rounded bg-sky-900/40 font-semibold">Pro booking</span>`
               : ''}
+            ${multiPill}
             ${freqChip ? `<span class="text-harbor-primary-light/80 text-xs px-1.5 rounded bg-harbor-primary/15">${freqChip}</span>` : ''}
-            ${multiProgress}
             ${isOneOffTask(habit) && !(habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))) ? `<span class="text-harbor-muted text-xs px-1.5 rounded bg-harbor-raised">One-time</span>` : ''}
             ${dueNote}
             <span class="text-xs text-harbor-muted">${habit.est_minutes} min • ${difficultyLabel} energy</span>
@@ -18945,51 +19006,59 @@
       comps.push(today);
       comps.sort();
       const afterCount = doneCount + 1;
+      const fullyDone = afterCount >= need;
 
-      // One-day pull expires once done
-      if (habit.pullToToday) delete habit.pullToToday;
+      // One-day pull expires only when fully done for today
+      if (fullyDone && habit.pullToToday) delete habit.pullToToday;
 
       logMetricOnComplete(habit);
       const pointsEarned = (typeof isCheatDayFundEnabled === 'function' && isCheatDayFundEnabled())
         ? awardRewardPoints(habit)
         : 0;
 
-      const passAwarded = typeof maybeAwardStreakPass === 'function' ? maybeAwardStreakPass(habit) : false;
+      const passAwarded = fullyDone && typeof maybeAwardStreakPass === 'function'
+        ? maybeAwardStreakPass(habit)
+        : false;
       
       // If recurring, we don't add it again until next due — handled by isDueToday
       saveState();
       
-      // UI feedback
+      // UI feedback: full complete animation only when all times-per-day are done
       const card = document.querySelector(`[data-habit-id="${habitId}"]`);
-      if (card) {
-        card.classList.add('task-complete');
-        setTimeout(() => {
-          renderTasks(); // re-render list
-          renderStreaks();
-          updateSmartBanner();
-        }, 460);
-      } else {
+      const refreshUi = () => {
         renderTasks();
         renderStreaks();
+        updateSmartBanner();
+        if (currentTab === 'streaks') renderRewardBank();
+        if (currentTab === 'streaks' && currentProjectionHabit === habitId) {
+          showProjections(habitId);
+        }
+      };
+      if (card && fullyDone) {
+        card.classList.add('task-complete');
+        setTimeout(refreshUi, 460);
+      } else if (card && need > 1) {
+        const hit = card.querySelector('.task-complete-hit');
+        hit?.classList.add('is-tick');
+        setTimeout(refreshUi, 200);
+      } else {
+        refreshUi();
       }
-      if (currentTab === 'streaks') renderRewardBank();
       
-      const ptsMsg = pointsEarned ? ` · +${pointsEarned} fills Harbor Day` : '';
+      const ptsMsg = fullyDone && pointsEarned ? ` · +${pointsEarned} fills Harbor Day` : '';
       const passMsg = passAwarded ? ' · 🌊 Pass earned' : '';
-      const multiMsg = need > 1 ? ` (${afterCount}/${need} today)` : '';
-      showToast(`🔥 ${habit.title}${multiMsg}${ptsMsg}${passMsg}`);
+      if (need > 1 && !fullyDone) {
+        showToast(`${habit.title} · ${afterCount}/${need}`);
+      } else {
+        showToast(`🔥 ${habit.title}${need > 1 ? ` · ${afterCount}/${need}` : ''}${ptsMsg}${passMsg}`);
+      }
       maybeAdvanceTutorial('habit-complete');
       
       // Gentle autonomous follow-up
       setTimeout(() => {
         updateSmartBanner();
-        maybeSuggestAutomation(habit);
+        if (fullyDone) maybeSuggestAutomation(habit);
       }, 1200);
-      
-      // Update projections if open
-      if (currentTab === 'streaks' && currentProjectionHabit === habitId) {
-        showProjections(habitId);
-      }
     }
 
     function maybeSuggestAutomation(habit) {
