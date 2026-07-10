@@ -1289,9 +1289,12 @@
       flex-direction: column;
       min-width: 0;
       min-height: 0;
-      flex: 1;
+      flex: 1 1 auto;
+      height: 100%;
       /* Match left/right padding feel — no gutter lost to a scrollbar */
       scrollbar-gutter: auto;
+      /* Library owns vertical scroll via #library-list — avoid parent fighting it */
+      padding-bottom: 0;
     }
 
     #schedule-view-toggle {
@@ -1309,25 +1312,31 @@
       overflow: visible;
       min-width: 0;
       width: 100%;
+      padding-bottom: 0.15rem;
     }
 
-    /* Mobile-first: one vertical scroll through full-width categories */
+    /* Mobile-first: one continuous vertical scroll through full-width categories */
     #library-list {
-      flex: 1;
+      flex: 1 1 auto;
       min-height: 0;
       overflow-y: auto;
       overflow-x: hidden;
-      overscroll-behavior: contain;
+      overscroll-behavior-y: contain;
       -webkit-overflow-scrolling: touch;
+      scroll-behavior: auto;
+      /* Soft momentum + room for sticky section titles */
+      scroll-padding-top: 0.35rem;
+      scroll-padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
       display: flex;
       flex-direction: column;
-      gap: 0.85rem;
+      gap: 1rem;
       align-items: stretch;
       width: 100%;
-      padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
       /* Camouflage scrollbar — scroll still works */
       scrollbar-width: none;
       -ms-overflow-style: none;
+      touch-action: pan-y;
     }
 
     #library-list::-webkit-scrollbar {
@@ -1348,10 +1357,10 @@
       max-width: none;
       box-sizing: border-box;
       background:
-        linear-gradient(165deg, rgba(255, 255, 255, 0.35) 0%, rgb(var(--harbor-surface)) 100%);
+        linear-gradient(165deg, rgba(255, 255, 255, 0.4) 0%, rgb(var(--harbor-surface)) 100%);
       border: 1px solid rgba(47, 155, 140, 0.14);
-      border-radius: var(--harbor-radius-xl);
-      padding: 0.8rem 0.9rem 0.75rem;
+      border-radius: calc(var(--harbor-radius-xl) + 0.1rem);
+      padding: 0.95rem 1rem 0.9rem;
       box-shadow: var(--harbor-shadow-sm);
     }
     html[data-theme="dark"] .library-column {
@@ -1362,20 +1371,20 @@
     .library-column-header {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
-      margin: -0.15rem 0 0.55rem;
-      padding: 0.35rem 0 0.5rem;
-      border-bottom: 1px solid rgb(var(--harbor-border));
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      background: linear-gradient(180deg, rgb(var(--harbor-surface)) 78%, transparent 100%);
+      gap: 0.45rem;
+      margin: -0.2rem 0 0.7rem;
+      padding: 0.4rem 0 0.55rem;
+      border-bottom: 1px solid rgb(var(--harbor-border) / 0.85);
+      /* Non-sticky: smoother continuous scroll through sections */
+      position: relative;
+      z-index: 1;
+      background: transparent;
     }
 
     .library-column-tasks {
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: 0.55rem;
       max-height: none;
       overflow: visible;
     }
@@ -1384,18 +1393,12 @@
       margin-bottom: 0;
     }
 
-    .library-column-header {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgb(var(--harbor-surface)) 88%, transparent 100%);
-    }
-    html[data-theme="dark"] .library-column-header {
-      background: linear-gradient(180deg, rgb(var(--harbor-surface)) 78%, transparent 100%);
-    }
     .library-column-header .feed-section-label {
-      font-size: 0.72rem;
-      letter-spacing: 0.04em;
+      font-size: 0.78rem;
+      letter-spacing: 0.035em;
     }
     .library-column-header span[aria-hidden="true"] {
-      font-size: 1rem;
+      font-size: 1.15rem;
       line-height: 1;
     }
 
@@ -2656,10 +2659,12 @@
       background:
         linear-gradient(155deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 72%);
       border: 1px solid rgba(47, 155, 140, 0.14);
-      border-radius: 1rem;
-      padding: 0.7rem 0.8rem;
+      border-radius: 1.15rem;
+      padding: 0.9rem 0.95rem;
+      min-height: 4.35rem;
       box-shadow: var(--harbor-shadow-sm);
       transition: transform 0.15s ease, border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
     }
     html[data-theme="dark"] .library-task-card {
       background: linear-gradient(160deg, rgba(32, 52, 48, 0.95) 0%, rgb(var(--harbor-surface)) 100%);
@@ -2668,6 +2673,9 @@
     .library-task-card:hover {
       border-color: rgba(47, 155, 140, 0.28);
       box-shadow: var(--harbor-shadow-md);
+    }
+    .library-task-card:active {
+      transform: scale(0.992);
     }
     .library-task-card.is-added {
       border-color: rgba(47, 155, 140, 0.42);
@@ -2689,17 +2697,17 @@
     .library-task-inner {
       display: flex;
       align-items: flex-start;
-      gap: 0.7rem;
+      gap: 0.8rem;
     }
     .library-task-icon {
-      width: 2.45rem;
-      height: 2.45rem;
+      width: 2.85rem;
+      height: 2.85rem;
       flex-shrink: 0;
-      border-radius: 0.85rem;
+      border-radius: 0.95rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.15rem;
+      font-size: 1.3rem;
       line-height: 1;
       border: 1px solid transparent;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
@@ -2719,35 +2727,36 @@
     .library-task-body {
       flex: 1;
       min-width: 0;
+      padding-top: 0.05rem;
     }
     .library-task-title {
-      font-size: 0.88rem;
+      font-size: 0.98rem;
       font-weight: 650;
-      letter-spacing: -0.015em;
-      line-height: 1.25;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
       color: rgb(var(--harbor-text));
     }
     .library-task-note {
-      margin-top: 0.28rem;
-      font-size: 0.68rem;
-      line-height: 1.35;
+      margin-top: 0.32rem;
+      font-size: 0.74rem;
+      line-height: 1.4;
       color: rgb(var(--harbor-muted));
     }
     .library-task-meta {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 0.28rem;
-      margin-top: 0.4rem;
+      gap: 0.32rem;
+      margin-top: 0.5rem;
     }
     .library-meta-chip {
       display: inline-flex;
       align-items: center;
-      gap: 0.22rem;
-      font-size: 0.62rem;
+      gap: 0.25rem;
+      font-size: 0.66rem;
       font-weight: 650;
       letter-spacing: 0.01em;
-      padding: 0.18rem 0.45rem;
+      padding: 0.22rem 0.5rem;
       border-radius: 999px;
       border: 1px solid transparent;
       line-height: 1.2;
@@ -7886,15 +7895,15 @@
 
       #library-list {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 0.85rem;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
         overflow-x: visible;
         overflow-y: visible;
         padding-bottom: 1.5rem;
       }
 
       #library-list.library-filtered {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       }
 
       .library-column {
@@ -8397,7 +8406,7 @@
       </div>
 
       <!-- LIBRARY TAB -->
-      <div id="tab-content-library" class="tab-content px-5 pt-3 pb-2 bg-harbor-bg hidden">
+      <div id="tab-content-library" class="tab-content px-4 pt-2.5 pb-0 bg-harbor-bg hidden">
         <div class="library-header">
           <div class="panel-head">
             <div class="section-header font-semibold text-harbor-text">Task Library</div>
@@ -8407,15 +8416,15 @@
               </button>
             </div>
           </div>
-          <div id="library-stats" class="text-[10px] text-harbor-muted mb-2"></div>
+          <div id="library-stats" class="text-[10px] text-harbor-muted mb-1.5"></div>
 
-          <div class="relative mb-3">
+          <div class="relative mb-2">
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-harbor-muted text-xs"></i>
             <input id="library-search" type="text" oninput="onLibrarySearch()"
-              class="input-polish w-full bg-harbor-raised/90 border border-harbor-border focus:border-harbor-primary rounded-2xl py-2.5 pl-8 pr-3 text-xs placeholder:text-harbor-muted outline-none"
+              class="input-polish w-full bg-harbor-raised/90 border border-harbor-border focus:border-harbor-primary rounded-2xl py-2.5 pl-8 pr-3 text-sm placeholder:text-harbor-muted outline-none"
               placeholder="Quick search…">
           </div>
-          <div id="library-filters" class="library-filters mb-2" role="tablist" aria-label="Library categories"></div>
+          <div id="library-filters" class="library-filters mb-1.5" role="tablist" aria-label="Library categories"></div>
         </div>
         
         <div id="library-list" role="region" aria-label="Library tasks by category"></div>
@@ -8480,7 +8489,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 202;
+    const HARBOR_BUILD_NUMBER = 203;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -24943,7 +24952,7 @@
           <div class="library-task-icon tone-${visual.tone}" aria-hidden="true">${visual.emoji}</div>
           <div class="library-task-body">
             <div class="library-task-title">${escapeBriefHtml(task.title)}</div>
-            ${task.note ? `<div class="library-task-note line-clamp-2">${escapeBriefHtml(task.note)}</div>` : ''}
+            ${task.note ? `<div class="library-task-note line-clamp-3">${escapeBriefHtml(task.note)}</div>` : ''}
             <div class="library-task-meta">
               ${proChip}
               <span class="library-meta-chip ${getLibraryEnergyChipClass(diff)}"><i class="fa-solid fa-bolt" aria-hidden="true"></i>${energyLabel}</span>
