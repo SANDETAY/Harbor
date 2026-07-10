@@ -7667,7 +7667,7 @@
         <div id="task-list"></div>
         <div id="app-version-foot" class="app-version-foot" aria-label="App version">
           <button type="button" class="app-version-foot-btn" onclick="showReleaseNotes()" title="What's new">
-            Harbor <span class="tabular-nums" id="app-version-foot-label">0.9.1</span>
+            Harbor <span class="tabular-nums" id="app-version-foot-label">0.9.2</span>
           </button>
         </div>
       </div>
@@ -7932,23 +7932,35 @@
 
     // Product version (semver). Pre-1.0: feature-complete late beta / RC territory.
     // Bump MINOR for larger feature sets, PATCH for fixes. Reserve 1.0.0 for store launch.
-    const HARBOR_VERSION = '0.9.1';
+    const HARBOR_VERSION = '0.9.2';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 182;
+    const HARBOR_BUILD_NUMBER = 183;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
-    // Feedback delivery: recipientEmail is required (FormSubmit + mailto fallback).
-    // Optional web3formsAccessKey from https://web3forms.com is tried first when set.
+    // Feedback delivery (tried in order): Web3Forms → FormSubmit → mailto backup.
+    // Web3Forms access_key is PUBLIC by design (not a secret API key). Get one free at
+    // https://web3forms.com — use the same inbox as recipientEmail. Optional Pro feature:
+    // restrict the key to sandetay.github.io / your domain to cut spam abuse.
     const FEEDBACK_CONFIG = {
       recipientEmail: 'Taylorsanders12360@gmail.com',
-      web3formsAccessKey: '',
+      // Public Web3Forms access key (safe client-side; binds submissions to this inbox)
+      web3formsAccessKey: '8b6739d4-d271-4f04-bd6b-84ae3790ed17',
       appName: 'Harbor',
       appVersion: HARBOR_VERSION
     };
 
     /** User-facing changelog (newest first). Keep short and plain — not a git log. */
     const HARBOR_CHANGELOG = [
+      {
+        version: '0.9.2',
+        date: '2026-07-10',
+        title: 'Reliable feedback email',
+        highlights: [
+          'Web3Forms enabled for primary feedback delivery to the builder inbox',
+          'FormSubmit and mail-app backup still kick in if the primary path fails'
+        ]
+      },
       {
         version: '0.9.1',
         date: '2026-07-10',
@@ -17971,21 +17983,34 @@
       }
     }
 
-    /** Try Web3Forms (most reliable when access key is configured). */
+    /**
+     * Web3Forms — preferred path when access_key is set.
+     * Docs: access_key is public (safe in client JS). Prefer client-side submit.
+     * https://docs.web3forms.com/getting-started/faq
+     */
     async function deliverFeedbackViaWeb3Forms(payload, bodyText) {
       const key = (FEEDBACK_CONFIG.web3formsAccessKey || '').trim();
       if (!key) return { ok: false, skipped: true };
+
+      const replyEmail = (payload.replyEmail || '').trim();
       const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
           access_key: key,
           subject: getFeedbackSubject(payload),
-          from_name: payload.replyEmail ? 'Harbor User' : 'Harbor Feedback',
-          email: payload.replyEmail || FEEDBACK_CONFIG.recipientEmail,
-          replyto: payload.replyEmail || FEEDBACK_CONFIG.recipientEmail,
+          from_name: FEEDBACK_CONFIG.appName || 'Harbor',
+          // Required-ish identity fields for the email template
+          name: replyEmail ? 'Harbor User' : 'Harbor Feedback',
+          email: replyEmail || FEEDBACK_CONFIG.recipientEmail,
+          replyto: replyEmail || FEEDBACK_CONFIG.recipientEmail,
           message: bodyText,
-          to: FEEDBACK_CONFIG.recipientEmail,
+          // Extra structured fields appear in the email body
+          category: payload.category || 'General',
+          rating: payload.rating != null ? String(payload.rating) : '',
+          app_version: FEEDBACK_CONFIG.appVersion || '',
+          build: typeof HARBOR_BUILD !== 'undefined' ? HARBOR_BUILD : '',
+          // Honeypot — must stay empty / unchecked (spam bots fill it)
           botcheck: ''
         })
       });
