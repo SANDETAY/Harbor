@@ -1,11 +1,13 @@
-# Harbor Web App (Design Preview)
+# Harbor
 
-Shareable **full-width responsive website** of **Harbor** for design review and user testing before the native iOS/Android build. Fills your browser on desktop; still works great on phones.
+Calm life management app: energy-based tasks, bills, grocery, streaks, calendar, and smart suggestions. **Data stays on the device** (`localStorage`).
+
+This is a **Progressive Web App (PWA)** — one responsive `index.html` that works in the browser and can be **Add to Home Screen**’d like an app. You do **not** need to rewrite it into Swift/Kotlin to try it as an “app” today.
 
 ## Quick Start (Local)
 
 ```powershell
-cd "P:\App Projects\Projects\webapp"
+cd C:\Users\Taylor\Rythm
 powershell -ExecutionPolicy Bypass -File scripts\start-server.ps1
 ```
 
@@ -47,13 +49,13 @@ Every `git push` to `main` updates the live site. Testers can also **Add to Home
 2. Connect the repo in Netlify (build command: none, publish directory: `.`)
 3. Every push auto-deploys
 
-### Option D — Add to iPhone home screen
+### Option D — Add to iPhone / Android home screen
 
-1. Open the deployed URL in Safari
-2. Tap Share → **Add to Home Screen**
+1. Open the deployed URL in Safari (iOS) or Chrome (Android)
+2. Share / menu → **Add to Home Screen** (or **Install app**)
 3. Harbor launches full-screen like a native app
 
-## What Works in the Preview
+## What Works
 
 | Feature | Status |
 |---------|--------|
@@ -64,11 +66,23 @@ Every `git push` to `main` updates the live site. Testers can also **Add to Home
 | Streaks & Harbor Day | Live |
 | Weather (hourly forecast) | Live (uses device location) |
 | Voice commands | Chrome/Edge only |
-| Calendar (ICS URL + file import) | Live — secret iCal URL and/or .ics file; direct fetch by default (optional network helper) |
-| Garmin / Apple Health sync | Simulated — UI placeholder |
+| Calendar (ICS URL + file import) | Live — secret iCal URL and/or .ics file |
+| Garmin / Apple Health sync | Simulated — UI placeholder (flagged off) |
 | Subscriptions tracker | Live (manual + CSV import) |
 
-Data is stored in the browser (`localStorage`). Each tester gets their own isolated data on their device.
+Data is stored in the browser (`localStorage`). Each person gets their own isolated data on their device. Export/import from Menu for backups or sharing a household profile file.
+
+## Making this a “real” store app
+
+You **cannot** paste this HTML into Xcode/Android Studio and “import” it as native UI. Paths that *do* work:
+
+| Path | Effort | Result |
+|------|--------|--------|
+| **PWA (now)** | Already done | Home-screen app, works offline for cached assets, no App Store required |
+| **Capacitor / Cordova shell** | 1–3 days setup | Wraps this same web app in a native container → submit to App Store / Play Store |
+| **Rebuild in React Native / Expo / Swift / Kotlin** | Weeks–months | True native UI; reimplement features, keep product logic/design |
+
+**Recommended launch path:** ship the **PWA** for real use and feedback → when you want store listing / push / deeper device APIs, wrap with **[Capacitor](https://capacitorjs.com/)** (keeps `index.html` as the UI) *or* plan a native rebuild only if you need heavy native UX.
 
 ## Run Simulation Tests
 
@@ -88,8 +102,8 @@ Settings → **Factory Reset** restores the first-time experience.
 ## Project Structure
 
 ```
-webapp/
-  index.html              # Full Harbor prototype
+Rythm/   (repo: SANDETAY/Harbor)
+  index.html              # Full Harbor app
   manifest.webmanifest    # PWA install config
   sw.js                   # Offline cache for assets
   harbor-mark.svg         # Anchor mark (vector)
@@ -99,10 +113,6 @@ webapp/
   scripts/
     create-deploy-zip.ps1 # One-click Netlify Drop zip
 ```
-
-## Next Step: Native App
-
-When testing feedback is solid, the prototype logic ports to **Expo + React Native** per the architecture plan in `habit-ease/ARCHITECTURE.md`.
 
 ## License
 

@@ -6,8 +6,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0A1F1E",
-  "theme_color": "#0A1F1E",
+  "background_color": "#D6E8E2",
+  "theme_color": "#D6E8E2",
   "categories": ["productivity", "lifestyle"],
   "icons": [
     {
@@ -20,7 +20,13 @@
       "src": "harbor-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "harbor-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

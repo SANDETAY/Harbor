@@ -1,4 +1,4 @@
-const CACHE_NAME = 'harbor-preview-v166';
+const CACHE_NAME = 'harbor-preview-v167';
 const PRECACHE = [
   './harbor-favicon-32.png',
   './harbor-apple-touch.png',
@@ -27,7 +27,7 @@ self.addEventListener('message', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "Harbor design preview — shareable web app for tester feedback before native iOS/Android build.",
+  "description": "Harbor — calm life management PWA (tasks, bills, grocery, streaks). Ship as web/PWA first; wrap with Capacitor for store builds later.",
   "scripts": {
     "start": "powershell -ExecutionPolicy Bypass -File scripts/start-server.ps1",
     "preview": "powershell -ExecutionPolicy Bypass -File scripts/start-server.ps1",

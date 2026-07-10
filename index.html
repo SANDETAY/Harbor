@@ -7083,10 +7083,10 @@
       recipientEmail: 'Taylorsanders12360@gmail.com',
       web3formsAccessKey: '',
       appName: 'Harbor',
-      appVersion: 'preview-1.4'
+      appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v166';
+    const HARBOR_BUILD = 'v167';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -7112,7 +7112,7 @@
       subscriptions: [],
       metricLogs: {},
       rewardBank: { points: 0, totalEarned: 0, cheatDownsUsed: 0, lastCheatDate: null },
-      challenges: [], // Streak-Off challenges (local-first social)
+      challenges: [], // reserved (legacy Streak-Offs removed)
       calendarCache: null,
       settings: {
         weightLb: 160,
@@ -8128,18 +8128,33 @@
 
     }
 
+    let _storageSaveWarned = false;
     function saveState() {
       try {
         if (state.settings?.onboarded) {
           localStorage.setItem('harbor_onboarded', '1');
         }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        _storageSaveWarned = false;
       } catch (err) {
         console.warn('[Harbor] Could not save local data', err?.name || err);
         try {
           // Last-ditch: keep onboarding/tutorial flags so users are not forced through setup again
           localStorage.setItem('harbor_onboarded', state.settings?.onboarded ? '1' : (localStorage.getItem('harbor_onboarded') || ''));
         } catch (_) { /* ignore */ }
+        // Surface once until a save succeeds again (quota / private mode)
+        if (!_storageSaveWarned) {
+          _storageSaveWarned = true;
+          try {
+            const isQuota = err?.name === 'QuotaExceededError' || /quota/i.test(String(err?.message || err || ''));
+            showToast(
+              isQuota
+                ? 'Storage full — free space or export a backup in Menu'
+                : 'Could not save on this device — check private mode or free storage',
+              'warn'
+            );
+          } catch (_) { /* toast may not exist during early boot */ }
+        }
       }
     }
 
@@ -9403,7 +9418,7 @@
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-ban text-harbor-primary-light mr-1.5"></i>What we don’t do</h4>
-              <p>No ads, no trackers, no sale of personal data. Prototype builds may log non-identifying errors in the browser console for debugging.</p>
+              <p>No ads, no trackers, no sale of personal data. Optional console messages stay in your browser only and never leave the device.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-trash-can text-harbor-primary-light mr-1.5"></i>Your control</h4>
@@ -9413,7 +9428,7 @@
 
           <button type="button" onclick="this.closest('.fixed').remove()"
             class="w-full mt-5 py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Got it</button>
-          <div class="text-[10px] text-center text-harbor-muted mt-3">Harbor ${typeof HARBOR_BUILD !== 'undefined' ? HARBOR_BUILD : ''} · local-first prototype</div>
+          <div class="text-[10px] text-center text-harbor-muted mt-3">Harbor ${typeof HARBOR_BUILD !== 'undefined' ? HARBOR_BUILD : ''} · local-first · your device</div>
         </div>`;
       document.body.appendChild(modal);
     }
@@ -15953,7 +15968,7 @@
           await navigator.clipboard.writeText(bodyText);
           showToast('Could not send online — feedback copied to clipboard');
         } catch (_) {
-          showToast('Saved locally — configure FEEDBACK_CONFIG.recipientEmail to receive submissions');
+          showToast('Saved on this device — could not email feedback right now', 'warn');
         }
         return true;
       }
@@ -18768,13 +18783,13 @@
           ${canNativePwaInstall() ? 'Add to Home Screen' : 'Show me how'}
         </button>
         <p class="tutorial-install-note" style="margin-bottom:0">
-          You can do this later from <strong>Menu → Add to Home Screen</strong>. Harbor is still a preview — your data stays on this device.
+          You can do this later from <strong>Menu → Add to Home Screen</strong>. Your data stays on this device.
         </p>`;
     }
 
     function getPrototypeTutorialBody() {
       // Kept for any legacy callers; tour no longer uses a separate prototype step
-      return `<p class="tutorial-install-lead">Harbor is a live preview. Your data stays on this device. Thanks for trying it.</p>`;
+      return `<p class="tutorial-install-lead">Harbor keeps your data on this device. Thanks for trying it.</p>`;
     }
 
     function openInstallGuideFromTutorial() {
@@ -22440,7 +22455,7 @@
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-fire text-orange-400 mr-1.5"></i>Streaks</h4>
-              <p>Daily habits you want to keep. See your streak, <strong class="text-harbor-text">Harbor Day</strong> (earn a treat — Moment, Window, Full day, or Bank), and Projected Wins. Challenge friends with Streak-Offs when you’re ready.</p>
+              <p>Daily habits you want to keep. See your streak fires, <strong class="text-harbor-text">Projected Wins</strong> (Outlook), and <strong class="text-harbor-text">Harbor Day</strong> — earn a treat (Moment, Window, Full day, or Bank) when you hit your goal.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-book text-violet-300 mr-1.5"></i>Library</h4>
