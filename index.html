@@ -6757,7 +6757,7 @@
   <div id="welcome-spotlight-overlay" class="welcome-spotlight-overlay" aria-hidden="true">
     <div id="welcome-spotlight-highlight" class="hidden"></div>
     <div id="welcome-spotlight-card" class="welcome-spotlight-card hidden" role="dialog" aria-modal="true">
-      <div class="text-xs text-harbor-muted leading-relaxed mb-2.5">Your starter tasks are ready in <strong class="text-harbor-text">Today</strong>. Tap <strong class="text-harbor-primary-light">Learn More</strong> below for a short, friendly tour whenever you’re ready.</div>
+      <div class="text-xs text-harbor-muted leading-relaxed mb-2.5">Your starter tasks are ready in <strong class="text-harbor-text">Today</strong>. Tap <strong class="text-harbor-primary-light">Quick tour</strong> below for a short walkthrough whenever you’re ready.</div>
       <button type="button" onclick="skipWelcomeSpotlight()" class="w-full py-2 rounded-xl bg-harbor-raised border border-harbor-border text-[11px] font-medium text-harbor-muted">Skip for Now</button>
     </div>
   </div>
@@ -6798,7 +6798,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v158';
+    const HARBOR_BUILD = 'v159';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -22369,7 +22369,7 @@
                 <div>
                   <label class="block text-[10px] text-harbor-muted mb-1">Gender</label>
                   <select id="profile-gender" class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 text-harbor-text">
-                    ${genderOptions.map(g => `<option value="${g.id}" ${(profile.gender || '') === g.id ? 'selected' : ''}>${g.label}</option>`).join('')}
+                    ${genderOptions.map(g => `<option value="${g.id}" ${selectedGender === g.id ? 'selected' : ''}>${g.label}</option>`).join('')}
                   </select>
                 </div>
                 <div>
