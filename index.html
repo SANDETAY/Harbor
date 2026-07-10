@@ -2551,8 +2551,10 @@
     }
 
     #smart-banner {
-      margin-top: 0.45rem;
-      margin-bottom: 0.35rem;
+      /* smart banner compact mega-patch */
+      margin-top: 0.35rem;
+      margin-bottom: 0.25rem;
+      padding: 0.45rem 0.7rem !important;
       transition: opacity var(--harbor-duration) ease, transform var(--harbor-duration) var(--harbor-ease-out);
     }
 
@@ -3163,6 +3165,161 @@
       margin-bottom: 0;
     }
 
+
+    .panel-toolbar-cluster {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.35rem;
+      max-width: min(100%, 18rem);
+    }
+    .chip-tool-btn {
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.68rem;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+      padding: 0.4rem 0.65rem;
+      min-height: 2rem;
+      border-radius: 999px;
+      border: 1px solid rgba(47, 155, 140, 0.2);
+      background: rgb(var(--harbor-surface));
+      color: rgb(var(--harbor-primary-light));
+      box-shadow: var(--harbor-shadow-sm);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .chip-tool-btn:active {
+      transform: scale(0.97);
+      opacity: 0.92;
+    }
+    html[data-theme="dark"] .chip-tool-btn {
+      border-color: rgba(72, 178, 162, 0.22);
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-primary-light));
+    }
+    .schedule-free-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      max-width: 100%;
+      font-size: 0.68rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-primary-light));
+      background: rgba(47, 155, 140, 0.1);
+      border: 1px solid rgba(47, 155, 140, 0.16);
+      border-radius: 999px;
+      padding: 0.18rem 0.55rem;
+      line-height: 1.25;
+    }
+    .schedule-free-pill:empty {
+      display: none;
+    }
+    html[data-theme="dark"] .schedule-free-pill {
+      background: rgba(72, 178, 162, 0.12);
+      border-color: rgba(72, 178, 162, 0.2);
+    }
+    .schedule-sync-quiet:empty {
+      display: none;
+    }
+    /* Minutes chips in Add Task */
+    .qt-minutes-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .qt-min-chip {
+      appearance: none;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      border-radius: 999px;
+      padding: 0.42rem 0.7rem;
+      font-size: 0.72rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .qt-min-chip.is-active {
+      border-color: rgba(47, 155, 140, 0.45);
+      background: rgba(47, 155, 140, 0.12);
+      color: rgb(var(--harbor-text));
+    }
+    .qt-times-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.45rem;
+    }
+    .qt-times-chip {
+      appearance: none;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      border-radius: 999px;
+      padding: 0.4rem 0.65rem;
+      font-size: 0.7rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .qt-times-chip.is-active {
+      border-color: rgba(47, 155, 140, 0.45);
+      background: rgba(47, 155, 140, 0.12);
+      color: rgb(var(--harbor-text));
+    }
+    .qt-recur-more-wrap {
+      margin-top: 0.4rem;
+    }
+    .qt-recur-more-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.68rem;
+      font-weight: 650;
+      padding: 0.2rem 0;
+      cursor: pointer;
+    }
+    .qt-recurrence-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .library-filter-chip {
+      color: rgb(var(--harbor-text)) !important;
+      opacity: 0.92;
+    }
+    .library-filter-chip.is-active,
+    .library-filter-chip[aria-selected="true"] {
+      opacity: 1;
+      font-weight: 700;
+    }
+    .library-header {
+      position: sticky;
+      top: 0;
+      z-index: 12;
+      background: linear-gradient(180deg, rgb(var(--harbor-bg)) 70%, transparent 100%);
+      padding-bottom: 0.25rem;
+      margin-bottom: 0.15rem;
+    }
+    html[data-theme="dark"] .library-header {
+      background: linear-gradient(180deg, rgb(var(--harbor-bg)) 78%, transparent 100%);
+    }
+    #library-list {
+      padding-top: 0.15rem;
+    }
+    .person-pick-btn.is-selected,
+    .person-color-swatch.is-selected {
+      outline: 2px solid rgb(var(--harbor-primary));
+      outline-offset: 2px;
+      box-shadow: 0 0 0 3px rgba(47, 155, 140, 0.25);
+    }
+
+    /* mega-patch panel tools */
     /* ── Summary Orb ──
        Bottom-right above browser chrome / home indicator; all main tabs. */
     button.summary-orb,
@@ -3199,10 +3356,10 @@
 
     .summary-orb-glow {
       position: absolute;
-      inset: -10%;
+      inset: -12%;
       border-radius: 999px;
-      background: radial-gradient(circle, rgba(107, 191, 176, 0.32) 0%, rgba(47, 155, 140, 0.08) 48%, transparent 72%);
-      filter: blur(5px);
+      background: radial-gradient(circle, rgba(47, 155, 140, 0.28) 0%, rgba(47, 155, 140, 0.08) 48%, transparent 72%);
+      filter: blur(6px);
       animation: orbAmbientGlow 4.8s ease-in-out infinite;
       pointer-events: none;
       z-index: 0;
@@ -3238,15 +3395,25 @@
       align-items: center;
       justify-content: center;
       background:
-        radial-gradient(circle at 32% 28%, rgba(200, 255, 240, 0.26) 0%, transparent 42%),
-        linear-gradient(155deg, rgba(72, 170, 156, 0.98) 0%, rgba(28, 92, 86, 0.98) 48%, rgba(16, 42, 50, 0.99) 100%);
-      border: 1px solid rgba(180, 240, 225, 0.28);
+        radial-gradient(circle at 30% 26%, rgba(255, 255, 255, 0.55) 0%, transparent 42%),
+        linear-gradient(155deg, #56C4B4 0%, #2F9B8C 48%, #1C7066 100%);
+      border: 1px solid rgba(255, 255, 255, 0.45);
       box-shadow:
-        0 10px 24px rgba(0, 0, 0, 0.38),
-        0 0 0 1px rgba(0, 0, 0, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.22),
-        inset 0 -8px 16px rgba(0, 0, 0, 0.2);
+        0 8px 22px rgba(47, 155, 140, 0.32),
+        0 2px 8px rgba(18, 48, 44, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+        inset 0 -6px 14px rgba(28, 112, 102, 0.25);
       overflow: hidden;
+    }
+    html[data-theme="dark"] .summary-orb-core {
+      background:
+        radial-gradient(circle at 30% 26%, rgba(154, 214, 202, 0.28) 0%, transparent 42%),
+        linear-gradient(155deg, #3A9E90 0%, #1E6B60 50%, #10201D 100%);
+      border-color: rgba(72, 178, 162, 0.4);
+      box-shadow:
+        0 10px 24px rgba(0, 10, 8, 0.45),
+        0 0 0 1px rgba(72, 178, 162, 0.18),
+        inset 0 1px 0 rgba(154, 214, 202, 0.2);
     }
 
     .summary-orb-core::after {
@@ -3278,18 +3445,22 @@
 
     .summary-orb-label {
       position: absolute;
-      bottom: -1.1rem;
+      bottom: -1.15rem;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 0.56rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
+      font-size: 0.58rem;
+      font-weight: 750;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: rgba(180, 210, 204, 0.7);
+      color: #1C7066;
       white-space: nowrap;
       pointer-events: none;
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
       z-index: 3;
+    }
+    html[data-theme="dark"] .summary-orb-label {
+      color: #9AD6CA;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
     }
 
     .summary-orb-badge {
@@ -5414,10 +5585,10 @@
       }
 
       #smart-banner {
-        padding: 0.65rem 0.75rem !important;
-        margin-top: 0.35rem !important;
-        margin-bottom: 0.3rem !important;
-        border-radius: 0.85rem !important;
+        padding: 0.42rem 0.65rem !important;
+        margin-top: 0.3rem !important;
+        margin-bottom: 0.22rem !important;
+        border-radius: 0.75rem !important;
       }
 
       #smart-banner .fa-lightbulb {
@@ -6036,7 +6207,7 @@
           <button type="button" role="tab" aria-selected="true" onclick="switchLifePanel('schedule')" id="life-panel-tab-schedule"
             class="life-nav-tab life-panel-active">Schedule</button>
           <button type="button" role="tab" aria-selected="false" onclick="switchLifePanel('grocery')" id="life-panel-tab-grocery"
-            class="life-nav-tab">Grocery</button>
+            class="life-nav-tab">Groceries</button>
           <button type="button" role="tab" aria-selected="false" onclick="switchLifePanel('bills')" id="life-panel-tab-bills"
             class="life-nav-tab">Bills</button>
           <button type="button" role="tab" aria-selected="false" onclick="switchLifePanel('subscriptions')" id="life-panel-tab-subscriptions"
@@ -6047,10 +6218,16 @@
         <div id="life-panel-schedule" class="life-panel">
           <div class="panel-head">
             <div class="min-w-0 flex-1">
-              <div id="schedule-section-title" class="section-header font-semibold text-harbor-text">Today's Schedule</div>
-              <div id="schedule-free-time" class="text-xs text-harbor-primary-light font-medium mt-0.5"></div>
+              <div class="section-header font-semibold text-harbor-text">Schedule</div>
+              <div id="schedule-free-time" class="schedule-free-pill mt-1" aria-live="polite"></div>
             </div>
-            <div class="panel-toolbar">
+            <div class="panel-toolbar panel-toolbar-cluster">
+              <button type="button" onclick="showScheduleImportModal()" class="chip-tool-btn" id="schedule-import-btn" aria-label="Import calendar file">
+                Import File
+              </button>
+              <button type="button" onclick="showCalendarFeedModal()" class="chip-tool-btn" id="schedule-url-btn" aria-label="Add calendar URL">
+                Calendar URL
+              </button>
               <button type="button" onclick="showAddCalendarEventModal()" class="chip-add-btn" id="schedule-add-btn" aria-label="Add event">
                 <i class="fa-solid fa-plus"></i>Add
               </button>
@@ -6073,21 +6250,20 @@
             </div>
             <span class="work-hours-cta">Edit</span>
           </button>
-          <div class="panel-tools" aria-label="Schedule Tools">
-            <button type="button" onclick="showScheduleImportModal()" class="chip-tool-link">Import File</button>
-            <span class="chip-tool-sep" aria-hidden="true">·</span>
-            <button type="button" onclick="showCalendarFeedModal()" class="chip-tool-link">Calendar URL</button>
-          </div>
-          <div id="schedule-availability" class="text-[10px] text-harbor-muted mb-1.5"></div>
-          <div id="schedule-sync-badge" class="text-[10px] text-harbor-muted mb-2"></div>
+          <div id="schedule-section-title" class="hidden" aria-hidden="true"></div>
+          <div id="schedule-availability" class="hidden" aria-hidden="true"></div>
+          <div id="schedule-sync-badge" class="schedule-sync-quiet text-[10px] text-harbor-muted/80 mb-1.5"></div>
           <div id="schedule-list" class="space-y-2 mb-2"></div>
         </div>
 
         <!-- Grocery Panel -->
         <div id="life-panel-grocery" class="life-panel hidden">
           <div class="panel-head">
-            <div class="section-header font-semibold text-harbor-text">Dinner &amp; Grocery</div>
-            <div class="panel-toolbar">
+            <div class="section-header font-semibold text-harbor-text">Groceries</div>
+            <div class="panel-toolbar panel-toolbar-cluster">
+              <button type="button" onclick="tryShowAddMealPresetModal()" class="chip-tool-btn" aria-label="Add recipe">+ Recipe</button>
+              <button type="button" onclick="showManageMealPresetsModal()" class="chip-tool-btn" aria-label="Manage recipes">Manage</button>
+              <button type="button" onclick="clearCheckedGrocery()" class="chip-tool-btn" aria-label="Clear checked items">Clear</button>
               <button type="button" onclick="showAddGroceryItemModal()" class="chip-add-btn" id="grocery-add-btn" aria-label="Add Grocery Item">
                 <i class="fa-solid fa-plus"></i>Add
               </button>
@@ -6096,14 +6272,7 @@
               </button>
             </div>
           </div>
-          <div class="panel-tools" aria-label="Grocery Tools">
-            <button type="button" onclick="tryShowAddMealPresetModal()" class="chip-tool-link">+ Recipe</button>
-            <span class="chip-tool-sep" aria-hidden="true">·</span>
-            <button type="button" onclick="showManageMealPresetsModal()" class="chip-tool-link">Manage</button>
-            <span class="chip-tool-sep" aria-hidden="true">·</span>
-            <button type="button" onclick="clearCheckedGrocery()" class="chip-tool-link">Clear Done</button>
-          </div>
-          <div id="grocery-view-label" class="text-[10px] text-harbor-muted mb-2">Themed dinners · Sun–Sat</div>
+          <div id="grocery-view-label" class="hidden" aria-hidden="true"></div>
           <div id="meal-grocery-filters" class="library-filters-scroll mb-2 -mx-1 px-1"></div>
           <div id="grocery-list" class="space-y-2 mb-2"></div>
         </div>
@@ -6149,42 +6318,23 @@
 
       <!-- STREAKS TAB -->
       <div id="tab-content-streaks" class="tab-content px-5 pb-6 bg-transparent hidden">
-        <div id="streak-off-panel" class="mb-4" aria-label="Streak-Offs">
-          <!-- Filled by renderStreakOffPanel(); static fallback if JS lags -->
-          <div class="streak-off-card">
-            <div class="flex items-center justify-between gap-2 relative z-[1]">
-              <div>
-                <div class="streak-off-kicker">Streak-Offs</div>
-                <div class="streak-off-title">Challenge a Friend</div>
-                <div class="streak-off-meta">Loading crew board…</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="streaks-title-header">
-          <div class="section-header font-semibold text-harbor-text mb-1">Your Streaks</div>
-          <div class="text-[10px] text-harbor-muted mb-2">Daily habits only — chores and one-time tasks don’t build streaks</div>
-        </div>
-        <div id="streak-badge-legend"></div>
+        <div id="streak-off-panel" class="hidden" aria-hidden="true"></div>
+        <div id="streak-badge-legend" class="hidden" aria-hidden="true"></div>
 
         <div class="streaks-body">
           <div id="streaks-list" class="space-y-3"></div>
           <div id="reward-bank-panel"></div>
         </div>
 
-        <!-- Projection Panel -->
+        <!-- Habit Outlook -->
         <div class="mt-6">
-          <div class="section-header font-semibold text-harbor-text mb-2">Projected Wins</div>
+          <div class="section-header font-semibold text-harbor-text mb-1">Habit Outlook</div>
+          <div class="text-[10px] text-harbor-muted mb-2">Pace and trends for habits with a goal — steps, miles, pages, savings, and more.</div>
           <div id="projection-panel" 
             class="bg-harbor-surface border border-harbor-border rounded-3xl p-4 text-sm">
-            <div id="projection-hint" class="text-harbor-muted text-xs">Tap a streak with a measurable goal — steps, miles, savings — to see a gentle forecast.</div>
+            <div id="projection-hint" class="text-harbor-muted text-xs">Tap a habit with a goal to see your pace and a gentle 30-day outlook.</div>
             <div id="projection-content" class="hidden"></div>
           </div>
-        </div>
-
-        <div class="mt-4 text-[10px] text-center text-harbor-muted">
-          Inspired by popular trackers (Streaks, Strides, Apple Health)
         </div>
       </div>
 
@@ -6217,13 +6367,13 @@
       <!-- Summary FAB — thumb zone, day/week/month digest -->
       <button type="button" id="summary-launcher" class="summary-orb hidden"
         onclick="showSummaryModal()"
-        aria-label="Open your Summary">
+        aria-label="Open Overview — day, week, and month at a glance">
         <span class="summary-orb-glow" aria-hidden="true"></span>
         <span class="summary-orb-spin" aria-hidden="true"></span>
         <span class="summary-orb-core" aria-hidden="true">
           <img class="summary-orb-icon" src="harbor-fab-anchor.png" width="128" height="128" alt="" decoding="async">
         </span>
-        <span class="summary-orb-label" aria-hidden="true">Summary</span>
+        <span class="summary-orb-label" aria-hidden="true">Overview</span>
         <span id="summary-fab-badge" class="summary-orb-badge hidden" aria-hidden="true"></span>
       </button>
       </div><!-- /app-shell -->
@@ -6276,7 +6426,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v143';
+    const HARBOR_BUILD = 'v144';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -6483,6 +6633,7 @@
     const SUBSCRIPTION_PRESETS = [
       {
         id: 'netflix',
+        homeUrl: 'https://www.netflix.com/login',
         manageUrl: 'https://www.netflix.com/cancelplan', name: 'Netflix', brandColor: '#E50914', matchPattern: /netflix/i,
         tiers: [
           { id: 'ads', label: 'Standard with ads', amount: 7.99, cycle: 'monthly' },
@@ -6492,6 +6643,7 @@
       },
       {
         id: 'spotify',
+        homeUrl: 'https://www.spotify.com/account/',
         manageUrl: 'https://www.spotify.com/account/subscription/', name: 'Spotify', brandColor: '#1DB954', matchPattern: /spotify/i,
         tiers: [
           { id: 'student', label: 'Student', amount: 5.99, cycle: 'monthly' },
@@ -6502,6 +6654,7 @@
       },
       {
         id: 'disney-plus',
+        homeUrl: 'https://www.disneyplus.com/login',
         manageUrl: 'https://www.disneyplus.com/account', name: 'Disney+', brandColor: '#113CCF', matchPattern: /disney\s*\+|disney plus/i,
         tiers: [
           { id: 'basic-ads', label: 'Basic (with ads)', amount: 9.99, cycle: 'monthly' },
@@ -6511,6 +6664,7 @@
       },
       {
         id: 'hulu',
+        homeUrl: 'https://auth.hulu.com/web/login',
         manageUrl: 'https://secure.hulu.com/account', name: 'Hulu', brandColor: '#1CE783', matchPattern: /hulu/i,
         tiers: [
           { id: 'ads', label: 'With ads', amount: 9.99, cycle: 'monthly' },
@@ -6520,6 +6674,7 @@
       },
       {
         id: 'max',
+        homeUrl: 'https://auth.max.com/login',
         manageUrl: 'https://auth.max.com/product', name: 'Max', brandColor: '#002BE7', matchPattern: /hbo|max\.com/i,
         tiers: [
           { id: 'ads', label: 'With ads', amount: 9.99, cycle: 'monthly' },
@@ -6529,6 +6684,7 @@
       },
       {
         id: 'youtube-premium',
+        homeUrl: 'https://www.youtube.com/',
         manageUrl: 'https://www.youtube.com/paid_memberships', name: 'YouTube Premium', brandColor: '#FF0000', matchPattern: /youtube|google\s*youtube/i,
         tiers: [
           { id: 'individual', label: 'Individual', amount: 13.99, cycle: 'monthly' },
@@ -6557,10 +6713,11 @@
       },
       {
         id: 'amazon-prime',
+        homeUrl: 'https://www.amazon.com/gp/css/homepage.html',
         manageUrl: 'https://www.amazon.com/gp/primecentral', name: 'Amazon Prime', brandColor: '#00A8E1', matchPattern: /amazon prime|amzn\.com\/bill|prime video/i,
         tiers: [
           { id: 'monthly', label: 'Monthly', amount: 14.99, cycle: 'monthly' },
-          { id: 'yearly', label: 'Annual', amount: 139, cycle: 'yearly' }
+          { id: 'yearly', label: 'Yearly', amount: 139, cycle: 'yearly' }
         ]
       },
       {
@@ -6582,11 +6739,26 @@
       },
       {
         id: 'gym',
-        manageUrl: 'https://www.google.com/search?q=cancel+gym+membership', name: 'Gym', brandColor: '#FF6B35', matchPattern: /planet fitness|la fitness|equinox|ymca|gym/i,
+        homeUrl: 'https://www.planetfitness.com/login',
+        manageUrl: 'https://www.planetfitness.com/login',
+        name: 'Gym', brandColor: '#FF6B35', matchPattern: /planet fitness|la fitness|equinox|ymca|24 hour fitness|gold'?s gym|anytime fitness|orangetheory|chuze|gym/i,
         tiers: [
           { id: 'pf-classic', label: 'Planet Fitness Classic', amount: 15, cycle: 'monthly' },
           { id: 'pf-black', label: 'Planet Fitness Black Card', amount: 24.99, cycle: 'monthly' },
-          { id: 'la-fitness', label: 'LA Fitness', amount: 39.99, cycle: 'monthly' }
+          { id: 'chuze-base', label: 'Chuze Fitness Base', amount: 21.99, cycle: 'monthly' },
+          { id: 'chuze-plus', label: 'Chuze Fitness Plus', amount: 29.99, cycle: 'monthly' },
+          { id: 'la-fitness', label: 'LA Fitness', amount: 39.99, cycle: 'monthly' },
+          { id: 'anytime', label: 'Anytime Fitness', amount: 45, cycle: 'monthly' }
+        ]
+      },
+      {
+        id: 'chuze',
+        homeUrl: 'https://chuzefitness.com/login/',
+        manageUrl: 'https://chuzefitness.com/login/',
+        name: 'Chuze Fitness', brandColor: '#E31837', matchPattern: /chuze/i,
+        tiers: [
+          { id: 'base', label: 'Base', amount: 21.99, cycle: 'monthly' },
+          { id: 'plus', label: 'Plus', amount: 29.99, cycle: 'monthly' }
         ]
       },
       {
@@ -6616,6 +6788,7 @@
       },
       {
         id: 'chatgpt',
+        homeUrl: 'https://chatgpt.com/auth/login',
         manageUrl: 'https://chatgpt.com/#settings', name: 'ChatGPT', brandColor: '#412991', matchPattern: /openai|chatgpt/i,
         tiers: [
           { id: 'plus', label: 'Plus', amount: 20, cycle: 'monthly' },
@@ -6624,6 +6797,7 @@
       },
       {
         id: 'claude',
+        homeUrl: 'https://claude.ai/login',
         manageUrl: 'https://claude.ai/settings', name: 'Claude', brandColor: '#D97757', matchPattern: /anthropic|claude/i,
         tiers: [
           { id: 'pro', label: 'Pro', amount: 20, cycle: 'monthly' },
@@ -6632,7 +6806,107 @@
         ]
       },
       {
-        id: 'grok',
+
+      {
+        id: 'costco',
+        homeUrl: 'https://www.costco.com/LogonForm',
+        manageUrl: 'https://www.costco.com/myaccount',
+        name: 'Costco', brandColor: '#E31837', matchPattern: /costco/i,
+        tiers: [
+          { id: 'goldstar', label: 'Gold Star', amount: 65, cycle: 'yearly' },
+          { id: 'executive', label: 'Executive', amount: 130, cycle: 'yearly' }
+        ]
+      },
+      {
+        id: 'walmart-plus',
+        homeUrl: 'https://www.walmart.com/account/login',
+        manageUrl: 'https://www.walmart.com/plus',
+        name: 'Walmart+', brandColor: '#0071CE', matchPattern: /walmart\s*\+|walmart plus/i,
+        tiers: [
+          { id: 'monthly', label: 'Monthly', amount: 12.95, cycle: 'monthly' },
+          { id: 'yearly', label: 'Annual', amount: 98, cycle: 'yearly' }
+        ]
+      },
+      {
+        id: 'doordash',
+        homeUrl: 'https://www.doordash.com/consumer/login/',
+        manageUrl: 'https://www.doordash.com/consumer/edit_profile/',
+        name: 'DoorDash DashPass', brandColor: '#FF3008', matchPattern: /doordash|dashpass/i,
+        tiers: [
+          { id: 'monthly', label: 'Monthly', amount: 9.99, cycle: 'monthly' },
+          { id: 'yearly', label: 'Annual', amount: 96, cycle: 'yearly' }
+        ]
+      },
+      {
+        id: 'uber-one',
+        homeUrl: 'https://auth.uber.com/login/',
+        manageUrl: 'https://www.uber.com/us/en/u/uber-one/',
+        name: 'Uber One', brandColor: '#000000', matchPattern: /uber\s*one|uber eats/i,
+        tiers: [
+          { id: 'monthly', label: 'Monthly', amount: 9.99, cycle: 'monthly' },
+          { id: 'yearly', label: 'Annual', amount: 96, cycle: 'yearly' }
+        ]
+      },
+      {
+        id: 'audible',
+        homeUrl: 'https://www.audible.com/sign-in',
+        manageUrl: 'https://www.audible.com/account/overview',
+        name: 'Audible', brandColor: '#F8991C', matchPattern: /audible/i,
+        tiers: [
+          { id: 'plus', label: 'Plus', amount: 7.95, cycle: 'monthly' },
+          { id: 'premium', label: 'Premium Plus', amount: 14.95, cycle: 'monthly' }
+        ]
+      },
+      {
+        id: 'youtube-tv',
+        homeUrl: 'https://tv.youtube.com/',
+        manageUrl: 'https://tv.youtube.com/',
+        name: 'YouTube TV', brandColor: '#FF0000', matchPattern: /youtube\s*tv/i,
+        tiers: [
+          { id: 'base', label: 'Base plan', amount: 82.99, cycle: 'monthly' }
+        ]
+      },
+      {
+        id: 'apple-tv',
+        homeUrl: 'https://tv.apple.com/',
+        manageUrl: 'https://www.apple.com/account/subscriptions/',
+        name: 'Apple TV+', brandColor: '#1D1D1F', matchPattern: /apple\s*tv/i,
+        tiers: [
+          { id: 'monthly', label: 'Monthly', amount: 9.99, cycle: 'monthly' }
+        ]
+      },
+      {
+        id: 'crunchyroll',
+        homeUrl: 'https://www.crunchyroll.com/login',
+        manageUrl: 'https://www.crunchyroll.com/account/membership',
+        name: 'Crunchyroll', brandColor: '#F47521', matchPattern: /crunchyroll/i,
+        tiers: [
+          { id: 'fan', label: 'Fan', amount: 7.99, cycle: 'monthly' },
+          { id: 'mega', label: 'Mega Fan', amount: 11.99, cycle: 'monthly' }
+        ]
+      },
+      {
+        id: 'github',
+        homeUrl: 'https://github.com/login',
+        manageUrl: 'https://github.com/settings/billing',
+        name: 'GitHub', brandColor: '#24292F', matchPattern: /github/i,
+        tiers: [
+          { id: 'pro', label: 'Pro', amount: 4, cycle: 'monthly' },
+          { id: 'team', label: 'Team', amount: 4, cycle: 'monthly' }
+        ]
+      },
+      {
+        id: 'notion',
+        homeUrl: 'https://www.notion.so/login',
+        manageUrl: 'https://www.notion.so/my-account',
+        name: 'Notion', brandColor: '#000000', matchPattern: /notion/i,
+        tiers: [
+          { id: 'plus', label: 'Plus', amount: 10, cycle: 'monthly' },
+          { id: 'business', label: 'Business', amount: 18, cycle: 'monthly' }
+        ]
+      },
+
+              id: 'grok',
         manageUrl: 'https://x.com/settings', name: 'Grok', brandColor: '#1C1C1E', matchPattern: /xai|grok|supergrok/i,
         tiers: [
           { id: 'supergrok', label: 'SuperGrok', amount: 30, cycle: 'monthly' },
@@ -6647,7 +6921,7 @@
         id: 'sunday-supper',
         weekday: 0,
         dayShort: 'Sun',
-        label: '🍗 Sunday Supper',
+        label: 'Sunday Supper',
         recipe: 'Roast chicken & veggies',
         effort: 3,
         items: [
@@ -6666,7 +6940,7 @@
         id: 'meatless-monday',
         weekday: 1,
         dayShort: 'Mon',
-        label: '🌱 Meatless Monday',
+        label: 'Meatless Monday',
         recipe: 'Chickpea veggie pasta',
         effort: 2,
         items: [
@@ -6685,7 +6959,7 @@
         id: 'taco-tuesday',
         weekday: 2,
         dayShort: 'Tue',
-        label: '🌮 Taco Tuesday',
+        label: 'Taco Tuesday',
         recipe: 'Classic beef tacos',
         effort: 1,
         items: [
@@ -6706,7 +6980,7 @@
         id: 'wing-wednesday',
         weekday: 3,
         dayShort: 'Wed',
-        label: '🍗 Wing Wednesday',
+        label: 'Wing Wednesday',
         recipe: 'Buffalo wings & dips',
         effort: 2,
         items: [
@@ -6724,7 +6998,7 @@
         id: 'stir-fry-thursday',
         weekday: 4,
         dayShort: 'Thu',
-        label: '🥘 Stir-Fry Thursday',
+        label: 'Stir-Fry Thursday',
         recipe: 'Chicken veggie stir-fry',
         effort: 2,
         items: [
@@ -6744,7 +7018,7 @@
         id: 'pizza-friday',
         weekday: 5,
         dayShort: 'Fri',
-        label: '🍕 Pizza Friday',
+        label: 'Pizza Friday',
         recipe: 'Homemade sheet-pan pizza',
         effort: 1,
         items: [
@@ -6763,7 +7037,7 @@
         id: 'grill-saturday',
         weekday: 6,
         dayShort: 'Sat',
-        label: '🔥 Grill Saturday',
+        label: 'Grill Saturday',
         recipe: 'Burgers & corn',
         effort: 2,
         items: [
@@ -7375,7 +7649,8 @@
         'caulk-grout': { key: 'general', short: 'Caulk / grout pro' },
         'washer-hoses': { key: 'plumbing', short: 'Washer hose check' },
         'fridge-coils': { key: 'general', short: 'Appliance tech' },
-        'car-battery-test': { key: 'auto', short: 'Battery / auto shop' }
+        'car-battery-test': { key: 'auto', short: 'Battery / auto shop' },
+        'meal-prep': { key: 'general', short: 'Meal prep help' }
       };
       const meta = proMap[task.id];
       if (meta) {
@@ -8132,15 +8407,15 @@
         : { id: 'hp-' + Date.now(), name: '', role: 'spouse', color: nextHouseholdColor() };
 
       const editor = document.createElement('div');
-      editor.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[70]';
+      editor.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end sm:items-center justify-center z-[70]';
       editor.innerHTML = `
         <div class="absolute inset-0" onclick="this.closest('.fixed').remove()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm">
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full sm:max-w-md bg-harbor-surface border-t sm:border border-harbor-border rounded-t-3xl sm:rounded-3xl p-5 text-sm mb-[max(0.5rem,env(keyboard-inset-height,0px))] max-h-[min(88vh,100dvh-2rem)] overflow-y-auto">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-3">${existing ? 'Edit person' : 'Add person'}</div>
           <label class="block text-[10px] text-harbor-muted mb-1">Name</label>
           <input id="hp-name" type="text" maxlength="32" value="${escapeBriefHtml(draft.name)}" placeholder="e.g. Alex, Maya"
-            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-3 text-harbor-text">
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-3 text-harbor-text" autocomplete="name">
           <label class="block text-[10px] text-harbor-muted mb-1">Relationship</label>
           <select id="hp-role" class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-3 text-harbor-text" ${isMe ? 'disabled' : ''}>
             ${HOUSEHOLD_ROLE_OPTIONS.filter(r => isMe ? true : r.id !== 'me').map(r =>
@@ -8148,11 +8423,11 @@
             ).join('')}
           </select>
           <label class="block text-[10px] text-harbor-muted mb-1.5">Color</label>
-          <div class="flex flex-wrap gap-2 mb-4" id="hp-colors">
+          <div class="flex flex-wrap gap-2.5 mb-4" id="hp-colors">
             ${HOUSEHOLD_COLOR_PALETTE.map(c => `
               <button type="button" data-color="${c}"
-                class="household-color-dot ${draft.color.toLowerCase() === c.toLowerCase() ? 'ring-2 ring-white/80 scale-110' : ''}"
-                style="background:${c}; width:1.45rem; height:1.45rem;" aria-label="Color ${c}"></button>
+                class="household-color-dot person-color-swatch ${draft.color.toLowerCase() === c.toLowerCase() ? 'is-selected ring-2 ring-harbor-primary scale-110' : ''}"
+                style="background:${c}; width:1.7rem; height:1.7rem; border:2px solid rgba(18,40,37,0.15);" aria-label="Color ${c}"></button>
             `).join('')}
           </div>
           <div class="flex gap-2">
@@ -8165,15 +8440,25 @@
       document.body.appendChild(editor);
 
       let color = draft.color;
+      const paintColorSel = () => {
+        editor.querySelectorAll('#hp-colors button').forEach(b => {
+          const on = (b.dataset.color || '').toLowerCase() === (color || '').toLowerCase();
+          b.classList.toggle('is-selected', on);
+          b.classList.toggle('ring-2', on);
+          b.classList.toggle('ring-harbor-primary', on);
+          b.classList.toggle('scale-110', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      };
+      paintColorSel();
       editor.querySelectorAll('#hp-colors button').forEach(btn => {
         btn.onclick = () => {
           color = btn.dataset.color;
-          editor.querySelectorAll('#hp-colors button').forEach(b => {
-            b.classList.toggle('ring-2', b.dataset.color === color);
-            b.classList.toggle('ring-white/80', b.dataset.color === color);
-            b.classList.toggle('scale-110', b.dataset.color === color);
-          });
+          paintColorSel();
         };
+      });
+      editor.querySelector('#hp-name')?.addEventListener('focus', () => {
+        setTimeout(() => editor.querySelector('#hp-name')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 250);
       });
 
       editor.querySelector('#hp-save').onclick = () => {
@@ -8550,8 +8835,20 @@
       return /run|swim|jog|hike|workout|bike|cycle|cardio|exercise|row|elliptical|lift|weights?|yoga|pilates|dance|climb|ski|skate|tennis|basketball|soccer|football|boxing|martial/i.test(title);
     }
 
+    function getTimesPerDay(habit) {
+      const n = Number(habit?.times_per_day);
+      if (!Number.isFinite(n) || n < 1) return 1;
+      return Math.min(5, Math.round(n));
+    }
+
+    function countCompletionsOnDate(habitId, dateStr) {
+      return (getCompletions(habitId) || []).filter(d => d === dateStr).length;
+    }
+
     function isCompletedToday(habitId) {
-      return (getCompletions(habitId) || []).includes(todayStr());
+      const habit = state.habits?.find(h => h.id === habitId);
+      const need = getTimesPerDay(habit);
+      return countCompletionsOnDate(habitId, todayStr()) >= need;
     }
 
     function hasSyncedToday(habitId) {
@@ -9334,16 +9631,16 @@
     function formatIntervalLabel(days) {
       if (days === 0) return 'One-time';
       if (!days) return 'Daily';
-      if (days === 2) return '3× / week';
-      if (days === 3) return '2× / week';
+      if (days === 2) return '3 times a week';
+      if (days === 3) return 'Twice a week';
       if (days === 7) return 'Weekly';
-      if (days === 14) return 'Biweekly';
+      if (days === 14) return 'Every 2 weeks';
       if (days >= 28 && days <= 31) return 'Monthly';
-      if (days >= 58 && days <= 62) return '~60 days';
-      if (days >= 85 && days <= 95) return 'Quarterly';
-      if (days >= 175 && days <= 185) return 'Semi-annual';
-      if (days >= 360) return 'Annual';
-      return `Every ${days}d`;
+      if (days >= 58 && days <= 62) return 'Every ~2 months';
+      if (days >= 85 && days <= 95) return 'Every 3 months';
+      if (days >= 175 && days <= 185) return 'Twice a year';
+      if (days >= 360) return 'Yearly';
+      return `Every ${days} days`;
     }
 
     function getDaysUntilHabitDue(habit) {
@@ -9370,7 +9667,7 @@
     function getEnergyMatchedTasks(energy) {
       const today = todayStr();
       let pool = state.habits.filter(h => {
-        if ((getCompletions(h.id) || []).includes(today)) return false;
+        if (isCompletedToday(h.id)) return false;
         return isDueToday(h);
       });
 
@@ -9538,39 +9835,39 @@
 
     const TASK_RECURRENCE_OPTIONS = [
       { key: 'daily', label: 'Daily', days: null },
-      { key: '2', label: '3× / week', days: 2 },
-      { key: '3', label: '2× / week', days: 3 },
+      { key: '2', label: '3 times a week', days: 2 },
+      { key: '3', label: 'Twice a week', days: 3 },
       { key: '7', label: 'Weekly', days: 7 },
-      { key: '14', label: 'Biweekly', days: 14 },
+      { key: '14', label: 'Every 2 weeks', days: 14 },
       { key: '30', label: 'Monthly', days: 30 },
-      { key: '90', label: 'Quarterly', days: 90 },
-      { key: '180', label: 'Semi-Annual', days: 180 },
-      { key: '365', label: 'Annual', days: 365 }
+      { key: '90', label: 'Every 3 months', days: 90 },
+      { key: '180', label: 'Twice a year', days: 180 },
+      { key: '365', label: 'Yearly', days: 365 }
     ];
 
     const HABIT_RECURRENCE_OPTIONS = [
       { key: 'daily', label: 'Daily', days: null },
-      { key: '2', label: '3× / week', days: 2 },
-      { key: '3', label: '2× / week', days: 3 },
+      { key: '2', label: '3 times a week', days: 2 },
+      { key: '3', label: 'Twice a week', days: 3 },
       { key: '7', label: 'Weekly', days: 7 }
     ];
 
-    const CHORE_RECURRENCE_OPTIONS = TASK_RECURRENCE_OPTIONS.filter(o => o.key !== 'daily' && o.key !== '2' && o.key !== '3')
-      .concat([
-        { key: '2', label: '3× / week', days: 2 },
-        { key: '3', label: '2× / week', days: 3 }
-      ]);
-    // Chores: keep common intervals + 2×/3× week near the front
-    const CHORE_RECURRENCE_ORDERED = [
-      { key: '3', label: '2× / week', days: 3 },
-      { key: '2', label: '3× / week', days: 2 },
+    // Chores: primary chips stay short; "More" holds longer intervals
+    const CHORE_RECURRENCE_PRIMARY = [
+      { key: 'daily', label: 'Daily', days: null },
+      { key: '3', label: 'Twice a week', days: 3 },
+      { key: '2', label: '3 times a week', days: 2 },
       { key: '7', label: 'Weekly', days: 7 },
-      { key: '14', label: 'Biweekly', days: 14 },
-      { key: '30', label: 'Monthly', days: 30 },
-      { key: '90', label: 'Quarterly', days: 90 },
-      { key: '180', label: 'Semi-Annual', days: 180 },
-      { key: '365', label: 'Annual', days: 365 }
+      { key: '30', label: 'Monthly', days: 30 }
     ];
+    const CHORE_RECURRENCE_MORE = [
+      { key: '14', label: 'Every 2 weeks', days: 14 },
+      { key: '90', label: 'Every 3 months', days: 90 },
+      { key: '180', label: 'Twice a year', days: 180 },
+      { key: '365', label: 'Yearly', days: 365 }
+    ];
+    const CHORE_RECURRENCE_ORDERED = CHORE_RECURRENCE_PRIMARY.concat(CHORE_RECURRENCE_MORE);
+    const CHORE_RECURRENCE_OPTIONS = CHORE_RECURRENCE_ORDERED;
 
     function resolveQuickTaskInterval(title, intervalUserPicked, selectedInterval) {
       if (isSchedulingTaskTitle(title)) return 0;
@@ -9725,7 +10022,7 @@
           <div class="flex items-center justify-between mb-3">
             <div>
               <div class="font-semibold text-lg text-harbor-text">${isEdit ? (isHabitEdit && !editLibTask ? 'Edit Task' : 'Edit Personal Task') : isLibrary ? 'Add Personal Task' : 'Add Task'}</div>
-              <div class="text-[10px] text-harbor-muted">${isEdit ? 'Update details and save' : isLibrary ? 'Type a name and save to your library' : 'Name it, pick type & how often'}</div>
+              <div class="text-[10px] text-harbor-muted">${isEdit ? 'Update details and save' : isLibrary ? 'Type a name and save to your library' : 'Name it, pick type, & how often'}</div>
             </div>
             <button type="button" onclick="closeQuickTaskModal()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
@@ -9739,15 +10036,15 @@
             <div class="grid grid-cols-3 gap-1.5" role="group" aria-label="Task type">
               <button type="button" class="qt-kind-chip" data-kind="task" aria-pressed="false">
                 <div class="text-sm font-semibold text-harbor-text">Task</div>
-                <div class="text-[9px] text-harbor-muted leading-snug mt-0.5">Once · Today</div>
+                <div class="text-[9px] text-harbor-muted leading-snug mt-0.5">One and done</div>
               </button>
               <button type="button" class="qt-kind-chip" data-kind="habit" aria-pressed="false">
                 <div class="text-sm font-semibold text-harbor-text">Habit</div>
-                <div class="text-[9px] text-harbor-muted leading-snug mt-0.5">Repeats · streaks</div>
+                <div class="text-[9px] text-harbor-muted leading-snug mt-0.5">Builds streaks</div>
               </button>
               <button type="button" class="qt-kind-chip" data-kind="chore" aria-pressed="false">
                 <div class="text-sm font-semibold text-harbor-text">Chore</div>
-                <div class="text-[9px] text-harbor-muted leading-snug mt-0.5">Repeats · no streak</div>
+                <div class="text-[9px] text-harbor-muted leading-snug mt-0.5">Repeats, no streak</div>
               </button>
             </div>
             <div id="qt-kind-hint" class="text-[10px] text-harbor-primary-light mt-1.5 leading-snug"></div>
@@ -9765,6 +10062,14 @@
               <span id="qt-recur-caption" class="text-[9px] text-harbor-muted/80"></span>
             </div>
             <div id="qt-recurrence-row" class="qt-recurrence-row" role="group" aria-label="How often"></div>
+            <div id="qt-recur-more-wrap" class="qt-recur-more-wrap hidden">
+              <button type="button" id="qt-recur-more-btn" class="qt-recur-more-btn">More options</button>
+              <div id="qt-recurrence-more-row" class="qt-recurrence-row mt-1.5 hidden" role="group" aria-label="More how often"></div>
+            </div>
+            <div id="qt-times-section" class="hidden">
+              <label class="block text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mt-2.5 mb-1">Times per day</label>
+              <div id="qt-times-row" class="qt-times-row" role="group" aria-label="Times per day"></div>
+            </div>
           </div>
 
           <div id="qt-energy-section" class="mb-3">
@@ -9783,9 +10088,9 @@
           </div>
 
           <div id="qt-minutes-section" class="mb-3">
-            <label class="block text-xs text-harbor-muted mb-1">Estimated minutes</label>
-            <input id="qt-minutes" type="number" min="0" value="${inferred.est_minutes}"
-              class="w-full bg-harbor-raised border border-harbor-border focus:border-harbor-primary rounded-2xl px-4 py-2.5 outline-none text-harbor-text">
+            <label class="block text-xs text-harbor-muted mb-1.5">About how long?</label>
+            <input id="qt-minutes" type="hidden" value="${inferred.est_minutes}">
+            <div id="qt-minutes-row" class="qt-minutes-row" role="group" aria-label="Estimated time"></div>
           </div>
 
           <div id="qt-summary" class="text-[10px] text-harbor-muted mb-3 px-1"></div>
@@ -9802,6 +10107,15 @@
       let intervalUserPicked = false;
       let selectedDiff = editSource ? (editSource.difficulty || 2) : inferred.difficulty;
       let selectedKind = 'task'; // task | habit | chore
+      let selectedTimesPerDay = editSource?.times_per_day ? Math.max(1, Number(editSource.times_per_day) || 1) : 1;
+      let showChoreMore = false;
+      const MINUTE_PRESETS = [
+        { label: '5 min', value: 5 },
+        { label: '15 min', value: 15 },
+        { label: '30 min', value: 30 },
+        { label: '1 hr', value: 60 },
+        { label: '2 hr', value: 120 }
+      ];
 
       if (isEdit && editSource) {
         if (isOneOffTask(editSource)) selectedKind = 'task';
@@ -9811,10 +10125,7 @@
           selectedInterval = editSource.interval_days == null ? null : editSource.interval_days;
           intervalUserPicked = true;
         }
-        if (selectedKind === 'chore' && (selectedInterval == null || selectedInterval <= 1)) {
-          selectedInterval = 7;
-          intervalUserPicked = true;
-        }
+        // Chores may be daily (null) — do not force weekly on edit
         if (selectedKind === 'task') {
           selectedInterval = 0;
           intervalUserPicked = true;
@@ -9873,36 +10184,129 @@
         return opt.days === selectedInterval;
       }
 
+      function pickRecurrenceOpt(opt) {
+        if (!opt) return;
+        intervalUserPicked = true;
+        selectedInterval = opt.days;
+        if (opt.days != null && opt.days > 1) selectedTimesPerDay = 1;
+        updateIntervalButtons();
+        renderTimesPerDay();
+        refreshSummary();
+      }
+
       function renderRecurrenceChips() {
         if (!recurrenceRow) return;
-        const opts = recurrenceOptionsForKind();
-        recurrenceRow.innerHTML = opts.map(opt =>
-          `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
-        ).join('');
-        recurrenceRow.querySelectorAll('.qt-recur-chip').forEach(btn => {
+        const moreWrap = modal.querySelector('#qt-recur-more-wrap');
+        const moreRow = modal.querySelector('#qt-recurrence-more-row');
+        const moreBtn = modal.querySelector('#qt-recur-more-btn');
+
+        if (selectedKind === 'chore') {
+          const primary = CHORE_RECURRENCE_PRIMARY;
+          const more = CHORE_RECURRENCE_MORE;
+          recurrenceRow.innerHTML = primary.map(opt =>
+            `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
+          ).join('');
+          if (moreWrap && moreRow) {
+            moreWrap.classList.remove('hidden');
+            const inMore = more.some(o => recurrenceOptionMatches(o));
+            if (inMore) showChoreMore = true;
+            moreRow.classList.toggle('hidden', !showChoreMore);
+            moreRow.innerHTML = more.map(opt =>
+              `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
+            ).join('');
+            if (moreBtn) {
+              moreBtn.textContent = showChoreMore ? 'Fewer options' : 'More options';
+              moreBtn.onclick = () => {
+                showChoreMore = !showChoreMore;
+                renderRecurrenceChips();
+              };
+            }
+          }
+        } else {
+          const opts = recurrenceOptionsForKind();
+          recurrenceRow.innerHTML = opts.map(opt =>
+            `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
+          ).join('');
+          moreWrap?.classList.add('hidden');
+        }
+
+        modal.querySelectorAll('.qt-recur-chip').forEach(btn => {
           btn.onclick = () => {
-            const list = recurrenceOptionsForKind();
+            const list = selectedKind === 'chore'
+              ? CHORE_RECURRENCE_ORDERED
+              : recurrenceOptionsForKind();
             const opt = list.find(o => o.key === btn.dataset.intervalKey)
               || TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
-            if (!opt) return;
-            intervalUserPicked = true;
-            selectedInterval = opt.days;
-            // Keep current kind (habit or chore) — don't force chore
-            updateIntervalButtons();
-            refreshSummary();
+            pickRecurrenceOpt(opt);
           };
         });
         updateIntervalButtons();
+        renderTimesPerDay();
       }
 
       function updateIntervalButtons() {
-        const opts = recurrenceOptionsForKind();
+        const opts = selectedKind === 'chore' ? CHORE_RECURRENCE_ORDERED : recurrenceOptionsForKind();
         modal.querySelectorAll('.qt-recur-chip').forEach(btn => {
           const opt = opts.find(o => o.key === btn.dataset.intervalKey)
             || TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
           const active = opt && recurrenceOptionMatches(opt);
           btn.classList.toggle('is-active', active);
           btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+      }
+
+      function renderTimesPerDay() {
+        const sec = modal.querySelector('#qt-times-section');
+        const row = modal.querySelector('#qt-times-row');
+        if (!sec || !row) return;
+        const isDaily = (selectedInterval == null || selectedInterval === 1);
+        const show = (selectedKind === 'habit' || selectedKind === 'chore') && isDaily;
+        sec.classList.toggle('hidden', !show);
+        if (!show) return;
+        const options = [
+          { n: 1, label: 'Once' },
+          { n: 2, label: 'Twice' },
+          { n: 3, label: '3 times' }
+        ];
+        row.innerHTML = options.map(o =>
+          `<button type="button" class="qt-times-chip ${selectedTimesPerDay === o.n ? 'is-active' : ''}" data-times="${o.n}">${o.label}</button>`
+        ).join('');
+        row.querySelectorAll('.qt-times-chip').forEach(btn => {
+          btn.onclick = () => {
+            selectedTimesPerDay = parseInt(btn.dataset.times, 10) || 1;
+            renderTimesPerDay();
+            refreshSummary();
+          };
+        });
+      }
+
+      function nearestMinutePreset(mins) {
+        const v = Number(mins) || 15;
+        let best = MINUTE_PRESETS[0].value;
+        let bestDist = Math.abs(v - best);
+        MINUTE_PRESETS.forEach(p => {
+          const d = Math.abs(v - p.value);
+          if (d < bestDist) { best = p.value; bestDist = d; }
+        });
+        return best;
+      }
+
+      function renderMinuteChips() {
+        const row = modal.querySelector('#qt-minutes-row');
+        if (!row || !minutesInput) return;
+        let current = parseInt(minutesInput.value, 10);
+        if (!Number.isFinite(current) || current <= 0) current = 15;
+        current = nearestMinutePreset(current);
+        minutesInput.value = String(current);
+        row.innerHTML = MINUTE_PRESETS.map(p =>
+          `<button type="button" class="qt-min-chip ${Number(minutesInput.value) === p.value ? 'is-active' : ''}" data-min="${p.value}">${p.label}</button>`
+        ).join('');
+        row.querySelectorAll('.qt-min-chip').forEach(btn => {
+          btn.onclick = () => {
+            minutesInput.value = btn.dataset.min;
+            renderMinuteChips();
+            refreshSummary();
+          };
         });
       }
 
@@ -9914,11 +10318,11 @@
         });
         if (kindHint) {
           if (selectedKind === 'task') {
-            kindHint.textContent = 'Appears on Today until you finish it. No streak.';
+            kindHint.textContent = 'A one-time to-do that leaves Today when you finish it.';
           } else if (selectedKind === 'habit') {
-            kindHint.textContent = 'Repeats on your schedule and builds a streak when you complete it. Example: swim 2× / week.';
+            kindHint.textContent = 'Something you return to on purpose — builds a streak. Example: walk daily, or feed the dogs twice a day.';
           } else {
-            kindHint.textContent = 'Repeating chores show on Today when due. Plan ahead in Summary · This Week. No streak pressure.';
+            kindHint.textContent = 'Housework that comes back on a schedule. Shows when due — no streak pressure.';
           }
         }
         const showRecurrence = selectedKind === 'habit' || selectedKind === 'chore';
@@ -9940,7 +10344,7 @@
           if (selectedInterval === 0 || selectedInterval === undefined) selectedInterval = null;
         } else if (kind === 'chore') {
           intervalUserPicked = true;
-          if (selectedInterval == null || selectedInterval === 0 || selectedInterval === 1) selectedInterval = 7;
+          if (selectedInterval === 0 || selectedInterval === undefined) selectedInterval = 7;
         }
         updateKindButtons();
         updateIntervalButtons();
@@ -9967,7 +10371,8 @@
         const inf = inferTaskDefaults(title);
         if (!isEdit) {
           selectedDiff = inf.difficulty;
-          minutesInput.value = inf.est_minutes;
+          minutesInput.value = nearestMinutePreset(inf.est_minutes || 15);
+          if (typeof renderMinuteChips === 'function') renderMinuteChips();
           if (!intervalUserPicked) {
             if (inf.interval_days === null && /\b(a day|per day|daily|every day|each day)\b/i.test(title)) {
               intervalUserPicked = true;
@@ -9987,9 +10392,13 @@
       }
 
       function formatHabitFreqLabel(interval) {
-        if (interval == null || interval === 1) return 'Daily habit';
-        if (interval === 2) return '3× / week habit';
-        if (interval === 3) return '2× / week habit';
+        if (interval == null || interval === 1) {
+          if (selectedTimesPerDay >= 3) return '3 times a day habit';
+          if (selectedTimesPerDay === 2) return 'Twice a day habit';
+          return 'Daily habit';
+        }
+        if (interval === 2) return '3 times a week habit';
+        if (interval === 3) return 'Twice a week habit';
         if (interval === 7) return 'Weekly habit';
         return formatIntervalLabel(interval) + ' habit';
       }
@@ -10002,8 +10411,12 @@
         let freq = 'One-time task';
         if (selectedKind === 'habit') freq = formatHabitFreqLabel(selectedInterval);
         else if (selectedKind === 'chore') {
-          if (selectedInterval === 2) freq = '3× / week chore';
-          else if (selectedInterval === 3) freq = '2× / week chore';
+          if (selectedInterval == null || selectedInterval === 1) {
+            freq = selectedTimesPerDay >= 2
+              ? `${selectedTimesPerDay === 2 ? 'Twice' : selectedTimesPerDay + ' times'} a day chore`
+              : 'Daily chore';
+          } else if (selectedInterval === 2) freq = '3 times a week chore';
+          else if (selectedInterval === 3) freq = 'Twice a week chore';
           else freq = formatIntervalLabel(selectedInterval || 7) + ' chore';
         } else if (isSchedulingTaskTitle(title)) freq = 'One-time';
         const tag = isLibrary ? ' · tagged Personal' : '';
@@ -10061,9 +10474,13 @@
           goalInputMain.value = editSource.target_value;
           goalInput.value = editSource.target_value;
         }
+      } else {
+        minutesInput.value = nearestMinutePreset(inferred.est_minutes || 15);
       }
       updateKindButtons();
       updateIntervalButtons();
+      renderMinuteChips();
+      renderTimesPerDay();
       refreshGoalField();
 
       modal.querySelectorAll('.qt-kind-chip').forEach(btn => {
@@ -10099,9 +10516,12 @@
             interval = null;
           }
         } else {
-          interval = (intervalUserPicked && selectedInterval != null && selectedInterval > 1)
-            ? selectedInterval
-            : (inf.interval_days > 1 ? inf.interval_days : 7);
+          // chore — allow daily (null) or multi-day cadence
+          if (intervalUserPicked) {
+            interval = selectedInterval === 0 ? 7 : selectedInterval;
+          } else {
+            interval = inf.interval_days > 1 ? inf.interval_days : 7;
+          }
         }
         const trackStreak = selectedKind === 'habit';
         const isRecurring = interval != null && interval !== 0;
@@ -10118,6 +10538,13 @@
           librarySection: (mode === 'library' || isRecurring) ? 'Personal' : undefined,
           trackStreak
         };
+        if ((selectedKind === 'habit' || selectedKind === 'chore')
+            && (interval == null || interval === 1)
+            && selectedTimesPerDay > 1) {
+          task.times_per_day = selectedTimesPerDay;
+        } else {
+          delete task.times_per_day;
+        }
         if (inf.unit || editSource?.unit) {
           const activeGoal = getActiveGoalInput();
           const unit = inf.unit || editSource?.unit;
@@ -10653,7 +11080,7 @@
           <div class="font-semibold text-lg text-center text-harbor-text mb-2">You've hit the ${MAX_MEAL_PRESETS}-recipe limit</div>
           <p class="text-harbor-muted text-xs leading-relaxed mb-4 text-center">
             Harbor caps grocery meal shortcuts at <strong class="text-harbor-text">${MAX_MEAL_PRESETS} recipes</strong> so the chip row stays quick to scroll and tap on your phone.
-            Your <strong class="text-harbor-text">master grocery list</strong> is unlimited — only these meal presets are capped.
+            Your <strong class="text-harbor-text">shopping list</strong> is unlimited — only these meal presets are capped.
           </p>
           <p class="text-[10px] text-harbor-primary-light text-center mb-4">
             Delete one you don't use in Manage, then add your new recipe.
@@ -10744,7 +11171,7 @@
         const id = 'meal-custom-' + Date.now();
         state.mealPresets.push({
           id,
-          label: name.startsWith('🍽') ? name : `🍽 ${name}`,
+          label: String(name || '').replace(/^🍽\s*/, ''),
           effort: selectedEffort,
           items,
           isCustom: true
@@ -10753,6 +11180,65 @@
         modal.remove();
         renderGrocery();
         showToast(`"${name}" added to recipes`);
+      };
+    }
+
+
+    function showEditMealPresetModal(presetId) {
+      const presets = ensureMealPresets();
+      const preset = presets.find(p => p.id === presetId);
+      if (!preset) {
+        showToast('Recipe not found', 'warn');
+        return;
+      }
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
+      const itemsText = (preset.items || []).join('\n');
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[85vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="font-semibold text-lg text-harbor-text">Edit Recipe</div>
+              <div class="text-[10px] text-harbor-muted">Update name, notes, and ingredients</div>
+            </div>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
+          </div>
+          <label class="block text-[10px] text-harbor-muted mb-1">Name</label>
+          <input id="mp-edit-name" type="text" value="${escapeBriefHtml(preset.label || '')}"
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-3 text-harbor-text">
+          <label class="block text-[10px] text-harbor-muted mb-1">Recipe note</label>
+          <input id="mp-edit-recipe" type="text" value="${escapeBriefHtml(preset.recipe || '')}" placeholder="Optional short description"
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-3 text-harbor-text">
+          <label class="block text-[10px] text-harbor-muted mb-1">Ingredients (one per line)</label>
+          <textarea id="mp-edit-items" rows="8"
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-3 text-harbor-text text-xs leading-relaxed">${escapeBriefHtml(itemsText)}</textarea>
+          <button type="button" id="mp-edit-save" class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Save recipe</button>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.querySelector('#mp-edit-save').onclick = () => {
+        const name = (modal.querySelector('#mp-edit-name')?.value || '').trim();
+        if (!name) { showToast('Enter a recipe name', 'warn'); return; }
+        const recipe = (modal.querySelector('#mp-edit-recipe')?.value || '').trim();
+        const items = (modal.querySelector('#mp-edit-items')?.value || '')
+          .split(/\n/)
+          .map(s => s.trim())
+          .filter(Boolean);
+        if (!items.length) { showToast('Add at least one ingredient', 'warn'); return; }
+        const idx = state.mealPresets.findIndex(p => p.id === presetId);
+        if (idx < 0) { showToast('Recipe not found', 'warn'); return; }
+        state.mealPresets[idx] = {
+          ...state.mealPresets[idx],
+          label: name.replace(/^🍽\s*/, ''),
+          recipe: recipe || undefined,
+          items,
+          isCustom: state.mealPresets[idx].isCustom || !state.mealPresets[idx].weekday
+        };
+        saveState();
+        modal.remove();
+        renderGrocery();
+        showManageMealPresetsModal();
+        showToast(`Updated "${name}"`);
       };
     }
 
@@ -10793,8 +11279,13 @@
             <div class="font-medium text-sm truncate">${p.dayShort ? `${p.dayShort} · ` : ''}${p.label}</div>
             <div class="text-[10px] text-harbor-muted">${p.recipe ? `${p.recipe} · ` : ''}${getMealEffortLabel(p.effort)} · ${p.items.length} ingredients</div>
           </div>
+          <button type="button" data-id="${p.id}" class="mp-edit text-[10px] font-semibold text-harbor-primary-light px-2">Edit</button>
           <button type="button" data-id="${p.id}" class="mp-delete text-rose-400 text-xs font-medium px-2">Delete</button>
         `;
+        row.querySelector('.mp-edit').onclick = () => {
+          modal.remove();
+          showEditMealPresetModal(p.id);
+        };
         row.querySelector('.mp-delete').onclick = () => {
           removeMealPreset(p.id);
           modal.remove();
@@ -10835,7 +11326,7 @@
       renderGrocery();
       renderTodayFeed();
       updateSmartBanner();
-      showToast(`Added to master list: ${item.name}`);
+      showToast(`Added to shopping list: ${item.name}`);
       return item;
     }
 
@@ -10879,7 +11370,7 @@
         <div class="library-filters">
           <button type="button" onclick="selectMealGroceryList(null)"
             class="meal-grocery-chip px-3 py-1.5 rounded-full border text-xs font-semibold ${!activeMeal ? 'is-active border-harbor-primary text-harbor-text' : 'border-harbor-border bg-harbor-raised text-harbor-muted'}">
-            Master
+            Shopping list
           </button>
           ${visible.map(p => `
             <button type="button" onclick="selectMealGroceryList('${p.id}')"
@@ -13355,11 +13846,13 @@
 
     function getSubscriptionManageUrl(sub) {
       if (!sub) return null;
-      if (sub.manageUrl) return sub.manageUrl;
       const preset = resolveSubscriptionPreset(sub);
+      // Prefer provider home/login so user can sign in, then cancel
+      if (preset?.homeUrl) return preset.homeUrl;
+      if (sub.homeUrl) return sub.homeUrl;
+      if (sub.manageUrl) return sub.manageUrl;
       if (preset?.manageUrl) return preset.manageUrl;
-      // Safe fallback: search only (no auto-open of random domains)
-      const q = encodeURIComponent(`cancel ${sub.name} subscription`);
+      const q = encodeURIComponent(`${sub.name} login cancel subscription`);
       return `https://www.google.com/search?q=${q}`;
     }
 
@@ -13423,7 +13916,7 @@
         renderTasks();
         updateSmartBanner();
         close();
-        showToast(`Opened cancel page · ${sub.name} marked inactive`);
+        showToast(`Opened ${sub.name} · cancel in your account, then you’re set`);
       });
       modal.querySelector('[data-cancel-later]')?.addEventListener('click', () => {
         createSubscriptionCancelTask(sub);
@@ -13971,6 +14464,15 @@
         <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove task"><i class="fa-solid fa-trash-can"></i> Delete</button>
       `;
 
+      const timesNeed = typeof getTimesPerDay === 'function' ? getTimesPerDay(habit) : 1;
+      const timesDone = typeof countCompletionsOnDate === 'function' ? countCompletionsOnDate(habit.id, todayStr()) : 0;
+      const multiProgress = timesNeed > 1
+        ? `<span class="text-harbor-primary-light text-xs px-1.5 rounded bg-harbor-primary/15 font-semibold tabular-nums">${timesDone}/${timesNeed} today</span>`
+        : '';
+      const freqChip = timesNeed > 1
+        ? (timesNeed === 2 ? 'Twice a day' : `${timesNeed} times a day`)
+        : (isRecurring ? formatIntervalLabel(habit.interval_days) : '');
+
       const contentHtml = `
         <div onclick="completeHabit('${habit.id}', event)" class="task-complete-hit touch-target w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-harbor-border active:border-harbor-primary flex items-center justify-center text-xl">
           <i class="fa-regular fa-circle text-harbor-muted"></i>
@@ -13981,7 +14483,8 @@
             ${habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))
               ? `<span class="text-sky-300 text-xs px-1.5 rounded bg-sky-900/40 font-semibold">Pro booking</span>`
               : ''}
-            ${isRecurring ? `<span class="text-harbor-primary-light/80 text-xs px-1.5 rounded bg-harbor-primary/15">${formatIntervalLabel(habit.interval_days)}</span>` : ''}
+            ${freqChip ? `<span class="text-harbor-primary-light/80 text-xs px-1.5 rounded bg-harbor-primary/15">${freqChip}</span>` : ''}
+            ${multiProgress}
             ${isOneOffTask(habit) && !(habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))) ? `<span class="text-harbor-muted text-xs px-1.5 rounded bg-harbor-raised">One-time</span>` : ''}
             ${dueNote}
             <span class="text-xs text-harbor-muted">${habit.est_minutes} min • ${difficultyLabel} energy</span>
@@ -14275,8 +14778,10 @@
       if (!state.completions[habitId]) state.completions[habitId] = [];
       
       const comps = state.completions[habitId];
-      if (comps.includes(today)) {
-        showToast("Already done today");
+      const need = getTimesPerDay(habit);
+      const doneCount = comps.filter(d => d === today).length;
+      if (doneCount >= need) {
+        showToast(need > 1 ? `All ${need} done for today` : "Already done today");
         return;
       }
       if (getHabitSkips(habitId).includes(today)) {
@@ -14286,6 +14791,7 @@
       
       comps.push(today);
       comps.sort();
+      const afterCount = doneCount + 1;
 
       logMetricOnComplete(habit);
       const pointsEarned = (typeof isCheatDayFundEnabled === 'function' && isCheatDayFundEnabled())
@@ -14321,7 +14827,8 @@
       const ptsMsg = pointsEarned ? ` · +${pointsEarned} toward Harbor Day` : '';
       const soMsg = streakOffHit ? ' · Streak-Off ✓' : '';
       const passMsg = passAwarded ? ' · 🌊 Pass earned' : '';
-      showToast(`Great job! ${habit.title} logged${ptsMsg}${soMsg}${passMsg}`);
+      const multiMsg = need > 1 ? ` (${afterCount}/${need} today)` : '';
+      showToast(`Great job! ${habit.title} logged${multiMsg}${ptsMsg}${soMsg}${passMsg}`);
       maybeAdvanceTutorial('habit-complete');
       
       // Gentle autonomous follow-up
@@ -16865,7 +17372,7 @@
       {
         id: 'today-intro',
         title: 'Today Tab',
-        body: 'Your <strong>daily</strong> tasks gather here each morning. Weekly, monthly, and longer chores stay out of the way — you’ll find them in <strong>Summary</strong> instead.',
+        body: 'Your <strong>daily</strong> tasks gather here each morning. Weekly, monthly, and longer chores stay out of the way — you’ll find them in <strong>Overview</strong> instead.',
         target: () => document.getElementById('tab-today'),
         cardPlacement: 'below',
         prepare: () => switchTab('today')
@@ -16877,16 +17384,6 @@
         target: () => getTutorialTaskCard(),
         waitFor: 'habit-complete',
         interactive: true,
-        prepare: () => switchTab('today')
-      },
-      {
-        id: 'edit-delete-task',
-        title: 'Edit or Delete',
-        body: () => isSwipeMobile()
-          ? '<strong>Swipe a task left</strong> to edit or delete it.'
-          : 'Use <strong>Edit</strong> or <strong>×</strong> on a task card to change or remove it.',
-        target: () => getTutorialTaskCard(),
-        cardPlacement: 'below',
         prepare: () => switchTab('today')
       },
       {
@@ -16907,7 +17404,7 @@
       },
       {
         id: 'projections-tap',
-        title: 'Open Projected Wins',
+        title: 'Open Habit Outlook',
         body: 'Tap a streak with a measurable goal (steps, savings, pages) to open your forecast below.',
         target: () => getTutorialQuantStreakCard(),
         waitFor: 'projection-open',
@@ -16921,7 +17418,7 @@
       },
       {
         id: 'projections-read',
-        title: 'Projected Wins',
+        title: 'Habit Outlook',
         body: 'This panel gently forecasts where your habit is headed — daily pace, a 30-day outlook, and fun equivalents. Take your time, then tap <strong>Next</strong> when you’re ready.',
         target: () => document.getElementById('projection-panel'),
         cardPlacement: 'above',
@@ -16962,8 +17459,8 @@
       },
       {
         id: 'summary',
-        title: 'Summary',
-        body: 'Tap the glowing <strong>Summary</strong> button at the <strong>bottom right</strong> for your day, week, and month at a glance. Longer tasks, Schedule, bills, and grocery live here so Today stays light.<br><br><span class="text-harbor-primary-light">Browse as long as you like</span>, then tap <strong>Next</strong> when you’re ready.',
+        title: 'Overview',
+        body: 'Tap the glowing <strong>Overview</strong> button at the <strong>bottom right</strong> for your day, week, and month at a glance. Longer tasks, Schedule, bills, and grocery live here so Today stays light.<br><br><span class="text-harbor-primary-light">Browse as long as you like</span>, then tap <strong>Next</strong> when you’re ready.',
         target: () => document.getElementById('summary-launcher'),
         waitFor: 'summary-open',
         // Unlock Next after open — do NOT auto-advance so users can explore Summary first
@@ -18399,12 +18896,12 @@
     // ==================== LIBRARY ====================
     const LIBRARY_FILTER_STYLES = {
       all: { active: 'bg-harbor-primary/90 border-harbor-primary text-white', idle: 'bg-harbor-raised border-harbor-border text-harbor-text' },
-      daily: { active: 'bg-amber-600/90 border-amber-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-amber-200/80' },
-      weekly: { active: 'bg-sky-600/90 border-sky-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-sky-200/80' },
-      maintenance: { active: 'bg-orange-600/90 border-orange-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-orange-200/80' },
-      health: { active: 'bg-rose-600/90 border-rose-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-rose-200/80' },
-      mind: { active: 'bg-violet-600/90 border-violet-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-violet-200/80' },
-      personal: { active: 'bg-pink-600/90 border-pink-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-pink-200/80' }
+      daily: { active: 'bg-amber-600/90 border-amber-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-amber-800' },
+      weekly: { active: 'bg-sky-600/90 border-sky-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-sky-800' },
+      maintenance: { active: 'bg-orange-600/90 border-orange-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-orange-800' },
+      health: { active: 'bg-rose-600/90 border-rose-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-rose-800' },
+      mind: { active: 'bg-violet-600/90 border-violet-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-violet-800' },
+      personal: { active: 'bg-pink-600/90 border-pink-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-pink-800' }
     };
 
     function switchLibraryFilter(filterId) {
@@ -20245,6 +20742,12 @@
     }
 
     function renderStreakOffPanel() {
+      // Streak-Offs removed from UI — keep function as no-op for callers
+      const panel = document.getElementById('streak-off-panel');
+      if (panel) { panel.innerHTML = ''; panel.classList.add('hidden'); }
+      return;
+      // legacy below (unreachable)
+
       const el = document.getElementById('streak-off-panel');
       if (!el) {
         console.warn('[Harbor] streak-off-panel missing from DOM');
@@ -20993,6 +21496,8 @@
         <div class="app-menu-group">
           ${appMenuItemHtml('profile', 'fa-regular fa-user', 'Profile', 'Name, metrics, and home base')}
           ${appMenuItemHtml('household', 'fa-solid fa-people-group', 'Household', 'Spouse, kids, and event colors')}
+          ${appMenuItemHtml('export-profile', 'fa-solid fa-file-export', 'Share Profile', 'Export a backup for a spouse or new device')}
+          ${appMenuItemHtml('import-profile', 'fa-solid fa-file-import', 'Import Profile', 'Load a Harbor backup file')}
         </div>
 
         <div class="app-menu-section-label">Preferences</div>
@@ -21000,16 +21505,9 @@
           ${appMenuItemHtml('settings', 'fa-solid fa-sliders', 'Settings', 'Theme, features, and calendar', { primary: true })}
         </div>
 
-        <div class="app-menu-section-label">Share &amp; Privacy</div>
+        <div class="app-menu-section-label">Privacy</div>
         <div class="app-menu-group">
-          ${appMenuItemHtml('export-profile', 'fa-solid fa-file-export', 'Export Profile', 'Backup for a spouse or a new device')}
-          ${appMenuItemHtml('import-profile', 'fa-solid fa-file-import', 'Import Profile', 'Load a Harbor backup file')}
           ${appMenuItemHtml('privacy', 'fa-solid fa-shield-halved', 'Privacy', 'How your data stays on this device')}
-        </div>
-
-        <div class="app-menu-section-label">Crew</div>
-        <div class="app-menu-group">
-          ${appMenuItemHtml('streakoff', 'fa-solid fa-anchor', 'Streak-Offs', 'Challenge friends on the Streaks tab')}
         </div>
 
         <div class="app-menu-section-label">Help</div>
@@ -21038,13 +21536,6 @@
       else if (action === 'household') showHouseholdProfilesModal();
       else if (action === 'overview') showFeatureOverview();
       else if (action === 'install') promptPwaInstall();
-      else if (action === 'streakoff') {
-        switchTab('streaks');
-        setTimeout(() => {
-          document.getElementById('streak-off-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          showToast('Streak-Offs live on the Streaks tab');
-        }, 120);
-      }
       else if (action === 'tutorial') {
         startAppTutorial();
         showToast('Starting app tour');
@@ -21076,7 +21567,7 @@
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-cart-shopping text-emerald-400 mr-1.5"></i>Life → Grocery, Bills, Subscriptions</h4>
-              <p><strong class="text-harbor-text">Grocery:</strong> your shopping list. <strong class="text-harbor-text">Bills:</strong> due dates and paid status. <strong class="text-harbor-text">Subscriptions:</strong> Netflix, gym, and more — so you always know what you’re paying for.</p>
+              <p><strong class="text-harbor-text">Groceries:</strong> your shopping list and dinner shortcuts. <strong class="text-harbor-text">Bills:</strong> due dates and paid status. <strong class="text-harbor-text">Subscriptions:</strong> Netflix, gym, and more — so you always know what you’re paying for.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-fire text-orange-400 mr-1.5"></i>Streaks</h4>
@@ -21505,35 +21996,10 @@
                 <h3 id="settings-sec-you" class="settings-section-title">1 · You</h3>
               </div>
               <div class="settings-card">
-                <div class="settings-row">
-                  <div class="settings-row-copy">
-                    <div class="settings-row-title">Profile</div>
-                    <div class="settings-row-desc">Name, body metrics, and home base</div>
-                  </div>
-                  <button type="button" class="settings-row-action" onclick="this.closest('.fixed').remove(); showUserProfile()">
-                    Open <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
-                  </button>
-                </div>
-                <div class="settings-row">
-                  <div class="settings-row-copy">
-                    <div class="settings-row-title">Household</div>
-                    <div class="settings-row-desc">Spouse, kids, and color-coded events</div>
-                  </div>
-                  <button type="button" class="settings-row-action" onclick="this.closest('.fixed').remove(); showHouseholdProfilesModal()">
-                    Manage <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
-                  </button>
-                </div>
                 <div class="settings-card-block">
-                  <div class="settings-row-title">Share Profile</div>
-                  <div class="settings-row-desc">Export a backup so a spouse can import it and match schedules.</div>
-                  <div class="settings-inline-actions">
-                    <button type="button" class="settings-btn-secondary" onclick="exportHarborProfile()">
-                      <i class="fa-solid fa-file-export mr-1 text-harbor-primary-light" aria-hidden="true"></i>Export
-                    </button>
-                    <button type="button" class="settings-btn-primary" onclick="this.closest('.fixed').remove(); triggerHarborProfileImport()">
-                      <i class="fa-solid fa-file-import mr-1" aria-hidden="true"></i>Import
-                    </button>
-                  </div>
+                  <p class="settings-help-text">
+                    Profile, Household, and Share Profile live in the <strong class="text-harbor-text">app menu</strong> (☰). This screen is for look, features, and calendar tools.
+                  </p>
                 </div>
               </div>
             </section>
