@@ -4426,8 +4426,47 @@
       box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25);
     }
     .cheat-treat-btn.is-selected {
-      border-color: rgba(251, 191, 36, 0.65);
-      background: rgba(251, 191, 36, 0.12);
+      border-color: rgba(47, 155, 140, 0.65);
+      background: rgba(47, 155, 140, 0.14);
+    }
+
+    .harbor-mode-btn.is-selected {
+      border-color: rgba(47, 155, 140, 0.65);
+      background: rgba(47, 155, 140, 0.14);
+    }
+
+    .harbor-goal-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: rgb(var(--harbor-text));
+      white-space: nowrap;
+    }
+
+    .harbor-goal-chip.is-selected {
+      border-color: rgba(47, 155, 140, 0.55);
+      background: rgba(47, 155, 140, 0.16);
+      color: rgb(var(--harbor-primary-light));
+    }
+
+    .harbor-aftercare-btn {
+      font-size: 0.62rem;
+      font-weight: 600;
+      padding: 0.35rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+    }
+
+    .harbor-aftercare-btn:active {
+      opacity: 0.85;
     }
 
     .sub-tier-row.is-selected {
@@ -5786,7 +5825,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v132';
+    const HARBOR_BUILD = 'v133';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -5900,19 +5939,53 @@
     const STREAK_MILESTONE_BONUSES = { 7: 25, 30: 75, 100: 200 };
 
     const CHEAT_DAY_TREATS = [
-      { id: 'coffee', emoji: '☕', label: 'Fancy coffee' },
+      { id: 'coffee', emoji: '☕', label: 'Favorite coffee' },
       { id: 'takeout', emoji: '🍕', label: 'Takeout night' },
-      { id: 'dessert', emoji: '🍰', label: 'Dessert splurge' },
-      { id: 'lazy', emoji: '🛋️', label: 'Lazy evening' },
-      { id: 'screen', emoji: '📺', label: 'Binge watch' },
-      { id: 'nap', emoji: '😴', label: 'Guilt-free nap' }
+      { id: 'sweet', emoji: '🍰', label: 'Something sweet' },
+      { id: 'lazy', emoji: '🛋️', label: 'Soft evening' },
+      { id: 'screen', emoji: '📺', label: 'Watch something easy' },
+      { id: 'nap', emoji: '😴', label: 'Guilt-free nap' },
+      { id: 'walk', emoji: '🚶', label: 'Walk with no goal' },
+      { id: 'early', emoji: '🌙', label: 'Early bedtime' }
+    ];
+
+    // How you spend a Harbor Day — rest is flexible, not one-size-fits-all
+    const HARBOR_CLAIM_MODES = [
+      {
+        id: 'moment',
+        emoji: '✨',
+        label: 'Harbor Moment',
+        short: 'Moment',
+        desc: '30–60 min just for you. Keep Today — protect the treat.'
+      },
+      {
+        id: 'window',
+        emoji: '🌅',
+        label: 'Harbor Window',
+        short: 'Window',
+        desc: 'A soft block of free hours. List stays light, streaks safe.'
+      },
+      {
+        id: 'full',
+        emoji: '⚓',
+        label: 'Full Harbor Day',
+        short: 'Full day',
+        desc: 'Today goes quiet. Rest freely — streaks stay protected.'
+      },
+      {
+        id: 'bank',
+        emoji: '🏦',
+        label: 'Bank for later',
+        short: 'Bank',
+        desc: 'Save a credit for a hard week. Spend it when you need it.'
+      }
     ];
 
     const CHEAT_DAY_RELAX_IDEAS = [
       'Take a walk with no step goal',
       'Read for pleasure — no page count',
       'Call someone you enjoy talking to',
-      'Watch something funny',
+      'Watch something easy and kind',
       'Cook or order comfort food',
       'Stretch, nap, or do nothing at all'
     ];
@@ -6615,6 +6688,8 @@
       if (!state.rewardBank.cheatDayDates) state.rewardBank.cheatDayDates = [];
       if (!state.rewardBank.badges) state.rewardBank.badges = 0;
       if (state.rewardBank.skipToken == null) state.rewardBank.skipToken = 0;
+      if (state.rewardBank.bankedHarborDays == null) state.rewardBank.bankedHarborDays = 0;
+      if (state.rewardBank.goalTreat === undefined) state.rewardBank.goalTreat = null;
       if (!state.feedbackLog) state.feedbackLog = [];
       if (state.rewardBank.cheatDaysUsed != null && state.rewardBank.cheatDownsUsed == null) {
         state.rewardBank.cheatDownsUsed = state.rewardBank.cheatDaysUsed;
@@ -13576,21 +13651,30 @@
       if (!container) return;
       container.innerHTML = '';
 
-      if (typeof isCheatDayActive === 'function' && isCheatDayActive()) {
+      if (typeof isCheatDayActive === 'function' && isCheatDayActive() && typeof isFullHarborDayActive === 'function' && isFullHarborDayActive()) {
         const bank = ensureRewardBank();
         const ideas = CHEAT_DAY_RELAX_IDEAS.slice(0, 4).map(i => `<li class="text-xs text-harbor-muted">${i}</li>`).join('');
+        const aftercare = bank.harborAftercare
+          ? `<div class="text-[10px] text-harbor-primary-light mt-3">Logged: ${bank.harborAftercare === 'good' ? 'it helped' : bank.harborAftercare === 'needed' ? 'you needed it' : 'maybe next time'} — no judgment.</div>`
+          : `<div class="flex flex-wrap gap-1.5 mt-3">
+              <span class="text-[10px] text-harbor-muted w-full mb-0.5">How did it feel? (optional)</span>
+              <button type="button" class="harbor-aftercare-btn" onclick="logHarborAftercare('good')">Felt good</button>
+              <button type="button" class="harbor-aftercare-btn" onclick="logHarborAftercare('needed')">I needed that</button>
+              <button type="button" class="harbor-aftercare-btn" onclick="logHarborAftercare('skipped')">Didn’t take it</button>
+            </div>`;
         container.innerHTML = `
           <div class="cheat-day-today-banner harbor-card rounded-3xl px-4 py-4 mb-3">
             <div class="flex items-center gap-2 mb-2">
-              <span class="text-2xl">${bank.lastTreatEmoji || '🎉'}</span>
+              <span class="text-2xl">${bank.lastTreatEmoji || '⚓'}</span>
               <div>
-                <div class="font-semibold text-harbor-text">Harbor Day — rest freely</div>
-                <div class="text-[10px] text-harbor-muted">Streaks protected · ${bank.lastTreatLabel || 'enjoy your treat'}</div>
+                <div class="font-semibold text-harbor-text">Full Harbor Day — rest freely</div>
+                <div class="text-[10px] text-harbor-muted">Streaks protected · ${bank.lastTreatLabel || 'your treat'}</div>
               </div>
             </div>
-            <div class="text-xs text-harbor-text mb-2">Ideas for today:</div>
+            <div class="text-xs text-harbor-text mb-2">Gentle ideas:</div>
             <ul class="space-y-1 list-disc list-inside">${ideas}</ul>
-            <div class="text-[10px] text-harbor-muted mt-3">Back to normal tomorrow. You can still complete tasks if you want — no pressure.</div>
+            <div class="text-[10px] text-harbor-muted mt-3">Back to normal tomorrow. You can still do tasks if you want — no pressure.</div>
+            ${aftercare}
           </div>`;
         return;
       }
@@ -13598,14 +13682,49 @@
       const sections = buildTodayFeed();
       const hasAny = sections.some(s => s.items.length > 0);
 
+      // Soft banner for Moment / Window — list stays usable
+      let harborSoftBanner = '';
+      if (typeof isCheatDayActive === 'function' && isCheatDayActive()) {
+        const bank = ensureRewardBank();
+        const mode = typeof getActiveHarborMode === 'function' ? getActiveHarborMode() : 'moment';
+        const title = mode === 'window' ? 'Harbor Window' : 'Harbor Moment';
+        const sub = mode === 'window'
+          ? 'A soft free block is yours — list stays if you need it.'
+          : 'Protect 30–60 minutes for yourself.';
+        const aftercare = bank.harborAftercare
+          ? ''
+          : `<div class="flex flex-wrap gap-1.5 mt-2">
+              <button type="button" class="harbor-aftercare-btn" onclick="logHarborAftercare('good')">Felt good</button>
+              <button type="button" class="harbor-aftercare-btn" onclick="logHarborAftercare('needed')">I needed that</button>
+              <button type="button" class="harbor-aftercare-btn" onclick="logHarborAftercare('skipped')">Skipped</button>
+            </div>`;
+        harborSoftBanner = `
+          <div class="cheat-day-today-banner harbor-card rounded-3xl px-4 py-3 mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">${bank.lastTreatEmoji || '✨'}</span>
+              <div class="min-w-0">
+                <div class="font-semibold text-harbor-text text-sm">${title} · ${bank.lastTreatLabel || 'your treat'}</div>
+                <div class="text-[10px] text-harbor-muted leading-snug">${sub} Streaks stay protected.</div>
+              </div>
+            </div>
+            ${aftercare}
+          </div>`;
+      }
+
       if (!hasAny) {
-        container.innerHTML = `
+        container.innerHTML = harborSoftBanner + `
           <div onclick="showQuickTaskModal({ mode: 'habit' })" class="harbor-empty empty-state cursor-pointer active:scale-[0.99] transition-transform">
             <i class="fa-solid fa-plus-circle text-3xl text-harbor-primary mb-2"></i>
             <div class="font-medium">No tasks yet</div>
             <div class="text-xs text-harbor-muted mt-1">Tap here to add a task, or browse the Library tab.</div>
           </div>`;
         return;
+      }
+
+      if (harborSoftBanner) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = harborSoftBanner;
+        while (wrap.firstChild) container.appendChild(wrap.firstChild);
       }
 
       sections.forEach(section => {
@@ -13731,7 +13850,7 @@
       }
       if (currentTab === 'streaks') renderRewardBank();
       
-      const ptsMsg = pointsEarned ? ` · +${pointsEarned} pts` : '';
+      const ptsMsg = pointsEarned ? ` · +${pointsEarned} toward Harbor Day` : '';
       const soMsg = streakOffHit ? ' · Streak-Off ✓' : '';
       showToast(`Great job! ${habit.title} logged${ptsMsg}${soMsg}`);
       maybeAdvanceTutorial('habit-complete');
@@ -15898,7 +16017,7 @@
       { id: 'outdoor-rain', reason: 'Outdoor tasks get rain warnings when afternoon showers are likely — reschedule before you get caught in the weather.', cta: 'Check weather', action: 'weather' },
       { id: 'streaks-log', reason: '<strong>Streaks</strong> logs completions over time — tap a habit to see history and how consistent you have been.', cta: 'View streaks', action: 'streaks' },
       { id: 'streaks-projections', reason: 'Open a tracked metric in Streaks for a <strong>30-day projection</strong> — useful for savings goals, steps, or anything you log with a number.', cta: 'See projections', action: 'streaks' },
-      { id: 'cheat-day-fund', reason: '<strong>Harbor Day</strong> on Streaks turns consistent effort into earned rest — fill the meter, then claim a soft day with streaks protected.', cta: 'Harbor Day', action: 'streaks' },
+      { id: 'cheat-day-fund', reason: '<strong>Harbor Day</strong> on Streaks: name a treat, fill the meter with real due tasks, then claim a Moment, Window, Full day, or Bank it for later.', cta: 'Harbor Day', action: 'streaks' },
       { id: 'subscriptions', reason: '<strong>Life → Subscriptions</strong> tracks streaming and services with renewal dates — pause one to auto-add a cancel task on Today.', cta: 'Manage subs', action: 'life-subs' },
       { id: 'sub-tiers', reason: 'When adding a subscription, pick the tier that matches your plan — pricing stays accurate for US tiers and CSV imports snap to the closest match.', cta: 'Add subscription', action: 'life-subs' },
       { id: 'maintenance-pref', reason: 'Your <strong>maintenance style</strong> (DIY, Hire, or Mix) in Settings shapes Library defaults — Schedule pro visits vs do-it-yourself chores.', cta: 'Set preference', action: 'settings' },
@@ -18192,6 +18311,8 @@
       if (!state.rewardBank.cheatDayDates) state.rewardBank.cheatDayDates = [];
       if (!state.rewardBank.badges) state.rewardBank.badges = 0;
       if (state.rewardBank.skipToken == null) state.rewardBank.skipToken = 0;
+      if (state.rewardBank.bankedHarborDays == null) state.rewardBank.bankedHarborDays = 0;
+      if (state.rewardBank.goalTreat === undefined) state.rewardBank.goalTreat = null;
       return state.rewardBank;
     }
 
@@ -18207,6 +18328,50 @@
     function isCheatDayActive() {
       const bank = ensureRewardBank();
       return bank.cheatDayDate === todayStr();
+    }
+
+    /** Full day pauses Today; Moment/Window keep the list with a soft banner. */
+    function getActiveHarborMode() {
+      if (!isCheatDayActive()) return null;
+      return ensureRewardBank().harborMode || 'full';
+    }
+
+    function isFullHarborDayActive() {
+      return getActiveHarborMode() === 'full';
+    }
+
+    function getHarborGoalTreat() {
+      return ensureRewardBank().goalTreat || null;
+    }
+
+    function setHarborGoalTreat(treat) {
+      const bank = ensureRewardBank();
+      bank.goalTreat = treat
+        ? { id: treat.id || 'custom', emoji: treat.emoji || '✨', label: treat.label || 'Something kind' }
+        : null;
+      saveState();
+      renderRewardBank();
+      showToast(treat ? `${treat.emoji || '✨'} Working toward: ${treat.label}` : 'Goal cleared — pick any treat when you claim');
+    }
+
+    function getHarborTreatById(id) {
+      return CHEAT_DAY_TREATS.find(t => t.id === id) || null;
+    }
+
+    function getHarborModeById(id) {
+      return HARBOR_CLAIM_MODES.find(m => m.id === id) || HARBOR_CLAIM_MODES[0];
+    }
+
+    /** Only real due work fills the meter — blocks same-day spam one-offs. */
+    function canEarnHarborPoints(habit) {
+      if (!habit) return false;
+      if (typeof isDueToday === 'function' && !isDueToday(habit)) return false;
+      if (habit.is_preset) return true;
+      if (habit.trackStreak) return true;
+      const added = habit.added_at || (typeof getHabitAddedDate === 'function' ? getHabitAddedDate(habit) : '') || '';
+      if (typeof isOneOffTask === 'function' && isOneOffTask(habit) && added === todayStr()) return false;
+      if (added === todayStr() && !habit.interval_days) return false;
+      return true;
     }
 
     function getCheatDayCost() {
@@ -18268,10 +18433,12 @@
     }
 
     function awardRewardPoints(habit) {
+      if (!canEarnHarborPoints(habit)) return 0;
       const bank = ensureRewardBank();
       const earned = getStreakPointsForCompletion(habit);
       const milestoneBonus = getStreakMilestoneBonus(habit);
       const total = earned + milestoneBonus;
+      if (total <= 0) return 0;
       bank.points += total;
       bank.totalEarned += total;
       bank.lastEarned = total;
@@ -18406,7 +18573,25 @@
         });
       }
       if (isCheatDayActive()) {
-        guides.push({ emoji: '⚓', label: 'Harbor Day', text: 'Today is soft and paused — enjoy the rest ideas; your streaks stay protected.' });
+        const mode = getActiveHarborMode();
+        const modeMeta = getHarborModeById(mode);
+        if (mode === 'full') {
+          guides.push({ emoji: '⚓', label: 'Full Harbor Day', text: 'Today is quiet — rest freely; streaks stay protected.' });
+        } else if (mode === 'moment') {
+          guides.push({ emoji: '✨', label: 'Harbor Moment', text: 'Protect 30–60 minutes for your treat. The list can wait.' });
+        } else if (mode === 'window') {
+          guides.push({ emoji: '🌅', label: 'Harbor Window', text: 'A soft free block is yours — streaks stay safe either way.' });
+        } else {
+          guides.push({ emoji: modeMeta.emoji || '⚓', label: modeMeta.label || 'Harbor Day', text: 'You earned this kindness. Streaks stay protected.' });
+        }
+      }
+      const banked = ensureRewardBank().bankedHarborDays || 0;
+      if (banked > 0) {
+        guides.push({
+          emoji: '🏦',
+          label: `${banked} banked Harbor Day${banked === 1 ? '' : 's'}`,
+          text: 'On Streaks, spend a credit when life gets loud — no need to re-earn first.'
+        });
       }
       return guides;
     }
@@ -18482,24 +18667,90 @@
       setTimeout(() => layer.remove(), 3200);
     }
 
-    function activateCheatDay(treat) {
+    function activateCheatDay(treat, modeId = 'full', opts = {}) {
       const bank = ensureRewardBank();
+      const mode = getHarborModeById(modeId);
       const cost = getCheatDayCost();
       const today = todayStr();
-      bank.points -= cost;
+      const fromBank = !!opts.fromBank;
+
+      if (fromBank) {
+        if ((bank.bankedHarborDays || 0) < 1) {
+          showToast('No banked Harbor Days yet', 'warn');
+          return false;
+        }
+        bank.bankedHarborDays -= 1;
+      } else {
+        if (bank.points < cost) {
+          showToast(`${cost - bank.points} more pts until Harbor Day`, 'warn');
+          return false;
+        }
+        if (getCheatDayCooldownDays() > 0) {
+          showToast(`Harbor Day unlocks in ${getCheatDayCooldownDays()} day${getCheatDayCooldownDays() === 1 ? '' : 's'}`, 'info');
+          return false;
+        }
+        bank.points -= cost;
+        bank.lastCheatDate = today;
+      }
+
       bank.cheatDownsUsed = (bank.cheatDownsUsed || 0) + 1;
-      bank.lastCheatDate = today;
-      bank.cheatDayDate = today;
       bank.lastTreatLabel = treat.label;
       bank.lastTreatEmoji = treat.emoji;
+      bank.lastHarborMode = mode.id;
+      bank.harborAftercare = null;
+
+      if (mode.id === 'bank') {
+        bank.bankedHarborDays = (bank.bankedHarborDays || 0) + 1;
+        bank.cheatDayDate = null;
+        bank.harborMode = null;
+        saveState();
+        showConfetti();
+        renderTasks();
+        renderRewardBank();
+        renderStreaks();
+        updateSmartBanner();
+        showToast(`🏦 Banked for later · ${treat.emoji} ${treat.label} is waiting when you need it`);
+        return true;
+      }
+
+      bank.cheatDayDate = today;
+      bank.harborMode = mode.id;
       if (!bank.cheatDayDates.includes(today)) bank.cheatDayDates.push(today);
+      // Keep goal as memory of what they earned; clear only on full claim if same treat
       saveState();
       showConfetti();
       renderTasks();
       renderRewardBank();
       renderStreaks();
       updateSmartBanner();
-      showToast(`${treat.emoji} Harbor Day — rest freely. Streaks stay protected.`);
+
+      if (mode.id === 'full') {
+        showToast(`${treat.emoji} Full Harbor Day — rest freely. Streaks stay protected.`);
+      } else if (mode.id === 'moment') {
+        showToast(`${treat.emoji} Harbor Moment — protect time for ${treat.label}.`);
+      } else {
+        showToast(`${treat.emoji} Harbor Window — a soft free block is yours.`);
+      }
+      return true;
+    }
+
+    function spendBankedHarborDay() {
+      const bank = ensureRewardBank();
+      if ((bank.bankedHarborDays || 0) < 1) {
+        showToast('No banked Harbor Days yet', 'info');
+        return;
+      }
+      showCheatDayRedeemModal({ fromBank: true });
+    }
+
+    function logHarborAftercare(feeling) {
+      const bank = ensureRewardBank();
+      if (!isCheatDayActive()) return;
+      bank.harborAftercare = feeling;
+      saveState();
+      renderTasks();
+      const labels = { good: 'Glad it helped', needed: 'You needed that', skipped: 'Maybe next time' };
+      showToast(labels[feeling] || 'Noted — no pressure');
     }
 
     function getRecentDailyPointAverage(days) {
@@ -18541,78 +18792,145 @@
       const bank = ensureRewardBank();
       const cost = getCheatDayCost();
       const cooldown = getCheatDayCooldownDays();
+      const goal = getHarborGoalTreat();
 
       if (cooldown > 0) {
-        const lastTreat = bank.lastTreatLabel ? ` Last treat: ${bank.lastTreatEmoji || ''} ${bank.lastTreatLabel}.` : '';
+        const lastTreat = bank.lastTreatLabel ? ` Last: ${bank.lastTreatEmoji || ''} ${bank.lastTreatLabel}.` : '';
         return `Rest and recharge ${cooldown} more day${cooldown === 1 ? '' : 's'} before the next Harbor Day.${lastTreat}`;
       }
       const remaining = Math.max(0, cost - bank.points);
-      if (remaining === 0) return '⚓ Meter full — claim your Harbor Day whenever you’re ready.';
+      const goalBit = goal ? ` toward ${goal.emoji} ${goal.label}` : '';
+      if (remaining === 0) {
+        return goal
+          ? `⚓ Ready — claim your Harbor Day for ${goal.emoji} ${goal.label} whenever you like.`
+          : '⚓ Meter full — claim a Harbor Day (Moment, Window, Full day, or Bank) whenever you’re ready.';
+      }
       const pace = getCheatDayPaceEstimate();
       const passCost = HARBOR_PASS_COST || 150;
       const passLine = bank.points < passCost
-        ? `Pass Once unlocks at ${passCost} pts`
-        : 'Pass Once available anytime · or keep saving for Harbor Day';
-      return `${passLine} · ${remaining} pts to Harbor Day (~${pace.days} day${pace.days === 1 ? '' : 's'} at your pace)`;
+        ? `Pass Once at ${passCost} pts`
+        : 'Pass Once available';
+      return `${passLine} · ~${pace.days} day${pace.days === 1 ? '' : 's'} to Harbor Day${goalBit} at your pace`;
     }
 
-    function showCheatDayRedeemModal() {
+    function showCheatDayRedeemModal(options = {}) {
       const bank = ensureRewardBank();
       const cost = getCheatDayCost();
       const cooldown = getCheatDayCooldownDays();
+      const fromBank = !!options.fromBank;
 
-      if (cooldown > 0) {
-        showToast(`Harbor Day unlocks in ${cooldown} day${cooldown === 1 ? '' : 's'}`);
-        return;
-      }
-      if (bank.points < cost) {
-        showToast(`${cost - bank.points} more pts until Harbor Day`);
-        return;
+      if (fromBank) {
+        if ((bank.bankedHarborDays || 0) < 1) {
+          showToast('No banked Harbor Days yet', 'info');
+          return;
+        }
+      } else {
+        if (cooldown > 0) {
+          showToast(`Harbor Day unlocks in ${cooldown} day${cooldown === 1 ? '' : 's'}`);
+          return;
+        }
+        if (bank.points < cost) {
+          showToast(`${cost - bank.points} more pts until Harbor Day`);
+          return;
+        }
       }
 
+      const goal = getHarborGoalTreat();
       const modal = document.createElement('div');
       modal.id = 'cheat-day-redeem-modal';
-      modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
+      modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[62]';
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm">
-          <div class="text-center mb-4">
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[90vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="text-center mb-3">
             <div class="text-4xl mb-2">⚓</div>
-            <div class="font-semibold text-lg text-harbor-text">You earned a Harbor Day</div>
-            <div class="text-xs text-harbor-muted mt-1">Rest freely today — streaks stay protected. Pick a gentle treat:</div>
+            <div class="font-semibold text-lg text-harbor-text">${fromBank ? 'Spend a banked Harbor Day' : 'You earned a Harbor Day'}</div>
+            <div class="text-xs text-harbor-muted mt-1 leading-relaxed">
+              ${fromBank
+                ? 'Use a saved credit — pick how rest fits today.'
+                : 'This is a kindness you earned. Pick how it fits your life, then choose the treat.'}
+            </div>
           </div>
-          <div class="grid grid-cols-2 gap-2 mb-4" id="cheat-treat-grid">
-            ${CHEAT_DAY_TREATS.map(t => `
-              <button type="button" data-treat-id="${t.id}" class="cheat-treat-btn px-3 py-3 rounded-2xl border border-harbor-border bg-harbor-raised text-left active:opacity-90">
-                <div class="text-xl mb-1">${t.emoji}</div>
-                <div class="text-xs font-semibold text-harbor-text">${t.label}</div>
+
+          <div class="text-[10px] uppercase tracking-wider text-harbor-primary-light font-semibold mb-1.5">How do you want it?</div>
+          <div class="space-y-1.5 mb-4" id="harbor-mode-grid">
+            ${HARBOR_CLAIM_MODES.filter(m => fromBank ? m.id !== 'bank' : true).map(m => `
+              <button type="button" data-mode-id="${m.id}" class="harbor-mode-btn w-full text-left px-3 py-2.5 rounded-2xl border border-harbor-border bg-harbor-raised active:opacity-90">
+                <div class="flex items-start gap-2">
+                  <span class="text-lg leading-none mt-0.5">${m.emoji}</span>
+                  <div class="min-w-0">
+                    <div class="text-[12px] font-semibold text-harbor-text">${m.label}</div>
+                    <div class="text-[10px] text-harbor-muted leading-snug">${m.desc}</div>
+                  </div>
+                </div>
               </button>
             `).join('')}
           </div>
-          <button type="button" id="cheat-redeem-confirm" disabled
+
+          <div class="text-[10px] uppercase tracking-wider text-harbor-primary-light font-semibold mb-1.5">Your treat</div>
+          <div class="grid grid-cols-2 gap-2 mb-4" id="cheat-treat-grid">
+            ${CHEAT_DAY_TREATS.map(t => `
+              <button type="button" data-treat-id="${t.id}" class="cheat-treat-btn px-3 py-2.5 rounded-2xl border border-harbor-border bg-harbor-raised text-left active:opacity-90 ${goal && goal.id === t.id ? 'is-selected' : ''}">
+                <div class="text-xl mb-0.5">${t.emoji}</div>
+                <div class="text-[11px] font-semibold text-harbor-text leading-snug">${t.label}</div>
+              </button>
+            `).join('')}
+          </div>
+
+          <button type="button" id="cheat-redeem-confirm"
             class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
-            Claim Harbor Day (${cost} pts)
+            ${fromBank ? 'Use banked credit' : `Claim · ${cost} pts`}
           </button>
+          <button type="button" onclick="this.closest('#cheat-day-redeem-modal').remove()" class="w-full mt-2 py-2.5 rounded-2xl text-xs text-harbor-muted">Not now</button>
         </div>
       `;
       document.body.appendChild(modal);
 
-      let selectedTreat = null;
+      let selectedTreat = goal && getHarborTreatById(goal.id)
+        ? getHarborTreatById(goal.id)
+        : (goal ? { id: goal.id, emoji: goal.emoji, label: goal.label } : null);
+      let selectedMode = fromBank ? 'moment' : 'full';
+
       const confirmBtn = modal.querySelector('#cheat-redeem-confirm');
+      const syncConfirm = () => {
+        confirmBtn.disabled = !(selectedTreat && selectedMode);
+        if (!selectedTreat || !selectedMode) return;
+        const mode = getHarborModeById(selectedMode);
+        if (fromBank) {
+          confirmBtn.textContent = `Use credit · ${mode.short} · ${selectedTreat.emoji} ${selectedTreat.label}`;
+        } else if (selectedMode === 'bank') {
+          confirmBtn.textContent = `Bank for later · ${selectedTreat.emoji} ${selectedTreat.label} · ${cost} pts`;
+        } else {
+          confirmBtn.textContent = `Claim ${mode.short} · ${selectedTreat.emoji} ${selectedTreat.label} · ${cost} pts`;
+        }
+      };
+
+      modal.querySelectorAll('.harbor-mode-btn').forEach(btn => {
+        if (btn.dataset.modeId === selectedMode) btn.classList.add('is-selected');
+        btn.onclick = () => {
+          modal.querySelectorAll('.harbor-mode-btn').forEach(b => b.classList.remove('is-selected'));
+          btn.classList.add('is-selected');
+          selectedMode = btn.dataset.modeId;
+          syncConfirm();
+        };
+      });
 
       modal.querySelectorAll('.cheat-treat-btn').forEach(btn => {
+        if (selectedTreat && btn.dataset.treatId === selectedTreat.id) btn.classList.add('is-selected');
         btn.onclick = () => {
           modal.querySelectorAll('.cheat-treat-btn').forEach(b => b.classList.remove('is-selected'));
           btn.classList.add('is-selected');
           selectedTreat = CHEAT_DAY_TREATS.find(t => t.id === btn.dataset.treatId) || null;
-          confirmBtn.disabled = !selectedTreat;
+          syncConfirm();
         };
       });
 
+      syncConfirm();
       confirmBtn.onclick = () => {
-        if (!selectedTreat) return;
+        if (!selectedTreat || !selectedMode) return;
         modal.remove();
-        activateCheatDay(selectedTreat);
+        activateCheatDay(selectedTreat, selectedMode, { fromBank });
       };
     }
 
@@ -18627,7 +18945,7 @@
       if (!isCheatDayFundEnabled()) {
         panel.innerHTML = `
           <div class="bg-harbor-surface/60 border border-harbor-border/60 rounded-3xl p-4 text-center">
-            <div class="text-xs text-harbor-muted">Harbor Day is off — enable in Settings if you want earned rest from streaks.</div>
+            <div class="text-xs text-harbor-muted">Harbor Day is off — enable in Settings if you want earned rest from real progress.</div>
           </div>`;
         return;
       }
@@ -18637,14 +18955,21 @@
       const cooldown = getCheatDayCooldownDays();
       const pct = Math.min(100, Math.round((bank.points / cost) * 100));
       const canRedeem = canRedeemCheatDay();
+      const goal = getHarborGoalTreat();
+      const banked = bank.bankedHarborDays || 0;
       const passReward = CHEAT_FUND_SMALL_REWARDS.find(r => r.id === 'skip') || { id: 'skip', cost: 150, emoji: '🌊', label: 'Pass Once' };
       const passReady = bank.points >= passReward.cost;
       const passPct = Math.min(99, Math.round((passReward.cost / cost) * 100));
       const milestoneMarkers = `<span class="cheat-fund-milestone ${passReady ? 'is-passed' : ''}" style="left:${passPct}%" title="Pass Once"></span>`;
 
+      const goalChips = CHEAT_DAY_TREATS.map(t => {
+        const selected = goal && goal.id === t.id;
+        return `<button type="button" class="harbor-goal-chip ${selected ? 'is-selected' : ''}" data-goal-id="${t.id}">${t.emoji} ${t.label}</button>`;
+      }).join('');
+
       const passHtml = `
         <button type="button" onclick="redeemSmallReward('skip')"
-          class="w-full mb-3 px-3 py-2.5 rounded-2xl border text-left transition-colors ${passReady
+          class="w-full mb-2.5 px-3 py-2.5 rounded-2xl border text-left transition-colors ${passReady
             ? 'border-harbor-primary/45 bg-harbor-primary/12 active:opacity-90'
             : 'border-harbor-border bg-harbor-raised/60 opacity-80'}"
           title="${passReward.desc || 'Pass an easy task once'}"
@@ -18653,13 +18978,27 @@
             <span class="text-lg leading-none" aria-hidden="true">${passReward.emoji}</span>
             <div class="flex-1 min-w-0">
               <div class="text-[11px] font-semibold text-harbor-text">Pass Once</div>
-              <div class="text-[9px] text-harbor-muted leading-snug">Skip one easy task without guilt · ${passReward.cost} pts</div>
+              <div class="text-[9px] text-harbor-muted leading-snug">One easy task, no guilt · ${passReward.cost} pts</div>
             </div>
             <div class="text-[10px] font-semibold tabular-nums ${passReady ? 'text-harbor-primary-light' : 'text-harbor-muted'}">
               ${passReady ? 'Claim' : `${Math.max(0, passReward.cost - bank.points)} pts`}
             </div>
           </div>
         </button>`;
+
+      const bankedHtml = banked > 0
+        ? `<button type="button" onclick="spendBankedHarborDay()"
+            class="w-full mb-2.5 px-3 py-2.5 rounded-2xl border border-amber-500/35 bg-amber-500/10 text-left active:opacity-90">
+            <div class="flex items-center gap-2.5">
+              <span class="text-lg leading-none">🏦</span>
+              <div class="flex-1 min-w-0">
+                <div class="text-[11px] font-semibold text-harbor-text">${banked} banked Harbor Day${banked === 1 ? '' : 's'}</div>
+                <div class="text-[9px] text-harbor-muted leading-snug">Spend a credit when life gets loud</div>
+              </div>
+              <div class="text-[10px] font-semibold text-amber-300">Use</div>
+            </div>
+          </button>`
+        : '';
 
       const activeGuides = getActiveRewardGuides();
       const activeGuidesHtml = activeGuides.length
@@ -18678,45 +19017,75 @@
           </div>`
         : '';
 
+      const goalHeadline = goal
+        ? `<div class="text-[12px] font-semibold text-harbor-text mb-0.5">${goal.emoji} Working toward ${goal.label}</div>
+           <div class="text-[10px] text-harbor-muted mb-2 leading-snug">Real due tasks fill this meter — not random one-offs you invent today.</div>`
+        : `<div class="text-[12px] font-semibold text-harbor-text mb-0.5">What are you earning?</div>
+           <div class="text-[10px] text-harbor-muted mb-2 leading-snug">Name a treat now so the grind feels real. Claim later as a Moment, Window, Full day, or Bank.</div>`;
+
       panel.innerHTML = `
         <div class="bg-harbor-surface border border-harbor-border rounded-3xl p-4 mt-3">
           <div class="flex items-center justify-between mb-2">
             <div class="section-header font-semibold text-harbor-text text-sm">Harbor Day</div>
             <div class="text-xs text-harbor-primary-light font-semibold tabular-nums">${bank.points} pts</div>
           </div>
-          <div class="text-[10px] text-harbor-muted mb-2 leading-snug">Fill the meter by showing up. Unlock a Pass along the way — or keep going for a full Harbor Day of rest.</div>
+          ${goalHeadline}
+          <div class="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5 px-0.5 mb-3" id="harbor-goal-row" style="-webkit-overflow-scrolling:touch;">
+            ${goalChips}
+          </div>
           <div class="cheat-fund-jar">
-            <div class="cheat-fund-jar-icon" aria-hidden="true">⚓</div>
+            <div class="cheat-fund-jar-icon" aria-hidden="true">${goal?.emoji || '⚓'}</div>
             <div class="cheat-fund-track">
               <div class="cheat-fund-fill" style="width:${pct}%"></div>
               ${milestoneMarkers}
             </div>
           </div>
           <div class="flex justify-between text-[10px] text-harbor-muted mb-1">
-            <span>Harbor Day at ${cost} pts</span>
+            <span>${goal ? `${goal.emoji} ${goal.label}` : 'Harbor Day'} at ${cost} pts</span>
             <span>${bank.points} / ${cost}</span>
           </div>
           <div class="text-[10px] text-harbor-primary-light mb-2 leading-snug">${getCheatDayEstimate()}</div>
           ${activeGuidesHtml}
+          ${bankedHtml}
           ${passHtml}
           <button type="button" onclick="redeemCheatDay()"
             class="w-full py-2.5 rounded-2xl text-xs font-semibold ${canRedeem ? 'bg-harbor-primary text-white active:opacity-90' : 'bg-harbor-raised text-harbor-muted border border-harbor-border'}">
             ${cooldown > 0
               ? `Resting · ${cooldown}d left`
               : canRedeem
-                ? `⚓ Claim Harbor Day (${cost} pts)`
+                ? `⚓ Claim Harbor Day${goal ? ` · ${goal.emoji} ${goal.label}` : ''} (${cost} pts)`
                 : `${Math.max(0, cost - bank.points)} pts to Harbor Day`}
           </button>
-          ${bank.cheatDownsUsed ? `<div class="text-[10px] text-harbor-muted text-center mt-2">${bank.cheatDownsUsed} Harbor Day${bank.cheatDownsUsed === 1 ? '' : 's'} claimed · ${bank.totalEarned || 0} lifetime pts</div>` : `<div class="text-[10px] text-harbor-muted text-center mt-2">Complete tasks to fill the meter · difficulty × minutes + streak bonus</div>`}
+          <div class="text-[10px] text-harbor-muted text-center mt-2 leading-snug">
+            ${bank.cheatDownsUsed
+              ? `${bank.cheatDownsUsed} kindness${bank.cheatDownsUsed === 1 ? '' : 'es'} claimed · ${bank.totalEarned || 0} lifetime pts${banked ? ` · ${banked} banked` : ''}`
+              : 'Complete due tasks only · difficulty × minutes + streak bonus'}
+          </div>
         </div>
       `;
+
+      panel.querySelectorAll('[data-goal-id]').forEach(btn => {
+        btn.onclick = () => {
+          const treat = getHarborTreatById(btn.dataset.goalId);
+          if (!treat) return;
+          const cur = getHarborGoalTreat();
+          if (cur && cur.id === treat.id) setHarborGoalTreat(null);
+          else setHarborGoalTreat(treat);
+        };
+      });
     }
 
     function getCheatDayFundProjectionLine() {
       if (!isCheatDayFundEnabled()) return '';
+      const goal = getHarborGoalTreat();
       const pace = getCheatDayPaceEstimate();
-      if (!pace) return '⚓ Harbor Day is ready — claim it on Streaks whenever you like.';
-      return `At your pace (~${pace.avg} pts/day), a Harbor Day is about ${pace.days} day${pace.days === 1 ? '' : 's'} away.`;
+      if (!pace) {
+        return goal
+          ? `⚓ Ready — claim Harbor Day for ${goal.emoji} ${goal.label} on Streaks.`
+          : '⚓ Harbor Day is ready — claim a Moment, Window, Full day, or Bank on Streaks.';
+      }
+      const goalBit = goal ? ` for ${goal.emoji} ${goal.label}` : '';
+      return `At your pace (~${pace.avg} pts/day), Harbor Day${goalBit} is about ${pace.days} day${pace.days === 1 ? '' : 's'} away.`;
     }
 
     function updateProjectionHint() {
@@ -20240,7 +20609,7 @@
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-fire text-orange-400 mr-1.5"></i>Streaks</h4>
-              <p>Daily habits you want to keep. See your streak, optional <strong class="text-harbor-text">Harbor Day</strong> earned rest, and Projected Wins for measurable goals. Challenge friends with Streak-Offs when you’re ready.</p>
+              <p>Daily habits you want to keep. See your streak, <strong class="text-harbor-text">Harbor Day</strong> (earn a treat — Moment, Window, Full day, or Bank), and Projected Wins. Challenge friends with Streak-Offs when you’re ready.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-book text-violet-300 mr-1.5"></i>Library</h4>
@@ -20757,7 +21126,7 @@
                 <div class="settings-row">
                   <div class="settings-row-copy">
                     <div class="settings-row-title">Harbor Day</div>
-                    <div class="settings-row-desc">Earn calm rest days from consistent streaks</div>
+                    <div class="settings-row-desc">Earn a treat — Moment, Window, Full day, or Bank for later</div>
                   </div>
                   <button type="button" id="cheat-fund-toggle" role="switch" aria-checked="${cheatFundOn ? 'true' : 'false'}"
                     aria-label="Harbor Day" class="smart-suggestions-toggle harbor-switch">
