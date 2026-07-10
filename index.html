@@ -4706,9 +4706,28 @@
       position: fixed;
       border-radius: 1rem;
       box-shadow: 0 0 0 9999px rgba(10, 31, 30, 0.78), 0 0 0 2px rgba(107, 191, 176, 0.85), var(--harbor-glow-primary);
-      transition: top 0.38s var(--harbor-ease-out), left 0.38s var(--harbor-ease-out), width 0.38s var(--harbor-ease-out), height 0.38s var(--harbor-ease-out);
+      transition:
+        top 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        left 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        height 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.32s ease,
+        border-radius 0.4s ease;
       pointer-events: none;
       z-index: 191;
+      opacity: 1;
+      will-change: top, left, width, height, opacity;
+    }
+    .tutorial-highlight.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+    /* Prefer smooth motion over display:none (kills transitions) */
+    .tutorial-highlight.hidden {
+      display: block !important;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
     }
 
     .tutorial-card {
@@ -4726,7 +4745,16 @@
       pointer-events: auto;
       top: auto;
       bottom: auto;
-      transition: top 0.42s var(--harbor-ease-out), left 0.42s var(--harbor-ease-out);
+      transition:
+        top 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        bottom 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.28s ease,
+        transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: top, bottom, opacity;
+    }
+    .tutorial-card.is-fading {
+      opacity: 0.55;
+      transform: translateY(4px);
     }
 
     .tutorial-card.tutorial-card-center {
@@ -4807,14 +4835,20 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .tutorial-card {
-        transition: none;
+      .tutorial-card,
+      .tutorial-highlight {
+        transition: none !important;
+      }
+      .tutorial-card.is-fading {
+        opacity: 1;
+        transform: none;
       }
     }
 
     .tutorial-target-pulse {
       position: relative;
       z-index: 192 !important;
+      transition: box-shadow 0.35s ease, outline-color 0.35s ease;
     }
 
     #projection-panel.tutorial-target-pulse,
@@ -6734,7 +6768,7 @@
     <div id="tutorial-card" class="tutorial-card tutorial-card-bottom hidden" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
       <div class="flex items-center justify-between gap-3 mb-1.5">
         <div id="tutorial-step-label" class="text-[10px] uppercase tracking-wider text-harbor-accent font-semibold"></div>
-        <button type="button" onclick="skipAppTutorial()" class="text-[10px] text-harbor-muted hover:text-harbor-text">Skip Tour</button>
+        <button type="button" onclick="skipAppTutorial()" class="text-[10px] text-harbor-muted hover:text-harbor-text">Skip</button>
       </div>
       <div id="tutorial-title" class="text-sm font-semibold text-harbor-text mb-1"></div>
       <div id="tutorial-body" class="text-xs text-harbor-muted leading-relaxed mb-3"></div>
@@ -6764,7 +6798,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v157';
+    const HARBOR_BUILD = 'v158';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -17710,8 +17744,8 @@
       return {
         score: 100,
         type: 'welcome',
-        cta: 'Learn more',
-        reason: `Welcome to Harbor. To start a guided tutorial tap <strong>Learn More</strong> below.`
+        cta: 'Quick tour',
+        reason: `Welcome to Harbor. Tap <strong>Quick tour</strong> for a short walkthrough.`
       };
     }
 
@@ -18108,78 +18142,29 @@
       return n;
     }
 
+    // Short tour: only what helps day one. Skip deep Streaks/Outlook — discoverable later.
     const APP_TUTORIAL_STEPS = [
       {
         id: 'today-intro',
-        title: 'Today Tab',
-        body: 'Your <strong>daily</strong> tasks gather here each morning. Weekly, monthly, and longer chores stay out of the way — you’ll find them in <strong>Overview</strong> instead.',
+        title: 'Your day starts here',
+        body: 'This is <strong>Today</strong> — the tasks for right now. Longer chores show up in <strong>Overview</strong> so this list stays light.',
         target: () => document.getElementById('tab-today'),
         cardPlacement: 'below',
         prepare: () => switchTab('today')
       },
       {
         id: 'complete-task',
-        title: 'Complete a Task',
-        body: '<strong>Tap</strong> the circle to log a quiet win.',
+        title: 'Finish a task',
+        body: 'Tap the <strong>circle</strong> on a task when it’s done. Try one now.',
         target: () => getTutorialTaskCard(),
         waitFor: 'habit-complete',
         interactive: true,
         prepare: () => switchTab('today')
       },
       {
-        id: 'life-intro',
-        title: 'Life Tab',
-        body: 'Right beside Today — Schedule, groceries, bills, and subscriptions, all in one calm place.',
-        target: () => document.getElementById('tab-life'),
-        cardPlacement: 'below',
-        prepare: () => switchTab('life')
-      },
-      {
-        id: 'streaks-intro',
-        title: 'Streaks Tab',
-        body: 'Daily habits build gentle streaks here — no pressure, just progress you can see.',
-        target: () => document.getElementById('tab-streaks'),
-        cardPlacement: 'below',
-        prepare: () => switchTab('streaks')
-      },
-      {
-        id: 'projections-tap',
-        title: 'Open Habit Outlook',
-        body: 'Tap a streak with a measurable goal (steps, savings, pages) to open your forecast below.',
-        target: () => getTutorialQuantStreakCard(),
-        waitFor: 'projection-open',
-        interactive: true,
-        cardPlacement: 'above',
-        prepare: () => {
-          switchTab('streaks');
-          currentProjectionHabit = null;
-          renderStreaks();
-        }
-      },
-      {
-        id: 'projections-read',
-        title: 'Habit Outlook',
-        body: 'This panel gently forecasts where your habit is headed — daily pace, a 30-day outlook, and fun equivalents. Take your time, then tap <strong>Next</strong> when you’re ready.',
-        target: () => document.getElementById('projection-panel'),
-        cardPlacement: 'above',
-        prepare: () => {
-          switchTab('streaks');
-          renderStreaks();
-          if (currentProjectionHabit) showProjections(currentProjectionHabit);
-        }
-      },
-      {
-        id: 'library-intro',
-        title: 'Library Tab',
-        body: 'Browse ready-made chores and habits. Tap any card to add it to Harbor, or create your own under Personal.',
-        target: () => document.getElementById('tab-library'),
-        cardPlacement: 'below',
-        prepare: () => switchTab('library')
-      },
-      {
         id: 'energy-smart',
-        title: 'Energy &amp; Smart Suggestions',
-        body: 'Set your energy level and Harbor softly re-sorts Today. <strong>Smart Suggestions</strong> use energy, calendar, and weather to nudge what fits right now.',
+        title: 'Match your energy',
+        body: 'Pick <strong>Low</strong>, <strong>Medium</strong>, or <strong>High</strong>. Today reorders to fit how you feel. The tip bar above also suggests a good next step.',
         target: () => document.getElementById('energy-bar-section'),
         cardPlacement: 'below',
         highlightUnion: () => {
@@ -18194,16 +18179,36 @@
         },
         prepare: () => {
           switchTab('today');
+          if (typeof energyExpanded !== 'undefined') energyExpanded = true;
+          if (typeof syncEnergyCompactUI === 'function') syncEnergyCompactUI();
           showTutorialSmartBanner();
         }
       },
       {
+        id: 'life-intro',
+        title: 'Life holds the rest',
+        body: 'Open <strong>Life</strong> for your schedule, grocery list, bills, and subscriptions — all in one place.',
+        target: () => document.getElementById('tab-life'),
+        cardPlacement: 'below',
+        prepare: () => {
+          hideTutorialSmartBanner();
+          switchTab('life');
+        }
+      },
+      {
+        id: 'library-intro',
+        title: 'Add tasks from Library',
+        body: 'The <strong>Library</strong> has ready-made tasks. Tap any card to add it, or make your own.',
+        target: () => document.getElementById('tab-library'),
+        cardPlacement: 'below',
+        prepare: () => switchTab('library')
+      },
+      {
         id: 'summary',
-        title: 'Overview',
-        body: 'Tap the glowing <strong>Overview</strong> button at the <strong>bottom right</strong> for your day, week, and month at a glance. Longer tasks, Schedule, bills, and grocery live here so Today stays light.<br><br><span class="text-harbor-primary-light">Browse as long as you like</span>, then tap <strong>Next</strong> when you’re ready.',
+        title: 'See the big picture',
+        body: 'Tap the glowing <strong>Overview</strong> button (bottom right) for day, week, and month. Look around, then tap <strong>Next</strong>.',
         target: () => document.getElementById('summary-launcher'),
         waitFor: 'summary-open',
-        // Unlock Next after open — do NOT auto-advance so users can explore Summary first
         unlockNextOnly: true,
         interactive: true,
         cardPlacement: 'above',
@@ -18212,26 +18217,13 @@
           updateSummaryLauncher();
           const fab = document.getElementById('summary-launcher');
           if (fab) fab.classList.remove('hidden');
-          requestAnimationFrame(() => requestAnimationFrame(() => hideTutorialSmartBanner()));
+          hideTutorialSmartBanner();
         }
       },
       {
         id: 'install-home',
-        title: 'Add Harbor to Your Phone',
+        title: 'Keep Harbor handy',
         body: () => getInstallTutorialBody(),
-        target: null,
-        noHighlight: true,
-        cardPlacement: 'center',
-        prepare: () => {
-          switchTab('today');
-          // Close summary if still open from previous step so the coachmark is clear
-          if (typeof closeSummaryModal === 'function') closeSummaryModal();
-        }
-      },
-      {
-        id: 'prototype-note',
-        title: 'You’re in the Harbor Prototype',
-        body: () => getPrototypeTutorialBody(),
         target: null,
         noHighlight: true,
         cardPlacement: 'center',
@@ -18244,7 +18236,6 @@
 
     function getMobileInstallPlatform() {
       const ua = navigator.userAgent || '';
-      // iPadOS 13+ reports as MacIntel with touch
       if (/iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
         return 'ios';
       }
@@ -18257,68 +18248,37 @@
       let stepsHtml = '';
       if (platform === 'ios') {
         stepsHtml = `
-          <div class="tutorial-install-platform">
-            <div class="tutorial-install-platform-title"><i class="fa-brands fa-apple mr-1"></i> iPhone / iPad</div>
-            <ol class="tutorial-install-steps">
-              <li>Stay in <strong>Safari</strong> (not Chrome).</li>
-              <li>Tap <strong>Share</strong> (the square with the ↑ arrow).</li>
-              <li>Choose <strong>Add to Home Screen</strong>, then <strong>Add</strong>.</li>
-            </ol>
-          </div>`;
+          <ol class="tutorial-install-steps">
+            <li>In <strong>Safari</strong>, tap <strong>Share</strong>.</li>
+            <li>Tap <strong>Add to Home Screen</strong>.</li>
+          </ol>`;
       } else if (platform === 'android') {
         stepsHtml = `
-          <div class="tutorial-install-platform">
-            <div class="tutorial-install-platform-title"><i class="fa-brands fa-android mr-1"></i> Android</div>
-            <ol class="tutorial-install-steps">
-              <li>Tap <strong>Add Harbor to home screen</strong> below when you see it — or use Chrome’s menu → <strong>Add to Home screen</strong>.</li>
-              <li>You’re only <strong>pinning a shortcut</strong>, not installing a big store app. Harbor still runs in your browser, just full-screen and one tap away.</li>
-            </ol>
-          </div>`;
+          <ol class="tutorial-install-steps">
+            <li>Tap the button below, or Chrome menu → <strong>Add to Home screen</strong>.</li>
+            <li>It’s a shortcut — not a store download.</li>
+          </ol>`;
       } else {
         stepsHtml = `
-          <div class="tutorial-install-platform">
-            <div class="tutorial-install-platform-title">Your phone</div>
-            <ol class="tutorial-install-steps">
-              <li><strong>Android:</strong> use <strong>Add to home screen</strong> — it’s a shortcut, not a heavy app install.</li>
-              <li><strong>iPhone:</strong> Safari → Share → <strong>Add to Home Screen</strong>.</li>
-            </ol>
-          </div>`;
+          <ol class="tutorial-install-steps">
+            <li><strong>Phone:</strong> browser menu → Add to Home Screen.</li>
+            <li>You’ll get a full-screen icon on your home screen.</li>
+          </ol>`;
       }
       return `
-        <p class="tutorial-install-lead">Harbor feels best from your Home Screen — full screen, one gentle tap away, more like something you own than a tab you keep losing.</p>
+        <p class="tutorial-install-lead">Add Harbor to your home screen for one-tap access.</p>
         ${stepsHtml}
-        <p class="tutorial-install-note">You can open this again anytime under <strong>Menu → Add to Home Screen</strong>.</p>
         <button type="button" class="tutorial-install-cta" onclick="event.stopPropagation(); openInstallGuideFromTutorial()">
-          ${canNativePwaInstall() ? 'Add Harbor to Home Screen' : 'Show Me How'}
+          ${canNativePwaInstall() ? 'Add to Home Screen' : 'Show me how'}
         </button>
         <p class="tutorial-install-note" style="margin-bottom:0">
-          ${canNativePwaInstall()
-            ? 'One tap opens your browser’s official Add to Home Screen dialog — a local shortcut, not an app-store download.'
-            : platform === 'ios'
-              ? 'Apple requires the Safari Share steps above (sites can’t add icons silently).'
-              : 'If a one-tap button isn’t ready yet, the guide will walk you through it.'}
+          You can do this later from <strong>Menu → Add to Home Screen</strong>. Harbor is still a preview — your data stays on this device.
         </p>`;
     }
 
     function getPrototypeTutorialBody() {
-      return `
-        <p class="tutorial-install-lead">Quick honesty before you sail off: <strong>Harbor is a live prototype</strong> — think early beta, not a finished store app.</p>
-        <div class="tutorial-install-platform">
-          <div class="tutorial-install-platform-title"><i class="fa-brands fa-github mr-1"></i> Why GitHub?</div>
-          <p class="text-[0.74rem] text-harbor-muted leading-relaxed m-0">
-            You’re using a preview hosted from our GitHub Pages build. That’s how we ship updates quickly for testers — no App Store review wait, no install package. Same local-first privacy: your data stays in <strong class="text-harbor-text">this browser / device</strong>.
-          </p>
-        </div>
-        <div class="tutorial-install-platform" style="margin-top:0.5rem">
-          <div class="tutorial-install-platform-title"><i class="fa-solid fa-flask mr-1"></i> What to expect</div>
-          <ol class="tutorial-install-steps">
-            <li>Features may change, get renamed, or get sharper as we learn from real use.</li>
-            <li>You might hit rough edges — that’s useful signal, not a personal failing.</li>
-            <li>Clearing site data or switching browsers can look like a “new” Harbor (export a profile backup if you care about your lists).</li>
-            <li>Feedback from the menu helps us prioritize what to polish next.</li>
-          </ol>
-        </div>
-        <p class="tutorial-install-note" style="margin-bottom:0">Thanks for testing the waters with us. Tap <strong>Finish Tour</strong> when you’re ready to use Harbor for real.</p>`;
+      // Kept for any legacy callers; tour no longer uses a separate prototype step
+      return `<p class="tutorial-install-lead">Harbor is a live preview. Your data stays on this device. Thanks for trying it.</p>`;
     }
 
     function openInstallGuideFromTutorial() {
@@ -18563,6 +18523,7 @@
       const isMobile = window.innerWidth < 768;
       const pad = isMobile ? 4 : 6;
       const margin = isMobile ? 4 : 8;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       let top = r.top - pad;
       let left = r.left - pad;
@@ -18574,7 +18535,7 @@
       const maxRight = vv.left + vv.width - margin;
       const maxBottom = vv.top + vv.height - margin;
 
-      // Prefer shifting the ring instead of crushing small targets (e.g. Brief FAB)
+      // Prefer shifting the ring instead of crushing small targets (e.g. Overview FAB)
       if (left + width > maxRight) left = Math.max(minLeft, maxRight - width);
       if (top + height > maxBottom) top = Math.max(minTop, maxBottom - height);
       left = Math.max(minLeft, left);
@@ -18582,11 +18543,27 @@
       if (left + width > maxRight) width = Math.max(24, maxRight - left);
       if (top + height > maxBottom) height = Math.max(24, maxBottom - top);
 
-      highlight.classList.remove('hidden');
-      highlight.style.top = `${top}px`;
-      highlight.style.left = `${left}px`;
-      highlight.style.width = `${width}px`;
-      highlight.style.height = `${height}px`;
+      const wasHidden = highlight.classList.contains('hidden') || highlight.classList.contains('is-hidden');
+      if (wasHidden && !reducedMotion) {
+        // Place first frame without animating from 0,0, then fade in
+        highlight.style.transition = 'none';
+        highlight.classList.remove('hidden', 'is-hidden');
+        highlight.style.top = `${top}px`;
+        highlight.style.left = `${left}px`;
+        highlight.style.width = `${width}px`;
+        highlight.style.height = `${height}px`;
+        highlight.style.opacity = '0';
+        void highlight.offsetWidth;
+        highlight.style.transition = '';
+        highlight.style.opacity = '1';
+      } else {
+        highlight.classList.remove('hidden', 'is-hidden');
+        highlight.style.opacity = '1';
+        highlight.style.top = `${top}px`;
+        highlight.style.left = `${left}px`;
+        highlight.style.width = `${width}px`;
+        highlight.style.height = `${height}px`;
+      }
 
       tutorialLastTargetRect = r;
       positionTutorialCard(r, step || APP_TUTORIAL_STEPS[state.settings.tutorialStep]);
@@ -18603,17 +18580,25 @@
       if (card) card.classList.toggle('tutorial-card-interactive', interactive);
     }
 
-    function clearTutorialHighlight() {
+    function clearTutorialHighlight(opts = {}) {
+      const { hideRing = false, clearCardPos = false } = opts;
       document.querySelectorAll('.tutorial-target-pulse, .tutorial-interactive-target').forEach(el => {
         el.classList.remove('tutorial-target-pulse', 'tutorial-interactive-target');
       });
       tutorialTargetEl = null;
-      tutorialLastTargetRect = null;
+      if (hideRing) {
+        tutorialLastTargetRect = null;
+        const highlight = document.getElementById('tutorial-highlight');
+        if (highlight) {
+          highlight.classList.add('is-hidden');
+          highlight.classList.add('hidden');
+        }
+      }
       const overlay = document.getElementById('tutorial-overlay');
       const card = document.getElementById('tutorial-card');
       if (overlay) overlay.classList.remove('is-interactive-step');
-      if (card) {
-        card.classList.remove('tutorial-card-interactive', 'tutorial-card-top', 'tutorial-card-bottom', 'tutorial-card-center');
+      if (card && clearCardPos) {
+        card.classList.remove('tutorial-card-interactive', 'tutorial-card-top', 'tutorial-card-bottom', 'tutorial-card-center', 'is-fading');
         card.style.top = '';
         card.style.bottom = '';
         card.style.maxHeight = '';
@@ -18651,10 +18636,14 @@
     function applyTutorialStepHighlight(step) {
       const overlay = document.getElementById('tutorial-overlay');
       const card = document.getElementById('tutorial-card');
-      clearTutorialHighlight();
+      // Keep the ring visible so it can glide to the next target
+      clearTutorialHighlight({ hideRing: false, clearCardPos: false });
 
       if (step?.noHighlight || step?.cardPlacement === 'center') {
-        document.getElementById('tutorial-highlight')?.classList.add('hidden');
+        const highlight = document.getElementById('tutorial-highlight');
+        if (highlight) {
+          highlight.classList.add('is-hidden', 'hidden');
+        }
         if (overlay) overlay.classList.remove('is-interactive-step');
         centerTutorialCard(step);
         return;
@@ -18785,9 +18774,9 @@
       const label = banner.querySelector('#smart-banner-label');
       const text = banner.querySelector('#smart-text');
       const cta = banner.querySelector('#smart-cta');
-      if (label) label.textContent = 'Smart Suggestion';
-      if (text) text.innerHTML = 'Set your energy and watch Today gently re-sort. Harbor will nudge a task that fits how you feel.';
-      if (cta) cta.textContent = 'Try Changing Energy';
+      if (label) label.textContent = 'Tip';
+      if (text) text.innerHTML = 'Try changing energy — Today reorders to match.';
+      if (cta) cta.textContent = 'Got it';
       resetSmartBannerDatasets(banner);
       banner.dataset.suggestionType = 'tutorial-demo';
       const footnote = document.getElementById('smart-bill-footnote');
@@ -18822,17 +18811,14 @@
 
       // Some steps only unlock Next (e.g. Summary) so the user can explore before continuing
       if (step.unlockNextOnly) {
-        const nextLabel = step.id === 'summary' ? 'Next — continue tour' : 'Next';
+        const nextLabel = step.id === 'summary' ? 'Next' : 'Next';
         unlockTutorialNextButton(nextLabel);
         const bodyEl = document.getElementById('tutorial-body');
         if (bodyEl && step.id === 'summary') {
-          bodyEl.innerHTML = 'Nice — <strong>Summary</strong> is open. Look around day / week / month, then tap <strong>Next</strong> when you’re ready to continue.';
+          bodyEl.innerHTML = 'Nice — Overview is open. Peek at day, week, or month, then tap <strong>Next</strong>.';
         }
-        // Keep the coachmark usable above the summary sheet
         const card = document.getElementById('tutorial-card');
-        if (card) {
-          card.style.zIndex = '300';
-        }
+        if (card) card.style.zIndex = '300';
         return;
       }
 
@@ -18870,10 +18856,15 @@
       const backBtn = document.getElementById('tutorial-back-btn');
       const nextBtn = document.getElementById('tutorial-next-btn');
 
+      // Soft fade between step copy so transitions feel calmer
+      if (card && !card.classList.contains('hidden')) {
+        card.classList.add('is-fading');
+      }
+
       if (step.prepare) step.prepare();
 
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const scrollDelay = reducedMotion ? 0 : (window.innerWidth < 768 ? 420 : 300);
+      const scrollDelay = reducedMotion ? 0 : (window.innerWidth < 768 ? 360 : 260);
 
       const layoutStep = () => {
         let target = typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
@@ -18884,8 +18875,8 @@
           if (tabScroller) {
             const tabRect = tabScroller.getBoundingClientRect();
             const targetRect = scrollTarget.getBoundingClientRect();
-            const card = document.getElementById('tutorial-card');
-            const cardH = card?.offsetHeight || 200;
+            const cardEl = document.getElementById('tutorial-card');
+            const cardH = cardEl?.offsetHeight || 200;
             const offset = cardH + 36;
             const targetMid = targetRect.top + targetRect.height / 2;
             const idealMid = tabRect.top + tabRect.height * 0.42;
@@ -18904,7 +18895,6 @@
         }
 
         setTimeout(() => {
-          // Fill card content first so height measurement is accurate (avoids collision with tabs)
           if (stepLabel) {
             stepLabel.textContent = `Step ${getVisibleTutorialStepNumber(stepIndex)} of ${getVisibleTutorialStepCount()}`;
           }
@@ -18917,16 +18907,31 @@
             nextBtn.classList.toggle('opacity-50', waiting);
             nextBtn.classList.toggle('pointer-events-none', waiting);
             nextBtn.textContent = waiting
-              ? 'Waiting for you…'
-              : (stepIndex === APP_TUTORIAL_STEPS.length - 1 ? 'Finish Tour' : 'Next');
+              ? (step.id === 'complete-task' ? 'Tap a circle…' : step.id === 'summary' ? 'Tap Overview…' : 'Your turn…')
+              : (stepIndex === APP_TUTORIAL_STEPS.length - 1 ? 'Finish' : 'Next');
           }
-          if (card) card.classList.remove('hidden');
+          if (card) {
+            card.classList.remove('hidden', 'is-fading');
+          }
           if (overlay) {
             overlay.classList.add('is-active');
             overlay.setAttribute('aria-hidden', 'false');
           }
 
-          applyTutorialStepHighlight(step);
+          // Highlight after content paint so card height is correct
+          requestAnimationFrame(() => {
+            applyTutorialStepHighlight(step);
+            requestAnimationFrame(() => {
+              const cur = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
+              if (tutorialLastTargetRect && cur) positionTutorialCard(tutorialLastTargetRect, cur);
+              // One more settle after layout/fonts
+              setTimeout(() => {
+                const settled = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
+                if (!state.settings.tutorialActive || settled?.id !== step.id) return;
+                applyTutorialStepHighlight(settled);
+              }, reducedMotion ? 0 : 120);
+            });
+          });
 
           if (step.autoAdvanceMs) {
             tutorialAutoAdvanceTimer = setTimeout(() => {
@@ -18935,19 +18940,7 @@
               nextTutorialStep();
             }, step.autoAdvanceMs);
           }
-
-          requestAnimationFrame(() => {
-            const current = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
-            if (tutorialLastTargetRect && current) {
-              positionTutorialCard(tutorialLastTargetRect, current);
-            }
-            // Second pass after fonts/layout settle
-            requestAnimationFrame(() => {
-              const cur = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
-              if (tutorialLastTargetRect && cur) positionTutorialCard(tutorialLastTargetRect, cur);
-            });
-          });
-        }, scrollTarget ? scrollDelay : 0);
+        }, scrollTarget ? scrollDelay : (reducedMotion ? 0 : 40));
       };
 
       if (step.id === 'summary') {
@@ -19002,7 +18995,7 @@
 
     function completeAppTutorial(skipped = false) {
       unbindTutorialViewportSync();
-      clearTutorialHighlight();
+      clearTutorialHighlight({ hideRing: true, clearCardPos: true });
       hideTutorialSmartBanner();
       hideWelcomeSpotlight();
       if (tutorialAutoAdvanceTimer) {
@@ -19017,8 +19010,12 @@
         overlay.classList.remove('is-active');
         overlay.setAttribute('aria-hidden', 'true');
       }
-      if (card) card.classList.add('hidden');
-      if (highlight) highlight.classList.add('hidden');
+      if (card) {
+        card.classList.add('hidden');
+        card.classList.remove('is-fading');
+        card.style.zIndex = '';
+      }
+      if (highlight) highlight.classList.add('hidden', 'is-hidden');
 
       state.settings.tutorialActive = false;
       state.settings.tutorialCompleted = true;
@@ -19034,8 +19031,8 @@
       updateSmartBanner();
       updateSummaryLauncher();
       showToast(skipped
-        ? 'Tour skipped — reopen anytime from Menu → Tutorial'
-        : 'Tour complete — replay anytime from Menu → Tutorial');
+        ? 'Tour skipped — open it anytime from Menu'
+        : 'You’re set — reopen the tour anytime from Menu');
     }
 
     function updateSmartBanner() {
@@ -21566,7 +21563,7 @@
       else if (action === 'install') promptPwaInstall();
       else if (action === 'tutorial') {
         startAppTutorial();
-        showToast('Starting app tour');
+        showToast('Starting quick tour');
       }
     }
 
@@ -21616,8 +21613,8 @@
           </div>
 
           <div class="flex gap-2 mt-5">
-            <button type="button" onclick="this.closest('.fixed').remove(); startAppTutorial(); showToast('Starting App Tour')"
-              class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">Start Guided Tour</button>
+            <button type="button" onclick="this.closest('.fixed').remove(); startAppTutorial(); showToast('Starting quick tour')"
+              class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">Start quick tour</button>
             <button type="button" onclick="this.closest('.fixed').remove()"
               class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold text-sm">Done</button>
           </div>
