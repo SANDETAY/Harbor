@@ -8331,7 +8331,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 198;
+    const HARBOR_BUILD_NUMBER = 199;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -14084,9 +14084,7 @@
       const dueLabel = formatBillDueDaysList(days);
       const recLabel = formatBillRecurrenceLabel(rec);
       const amtNote = bill.amount != null
-        ? (days.length > 1 && bill.amountPerPayment != null
-          ? ` · ${formatBillAmount(bill.amountPerPayment)} × ${days.length} = ${formatBillAmount(bill.amount)}`
-          : ` · ${formatBillAmount(bill.amount)}${formatBillRecurrenceShort(rec)}`)
+        ? ` · ${formatBillAmount(bill.amount)}${formatBillRecurrenceShort(rec)}`
         : '';
       showToast(`Bill added: ${bill.name} (${recLabel} · ${dueLabel}${amtNote})`);
       return bill;
@@ -14170,11 +14168,7 @@
           return;
         }
         const resolved = resolveBillAmountForPayDates(raw, [...selectedDays]);
-        if (days > 1) {
-          hint.textContent = `${formatBillAmount(resolved.amountPerPayment)} × ${days} pay dates = ${formatBillAmount(resolved.amount)}${formatBillRecurrenceShort(selectedRecurrence)} total`;
-        } else {
-          hint.textContent = `${formatBillAmount(resolved.amount)}${formatBillRecurrenceShort(selectedRecurrence)}`;
-        }
+        hint.textContent = `${formatBillAmount(resolved.amount)}${formatBillRecurrenceShort(selectedRecurrence)} total`;
       }
 
       modal.innerHTML = `
@@ -14376,9 +14370,7 @@
         const perPay = getBillPerPaymentAmount(bill);
         const periodTotal = getBillPeriodTotal(bill);
         const amountLabel = periodTotal > 0
-          ? (payDays.length > 1 && perPay > 0
-            ? `${formatBillAmountPrecise(periodTotal)}${formatBillRecurrenceShort(bill.recurrence)} · ${formatBillAmountPrecise(perPay)} × ${payDays.length}`
-            : `${formatBillAmountPrecise(periodTotal)}${formatBillRecurrenceShort(bill.recurrence)}`)
+          ? `${formatBillAmountPrecise(periodTotal)}${formatBillRecurrenceShort(bill.recurrence)}`
           : '';
 
         const card = document.createElement('div');
