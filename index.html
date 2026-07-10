@@ -3381,6 +3381,59 @@
     .cal-event-row--person {
       border-left: 3px solid var(--person-color, rgb(var(--harbor-primary)));
     }
+
+    /* Schedule phases — glanceable past / live without clutter */
+    .cal-event-row--past {
+      opacity: 0.52;
+    }
+    .cal-event-row--past .cal-event-time {
+      color: rgb(var(--harbor-muted)) !important;
+      text-decoration: line-through;
+      text-decoration-thickness: 1px;
+      text-decoration-color: rgb(var(--harbor-muted) / 0.55);
+    }
+    .cal-event-row--now {
+      border-color: rgba(47, 155, 140, 0.45);
+      box-shadow: 0 0 0 1px rgba(47, 155, 140, 0.12);
+    }
+    .cal-event-phase-pill {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.55rem;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.12rem 0.4rem;
+      border-radius: 999px;
+      line-height: 1.2;
+      flex-shrink: 0;
+    }
+    .cal-event-phase-pill.is-now {
+      background: rgba(47, 155, 140, 0.16);
+      color: rgb(var(--harbor-primary-light));
+    }
+    .cal-event-phase-pill.is-past {
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      border: 1px solid rgb(var(--harbor-border) / 0.8);
+    }
+    .schedule-earlier-hdr {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin: 0.85rem 0 0.4rem;
+      font-size: 0.62rem;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+    }
+    .schedule-earlier-hdr::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgb(var(--harbor-border) / 0.85);
+    }
     .summary-timeline-row--person {
       border-left: 3px solid var(--person-color, rgb(var(--harbor-primary)));
       padding-left: 0.45rem;
@@ -8199,7 +8252,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 196;
+    const HARBOR_BUILD_NUMBER = 197;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -14825,6 +14878,57 @@
       return h * 60 + (m || 0);
     }
 
+    /** Start minute-of-day for a calendar event (0–1439). */
+    function getEventStartMins(ev) {
+      return parseTimeMins(ev?.time || '00:00');
+    }
+
+    /**
+     * End minute-of-day. Uses duration when set; otherwise a short default window
+     * so a 13:00 appointment is treated as finished after it would reasonably end.
+     */
+    function getEventEndMins(ev) {
+      const start = getEventStartMins(ev);
+      const dur = Math.max(0, Number(ev?.durationMin) || 0);
+      const span = dur > 0 ? dur : 45;
+      return Math.min(24 * 60, start + span);
+    }
+
+    /**
+     * Phase relative to "now" for schedule glance UX.
+     * Future calendar days are always upcoming; past weekdays are past.
+     * @returns {'past'|'now'|'upcoming'}
+     */
+    function getCalendarEventPhase(ev, dateStr = todayStr()) {
+      const today = todayStr();
+      if (!dateStr || dateStr < today) return 'past';
+      if (dateStr > today) return 'upcoming';
+      // All-day / multi-hour blocks spanning the day stay "live" until evening
+      const dur = Math.max(0, Number(ev?.durationMin) || 0);
+      if (dur >= 12 * 60) {
+        const now = getNowMinutes();
+        return now >= 21 * 60 ? 'past' : (now >= 6 * 60 ? 'now' : 'upcoming');
+      }
+      const now = getNowMinutes();
+      const start = getEventStartMins(ev);
+      const end = getEventEndMins(ev);
+      if (now >= end) return 'past';
+      if (now >= start) return 'now';
+      return 'upcoming';
+    }
+
+    function isCalendarEventPast(ev, dateStr = todayStr()) {
+      return getCalendarEventPhase(ev, dateStr) === 'past';
+    }
+
+    function sortEventsByTime(events) {
+      return [...(events || [])].sort((a, b) => {
+        const da = getEventDate(a).localeCompare(getEventDate(b));
+        if (da) return da;
+        return getEventStartMins(a) - getEventStartMins(b);
+      });
+    }
+
     function formatMinsAsTime(mins) {
       const h = Math.floor(mins / 60);
       const m = mins % 60;
@@ -15293,7 +15397,7 @@
       });
       const title = document.getElementById('schedule-section-title');
       if (title) {
-        title.textContent = view === 'week' ? "This Week's Schedule" : "Today's Schedule";
+        title.textContent = view === 'week' ? 'Coming up this week' : "Today's schedule";
       }
     }
 
@@ -15326,15 +15430,39 @@
       };
     }
 
-    function filterEventsForWeek(events, anchorDate = todayStr()) {
-      // Only upcoming / remaining days this week — never past weekdays
-      const { start, end, empty } = getWeekRemainingBounds(anchorDate);
-      if (empty) return [];
+    /**
+     * Schedule "This Week" = after Today only (tomorrow → week end).
+     * Today events live exclusively under the Today sub-tab so glances don't double-list.
+     */
+    function getWeekBeyondTodayBounds(anchorDate = todayStr()) {
+      const weekEnd = getWeekEndDateStr(anchorDate);
+      const start = tomorrowStr();
+      return {
+        start,
+        end: weekEnd,
+        empty: start > weekEnd,
+        weekEnd
+      };
+    }
+
+    function filterEventsForWeek(events, anchorDate = todayStr(), opts = {}) {
+      // Default: remaining week including today (Summary, free-time estimates).
+      // Schedule This Week passes excludeToday so Today owns today's list.
+      const bounds = opts.excludeToday
+        ? getWeekBeyondTodayBounds(anchorDate)
+        : getWeekRemainingBounds(anchorDate);
+      if (bounds.empty) return [];
+      const { start, end } = bounds;
       return (events || []).filter(e => {
         const s = getEventDate(e);
         const en = getEventEndDate(e);
         return s <= end && en >= start;
       });
+    }
+
+    /** Life → Schedule "This Week" list (never duplicates Today). */
+    function filterEventsForScheduleWeek(events, anchorDate = todayStr()) {
+      return filterEventsForWeek(events, anchorDate, { excludeToday: true });
     }
 
     function filterEventsForMonth(events, anchorDate = todayStr()) {
@@ -16217,13 +16345,16 @@
     }
 
     function renderScheduleEventRow(ev, options = {}) {
-      const { showDate = false } = options;
+      const { showDate = false, phase: phaseOpt = null, onDate = null } = options;
       const eventId = ev.id || getStableCalendarEventId(ev);
+      const phaseDate = onDate || getEventDate(ev);
+      const phase = phaseOpt || getCalendarEventPhase(ev, phaseDate);
       const row = document.createElement('div');
       row.className = 'swipe-row';
       row.dataset.swipeId = eventId;
       row.dataset.swipeType = 'event';
       row.dataset.feedType = 'schedule';
+      row.dataset.eventPhase = phase;
       row.style.setProperty('--swipe-reveal', '8.75rem');
 
       const actionsHtml = `
@@ -16233,13 +16364,19 @@
       const person = getHouseholdPerson(ev.personId);
       const personColor = person?.color || '';
       const personChip = person ? renderPersonChipHtml(person.id) : '';
+      const phasePill = phase === 'now'
+        ? `<span class="cal-event-phase-pill is-now" title="Happening now">Now</span>`
+        : phase === 'past'
+          ? `<span class="cal-event-phase-pill is-past" title="This time has passed">Passed</span>`
+          : '';
       const contentHtml = `
         <div class="cal-event-body flex items-center gap-x-3 flex-1 min-w-0 cursor-pointer">
-          <div class="text-sm font-semibold text-harbor-primary-light tabular-nums w-16 flex-shrink-0">${formatScheduleEventTime(ev.time)}</div>
+          <div class="cal-event-time text-sm font-semibold text-harbor-primary-light tabular-nums w-16 flex-shrink-0">${formatScheduleEventTime(ev.time)}</div>
           <div class="flex-1 min-w-0">
             <div class="font-medium flex items-center gap-1.5 flex-wrap">
               ${person ? `<span class="person-swatch person-swatch--lg" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
               <span>${escapeBriefHtml(ev.title)}</span>
+              ${phasePill}
             </div>
             <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
               ${personChip}
@@ -16256,7 +16393,9 @@
       `;
 
       const cardClass = 'harbor-card bg-harbor-surface border border-harbor-border rounded-2xl px-4 py-3 flex items-center gap-x-3 active:bg-harbor-border/40'
-        + (personColor ? ' cal-event-row--person' : '');
+        + (personColor ? ' cal-event-row--person' : '')
+        + (phase === 'past' ? ' cal-event-row--past' : '')
+        + (phase === 'now' ? ' cal-event-row--now' : '');
       row.innerHTML = buildSwipeRowHtml(
         actionsHtml,
         contentHtml,
@@ -16298,6 +16437,25 @@
       return hdr;
     }
 
+    function ensureScheduleAutoRefresh() {
+      if (window.__harborScheduleTick) return;
+      window.__harborScheduleTick = setInterval(() => {
+        if (document.hidden) return;
+        if (typeof currentTab !== 'undefined' && currentTab !== 'life') return;
+        const panel = document.getElementById('life-panel-schedule');
+        if (!panel || panel.classList.contains('hidden')) return;
+        try { renderSchedule(); } catch (_) { /* ignore */ }
+      }, 60 * 1000);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && typeof currentTab !== 'undefined' && currentTab === 'life') {
+          const panel = document.getElementById('life-panel-schedule');
+          if (panel && !panel.classList.contains('hidden')) {
+            try { renderSchedule(); } catch (_) { /* ignore */ }
+          }
+        }
+      });
+    }
+
     function renderSchedule() {
       const container = document.getElementById('schedule-list');
       const freeEl = document.getElementById('schedule-free-time');
@@ -16305,6 +16463,7 @@
       const chipEl = document.getElementById('work-schedule-chip');
       if (!container) return;
 
+      ensureScheduleAutoRefresh();
       updateCalendarStatusUI();
       updateScheduleViewToggle();
       refreshCalendarCache();
@@ -16314,20 +16473,26 @@
       const allEvents = getAllCalendarEvents();
       const today = todayStr();
 
-      const weekRemaining = getWeekRemainingBounds(today);
+      // This Week = after Today only (no double-listing with Today sub-tab)
+      const weekAhead = getWeekBeyondTodayBounds(today);
       if (freeEl) {
         if (view === 'week') {
-          const weekEvents = filterEventsForWeek(allEvents);
-          freeEl.textContent = `${weekEvents.length} upcoming event${weekEvents.length === 1 ? '' : 's'}`;
+          const weekEvents = filterEventsForScheduleWeek(allEvents);
+          freeEl.textContent = weekEvents.length
+            ? `${weekEvents.length} upcoming event${weekEvents.length === 1 ? '' : 's'}`
+            : 'Clear ahead';
         } else {
-          freeEl.textContent = formatScheduleLoadLabel(avail);
+          const liveN = allEvents.filter(e => eventOccursOnDate(e, today) && getCalendarEventPhase(e, today) !== 'past').length;
+          freeEl.textContent = liveN
+            ? `${liveN} still ahead · ${formatScheduleLoadLabel(avail)}`
+            : formatScheduleLoadLabel(avail);
         }
       }
       if (detailEl) {
         if (view === 'week') {
-          detailEl.textContent = weekRemaining.empty
-            ? 'Week complete'
-            : `${formatEventDateLabel(weekRemaining.start)} – ${formatEventDateLabel(weekRemaining.end)}`;
+          detailEl.textContent = weekAhead.empty
+            ? 'Rest of week is on Today'
+            : `${formatEventDateLabel(weekAhead.start)} – ${formatEventDateLabel(weekAhead.end)}`;
         } else {
           detailEl.textContent = avail.summary;
         }
@@ -16356,26 +16521,31 @@
       container.innerHTML = '';
 
       if (view === 'week') {
-        const weekEvents = filterEventsForWeek(allEvents);
+        const weekEvents = filterEventsForScheduleWeek(allEvents);
         if (!weekEvents.length) {
           container.innerHTML = harborEmptyHtml(
             '📅',
-            weekRemaining.empty ? 'Week complete' : 'Nothing this week',
-            weekRemaining.empty
-              ? 'No more events left this week. Add something ahead or check Overview for the full month.'
-              : 'Plan the rest of your week — add an event or connect a calendar.',
+            weekAhead.empty ? 'You’re on Today' : 'Nothing coming up',
+            weekAhead.empty
+              ? 'The rest of this week is covered by Today. Check back tomorrow for a fresh week view.'
+              : 'Today holds what’s left for the day. Add something ahead, or open Summary for the full month.',
             scheduleEmptyActionsHtml()
           );
           return;
         }
-        groupEventsByDate(weekEvents, { minDate: weekRemaining.start, maxDate: weekRemaining.end })
+        groupEventsByDate(weekEvents, { minDate: weekAhead.start, maxDate: weekAhead.end })
           .forEach(({ date, events }) => {
             container.appendChild(renderScheduleSectionHeader(formatEventDateLabel(date)));
-            events.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
+            sortEventsByTime(events).forEach(ev => {
+              container.appendChild(renderScheduleEventRow(ev, { onDate: date, phase: 'upcoming' }));
+            });
           });
       } else {
-        const todayEvents = allEvents.filter(e => eventOccursOnDate(e, today));
-        if (!todayEvents.length) {
+        const todayEvents = sortEventsByTime(allEvents.filter(e => eventOccursOnDate(e, today)));
+        const live = todayEvents.filter(e => getCalendarEventPhase(e, today) !== 'past');
+        const past = todayEvents.filter(e => getCalendarEventPhase(e, today) === 'past');
+
+        if (!live.length && !past.length) {
           container.innerHTML = harborEmptyHtml(
             '📅',
             'Open schedule',
@@ -16384,7 +16554,30 @@
           );
           return;
         }
-        todayEvents.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
+
+        if (!live.length && past.length) {
+          const done = document.createElement('div');
+          done.className = 'text-xs text-harbor-muted leading-snug mb-2 px-0.5';
+          done.textContent = 'Nothing left on the clock today — earlier events are below if you need them.';
+          container.appendChild(done);
+        }
+
+        live.forEach(ev => {
+          container.appendChild(renderScheduleEventRow(ev, {
+            onDate: today,
+            phase: getCalendarEventPhase(ev, today)
+          }));
+        });
+
+        if (past.length) {
+          const earlier = document.createElement('div');
+          earlier.className = 'schedule-earlier-hdr';
+          earlier.textContent = past.length === 1 ? 'Earlier today' : `Earlier today · ${past.length}`;
+          container.appendChild(earlier);
+          past.forEach(ev => {
+            container.appendChild(renderScheduleEventRow(ev, { onDate: today, phase: 'past' }));
+          });
+        }
       }
 
       if (cache?.note) {
