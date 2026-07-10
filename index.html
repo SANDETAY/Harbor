@@ -52,7 +52,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="harbor-apple-touch.png">
 
   <link rel="manifest" href="manifest.webmanifest">
-  <title>Harbor · Create Your Harbor</title>
+  <title>Harbor · Build Your Harbor</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -80,7 +80,7 @@
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Outfit:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
 
     /* ── BASE (default): Splash-inspired Harbor teal ──
        Deep teal · warm stone text · seafoam · dawn accent
@@ -1935,18 +1935,24 @@
       .splash-mark,
       .splash-wordmark,
       .splash-slogan,
+      .splash-slogan-letter,
+      .splash-slogan-rule,
       .splash-wave-layer,
+      .splash-mark-draw,
       .app-content-wrap.splash-app-reveal {
         animation: none !important;
       }
       .splash-screen-harbor { opacity: 1; transform: none; }
       .splash-brand { opacity: 1; transform: none; }
-      .splash-mark { transform: none; }
+      .splash-mark { transform: none; opacity: 1; }
+      .splash-wordmark { opacity: 1; transform: none; }
       .splash-slogan { opacity: 1; transform: none; }
+      .splash-slogan-letter { opacity: 1; transform: none; filter: none; }
+      .splash-slogan-rule { opacity: 0.55; transform: scaleX(1); }
+      .splash-mark-draw { stroke-dashoffset: 0; }
       .splash-screen-harbor.is-revealing { opacity: 0; transform: none; }
       .app-content-wrap.splash-app-reveal { opacity: 1; transform: none; }
       .splash-wave-layer { opacity: 0.35; }
-      .splash-video { display: none !important; }
       body.is-splash-active .app-content-wrap { opacity: 1; }
       body.is-splash-active .site-header { opacity: 1; pointer-events: auto; }
     }
@@ -4459,20 +4465,15 @@
       color: #fff;
     }
 
-    /* Transparent R mark — no box, blends with page background */
-    /* ── Splash: peaceful harbor at dawn ── */
-    /* Full-screen cover from first paint — never fade the shell in from 0
-       (that caused a dark app flash). Only brand + slogan animate. */
+    /* ── Splash: crisp minimal mark + modern wordmark (vector, no video) ── */
     .splash-screen-harbor {
       overflow: hidden;
       will-change: opacity, transform;
-      /* Dawn harbor gradient — bottom #d8e4de must match html/body underlay (no black gap) */
-      background: linear-gradient(180deg, #0a3a38 0%, #1a5c56 38%, #6a9e96 72%, #d8e4de 100%);
+      background: linear-gradient(165deg, #062826 0%, #0a3a38 28%, #14605a 58%, #7aaba3 86%, #d8e4de 100%);
       opacity: 1;
       transform: none;
     }
 
-    /* Full-viewport cover so safe-area / home-indicator never shows app black under splash */
     #splash-screen.splash-screen-harbor {
       position: fixed;
       top: 0;
@@ -4488,71 +4489,8 @@
       min-height: 100dvh;
       min-height: -webkit-fill-available;
       z-index: 100;
-      /* Pull into iOS safe areas so no mint/white strip under the video */
       padding: 0;
       margin: 0;
-    }
-
-    /* Grok Imagine splash video — first ~2s.
-       Source is portrait (~2:3). Use contain by default so the full logo stays
-       visible on wide web viewports; cover only on tall phone-like frames. */
-    .splash-video {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      max-width: none;
-      max-height: none;
-      object-fit: contain;
-      object-position: center center;
-      z-index: 1;
-      background: #0a3a38;
-      pointer-events: none;
-      /* Prefer sharper decode/upscale where the engine supports it */
-      image-rendering: -webkit-optimize-contrast;
-      transform: translateZ(0);
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
-    }
-
-    .splash-video.is-ready {
-      opacity: 1;
-    }
-
-    /* Tall phone frames: fill edge-to-edge (still centered on the mark) */
-    .splash-video.fit-cover {
-      object-fit: cover;
-      object-position: center 46%;
-    }
-
-    /* Wide / desktop: keep full frame, teal letterbox (no cropped anchor) */
-    .splash-video.fit-contain {
-      object-fit: contain;
-      object-position: center center;
-    }
-
-    /* When video is driving the splash, hide the CSS brand/wave fallback */
-    .splash-screen-harbor.has-video-splash .splash-sky,
-    .splash-screen-harbor.has-video-splash .splash-waves,
-    .splash-screen-harbor.has-video-splash #splash-inner {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
-
-    .splash-screen-harbor.has-video-splash {
-      /* Deep teal under video — kills mint/white gap under home indicator */
-      background: #0a3a38 !important;
-    }
-
-    .splash-screen-harbor.has-video-splash .splash-video {
-      opacity: 1;
-    }
-
-    html.is-splash-active.has-video-splash-bg,
-    body.is-splash-active.has-video-splash-bg {
-      background-color: #0a3a38 !important;
-      background-image: none !important;
     }
 
     .splash-screen-harbor.is-hidden {
@@ -4570,8 +4508,8 @@
       inset: 0;
       pointer-events: none;
       background:
-        radial-gradient(ellipse 90% 55% at 50% 18%, rgba(255, 236, 210, 0.22) 0%, transparent 58%),
-        radial-gradient(ellipse 70% 40% at 70% 60%, rgba(180, 220, 210, 0.12) 0%, transparent 60%);
+        radial-gradient(ellipse 80% 50% at 50% 16%, rgba(255, 236, 210, 0.2) 0%, transparent 55%),
+        radial-gradient(ellipse 55% 40% at 50% 48%, rgba(107, 191, 176, 0.14) 0%, transparent 62%);
     }
 
     .splash-waves {
@@ -4579,7 +4517,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      height: 38%;
+      height: 36%;
       pointer-events: none;
       overflow: hidden;
     }
@@ -4600,19 +4538,19 @@
 
     .splash-wave-layer.w1 {
       bottom: -6%;
-      opacity: 0.28;
+      opacity: 0.26;
       animation: splashWaveDrift 14s linear infinite;
     }
 
     .splash-wave-layer.w2 {
       bottom: -2%;
-      opacity: 0.38;
+      opacity: 0.34;
       animation: splashWaveDrift 10.5s linear infinite reverse;
     }
 
     .splash-wave-layer.w3 {
       bottom: 4%;
-      opacity: 0.22;
+      opacity: 0.2;
       animation: splashWaveDrift 17s linear infinite;
     }
 
@@ -4625,64 +4563,139 @@
       height: 100%;
       position: relative;
       z-index: 2;
-      padding: 0 1.5rem 2rem;
-      gap: 1.1rem;
+      padding: 0 1.5rem 2.5rem;
+      gap: 0;
     }
 
     .splash-brand {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.85rem;
-      opacity: 0;
-      transform: scale(0.82);
-    }
-
-    .splash-brand.is-in {
-      animation: splashBrandSettle 900ms cubic-bezier(0.34, 1.45, 0.64, 1) forwards;
+      gap: 1.05rem;
     }
 
     .splash-mark {
-      width: 4.6rem;
-      height: 4.6rem;
-      color: #0d4f4a;
-      filter: drop-shadow(0 4px 18px rgba(10, 50, 48, 0.28));
-      animation: splashMarkBob 3.6s ease-in-out infinite;
+      width: clamp(5.25rem, 18vw, 6.5rem);
+      height: clamp(5.25rem, 18vw, 6.5rem);
+      color: #f0ebe3;
+      opacity: 0;
+      transform: translateY(10px) scale(0.92);
+      filter:
+        drop-shadow(0 0 22px rgba(107, 191, 176, 0.35))
+        drop-shadow(0 8px 24px rgba(4, 28, 26, 0.35));
+    }
+
+    .splash-mark.is-in {
+      animation:
+        splashMarkIn 780ms cubic-bezier(0.22, 1, 0.36, 1) forwards,
+        splashMarkBob 4s ease-in-out 780ms infinite;
     }
 
     .splash-mark svg {
       width: 100%;
       height: 100%;
       display: block;
+      overflow: visible;
+    }
+
+    /* Stroke-draw reveal on key anchor paths */
+    .splash-mark-draw {
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 280;
+      stroke-dashoffset: 280;
+    }
+
+    .splash-mark.is-in .splash-mark-draw {
+      animation: splashStrokeDraw 1.05s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .splash-mark.is-in .splash-mark-draw.d2 { animation-delay: 0.12s; }
+    .splash-mark.is-in .splash-mark-draw.d3 { animation-delay: 0.22s; }
+    .splash-mark.is-in .splash-mark-draw.d4 { animation-delay: 0.32s; }
+
+    .splash-mark-fill {
+      fill: currentColor;
+      opacity: 0;
+    }
+
+    .splash-mark.is-in .splash-mark-fill {
+      animation: splashFillIn 420ms ease 0.55s forwards;
     }
 
     .splash-wordmark {
-      font-family: 'Space Grotesk', 'Inter', sans-serif;
-      font-size: clamp(2.15rem, 7vw, 2.75rem);
+      font-family: 'Outfit', 'Space Grotesk', 'Inter', system-ui, sans-serif;
+      font-size: clamp(2.55rem, 9vw, 3.35rem);
       font-weight: 600;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.02em;
       line-height: 1;
-      color: #f4efe6;
+      color: #f7f3ec;
+      opacity: 0;
+      transform: translateY(12px);
       text-shadow:
-        0 0 18px rgba(244, 239, 230, 0.35),
-        0 0 36px rgba(107, 191, 176, 0.18),
-        0 2px 12px rgba(8, 30, 28, 0.25);
+        0 0 24px rgba(244, 239, 230, 0.28),
+        0 0 48px rgba(107, 191, 176, 0.16),
+        0 2px 14px rgba(8, 30, 28, 0.28);
+    }
+
+    .splash-wordmark.is-in {
+      animation: splashWordIn 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     .splash-slogan {
-      margin: 0;
-      font-family: 'Space Grotesk', 'Inter', sans-serif;
-      font-size: clamp(1.05rem, 3.4vw, 1.28rem);
+      margin: 1.15rem 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: baseline;
+      gap: 0.38em;
+      font-family: 'Outfit', 'Space Grotesk', 'Inter', system-ui, sans-serif;
+      font-size: clamp(0.95rem, 3.2vw, 1.15rem);
       font-weight: 500;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.16em;
       text-transform: none;
-      color: #e7ebe4;
-      opacity: 0;
-      transform: translateY(14px);
+      color: rgba(236, 242, 238, 0.92);
+      opacity: 1;
     }
 
-    .splash-slogan.is-in {
-      animation: splashSloganUp 720ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    .splash-slogan-letter {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(14px);
+      filter: blur(4px);
+    }
+
+    .splash-slogan.is-in .splash-slogan-letter {
+      animation: splashLetterIn 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .splash-slogan-space {
+      display: inline-block;
+      width: 0.28em;
+    }
+
+    .splash-slogan-rule {
+      width: min(11rem, 42vw);
+      height: 1px;
+      margin-top: 0.95rem;
+      border-radius: 999px;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(244, 239, 230, 0.15) 18%,
+        rgba(107, 191, 176, 0.75) 50%,
+        rgba(244, 239, 230, 0.15) 82%,
+        transparent 100%
+      );
+      opacity: 0;
+      transform: scaleX(0.35);
+      transform-origin: center;
+    }
+
+    .splash-slogan-rule.is-in {
+      animation: splashRuleIn 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     /* Hide chrome only while splash is up (never leave app stuck at opacity 0) */
@@ -4695,10 +4708,9 @@
       pointer-events: none;
     }
 
-    /* Match splash bottom mint so no black bar under waves / home indicator */
     body.is-splash-active {
-      background-color: #d8e4de;
-      background-image: linear-gradient(180deg, #0a3a38 0%, #1a5c56 38%, #6a9e96 72%, #d8e4de 100%);
+      background-color: #0a3a38;
+      background-image: linear-gradient(165deg, #062826 0%, #0a3a38 28%, #14605a 58%, #7aaba3 86%, #d8e4de 100%);
     }
 
     body.is-splash-active .site-root,
@@ -4707,7 +4719,7 @@
     }
 
     html.is-splash-active {
-      background-color: #d8e4de;
+      background-color: #0a3a38;
     }
 
     .app-content-wrap.splash-app-reveal {
@@ -4716,23 +4728,41 @@
 
     @keyframes splashHarborExit {
       from { opacity: 1; transform: scale(1); }
-      to { opacity: 0; transform: scale(0.97); }
+      to { opacity: 0; transform: scale(0.985); }
     }
 
-    @keyframes splashBrandSettle {
-      0% { opacity: 0; transform: scale(0.78); }
-      70% { opacity: 1; transform: scale(1.03); }
-      100% { opacity: 1; transform: scale(1); }
+    @keyframes splashMarkIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.9); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     @keyframes splashMarkBob {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-4px); }
+      50% { transform: translateY(-5px); }
     }
 
-    @keyframes splashSloganUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 0.95; transform: translateY(0); }
+    @keyframes splashStrokeDraw {
+      to { stroke-dashoffset: 0; }
+    }
+
+    @keyframes splashFillIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes splashWordIn {
+      from { opacity: 0; transform: translateY(14px); letter-spacing: 0.12em; }
+      to { opacity: 1; transform: translateY(0); letter-spacing: 0.02em; }
+    }
+
+    @keyframes splashLetterIn {
+      from { opacity: 0; transform: translateY(14px); filter: blur(4px); }
+      to { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+
+    @keyframes splashRuleIn {
+      from { opacity: 0; transform: scaleX(0.35); }
+      to { opacity: 0.9; transform: scaleX(1); }
     }
 
     @keyframes splashWaveDrift {
@@ -5431,19 +5461,8 @@
         </div>
       </header>
 
-      <!-- Splash / Launch screen — Grok Imagine video (first 2s) + CSS fallback -->
+      <!-- Splash — crisp vector mark + Outfit wordmark + letter-reveal slogan -->
       <div id="splash-screen" class="absolute inset-0 z-[100] splash-screen-harbor" aria-hidden="true">
-        <video id="splash-video"
-          class="splash-video"
-          muted
-          playsinline
-          webkit-playsinline
-          preload="auto"
-          aria-hidden="true"
-          disablepictureinpicture
-          disableremoteplayback>
-          <source src="harbor-splash.mp4" type="video/mp4">
-        </video>
         <div class="splash-sky" aria-hidden="true"></div>
         <div class="splash-waves" aria-hidden="true">
           <div class="splash-wave-layer w1">
@@ -5464,21 +5483,35 @@
         </div>
         <div id="splash-inner">
           <div id="splash-brand" class="splash-brand">
-            <div class="splash-mark" aria-hidden="true">
+            <div id="splash-mark" class="splash-mark" aria-hidden="true">
+              <!-- High-detail minimalist anchor: ring, stock, stock-cap, arms, flukes, crown -->
               <svg viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="64" cy="64" r="54" stroke="currentColor" stroke-width="4.5" opacity="0.9"/>
-                <circle cx="64" cy="64" r="48" fill="currentColor" fill-opacity="0.1"/>
-                <circle cx="64" cy="30" r="9" stroke="currentColor" stroke-width="5"/>
-                <rect x="40" y="40" width="48" height="7" rx="3.5" fill="currentColor"/>
-                <rect x="59.5" y="38" width="9" height="52" rx="4.5" fill="currentColor"/>
-                <path d="M28 78c4 22 22 34 36 34s32-12 36-34" stroke="currentColor" stroke-width="8" stroke-linecap="round" fill="none"/>
-                <path d="M28 78l-10-2 4-12z" fill="currentColor"/>
-                <path d="M100 78l10-2-4-12z" fill="currentColor"/>
+                <circle class="splash-mark-draw d1" cx="64" cy="64" r="52" stroke-width="2.25" opacity="0.55"/>
+                <circle class="splash-mark-draw d2" cx="64" cy="64" r="46" stroke-width="1.15" opacity="0.28"/>
+                <!-- Ring -->
+                <circle class="splash-mark-draw d2" cx="64" cy="28" r="9.5" stroke-width="3.6"/>
+                <circle class="splash-mark-fill" cx="64" cy="28" r="3.2"/>
+                <!-- Stock cap + crossbar -->
+                <path class="splash-mark-draw d3" stroke-width="3.8" d="M44 42.5h40"/>
+                <path class="splash-mark-draw d3" stroke-width="2.2" opacity="0.55" d="M48 46.5h32"/>
+                <!-- Shank -->
+                <path class="splash-mark-draw d3" stroke-width="4.4" d="M64 37v52"/>
+                <!-- Arms -->
+                <path class="splash-mark-draw d4" stroke-width="4.2" d="M64 84c-10 4-20 12-28 22"/>
+                <path class="splash-mark-draw d4" stroke-width="4.2" d="M64 84c10 4 20 12 28 22"/>
+                <!-- Flukes -->
+                <path class="splash-mark-draw d4" stroke-width="3.4" d="M36 106l-9-1 5-10"/>
+                <path class="splash-mark-draw d4" stroke-width="3.4" d="M92 106l9-1-5-10"/>
+                <!-- Crown tip -->
+                <path class="splash-mark-fill" d="M64 86.5l-3.2 7h6.4L64 86.5z" opacity="0.95"/>
+                <!-- Soft water arc under arms -->
+                <path class="splash-mark-draw d4" stroke-width="1.4" opacity="0.35" d="M38 114c8 5 16 7 26 7s18-2 26-7"/>
               </svg>
             </div>
-            <div class="splash-wordmark">Harbor</div>
+            <div id="splash-wordmark" class="splash-wordmark">Harbor</div>
           </div>
-          <p id="splash-slogan" class="splash-slogan">Create Your Harbor.</p>
+          <p id="splash-slogan" class="splash-slogan" aria-label="Build Your Harbor"></p>
+          <div id="splash-slogan-rule" class="splash-slogan-rule" aria-hidden="true"></div>
         </div>
       </div>
 
@@ -5826,7 +5859,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v123';
+    const HARBOR_BUILD = 'v124';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -22524,50 +22557,50 @@
       );
     }
 
-    function stopSplashVideo() {
-      const video = document.getElementById('splash-video');
-      if (!video) return;
-      try {
-        video.pause();
-        // Leave the source in place so a soft reload can replay; just freeze at cut
-        if (Number.isFinite(video.currentTime) && video.currentTime > 0) {
-          /* keep last frame for the exit fade */
+    function prepareSplashSlogan(sloganEl, text = 'Build Your Harbor') {
+      if (!sloganEl) return 0;
+      sloganEl.innerHTML = '';
+      let letterIndex = 0;
+      const words = text.split(' ');
+      words.forEach((word, wi) => {
+        const wordWrap = document.createElement('span');
+        wordWrap.className = 'splash-slogan-word';
+        wordWrap.setAttribute('aria-hidden', 'true');
+        [...word].forEach((ch) => {
+          const span = document.createElement('span');
+          span.className = 'splash-slogan-letter';
+          span.textContent = ch;
+          span.style.animationDelay = `${letterIndex * 38}ms`;
+          wordWrap.appendChild(span);
+          letterIndex += 1;
+        });
+        sloganEl.appendChild(wordWrap);
+        if (wi < words.length - 1) {
+          const space = document.createElement('span');
+          space.className = 'splash-slogan-space';
+          space.setAttribute('aria-hidden', 'true');
+          sloganEl.appendChild(space);
+          letterIndex += 1;
         }
-      } catch (_) { /* ignore */ }
-    }
-
-    /** Portrait Imagine clips look wrong with cover on wide screens (crops the mark). */
-    function fitSplashVideoToViewport(video) {
-      if (!video) return;
-      const vw = Math.max(window.innerWidth || 0, document.documentElement?.clientWidth || 0);
-      const vh = Math.max(window.innerHeight || 0, document.documentElement?.clientHeight || 0);
-      if (!vw || !vh) return;
-      const viewAspect = vw / vh;
-      const vidW = video.videoWidth || 448;
-      const vidH = video.videoHeight || 672;
-      const vidAspect = vidW / vidH;
-      // Cover only when the viewport is phone-tall relative to the clip.
-      // Otherwise contain so the full anchor + slogan stay in frame on desktop/web.
-      const useCover = viewAspect <= vidAspect * 1.02 && vh >= vw;
-      video.classList.toggle('fit-cover', useCover);
-      video.classList.toggle('fit-contain', !useCover);
+      });
+      sloganEl.setAttribute('aria-label', text);
+      return letterIndex;
     }
 
     function hideSplash() {
       const splash = document.getElementById('splash-screen');
       if (!splash) return;
-      stopSplashVideo();
       splash.classList.add('is-hidden');
-      splash.classList.remove('is-revealing', 'is-active', 'has-video-splash');
-      document.body.classList.remove('has-video-splash-bg');
-      document.documentElement.classList.remove('has-video-splash-bg');
+      splash.classList.remove('is-revealing', 'is-active');
       splash.style.display = 'none';
       splash.style.opacity = '';
       splash.style.clipPath = '';
       splash.style.pointerEvents = 'none';
       splash.setAttribute('aria-hidden', 'true');
-      document.getElementById('splash-brand')?.classList.remove('is-in');
+      document.getElementById('splash-mark')?.classList.remove('is-in');
+      document.getElementById('splash-wordmark')?.classList.remove('is-in');
       document.getElementById('splash-slogan')?.classList.remove('is-in');
+      document.getElementById('splash-slogan-rule')?.classList.remove('is-in');
       document.body.classList.remove('is-splash-active');
       document.documentElement.classList.remove('is-splash-active');
       try {
@@ -22664,38 +22697,35 @@
         setTimeout(fetchRealWeather, 600);
         
         window.HARBOR = { state, renderTasks, renderTodayFeed, completeHabit, setEnergy, simulateContextChange, addGroceryItem, markBillPaid, factoryReset: factoryResetApp, challenges: () => state.challenges };
-        console.log('%c[Harbor] Prototype ready. Create your harbor.', 'color:#2F9B8C');
+        console.log('%c[Harbor] Prototype ready. Build your harbor.', 'color:#2F9B8C');
     }
 
     function runSplashSequence(onComplete) {
       const splash = document.getElementById('splash-screen');
-      const brandEl = document.getElementById('splash-brand');
+      const markEl = document.getElementById('splash-mark');
+      const wordEl = document.getElementById('splash-wordmark');
       const sloganEl = document.getElementById('splash-slogan');
-      const video = document.getElementById('splash-video');
+      const ruleEl = document.getElementById('splash-slogan-rule');
       const appWrap = document.querySelector('.app-content-wrap');
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      // Video splash: play first 2s of Imagine clip, then soft exit into the app.
-      // CSS brand/waves remain as fallback if video can't play.
-      const VIDEO_CUT_S = 2;
-      const BRAND_MS = 120;
-      const SLOGAN_MS = 700;
-      const CSS_EXIT_AT = 2200;
+      // Mark draws in → wordmark → letter-stagger slogan → soft exit
+      const MARK_MS = 80;
+      const WORD_MS = 520;
+      const SLOGAN_MS = 980;
+      const RULE_MS = 1180;
+      const EXIT_AT = 3200;
       const REVEAL_MS = 560;
-      const VIDEO_HARD_TIMEOUT_MS = 3200;
 
       document.body.classList.add('is-splash-active');
       document.documentElement.classList.add('is-splash-active');
-      // Deep teal chrome while splash is up (avoids mint/white home-indicator strip under video)
       try {
         const metaTheme = document.querySelector('meta[name="theme-color"]');
         if (metaTheme) metaTheme.setAttribute('content', '#0a3a38');
       } catch (_) { /* ignore */ }
 
       if (splash) {
-        splash.classList.remove('is-hidden', 'is-revealing', 'has-video-splash');
-        document.body.classList.remove('has-video-splash-bg');
-        document.documentElement.classList.remove('has-video-splash-bg');
+        splash.classList.remove('is-hidden', 'is-revealing');
         splash.style.display = 'block';
         splash.style.opacity = '1';
         splash.style.clipPath = '';
@@ -22703,10 +22733,12 @@
         splash.setAttribute('aria-hidden', 'false');
       }
 
-      brandEl?.classList.remove('is-in');
+      markEl?.classList.remove('is-in');
+      wordEl?.classList.remove('is-in');
       sloganEl?.classList.remove('is-in');
+      ruleEl?.classList.remove('is-in');
+      prepareSplashSlogan(sloganEl, 'Build Your Harbor');
       appWrap?.classList.remove('splash-app-reveal');
-      // Keep chrome hidden until reveal so nothing flashes under the splash
       if (appWrap) appWrap.style.opacity = '0';
 
       let booted = false;
@@ -22720,9 +22752,6 @@
       const startReveal = () => {
         if (revealed) return;
         revealed = true;
-        try {
-          if (video && !video.paused) video.pause();
-        } catch (_) { /* ignore */ }
         splash?.classList.add('is-revealing');
         splash?.setAttribute('aria-hidden', 'true');
         if (appWrap) {
@@ -22745,122 +22774,32 @@
       };
 
       const cleanupSplash = () => {
-        brandEl?.classList.remove('is-in');
+        markEl?.classList.remove('is-in');
+        wordEl?.classList.remove('is-in');
         sloganEl?.classList.remove('is-in');
+        ruleEl?.classList.remove('is-in');
         hideSplash();
       };
 
-      const runCssFallbackSplash = () => {
-        splash?.classList.remove('has-video-splash');
-        requestAnimationFrame(() => {
-          setTimeout(() => brandEl?.classList.add('is-in'), BRAND_MS);
-          setTimeout(() => sloganEl?.classList.add('is-in'), SLOGAN_MS);
-        });
-        setTimeout(startReveal, CSS_EXIT_AT);
-        setTimeout(cleanupSplash, CSS_EXIT_AT + REVEAL_MS);
-      };
-
       if (reducedMotion) {
-        brandEl?.classList.add('is-in');
+        markEl?.classList.add('is-in');
+        wordEl?.classList.add('is-in');
         sloganEl?.classList.add('is-in');
+        ruleEl?.classList.add('is-in');
         setTimeout(startReveal, 280);
         setTimeout(cleanupSplash, 420);
         return;
       }
 
-      // Prefer the Imagine video for the first 2 seconds
-      if (video) {
-        let videoMode = false;
-        let cutTimer = null;
-        const clearVideoWatchers = () => {
-          video.removeEventListener('timeupdate', onTimeUpdate);
-          video.removeEventListener('ended', onEnded);
-          video.removeEventListener('error', onError);
-          if (cutTimer) {
-            clearTimeout(cutTimer);
-            cutTimer = null;
-          }
-        };
+      requestAnimationFrame(() => {
+        setTimeout(() => markEl?.classList.add('is-in'), MARK_MS);
+        setTimeout(() => wordEl?.classList.add('is-in'), WORD_MS);
+        setTimeout(() => sloganEl?.classList.add('is-in'), SLOGAN_MS);
+        setTimeout(() => ruleEl?.classList.add('is-in'), RULE_MS);
+      });
 
-        const finishVideoSplash = () => {
-          if (revealed) return;
-          clearVideoWatchers();
-          try {
-            if (video.currentTime < VIDEO_CUT_S && Number.isFinite(video.duration) && video.duration > VIDEO_CUT_S) {
-              video.currentTime = VIDEO_CUT_S;
-            }
-            video.pause();
-          } catch (_) { /* ignore */ }
-          startReveal();
-          setTimeout(cleanupSplash, REVEAL_MS);
-        };
-
-        const onTimeUpdate = () => {
-          if (video.currentTime >= VIDEO_CUT_S - 0.04) finishVideoSplash();
-        };
-        const onEnded = () => finishVideoSplash();
-        const onError = () => {
-          clearVideoWatchers();
-          if (!videoMode) runCssFallbackSplash();
-          else finishVideoSplash();
-        };
-
-        // Ensure source is present after a previous hideSplash() load()
-        const src = video.dataset.splashSrc || 'harbor-splash.mp4';
-        if (!video.getAttribute('src') && !video.querySelector('source[src]')) {
-          const source = document.createElement('source');
-          source.src = src;
-          source.type = 'video/mp4';
-          video.appendChild(source);
-        } else {
-          const existing = video.querySelector('source');
-          if (existing && !existing.getAttribute('src')) existing.setAttribute('src', src);
-        }
-
-        video.muted = true;
-        video.defaultMuted = true;
-        video.playsInline = true;
-        video.setAttribute('playsinline', '');
-        video.setAttribute('webkit-playsinline', '');
-        video.currentTime = 0;
-
-        video.addEventListener('timeupdate', onTimeUpdate);
-        video.addEventListener('ended', onEnded);
-        video.addEventListener('error', onError);
-
-        const playPromise = video.play();
-        const armVideoMode = () => {
-          videoMode = true;
-          splash?.classList.add('has-video-splash');
-          document.body.classList.add('has-video-splash-bg');
-          document.documentElement.classList.add('has-video-splash-bg');
-          video.classList.add('is-ready');
-          fitSplashVideoToViewport(video);
-          // Hard stop slightly after 2s in case timeupdate is sparse on some devices
-          cutTimer = setTimeout(finishVideoSplash, VIDEO_CUT_S * 1000 + 120);
-          // Absolute safety so splash never hangs
-          setTimeout(() => {
-            if (!revealed) finishVideoSplash();
-          }, VIDEO_HARD_TIMEOUT_MS);
-        };
-
-        const onMeta = () => fitSplashVideoToViewport(video);
-        video.addEventListener('loadedmetadata', onMeta, { once: true });
-        if (video.readyState >= 1) fitSplashVideoToViewport(video);
-
-        if (playPromise && typeof playPromise.then === 'function') {
-          playPromise.then(armVideoMode).catch(() => {
-            clearVideoWatchers();
-            runCssFallbackSplash();
-          });
-        } else {
-          // Older browsers: assume play started if no promise
-          armVideoMode();
-        }
-        return;
-      }
-
-      runCssFallbackSplash();
+      setTimeout(startReveal, EXIT_AT);
+      setTimeout(cleanupSplash, EXIT_AT + REVEAL_MS);
     }
 
     function formatHeaderDate(d = new Date()) {
