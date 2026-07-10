@@ -6744,6 +6744,8 @@
             <div class="panel-toolbar panel-toolbar-cluster">
               <button type="button" id="grocery-dinners-btn" class="chip-tool-btn" onclick="toggleGroceryDinners()"
                 aria-expanded="false">Dinner lists</button>
+              <button type="button" id="grocery-edit-dinner-btn" class="chip-tool-btn hidden"
+                onclick="editActiveDinnerList()" aria-label="Edit this dinner list">Edit dinner</button>
               <div class="life-manage-wrap">
                 <button type="button" class="chip-tool-btn" onclick="toggleLifeManageMenu('grocery')" aria-haspopup="menu" aria-expanded="false">Manage</button>
                 <div id="grocery-manage-menu" class="life-manage-menu hidden" role="menu">
@@ -6751,7 +6753,11 @@
                     <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add recipe</span>
                   </button>
                   <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showManageMealPresetsModal()">
-                    <i class="fa-solid fa-utensils" aria-hidden="true"></i><span>Edit recipes</span>
+                    <i class="fa-solid fa-utensils" aria-hidden="true"></i><span>Edit dinner lists</span>
+                  </button>
+                  <button type="button" role="menuitem" id="grocery-manage-edit-active"
+                    onclick="closeLifeManageMenus(); editActiveDinnerList()">
+                    <i class="fa-solid fa-pen" aria-hidden="true"></i><span>Edit this dinner</span>
                   </button>
                   <button type="button" role="menuitem" onclick="closeLifeManageMenus(); clearCheckedGrocery()">
                     <i class="fa-solid fa-check-double" aria-hidden="true"></i><span>Clear checked</span>
@@ -6763,7 +6769,7 @@
               </button>
             </div>
           </div>
-          <div id="grocery-view-label" class="hidden" aria-hidden="true"></div>
+          <div id="grocery-view-label" class="text-[10px] text-harbor-muted leading-snug mb-1.5 px-0.5"></div>
           <div id="meal-grocery-filters" class="library-filters-scroll mb-2 -mx-1 px-1 hidden"></div>
           <div id="grocery-list" class="space-y-2 mb-2"></div>
         </div>
@@ -6922,7 +6928,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v163';
+    const HARBOR_BUILD = 'v164';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -11774,41 +11780,47 @@
     }
 
 
-    function showEditMealPresetModal(presetId) {
+    function showEditMealPresetModal(presetId, options = {}) {
+      const returnToManage = options.returnToManage !== false;
       const presets = ensureMealPresets();
       const preset = presets.find(p => p.id === presetId);
       if (!preset) {
-        showToast('Recipe not found', 'warn');
+        showToast('Dinner list not found', 'warn');
         return;
       }
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
       const itemsText = (preset.items || []).join('\n');
+      const titleBit = preset.dayShort ? `${preset.dayShort} · ${preset.label}` : (preset.label || 'Dinner');
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[85vh] overflow-y-auto">
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <div class="font-semibold text-lg text-harbor-text">Edit Recipe</div>
-              <div class="text-[10px] text-harbor-muted">Update name, notes, and ingredients</div>
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[90vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="flex items-center justify-between mb-3 gap-2">
+            <div class="min-w-0">
+              <div class="font-semibold text-lg text-harbor-text">Edit dinner list</div>
+              <div class="text-[10px] text-harbor-muted leading-snug">Change the name and shopping ingredients for <strong class="text-harbor-text">${escapeBriefHtml(titleBit)}</strong></div>
             </div>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
+            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip flex-shrink-0" aria-label="Close">Close</button>
           </div>
-          <label class="block text-[10px] text-harbor-muted mb-1">Name</label>
+          <label class="block text-[10px] text-harbor-muted mb-1" for="mp-edit-name">Name</label>
           <input id="mp-edit-name" type="text" value="${escapeBriefHtml(preset.label || '')}"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-3 text-harbor-text">
-          <label class="block text-[10px] text-harbor-muted mb-1">Recipe note</label>
-          <input id="mp-edit-recipe" type="text" value="${escapeBriefHtml(preset.recipe || '')}" placeholder="Optional short description"
+          <label class="block text-[10px] text-harbor-muted mb-1" for="mp-edit-recipe">Note (optional)</label>
+          <input id="mp-edit-recipe" type="text" value="${escapeBriefHtml(preset.recipe || '')}" placeholder="e.g. 30 min · sheet pan"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-3 text-harbor-text">
-          <label class="block text-[10px] text-harbor-muted mb-1">Ingredients (one per line)</label>
-          <textarea id="mp-edit-items" rows="8"
-            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-3 text-harbor-text text-xs leading-relaxed">${escapeBriefHtml(itemsText)}</textarea>
-          <button type="button" id="mp-edit-save" class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Save recipe</button>
+          <label class="block text-[10px] text-harbor-muted mb-1" for="mp-edit-items">Ingredients (one per line)</label>
+          <textarea id="mp-edit-items" rows="10"
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-2 text-harbor-text text-xs leading-relaxed"
+            placeholder="Tortillas&#10;Ground beef&#10;Cheese">${escapeBriefHtml(itemsText)}</textarea>
+          <div class="text-[10px] text-harbor-muted mb-3 leading-snug">Saves this dinner’s shopping list. Checking items off while shopping won’t change the recipe.</div>
+          <button type="button" id="mp-edit-save" class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Save dinner list</button>
         </div>`;
       document.body.appendChild(modal);
+      setTimeout(() => modal.querySelector('#mp-edit-name')?.focus(), 60);
       modal.querySelector('#mp-edit-save').onclick = () => {
         const name = (modal.querySelector('#mp-edit-name')?.value || '').trim();
-        if (!name) { showToast('Enter a recipe name', 'warn'); return; }
+        if (!name) { showToast('Enter a name', 'warn'); return; }
         const recipe = (modal.querySelector('#mp-edit-recipe')?.value || '').trim();
         const items = (modal.querySelector('#mp-edit-items')?.value || '')
           .split(/\n/)
@@ -11816,20 +11828,64 @@
           .filter(Boolean);
         if (!items.length) { showToast('Add at least one ingredient', 'warn'); return; }
         const idx = state.mealPresets.findIndex(p => p.id === presetId);
-        if (idx < 0) { showToast('Recipe not found', 'warn'); return; }
+        if (idx < 0) { showToast('Dinner list not found', 'warn'); return; }
         state.mealPresets[idx] = {
           ...state.mealPresets[idx],
           label: name.replace(/^🍽\s*/, ''),
           recipe: recipe || undefined,
-          items,
-          isCustom: state.mealPresets[idx].isCustom || !state.mealPresets[idx].weekday
+          items
         };
+        // If this dinner is open, refresh the trip list and keep checked-off names when possible
+        if (state.groceryView?.mode === 'meal' && state.groceryView.mealId === presetId) {
+          reloadActiveDinnerTripFromPreset(presetId);
+        }
         saveState();
         modal.remove();
         renderGrocery();
-        showManageMealPresetsModal();
-        showToast(`Updated "${name}"`);
+        if (returnToManage) showManageMealPresetsModal();
+        showToast(`Saved “${name}”`);
       };
+    }
+
+    function editActiveDinnerList() {
+      if (!isGroceryMealView() || !state.groceryView?.mealId) {
+        showManageMealPresetsModal();
+        return;
+      }
+      // Sync any on-list edits into the recipe first so the editor shows current items
+      syncMealPresetItemsFromTrip();
+      showEditMealPresetModal(state.groceryView.mealId, { returnToManage: false });
+    }
+
+    function reloadActiveDinnerTripFromPreset(mealId) {
+      const preset = getMealPresetById(mealId);
+      if (!preset) return;
+      const prev = state.groceryTripItems || [];
+      const checkedByName = new Map();
+      prev.forEach(g => {
+        if (g.checked) checkedByName.set(String(g.name || '').toLowerCase(), true);
+      });
+      state.groceryTripItems = (preset.items || []).map((name, i) => ({
+        id: 'trip-' + mealId + '-' + i + '-' + Date.now().toString(36).slice(-4),
+        name,
+        qty: '',
+        checked: !!checkedByName.get(String(name).toLowerCase()),
+        fromMeal: mealId
+      }));
+    }
+
+    /** Keep recipe ingredients in sync when user adds/removes/renames on the open dinner list */
+    function syncMealPresetItemsFromTrip() {
+      if (!isGroceryMealView()) return;
+      const mealId = state.groceryView?.mealId;
+      if (!mealId) return;
+      const idx = state.mealPresets.findIndex(p => p.id === mealId);
+      if (idx < 0) return;
+      const items = (state.groceryTripItems || [])
+        .map(g => String(g.name || '').trim())
+        .filter(Boolean);
+      if (!items.length) return;
+      state.mealPresets[idx] = { ...state.mealPresets[idx], items };
     }
 
     function showManageMealPresetsModal() {
@@ -11839,17 +11895,18 @@
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
         <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[80vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="flex items-center justify-between mb-3">
             <div>
-              <div class="font-semibold text-lg text-harbor-text">Your Recipes</div>
-              <div class="text-[10px] text-harbor-muted">${presets.length} / ${MAX_MEAL_PRESETS} slots used</div>
+              <div class="font-semibold text-lg text-harbor-text">Dinner lists</div>
+              <div class="text-[10px] text-harbor-muted">${presets.length} / ${MAX_MEAL_PRESETS} · tap Edit to change ingredients</div>
             </div>
             <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div id="mp-manage-list" class="space-y-2 mb-4"></div>
           <button type="button" id="mp-manage-add-btn"
             class="w-full py-2.5 rounded-2xl border border-harbor-primary/40 text-harbor-primary-light text-xs font-semibold ${presets.length >= MAX_MEAL_PRESETS ? 'opacity-60' : ''}">
-            + Add custom recipe
+            + Add custom dinner
           </button>
         </div>
       `;
@@ -11866,15 +11923,15 @@
         row.className = 'bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 flex items-center gap-2';
         row.innerHTML = `
           <div class="flex-1 min-w-0">
-            <div class="font-medium text-sm truncate">${p.dayShort ? `${p.dayShort} · ` : ''}${p.label}</div>
-            <div class="text-[10px] text-harbor-muted">${p.recipe ? `${p.recipe} · ` : ''}${getMealEffortLabel(p.effort)} · ${p.items.length} ingredients</div>
+            <div class="font-medium text-sm truncate">${p.dayShort ? `${escapeBriefHtml(p.dayShort)} · ` : ''}${escapeBriefHtml(p.label)}</div>
+            <div class="text-[10px] text-harbor-muted">${p.recipe ? `${escapeBriefHtml(p.recipe)} · ` : ''}${getMealEffortLabel(p.effort)} · ${(p.items || []).length} items</div>
           </div>
-          <button type="button" data-id="${p.id}" class="mp-edit text-[10px] font-semibold text-harbor-primary-light px-2">Edit</button>
+          <button type="button" data-id="${p.id}" class="mp-edit text-[10px] font-semibold text-harbor-primary-light px-2 py-1.5 rounded-lg bg-harbor-primary/10">Edit</button>
           <button type="button" data-id="${p.id}" class="mp-delete text-rose-400 text-xs font-medium px-2">Delete</button>
         `;
         row.querySelector('.mp-edit').onclick = () => {
           modal.remove();
-          showEditMealPresetModal(p.id);
+          showEditMealPresetModal(p.id, { returnToManage: true });
         };
         row.querySelector('.mp-delete').onclick = () => {
           removeMealPreset(p.id);
@@ -11900,8 +11957,30 @@
     }
 
     function addGroceryItem(name, qty, options = {}) {
-      const toMaster = options.toMaster !== false;
       name = normalizeUserText(name);
+      if (!name) return null;
+
+      // When a dinner list is open, Add edits that dinner (unless forced to master)
+      if (isGroceryMealView() && options.toMaster !== true) {
+        if (!state.groceryTripItems) state.groceryTripItems = [];
+        const item = {
+          id: 'trip-' + (state.groceryView?.mealId || 'meal') + '-' + Date.now(),
+          name,
+          qty: qty || '',
+          checked: false,
+          fromMeal: state.groceryView?.mealId || null,
+          addedAt: new Date().toISOString()
+        };
+        state.groceryTripItems.unshift(item);
+        syncMealPresetItemsFromTrip();
+        saveState();
+        renderGrocery();
+        renderTodayFeed();
+        updateSmartBanner();
+        showToast(`Added to dinner list: ${item.name}`);
+        return item;
+      }
+
       const item = {
         id: 'groc-' + Date.now(),
         name,
@@ -11918,6 +11997,25 @@
       updateSmartBanner();
       showToast(`Added to shopping list: ${item.name}`);
       return item;
+    }
+
+    function renameGroceryItem(itemId) {
+      const items = getActiveGroceryItems();
+      const item = items.find(g => g.id === itemId);
+      if (!item) return;
+      const next = prompt('Item name', item.name);
+      if (next == null) return;
+      const name = normalizeUserText(next);
+      if (!name) {
+        showToast('Enter a name', 'warn');
+        return;
+      }
+      item.name = name;
+      setActiveGroceryItems(items);
+      if (isGroceryMealView()) syncMealPresetItemsFromTrip();
+      saveState();
+      renderGrocery();
+      showToast('Item updated');
     }
 
     function selectMealGroceryList(mealId) {
@@ -11995,6 +12093,8 @@
 
     function showAddGroceryItemModal() {
       document.getElementById('grocery-add-modal')?.remove();
+      const isMeal = isGroceryMealView();
+      const preset = isMeal ? getMealPresetById(state.groceryView?.mealId) : null;
       const modal = document.createElement('div');
       modal.id = 'grocery-add-modal';
       modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
@@ -12004,21 +12104,23 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="flex items-center justify-between mb-3">
             <div>
-              <div class="font-semibold text-lg text-harbor-text">Add grocery item</div>
-              <div class="text-[10px] text-harbor-muted mt-0.5">Or use the mic for hands-free adds</div>
+              <div class="font-semibold text-lg text-harbor-text">${isMeal ? 'Add to dinner list' : 'Add grocery item'}</div>
+              <div class="text-[10px] text-harbor-muted mt-0.5">${isMeal
+                ? `Goes on ${escapeBriefHtml(preset?.label || 'this dinner')} · also updates the saved recipe`
+                : 'Or use the mic for hands-free adds'}</div>
             </div>
             <button type="button" onclick="document.getElementById('grocery-add-modal')?.remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <label class="block text-xs text-harbor-muted mb-1" for="grocery-add-modal-input">Item</label>
           <input id="grocery-add-modal-input" type="text"
             class="w-full bg-harbor-raised border border-harbor-border focus:border-harbor-primary rounded-2xl px-4 py-3 mb-4 outline-none text-harbor-text placeholder:text-harbor-muted"
-            placeholder="e.g. milk, avocados..."
+            placeholder="${isMeal ? 'e.g. extra cheese, cilantro…' : 'e.g. milk, avocados…'}"
             enterkeyhint="done"
             autocomplete="off"
             onkeydown="if(event.key==='Enter'){event.preventDefault();addGroceryFromInput();}">
           <button type="button" onclick="addGroceryFromInput()"
             class="w-full py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold active:opacity-90">
-            <i class="fa-solid fa-plus mr-1"></i>Add to list
+            <i class="fa-solid fa-plus mr-1"></i>${isMeal ? 'Add to dinner' : 'Add to list'}
           </button>
         </div>
       `;
@@ -12055,6 +12157,7 @@
     function removeGroceryItem(itemId) {
       const items = getActiveGroceryItems().filter(g => g.id !== itemId);
       setActiveGroceryItems(items);
+      if (isGroceryMealView()) syncMealPresetItemsFromTrip();
       saveState();
       renderGrocery();
       renderTodayFeed();
@@ -12065,6 +12168,7 @@
       const before = items.length;
       const remaining = items.filter(g => !g.checked);
       setActiveGroceryItems(remaining);
+      if (isGroceryMealView()) syncMealPresetItemsFromTrip();
       saveState();
       renderGrocery();
       renderTodayFeed();
@@ -12075,17 +12179,35 @@
     function renderGrocery() {
       const container = document.getElementById('grocery-list');
       const labelEl = document.getElementById('grocery-view-label');
+      const editDinnerBtn = document.getElementById('grocery-edit-dinner-btn');
+      const manageEditActive = document.getElementById('grocery-manage-edit-active');
+      const addBtn = document.getElementById('grocery-add-btn');
       if (!container) return;
 
       renderMealGroceryFilters();
 
       const isMeal = isGroceryMealView();
       const items = getActiveGroceryItems();
+      const preset = isMeal ? getMealPresetById(state.groceryView.mealId) : null;
+
+      if (editDinnerBtn) {
+        editDinnerBtn.classList.toggle('hidden', !isMeal);
+      }
+      if (manageEditActive) {
+        manageEditActive.classList.toggle('hidden', !isMeal);
+      }
+      if (addBtn) {
+        addBtn.setAttribute('aria-label', isMeal ? 'Add item to this dinner list' : 'Add grocery item');
+      }
+
       if (labelEl) {
-        const preset = isMeal ? getMealPresetById(state.groceryView.mealId) : null;
-        labelEl.textContent = isMeal
-          ? `${preset?.label || 'Dinner'}${preset?.recipe ? ` · ${preset.recipe}` : ''} · master list unchanged`
-          : `${getMealEnergyFilterLabel(currentEnergy)} · adds go to master`;
+        if (isMeal) {
+          labelEl.classList.remove('hidden');
+          labelEl.innerHTML = `Editing <strong class="text-harbor-text">${escapeBriefHtml(preset?.label || 'dinner')}</strong>${preset?.recipe ? ` · ${escapeBriefHtml(preset.recipe)}` : ''} · <span class="text-harbor-primary-light">Add</span> updates this dinner · use <strong class="text-harbor-text">Edit dinner</strong> for the full list`;
+        } else {
+          labelEl.classList.remove('hidden');
+          labelEl.textContent = 'Your main shopping list · open Dinner lists for themed meal shops';
+        }
       }
 
       container.innerHTML = '';
@@ -12098,8 +12220,14 @@
           '🛒',
           isMeal ? 'Empty dinner list' : 'No list yet',
           isMeal
-            ? 'This dinner has no items — use <strong>Add</strong>, or switch back to your shopping list.'
-            : 'Use <strong>Add</strong> for staples, or open <strong>Dinner lists</strong> for a ready-made meal shop.'
+            ? 'Add ingredients with <strong>Add</strong>, or open <strong>Edit dinner</strong> to paste a full list.'
+            : 'Use <strong>Add</strong> for staples, or open <strong>Dinner lists</strong> for a ready-made meal shop.',
+          isMeal
+            ? `<div class="harbor-empty-actions">
+                <button type="button" class="chip-add-btn" onclick="showAddGroceryItemModal()"><i class="fa-solid fa-plus"></i>Add item</button>
+                <button type="button" class="chip-tool-btn" onclick="editActiveDinnerList()">Edit dinner</button>
+              </div>`
+            : ''
         );
         return;
       }
@@ -12110,16 +12238,21 @@
         row.dataset.groceryId = item.id;
         row.dataset.swipeId = item.id;
         row.dataset.swipeType = 'grocery';
-        row.style.setProperty('--swipe-reveal', '4.5rem');
-        const actionsHtml = `<button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove item"><i class="fa-solid fa-trash-can"></i> Remove</button>`;
+        row.style.setProperty('--swipe-reveal', isMeal ? '8.5rem' : '4.5rem');
+        const actionsHtml = isMeal
+          ? `<button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Rename item"><i class="fa-solid fa-pen"></i> Edit</button>
+             <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove item"><i class="fa-solid fa-trash-can"></i> Remove</button>`
+          : `<button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove item"><i class="fa-solid fa-trash-can"></i> Remove</button>`;
+        const safeName = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(item.name) : item.name;
         const contentHtml = `
           <div onclick="toggleGroceryItem('${item.id}')" class="w-8 h-8 flex-shrink-0 rounded-xl border-2 ${item.checked ? 'border-harbor-primary bg-harbor-primary' : 'border-harbor-border'} flex items-center justify-center">
             ${item.checked ? '<i class="fa-solid fa-check text-white text-sm"></i>' : ''}
           </div>
           <div class="flex-1 min-w-0" onclick="toggleGroceryItem('${item.id}')">
-            <div class="font-medium ${item.checked ? 'line-through text-harbor-muted' : ''}">${item.name}</div>
-            ${item.qty ? `<div class="text-xs text-harbor-muted">${item.qty}</div>` : ''}
+            <div class="font-medium ${item.checked ? 'line-through text-harbor-muted' : ''}">${safeName}</div>
+            ${item.qty ? `<div class="text-xs text-harbor-muted">${escapeBriefHtml(item.qty)}</div>` : ''}
           </div>
+          ${isMeal ? `<button type="button" onclick="event.stopImmediatePropagation(); renameGroceryItem('${item.id}')" class="row-inline-actions text-[10px] text-harbor-primary-light font-semibold px-1">Edit</button>` : ''}
           <button onclick="event.stopImmediatePropagation(); removeGroceryItem('${item.id}')" class="row-inline-actions text-harbor-muted hover:text-rose-400 text-sm">×</button>
         `;
         row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
@@ -14815,7 +14948,8 @@
         if (action === 'edit') editHabitFromToday(id);
         else if (action === 'delete') deleteHabitFromToday(id, null);
       } else if (type === 'grocery') {
-        if (action === 'delete') removeGroceryItem(id);
+        if (action === 'edit') renameGroceryItem(id);
+        else if (action === 'delete') removeGroceryItem(id);
       } else if (type === 'streak') {
         if (action === 'view') showProjections(id);
         else if (action === 'delete') deleteStreak(id, null);
