@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Harbor">
   <meta name="format-detection" content="telephone=no">
-  <meta name="theme-color" content="#0A1F1E" id="meta-theme-color">
+  <meta name="theme-color" content="#E8F2EE" id="meta-theme-color">
   <script>
     // Apply saved theme before paint to avoid flash
-    // harbor = splash teal (default) · light = sleek seafoam · dark = sleek noir
+    // harbor = light mint (default, splash-inspired) · light = same mint · dark = noir
     (function () {
       try {
         var raw = localStorage.getItem('harbor_state_v1');
@@ -19,8 +19,8 @@
         var parsed = JSON.parse(raw);
         var s = parsed && parsed.settings ? parsed.settings : {};
         var t = s.theme;
-        // v2: dark=sleek mono, harbor=teal. Migrate v1 (dark=teal, mono=b&w).
-        // v3: light is a first-class seafoam theme (no longer remapped to dark).
+        // v2: dark=sleek mono, harbor=default. Migrate v1 (dark=teal, mono=b&w).
+        // v3: light is first-class mint (same family as harbor).
         if (!s.themeSchemeV2) {
           t = (t === 'mono') ? 'dark' : (t === 'light') ? 'light' : 'harbor';
         } else if (t === 'mono') {
@@ -29,10 +29,10 @@
           t = 'harbor';
         }
         document.documentElement.setAttribute('data-theme', t);
-        document.documentElement.style.colorScheme = t === 'light' ? 'light' : 'dark';
+        document.documentElement.style.colorScheme = t === 'dark' ? 'dark' : 'light';
         var meta = document.querySelector('meta[name="theme-color"]');
         if (meta) {
-          meta.setAttribute('content', t === 'dark' ? '#070707' : t === 'light' ? '#F3F7F6' : '#0A1F1E');
+          meta.setAttribute('content', t === 'dark' ? '#070707' : '#E8F2EE');
         }
       } catch (e) { /* ignore */ }
     })();
@@ -83,47 +83,45 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Outfit:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
 
     /* ═══════════════════════════════════════════════════════════
-       Harbor Visual System v1 — “Coastal OS”
-       Splash is the north star: dawn teal → seafoam, warm stone type.
-       RGB channels so Tailwind opacity utilities work.
+       Harbor Visual System v2 — light coastal (splash mint)
+       Default app = peaceful splash bottom: soft mint, white cards,
+       deep teal actions. Dark is optional noir.
        ═══════════════════════════════════════════════════════════ */
-    :root, html[data-theme="harbor"] {
-      /* Surfaces — splash gradient distilled */
-      --harbor-bg: 8 28 27;               /* #081C1B deeper dawn */
-      --harbor-surface: 16 42 40;         /* #102A28 soft card */
-      --harbor-raised: 24 54 51;          /* #183633 lifted row */
-      --harbor-border: 38 72 68;          /* #264844 quieter edge */
-      --harbor-primary: 47 155 140;       /* #2F9B8C brand action */
-      --harbor-primary-light: 122 196 182;/* #7AC4B6 seafoam text */
-      --harbor-accent: 196 165 116;       /* #C4A574 warm stone (rare) */
-      --harbor-text: 244 239 230;         /* #F4EFE6 warm off-white */
-      --harbor-muted: 148 170 165;        /* #94AAA5 */
-      --harbor-low: 212 146 122;          /* energy only */
-      --harbor-med: 212 181 106;
+    :root, html[data-theme="harbor"], html[data-theme="light"] {
+      /* Splash-inspired light surfaces */
+      --harbor-bg: 232 242 238;           /* #E8F2EE soft mint wash */
+      --harbor-surface: 255 255 255;      /* pure white cards */
+      --harbor-raised: 244 249 247;       /* #F4F9F7 soft raised */
+      --harbor-border: 206 222 216;       /* #CEDDD8 airy edge */
+      --harbor-primary: 47 155 140;       /* #2F9B8C brand teal */
+      --harbor-primary-light: 28 112 102; /* #1C7066 deep teal text */
+      --harbor-accent: 176 138 72;        /* warm stone (rare) */
+      --harbor-text: 18 40 37;            /* #122825 deep ink */
+      --harbor-muted: 96 118 113;         /* #607671 */
+      --harbor-low: 196 110 86;
+      --harbor-med: 184 148 48;
       --harbor-high: 47 155 140;
-      --harbor-dawn: 10 58 56;            /* #0A3A38 splash top */
+      --harbor-dawn: 220 236 232;
       --harbor-mint: 216 228 222;         /* #D8E4DE splash bottom */
 
-      /* Motion — water, not bounce */
+      /* Motion */
       --harbor-ease-out: cubic-bezier(0.32, 0.72, 0, 1);
-      --harbor-ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
+      --harbor-ease-spring: cubic-bezier(0.34, 1.15, 0.64, 1);
       --harbor-duration-fast: 0.16s;
       --harbor-duration: 0.28s;
-      --harbor-duration-slow: 0.42s;
+      --harbor-duration-slow: 0.4s;
 
-      /* Elevation */
-      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.045) inset, 0 4px 20px rgba(2, 16, 15, 0.38);
-      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.055) inset, 0 14px 40px rgba(2, 16, 15, 0.48);
-      --harbor-glow-primary: 0 0 0 1px rgba(122, 196, 182, 0.2);
+      /* Soft Apple-like elevation */
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 2px 8px rgba(18, 48, 44, 0.05), 0 8px 24px rgba(18, 48, 44, 0.04);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 1) inset, 0 12px 40px rgba(18, 48, 44, 0.1);
+      --harbor-glow-primary: 0 0 0 1px rgba(47, 155, 140, 0.16);
 
-      /* Radius scale */
-      --harbor-radius-sm: 0.65rem;
+      --harbor-radius-sm: 0.7rem;
       --harbor-radius-md: 1rem;
       --harbor-radius-lg: 1.25rem;
-      --harbor-radius-xl: 1.5rem;
+      --harbor-radius-xl: 1.35rem;
       --harbor-radius-pill: 999px;
 
-      /* Type */
       --harbor-font: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
       --harbor-font-display: 'Outfit', 'Space Grotesk', system-ui, sans-serif;
       --harbor-text-xs: 0.68rem;
@@ -133,7 +131,7 @@
 
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-top: env(safe-area-inset-top, 0px);
-      color-scheme: dark;
+      color-scheme: light;
     }
 
     /* ── DARK MODE: noir with a whisper of teal (still Harbor) ── */
@@ -249,92 +247,80 @@
       color: #070707;
     }
 
-    /* ── LIGHT MODE: splash seafoam day ── */
-    html[data-theme="light"] {
-      --harbor-bg: 240 246 244;             /* near splash mint wash */
-      --harbor-surface: 255 255 255;
-      --harbor-raised: 232 241 238;
-      --harbor-border: 200 218 214;
-      --harbor-primary: 47 155 140;
-      --harbor-primary-light: 32 118 108;
-      --harbor-accent: 168 132 72;
-      --harbor-text: 16 34 32;
-      --harbor-muted: 88 110 106;
-      --harbor-low: 196 110 86;
-      --harbor-med: 184 148 48;
-      --harbor-high: 47 155 140;
-      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 4px 18px rgba(16, 48, 44, 0.06);
-      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.98) inset, 0 14px 36px rgba(16, 48, 44, 0.09);
-      --harbor-glow-primary: 0 0 0 1px rgba(47, 155, 140, 0.18);
-      --harbor-dawn: 220 236 232;
-      --harbor-mint: 216 228 222;
-      color-scheme: light;
-    }
-
-    html[data-theme="light"] .site-header {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(243, 247, 246, 0.94) 100%);
-      border-bottom-color: rgb(206 222 218);
-    }
-
+    /* Light + Harbor share the same splash-mint system (light is an alias) */
+    html[data-theme="harbor"] .chip-add-btn,
+    html[data-theme="harbor"] .today-add-btn,
     html[data-theme="light"] .chip-add-btn,
     html[data-theme="light"] .today-add-btn {
-      background: linear-gradient(180deg, #3AADA0 0%, #2F9B8C 100%);
+      background: linear-gradient(180deg, #3CB5A6 0%, #2F9B8C 100%);
       color: #FFFFFF;
       box-shadow:
-        0 2px 14px rgba(47, 155, 140, 0.36),
-        0 0 0 1px rgba(47, 155, 140, 0.16),
+        0 2px 12px rgba(47, 155, 140, 0.28),
+        0 0 0 1px rgba(47, 155, 140, 0.12),
         inset 0 1px 0 rgba(255, 255, 255, 0.35);
     }
 
+    html[data-theme="harbor"] .chip-voice-btn,
+    html[data-theme="harbor"] .today-voice-btn,
     html[data-theme="light"] .chip-voice-btn,
     html[data-theme="light"] .today-voice-btn {
-      background: rgb(255 255 255);
-      border-color: rgb(206 222 218);
-      color: rgb(18 36 34);
-      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 2px 8px rgba(18, 48, 44, 0.08);
+      background: #FFFFFF;
+      border-color: rgb(var(--harbor-border));
+      color: rgb(var(--harbor-text));
+      box-shadow: var(--harbor-shadow-sm);
     }
 
-    html[data-theme="light"] .life-nav-tab.life-panel-active,
-    html[data-theme="light"] .main-nav-tab.nav-active {
-      color: #0A1F1E;
+    html[data-theme="harbor"] .life-nav-tab.life-panel-active,
+    html[data-theme="light"] .life-nav-tab.life-panel-active {
+      color: #FFFFFF !important;
       font-weight: 750;
+      text-shadow: none;
     }
 
+    html[data-theme="harbor"] .main-nav-tab.nav-active,
+    html[data-theme="light"] .main-nav-tab.nav-active {
+      color: #0A1F1E !important;
+      font-weight: 750;
+      text-shadow: none;
+    }
+
+    html[data-theme="harbor"] .life-chip-indicator,
     html[data-theme="light"] .life-chip-indicator {
-      background: linear-gradient(180deg, #3AADA0 0%, #2F9B8C 100%);
-      box-shadow: 0 2px 10px rgba(47, 155, 140, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      background: linear-gradient(180deg, #3CB5A6 0%, #2F9B8C 100%);
+      box-shadow: 0 2px 10px rgba(47, 155, 140, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35);
     }
 
+    html[data-theme="harbor"] .main-nav-indicator,
     html[data-theme="light"] .main-nav-indicator {
-      background: linear-gradient(180deg, #3AADA0 0%, #2F9B8C 100%);
-      box-shadow: 0 2px 10px rgba(47, 155, 140, 0.25);
+      background: linear-gradient(180deg, rgba(60, 181, 166, 0.35) 0%, rgba(47, 155, 140, 0.12) 100%);
+      box-shadow: inset 0 -2.5px 0 #2F9B8C;
     }
 
+    html[data-theme="harbor"] .summary-toggle-btn.is-active,
     html[data-theme="light"] .summary-toggle-btn.is-active {
-      background: linear-gradient(135deg, #3AADA0 0%, #2F9B8C 100%);
+      background: linear-gradient(135deg, #3CB5A6 0%, #2F9B8C 100%);
       color: #FFFFFF;
-      box-shadow: 0 4px 16px rgba(47, 155, 140, 0.28);
+      box-shadow: 0 4px 16px rgba(47, 155, 140, 0.24);
     }
 
-    html[data-theme="light"] .energy-btn.is-active,
-    html[data-theme="light"] .energy-btn[aria-pressed="true"] {
-      color: #FFFFFF;
-    }
-
+    html[data-theme="harbor"] .swipe-action-edit,
     html[data-theme="light"] .swipe-action-edit {
-      background: linear-gradient(180deg, #3AADA0 0%, #268276 100%);
+      background: linear-gradient(180deg, #3CB5A6 0%, #268276 100%);
       color: #FFFFFF;
     }
 
+    html[data-theme="harbor"] body > .fixed.inset-0.modal-overlay-blur,
+    html[data-theme="harbor"] body > .fixed.inset-0[class*="bg-harbor-bg"],
     html[data-theme="light"] body > .fixed.inset-0.modal-overlay-blur,
     html[data-theme="light"] body > .fixed.inset-0[class*="bg-harbor-bg"] {
-      background-color: rgba(18, 36, 34, 0.42) !important;
+      background-color: rgba(18, 40, 37, 0.38) !important;
     }
 
+    html[data-theme="harbor"] .modal-close-chip,
     html[data-theme="light"] .modal-close-chip {
-      color: rgba(18, 36, 34, 0.72);
-      background: rgba(47, 155, 140, 0.08);
-      border-color: rgba(47, 155, 140, 0.2);
+      color: rgba(18, 40, 37, 0.65);
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(47, 155, 140, 0.18);
     }
 
     /* ── Settings switches (explicit CSS so knobs always render) ── */
@@ -418,17 +404,29 @@
       align-items: center;
       justify-content: space-between;
       gap: 0.5rem;
-      padding: 0.7rem 0.75rem;
-      border-radius: 1rem;
-      border: 1px solid rgb(var(--harbor-border));
-      background: rgb(var(--harbor-raised) / 0.55);
+      padding: 0.75rem 0.8rem;
+      border-radius: 1.05rem;
+      border: 1px solid rgba(47, 155, 140, 0.12);
+      background: #FFFFFF;
+      box-shadow: var(--harbor-shadow-sm);
       min-width: 0;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     }
 
     .theme-appearance-card.is-active {
+      border-color: rgba(47, 155, 140, 0.4);
+      background: rgba(47, 155, 140, 0.08);
+      box-shadow: 0 0 0 1px rgba(47, 155, 140, 0.12), var(--harbor-shadow-sm);
+    }
+
+    html[data-theme="dark"] .theme-appearance-card {
+      border-color: rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised) / 0.55);
+      box-shadow: none;
+    }
+    html[data-theme="dark"] .theme-appearance-card.is-active {
       border-color: rgb(var(--harbor-primary) / 0.55);
       background: rgb(var(--harbor-primary) / 0.12);
-      box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.12);
     }
 
     .theme-appearance-card .theme-card-label {
@@ -449,14 +447,14 @@
       display: flex;
       align-items: center;
       gap: 0.4rem;
-      margin-top: 0.45rem;
-      padding: 0.45rem 0.65rem;
-      border-radius: 0.75rem;
-      background: rgb(var(--harbor-raised) / 0.4);
-      border: 1px dashed rgb(var(--harbor-border));
+      margin-top: 0.5rem;
+      padding: 0.5rem 0.7rem;
+      border-radius: 0.85rem;
+      background: rgba(47, 155, 140, 0.06);
+      border: 1px solid rgba(47, 155, 140, 0.12);
       font-size: 0.625rem;
       color: rgb(var(--harbor-muted));
-      line-height: 1.3;
+      line-height: 1.35;
     }
 
     .theme-teal-dot {
@@ -500,8 +498,11 @@
     }
 
     html {
-      /* Solid dawn teal — matches splash top; avoids invalid RGB-token var misuse */
-      background-color: #0A3A38;
+      /* Soft mint wash — matches splash landing / light coastal default */
+      background-color: #E8F2EE;
+    }
+    html[data-theme="dark"] {
+      background-color: #060808;
     }
 
     body {
@@ -509,14 +510,14 @@
       font-size: var(--harbor-text-base);
       line-height: 1.45;
       letter-spacing: -0.011em;
-      /* Splash-continuous dawn wash (must stay visible — frames stay transparent) */
-      background-color: #081C1B !important;
+      /* Light coastal — matches splash mint landing */
+      background-color: #E8F2EE !important;
       background-image: linear-gradient(
-        175deg,
-        #0A3A38 0%,
-        #0A2422 32%,
-        #081C1B 62%,
-        #0C2824 100%
+        180deg,
+        #D8E4DE 0%,
+        #E8F2EE 28%,
+        #F4F9F7 72%,
+        #FFFFFF 100%
       ) !important;
       background-attachment: fixed;
       color: rgb(var(--harbor-text));
@@ -525,39 +526,29 @@
       text-rendering: optimizeLegibility;
     }
 
-    html[data-theme="light"] body {
-      background-color: #F0F6F4 !important;
-      background-image: linear-gradient(
-        180deg,
-        #E8F2EE 0%,
-        #F3F7F6 40%,
-        #F0F6F4 100%
-      ) !important;
-    }
-
     html[data-theme="dark"] body {
       background-color: #060808 !important;
       background-image: linear-gradient(
         180deg,
-        #0E1212 0%,
+        #101414 0%,
         #060808 55%,
         #050606 100%
       ) !important;
     }
 
-    /* Let the splash wash show through solid Tailwind bg utilities on the shell */
+    /* Transparent shell so mint wash shows */
+    .app-frame,
     .app-frame.bg-harbor-bg,
+    .site-root,
     #app-chrome,
     #app-scroll,
+    .main-nav,
     .main-nav.bg-harbor-bg,
+    .tab-content,
     .tab-content.bg-harbor-bg,
     #tab-content-library.bg-harbor-bg {
       background-color: transparent !important;
       background-image: none !important;
-    }
-
-    .app-frame {
-      background: transparent !important;
     }
     
     .font-display {
@@ -651,25 +642,19 @@
 
     #task-list .habit-card,
     #task-list .swipe-row-content.habit-card {
-      border: 1px solid rgba(107, 191, 176, 0.16) !important;
-      background:
-        linear-gradient(165deg, rgba(28, 62, 58, 0.55) 0%, rgba(16, 42, 40, 0.92) 100%) !important;
+      border: 1px solid rgba(47, 155, 140, 0.1) !important;
+      background: #FFFFFF !important;
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.05) inset,
-        0 8px 24px rgba(2, 14, 13, 0.35) !important;
-    }
-
-    html[data-theme="light"] #task-list .habit-card,
-    html[data-theme="light"] #task-list .swipe-row-content.habit-card {
-      border-color: rgba(47, 155, 140, 0.14) !important;
-      background: linear-gradient(165deg, #ffffff 0%, #f3f8f6 100%) !important;
-      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 6px 18px rgba(16, 48, 44, 0.07) !important;
+        0 1px 0 rgba(255, 255, 255, 1) inset,
+        0 4px 16px rgba(18, 48, 44, 0.06),
+        0 1px 2px rgba(18, 48, 44, 0.04) !important;
     }
 
     html[data-theme="dark"] #task-list .habit-card,
     html[data-theme="dark"] #task-list .swipe-row-content.habit-card {
       border-color: rgba(255, 255, 255, 0.08) !important;
       background: linear-gradient(165deg, #1a1a1a 0%, #121212 100%) !important;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 20px rgba(0, 0, 0, 0.35) !important;
     }
 
     #task-list .task-complete-hit {
@@ -887,7 +872,7 @@
       position: relative;
       gap: 0.35rem;
       padding-bottom: 0.15rem;
-      border-bottom-color: rgba(107, 191, 176, 0.12) !important;
+      border-bottom-color: rgba(47, 155, 140, 0.1) !important;
       background: transparent !important;
     }
 
@@ -937,11 +922,14 @@
     }
 
     .main-nav-tab.nav-active {
-      color: #dff7f1;
+      color: #0A1F1E;
       border-bottom-color: transparent;
       background: transparent;
       font-weight: 750;
-      text-shadow: 0 0 18px rgba(107, 191, 176, 0.25);
+      text-shadow: none;
+    }
+    html[data-theme="dark"] .main-nav-tab.nav-active {
+      color: #f5f5f5;
     }
 
     .life-subnav {
@@ -951,9 +939,14 @@
       padding: 0.28rem;
       margin-bottom: 0.85rem;
       border-radius: var(--harbor-radius-md);
-      border: 1px solid rgb(var(--harbor-border) / 0.9);
-      background: rgb(var(--harbor-surface) / 0.88);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(47, 155, 140, 0.12);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: var(--harbor-shadow-sm);
+    }
+
+    html[data-theme="dark"] .life-subnav {
+      border-color: rgb(var(--harbor-border));
+      background: rgb(var(--harbor-surface) / 0.9);
     }
 
     /* Sliding pill behind active Life chip */
@@ -964,8 +957,8 @@
       left: 0;
       width: 25%;
       border-radius: calc(var(--harbor-radius-md) - 0.15rem);
-      background: linear-gradient(180deg, rgba(47, 155, 140, 0.42) 0%, rgba(47, 155, 140, 0.22) 100%);
-      box-shadow: 0 1px 0 rgba(107, 191, 176, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      background: linear-gradient(180deg, #3CB5A6 0%, #2F9B8C 100%);
+      box-shadow: 0 2px 10px rgba(47, 155, 140, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.35);
       pointer-events: none;
       z-index: 0;
       opacity: 1;
@@ -973,6 +966,10 @@
         transform var(--harbor-duration-slow) var(--harbor-ease-out),
         width var(--harbor-duration-slow) var(--harbor-ease-out);
       will-change: transform, width;
+    }
+    html[data-theme="dark"] .life-chip-indicator {
+      background: linear-gradient(180deg, #FFFFFF 0%, #DCDCDC 100%);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.5);
     }
 
     .life-nav-tab {
@@ -1006,11 +1003,15 @@
     }
 
     .life-nav-tab.life-panel-active {
-      color: #e8faf5;
+      color: #FFFFFF;
       background: transparent;
       box-shadow: none;
       font-weight: 750;
       border-bottom: none;
+    }
+
+    html[data-theme="dark"] .life-nav-tab.life-panel-active {
+      color: #070707;
     }
 
     .work-hours-card {
@@ -1019,23 +1020,29 @@
       align-items: center;
       gap: 0.7rem;
       text-align: left;
-      padding: 0.72rem 0.8rem;
+      padding: 0.8rem 0.9rem;
       margin-bottom: 0.55rem;
-      border-radius: var(--harbor-radius-lg);
-      border: 1px solid rgba(47, 155, 140, 0.28);
-      background: linear-gradient(145deg, rgba(47, 155, 140, 0.12) 0%, rgb(var(--harbor-surface) / 0.95) 58%);
+      border-radius: var(--harbor-radius-xl);
+      border: 1px solid rgba(47, 155, 140, 0.12);
+      background: #FFFFFF;
       color: rgb(var(--harbor-text));
       cursor: pointer;
       box-shadow: var(--harbor-shadow-sm);
       transition:
         border-color var(--harbor-duration-fast) ease,
         background var(--harbor-duration) ease,
-        transform var(--harbor-duration-fast) var(--harbor-ease-out);
+        transform var(--harbor-duration-fast) var(--harbor-ease-out),
+        box-shadow var(--harbor-duration) ease;
     }
 
     .work-hours-card:hover {
-      border-color: rgba(47, 155, 140, 0.45);
-      background: linear-gradient(145deg, rgba(47, 155, 140, 0.16) 0%, rgb(var(--harbor-raised) / 0.9) 58%);
+      border-color: rgba(47, 155, 140, 0.28);
+      box-shadow: var(--harbor-shadow-md);
+    }
+
+    html[data-theme="dark"] .work-hours-card {
+      background: rgb(var(--harbor-surface));
+      border-color: rgb(var(--harbor-border));
     }
 
     .work-hours-card:active {
@@ -1280,16 +1287,30 @@
       font-weight: 700;
       border: 1px solid rgb(var(--harbor-border));
       color: rgb(var(--harbor-muted));
-      background: rgba(0, 0, 0, 0.15);
+      background: rgba(255, 255, 255, 0.72);
     }
 
     .streak-off-chip.is-live {
+      color: #1C7066;
+      border-color: rgba(47, 155, 140, 0.28);
+      background: rgba(47, 155, 140, 0.1);
+    }
+
+    .streak-off-chip.is-done {
+      color: #8a6a2e;
+      border-color: rgba(176, 138, 72, 0.35);
+      background: rgba(176, 138, 72, 0.12);
+    }
+
+    html[data-theme="dark"] .streak-off-chip {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    html[data-theme="dark"] .streak-off-chip.is-live {
       color: #dff7f1;
       border-color: rgba(107, 191, 176, 0.4);
       background: rgba(47, 155, 140, 0.2);
     }
-
-    .streak-off-chip.is-done {
+    html[data-theme="dark"] .streak-off-chip.is-done {
       color: #f0e6c8;
       border-color: rgba(196, 165, 116, 0.4);
       background: rgba(196, 165, 116, 0.15);
@@ -1332,32 +1353,23 @@
       display: block;
       flex-shrink: 0;
       position: relative;
-      z-index: 50; /* keep header menu above weather banner / chrome */
-      border-bottom: 1px solid rgba(107, 191, 176, 0.14);
+      z-index: 50;
+      border-bottom: 1px solid rgba(47, 155, 140, 0.1);
       background: linear-gradient(
         180deg,
-        rgba(16, 42, 40, 0.72) 0%,
-        rgba(8, 28, 27, 0.4) 100%
+        rgba(255, 255, 255, 0.86) 0%,
+        rgba(232, 242, 238, 0.72) 100%
       );
-      backdrop-filter: blur(20px) saturate(1.2);
-      -webkit-backdrop-filter: blur(20px) saturate(1.2);
-    }
-
-    html[data-theme="light"] .site-header {
-      border-bottom-color: rgba(47, 155, 140, 0.12);
-      background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.82) 0%,
-        rgba(243, 247, 246, 0.5) 100%
-      );
+      backdrop-filter: blur(22px) saturate(1.15);
+      -webkit-backdrop-filter: blur(22px) saturate(1.15);
     }
 
     html[data-theme="dark"] .site-header {
       border-bottom-color: rgba(255, 255, 255, 0.06);
       background: linear-gradient(
         180deg,
-        rgba(18, 18, 18, 0.88) 0%,
-        rgba(7, 7, 7, 0.5) 100%
+        rgba(18, 18, 18, 0.9) 0%,
+        rgba(7, 7, 7, 0.55) 100%
       );
     }
 
@@ -1532,11 +1544,15 @@
       min-width: 0;
       max-width: none;
       box-sizing: border-box;
-      background: rgb(var(--harbor-surface));
-      border: 1px solid rgb(var(--harbor-border) / 0.9);
-      border-radius: var(--harbor-radius-lg);
-      padding: 0.75rem 0.85rem 0.7rem;
+      background: #FFFFFF;
+      border: 1px solid rgba(47, 155, 140, 0.1);
+      border-radius: var(--harbor-radius-xl);
+      padding: 0.8rem 0.9rem 0.75rem;
       box-shadow: var(--harbor-shadow-sm);
+    }
+    html[data-theme="dark"] .library-column {
+      background: rgb(var(--harbor-surface));
+      border-color: rgb(var(--harbor-border) / 0.9);
     }
 
     .library-column-header {
@@ -1549,7 +1565,7 @@
       position: sticky;
       top: 0;
       z-index: 2;
-      background: linear-gradient(180deg, rgb(var(--harbor-surface)) 70%, rgba(18, 46, 44, 0.92) 100%);
+      background: linear-gradient(180deg, rgb(var(--harbor-surface)) 78%, transparent 100%);
     }
 
     .library-column-tasks {
@@ -1608,22 +1624,18 @@
     }
 
     .energy-btn.is-idle {
-      background: rgba(16, 42, 40, 0.55);
-      border: 1px solid rgba(107, 191, 176, 0.14);
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(47, 155, 140, 0.12);
       color: rgb(var(--harbor-muted));
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-
-    html[data-theme="light"] .energy-btn.is-idle {
-      background: rgba(255, 255, 255, 0.72);
-      border-color: rgba(47, 155, 140, 0.16);
+      box-shadow: var(--harbor-shadow-sm);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
     html[data-theme="dark"] .energy-btn.is-idle {
-      background: rgba(28, 28, 28, 0.75);
+      background: rgba(28, 28, 28, 0.8);
       border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: none;
     }
 
     .energy-btn.is-idle:hover {
@@ -1679,10 +1691,15 @@
     }
 
     .status-bar {
-      background: rgba(26, 35, 50, 0.72);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.88);
+      border-top: 1px solid rgba(47, 155, 140, 0.1);
+      backdrop-filter: blur(16px) saturate(1.1);
+      -webkit-backdrop-filter: blur(16px) saturate(1.1);
       padding-bottom: calc(0.5rem + var(--safe-bottom));
+    }
+    html[data-theme="dark"] .status-bar {
+      background: rgba(12, 12, 12, 0.88);
+      border-top-color: rgba(255, 255, 255, 0.06);
     }
 
     .status-bar-btn {
@@ -1954,8 +1971,8 @@
     .modal-close-chip:hover,
     .modal-close-chip:focus-visible {
       color: rgb(var(--harbor-text));
-      border-color: rgba(107, 191, 176, 0.4);
-      background: rgba(47, 155, 140, 0.14);
+      border-color: rgba(47, 155, 140, 0.28);
+      background: rgba(47, 155, 140, 0.1);
       outline: none;
     }
 
@@ -2090,12 +2107,18 @@
     }
 
     .onboarding-option {
-      border: 1px solid rgb(var(--harbor-border));
+      border: 1px solid rgba(47, 155, 140, 0.12);
       border-radius: 1.25rem;
       padding: 1rem;
       cursor: pointer;
-      background: rgba(18, 46, 44, 0.55);
+      background: #FFFFFF;
+      box-shadow: var(--harbor-shadow-sm);
       backdrop-filter: blur(8px);
+    }
+    html[data-theme="dark"] .onboarding-option {
+      border-color: rgb(var(--harbor-border));
+      background: rgba(28, 28, 28, 0.75);
+      box-shadow: none;
     }
 
     .onboarding-option-icon {
@@ -2110,13 +2133,19 @@
     }
 
     .onboarding-feature {
-      border: 1px solid rgb(var(--harbor-border));
+      border: 1px solid rgba(47, 155, 140, 0.12);
       border-radius: 1.1rem;
       padding: 0.85rem 0.95rem;
-      background: rgba(18, 46, 44, 0.45);
+      background: #FFFFFF;
+      box-shadow: var(--harbor-shadow-sm);
       display: flex;
       align-items: flex-start;
       gap: 0.75rem;
+    }
+    html[data-theme="dark"] .onboarding-feature {
+      border-color: rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised) / 0.55);
+      box-shadow: none;
     }
 
     .onboarding-feature-icon {
@@ -2499,15 +2528,17 @@
     }
 
     .suggestion-card {
-      background: linear-gradient(155deg, rgba(18, 48, 46, 0.97), rgb(var(--harbor-surface)));
-      box-shadow: var(--harbor-shadow-sm);
-      border: 1px solid rgb(var(--harbor-border) / 0.9) !important;
-      border-left: 2.5px solid rgb(var(--harbor-primary-light)) !important;
-      border-radius: var(--harbor-radius-lg) !important;
+      background: #FFFFFF !important;
+      box-shadow: var(--harbor-shadow-sm) !important;
+      border: 1px solid rgba(47, 155, 140, 0.12) !important;
+      border-left: 3px solid #2F9B8C !important;
+      border-radius: var(--harbor-radius-xl) !important;
     }
 
-    html[data-theme="light"] .suggestion-card {
-      background: linear-gradient(155deg, rgba(255, 255, 255, 0.98), rgb(var(--harbor-raised)));
+    html[data-theme="dark"] .suggestion-card {
+      background: rgb(var(--harbor-surface)) !important;
+      border-color: rgb(var(--harbor-border)) !important;
+      border-left-color: rgb(var(--harbor-primary-light)) !important;
     }
 
     #smart-banner {
@@ -2729,11 +2760,15 @@
     }
 
     .settings-card {
-      border: 1px solid rgb(var(--harbor-border) / 0.9);
-      border-radius: var(--harbor-radius-lg);
-      background: rgb(var(--harbor-raised) / 0.4);
+      border: 1px solid rgba(47, 155, 140, 0.1);
+      border-radius: var(--harbor-radius-xl);
+      background: #FFFFFF;
       box-shadow: var(--harbor-shadow-sm);
       overflow: hidden;
+    }
+    html[data-theme="dark"] .settings-card {
+      border-color: rgb(var(--harbor-border) / 0.9);
+      background: rgb(var(--harbor-raised) / 0.4);
     }
 
     .settings-row {
@@ -2869,21 +2904,25 @@
       width: 100%;
       padding: 0.8rem 0.9rem;
       border-radius: 0.9rem;
-      border: 1px solid rgba(244, 63, 94, 0.4);
-      background: rgba(136, 19, 55, 0.28);
-      color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.28);
+      background: rgba(255, 228, 230, 0.92);
+      color: #be123c;
       font-weight: 700;
       font-size: 0.84rem;
     }
 
     .settings-danger-btn:active {
-      background: rgba(159, 18, 57, 0.45);
+      background: rgba(254, 202, 202, 0.95);
     }
 
-    html[data-theme="light"] .settings-danger-btn {
-      background: rgba(255, 228, 230, 0.9);
-      border-color: rgba(244, 63, 94, 0.35);
-      color: #be123c;
+    html[data-theme="dark"] .settings-danger-btn {
+      background: rgba(136, 19, 55, 0.28);
+      border-color: rgba(244, 63, 94, 0.4);
+      color: #fda4af;
+    }
+
+    html[data-theme="dark"] .settings-danger-btn:active {
+      background: rgba(159, 18, 57, 0.45);
     }
 
     .settings-build-meta {
@@ -3496,7 +3535,7 @@
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      background: rgba(8, 18, 18, 0.78);
+      background: rgba(18, 40, 37, 0.42);
       /* solid fallback so underlying weather/tabs never “bleed” into the sheet */
     }
 
@@ -3516,14 +3555,21 @@
       overflow-x: hidden;
       overflow-y: auto;
       border-radius: var(--harbor-radius-xl) var(--harbor-radius-xl) 0 0;
-      border-top: 1px solid rgb(var(--harbor-border) / 0.9);
+      border-top: 1px solid rgba(47, 155, 140, 0.12);
       background:
-        radial-gradient(ellipse 90% 50% at 50% -10%, rgba(47, 155, 140, 0.12) 0%, transparent 55%),
-        rgb(var(--harbor-surface));
-      box-shadow: var(--harbor-shadow-md), 0 -10px 36px rgba(0, 0, 0, 0.28);
+        radial-gradient(ellipse 90% 50% at 50% -10%, rgba(47, 155, 140, 0.08) 0%, transparent 55%),
+        #FFFFFF;
+      box-shadow: var(--harbor-shadow-md), 0 -8px 32px rgba(18, 48, 44, 0.1);
       -webkit-overflow-scrolling: touch;
       isolation: isolate;
       animation: sheetUp var(--harbor-duration-slow) var(--harbor-ease-out) forwards;
+    }
+    html[data-theme="dark"] .summary-sheet {
+      border-top-color: rgb(var(--harbor-border) / 0.9);
+      background:
+        radial-gradient(ellipse 90% 50% at 50% -10%, rgba(255, 255, 255, 0.04) 0%, transparent 55%),
+        rgb(var(--harbor-surface));
+      box-shadow: var(--harbor-shadow-md), 0 -10px 36px rgba(0, 0, 0, 0.4);
     }
 
     body.summary-open #site-root {
@@ -3580,7 +3626,7 @@
       width: 2.35rem;
       height: 2.35rem;
       border-radius: 0.8rem;
-      background: linear-gradient(145deg, rgba(47, 155, 140, 0.35), rgba(22, 48, 58, 0.7));
+      background: linear-gradient(145deg, rgba(60, 181, 166, 0.35), rgba(47, 155, 140, 0.55));
       border: 1px solid rgba(107, 191, 176, 0.35);
       display: flex;
       align-items: center;
@@ -4634,20 +4680,24 @@
     .harbor-day-card {
       position: relative;
       margin-top: 0.65rem;
-      padding: 1.05rem 1rem 0.95rem;
+      padding: 1.15rem 1.1rem 1.05rem;
       border-radius: var(--harbor-radius-xl);
-      background: rgb(var(--harbor-surface));
-      border: 1px solid rgb(var(--harbor-border) / 0.88);
+      background: #FFFFFF;
+      border: 1px solid rgba(47, 155, 140, 0.1);
       box-shadow: var(--harbor-shadow-sm);
       overflow: hidden;
+    }
+    html[data-theme="dark"] .harbor-day-card {
+      background: rgb(var(--harbor-surface));
+      border-color: rgb(var(--harbor-border));
     }
     .harbor-day-card::before {
       content: '';
       position: absolute;
       inset: 0 0 auto 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(107, 191, 176, 0.45), transparent);
-      opacity: 0.9;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(47, 155, 140, 0.45), transparent);
+      opacity: 1;
       pointer-events: none;
     }
     .harbor-day-card.is-earning {
@@ -4684,8 +4734,8 @@
       justify-content: center;
       font-size: 1.05rem;
       line-height: 1;
-      background: rgba(47, 155, 140, 0.12);
-      border: 1px solid rgba(107, 191, 176, 0.22);
+      background: rgba(47, 155, 140, 0.1);
+      border: 1px solid rgba(47, 155, 140, 0.16);
       transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .cheat-fund-jar.is-earning .cheat-fund-jar-icon {
@@ -4733,11 +4783,12 @@
       100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
     }
     .cheat-day-today-banner {
-      background: linear-gradient(155deg, rgba(47, 155, 140, 0.14), rgba(18, 46, 44, 0.35));
-      border: 1px solid rgba(107, 191, 176, 0.28);
+      background: linear-gradient(155deg, rgba(47, 155, 140, 0.1), rgba(255, 255, 255, 0.94));
+      border: 1px solid rgba(47, 155, 140, 0.16);
     }
-    html[data-theme="light"] .cheat-day-today-banner {
-      background: linear-gradient(155deg, rgba(47, 155, 140, 0.1), rgba(255, 255, 255, 0.9));
+    html[data-theme="dark"] .cheat-day-today-banner {
+      background: linear-gradient(155deg, rgba(255, 255, 255, 0.06), rgba(18, 18, 18, 0.9));
+      border-color: rgba(255, 255, 255, 0.1);
     }
     html[data-fun-theme] .cheat-fund-fill {
       background: linear-gradient(to right, rgb(var(--harbor-primary)), rgb(var(--harbor-primary-light)));
@@ -4775,8 +4826,8 @@
       transition: border-color 0.15s, background 0.15s, opacity 0.15s;
     }
     .harbor-day-action.is-ready {
-      border-color: rgba(107, 191, 176, 0.4);
-      background: rgba(47, 155, 140, 0.1);
+      border-color: rgba(47, 155, 140, 0.32);
+      background: rgba(47, 155, 140, 0.08);
     }
     .harbor-day-action:disabled {
       opacity: 0.55;
@@ -6203,7 +6254,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v139';
+    const HARBOR_BUILD = 'v140';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -6921,8 +6972,8 @@
       if (!state.settings.scheduleView) {
         state.settings.scheduleView = 'today';
       }
-      // Theme scheme: harbor = splash teal (default), light = seafoam, dark = sleek noir.
-      // v1 had dark=teal and mono=B&W. v2 remapped mono→dark. v3 keeps light as first-class.
+      // Theme scheme: harbor = light mint (default), light = same mint family, dark = noir.
+      // v1 had dark=teal and mono=B&W. v2 remapped mono→dark. v3 keeps light first-class.
       if (!state.settings.themeSchemeV2) {
         const old = state.settings.theme;
         if (old === 'mono') state.settings.theme = 'dark';
@@ -18918,7 +18969,7 @@
 
     function getAppTheme() {
       const t = state?.settings?.theme;
-      // harbor = splash teal · light = seafoam · dark = sleek noir
+      // harbor = light mint (default) · light = same mint · dark = noir
       if (t === 'mono') return 'dark'; // legacy alias
       if (t === 'dark' || t === 'light' || t === 'harbor') return t;
       return 'harbor';
@@ -18926,12 +18977,11 @@
 
     function themeMetaColor(theme) {
       if (theme === 'dark') return '#070707';
-      if (theme === 'light') return '#F3F7F6';
-      return '#0A1F1E';
+      return '#E8F2EE'; // harbor + light share splash mint
     }
 
     function applyAppTheme(theme) {
-      // harbor = splash teal (default), light = seafoam, dark = sleek noir
+      // harbor = light mint (default), light = same mint family, dark = noir
       let t = theme === 'mono' ? 'dark' : theme;
       if (t !== 'dark' && t !== 'light' && t !== 'harbor') t = 'harbor';
       if (state?.settings) {
@@ -18939,7 +18989,7 @@
         state.settings.themeSchemeV2 = true;
       }
       document.documentElement.setAttribute('data-theme', t);
-      document.documentElement.style.colorScheme = t === 'light' ? 'light' : 'dark';
+      document.documentElement.style.colorScheme = t === 'dark' ? 'dark' : 'light';
       // Fun theme owns meta color while active
       const funActive = state?.settings?.funThemeUntil && state.settings.funThemeUntil >= todayStr();
       if (!funActive) {
@@ -21407,7 +21457,8 @@
       const smartSuggestionsOn = !state.settings.smartSuggestionsMuted;
       const currentTheme = getAppTheme();
       const darkModeOn = currentTheme === 'dark';
-      const lightModeOn = currentTheme === 'light';
+      // Harbor + light are the same mint family; Light switch means “day mode”
+      const lightModeOn = currentTheme !== 'dark';
       const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
       const corsHelperOn = state.settings.calendarAllowCorsHelper !== false;
       
@@ -21471,8 +21522,18 @@
               <div class="settings-card">
                 <div class="settings-card-block">
                   <div class="settings-row-title">Appearance</div>
-                  <div class="settings-row-desc mb-2">Light sits next to Dark. Turn both off for classic Harbor teal.</div>
+                  <div class="settings-row-desc mb-2">Soft mint day by default — the same calm wash as the splash. Dark is optional noir.</div>
                   <div class="theme-appearance-row" id="theme-appearance-row">
+                    <div class="theme-appearance-card ${lightModeOn ? 'is-active' : ''}" data-theme-card="light">
+                      <div class="min-w-0">
+                        <div class="theme-card-label">Light</div>
+                        <div class="theme-card-sub">Harbor mint</div>
+                      </div>
+                      <button type="button" id="light-mode-toggle" role="switch" aria-checked="${lightModeOn ? 'true' : 'false'}"
+                        aria-label="Light mode" class="smart-suggestions-toggle harbor-switch">
+                        <span></span>
+                      </button>
+                    </div>
                     <div class="theme-appearance-card ${darkModeOn ? 'is-active' : ''}" data-theme-card="dark">
                       <div class="min-w-0">
                         <div class="theme-card-label">Dark</div>
@@ -21483,20 +21544,10 @@
                         <span></span>
                       </button>
                     </div>
-                    <div class="theme-appearance-card ${lightModeOn ? 'is-active' : ''}" data-theme-card="light">
-                      <div class="min-w-0">
-                        <div class="theme-card-label">Light</div>
-                        <div class="theme-card-sub">Teal accents</div>
-                      </div>
-                      <button type="button" id="light-mode-toggle" role="switch" aria-checked="${lightModeOn ? 'true' : 'false'}"
-                        aria-label="Light mode" class="smart-suggestions-toggle harbor-switch">
-                        <span></span>
-                      </button>
-                    </div>
                   </div>
                   <div class="theme-teal-hint mt-2">
                     <span class="theme-teal-dot" aria-hidden="true"></span>
-                    <span>Default is <strong class="text-harbor-text">Harbor teal</strong> — both switches off.</span>
+                    <span>Default is <strong class="text-harbor-text">Harbor mint</strong> — soft seafoam, white cards, teal accents.</span>
                   </div>
                 </div>
               </div>
@@ -21665,10 +21716,12 @@
       const lightToggle = modal.querySelector('#light-mode-toggle');
       const refreshThemeCards = () => {
         const t = getAppTheme();
-        setSwitchChecked(darkToggle, t === 'dark');
-        setSwitchChecked(lightToggle, t === 'light');
+        const isDark = t === 'dark';
+        setSwitchChecked(darkToggle, isDark);
+        setSwitchChecked(lightToggle, !isDark);
         modal.querySelectorAll('[data-theme-card]').forEach((card) => {
-          card.classList.toggle('is-active', card.getAttribute('data-theme-card') === t);
+          const key = card.getAttribute('data-theme-card');
+          card.classList.toggle('is-active', isDark ? key === 'dark' : key === 'light');
         });
       };
 
@@ -21676,13 +21729,13 @@
         applyAppTheme(on ? 'dark' : 'harbor');
         refreshThemeCards();
         saveState();
-        showToast(on ? 'Dark mode on' : 'Harbor teal on');
+        showToast(on ? 'Dark mode on' : 'Harbor mint on');
       });
       wireSwitchToggle(lightToggle, (on) => {
-        applyAppTheme(on ? 'light' : 'harbor');
+        applyAppTheme(on ? 'harbor' : 'dark');
         refreshThemeCards();
         saveState();
-        showToast(on ? 'Light mode on' : 'Harbor teal on');
+        showToast(on ? 'Harbor mint on' : 'Dark mode on');
       });
       // Re-assert initial checked state after wiring (ensures knobs paint)
       setSwitchChecked(darkToggle, darkModeOn);
@@ -23304,7 +23357,7 @@
         if (metaTheme) {
           metaTheme.setAttribute(
             'content',
-            typeof themeMetaColor === 'function' ? themeMetaColor(theme) : (theme === 'dark' ? '#070707' : theme === 'light' ? '#F3F7F6' : '#0A1F1E')
+            typeof themeMetaColor === 'function' ? themeMetaColor(theme) : (theme === 'dark' ? '#070707' : '#E8F2EE')
           );
         }
       } catch (_) { /* ignore */ }
@@ -23461,7 +23514,7 @@
           if (metaTheme) {
             metaTheme.setAttribute(
               'content',
-              theme === 'dark' ? '#070707' : theme === 'light' ? '#F3F7F6' : '#0A1F1E'
+              theme === 'dark' ? '#070707' : '#E8F2EE'
             );
           }
         } catch (_) { /* ignore */ }
