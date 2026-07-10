@@ -3285,10 +3285,14 @@
     }
 
     .summary-dash-mark img {
-      width: 1.35rem;
-      height: 1.35rem;
+      width: 1.45rem;
+      height: 1.45rem;
       object-fit: contain;
-      filter: brightness(1.1);
+      object-position: center center;
+      /* Match FAB: white custom anchor on teal plate */
+      filter:
+        drop-shadow(0 0 1px rgba(255, 255, 255, 0.25))
+        drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
     }
 
     .summary-dash-title {
@@ -5782,7 +5786,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v128';
+    const HARBOR_BUILD = 'v129';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -15221,7 +15225,7 @@
           <div class="summary-dash-head">
             <div class="summary-dash-brand">
               <div class="summary-dash-mark" aria-hidden="true">
-                <img src="./harbor-mark.svg" alt="">
+                <img src="./harbor-fab-anchor.png" width="128" height="128" alt="" decoding="async">
               </div>
               <div class="min-w-0">
                 <div class="summary-dash-title">Summary</div>
