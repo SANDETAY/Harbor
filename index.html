@@ -4416,6 +4416,79 @@
       padding-top: 0.1rem;
     }
 
+    .summary-when-you-can {
+      margin-bottom: 0.85rem;
+    }
+
+    .summary-when-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.55rem 0.65rem;
+      border-radius: 0.85rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      margin-bottom: 0.4rem;
+    }
+
+    .summary-when-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .summary-when-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .summary-when-title {
+      font-size: 0.84rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-text));
+      line-height: 1.25;
+    }
+
+    .summary-when-meta {
+      font-size: 0.65rem;
+      color: rgb(var(--harbor-muted));
+      margin-top: 0.15rem;
+    }
+
+    .summary-pull-today-btn {
+      flex-shrink: 0;
+      border: 1px solid rgba(47, 155, 140, 0.45);
+      background: rgba(47, 155, 140, 0.12);
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      padding: 0.35rem 0.55rem;
+      border-radius: 999px;
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .summary-pull-today-btn:active {
+      transform: scale(0.97);
+    }
+
+    .summary-pull-today-btn.is-on {
+      border-color: rgba(47, 155, 140, 0.3);
+      background: transparent;
+      color: rgb(var(--harbor-muted));
+      font-weight: 600;
+    }
+
+    .summary-park-badge {
+      display: inline-block;
+      margin-left: 0.35rem;
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+      vertical-align: middle;
+    }
+
     #summary-day-events-modal .summary-day-events-sheet {
       position: relative;
       z-index: 1;
@@ -8050,7 +8123,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 188;
+    const HARBOR_BUILD_NUMBER = 189;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -8079,7 +8152,9 @@
         highlights: [
           'Browser tab title: Harbor · One App For the Whole Day',
           'Biweekly chore tags say “Every 2 weeks” (not fortnight)',
-          'Seasonal chores (heating tune-up, leaf raking, spring lawn care, etc.) only show on Today when that season is near',
+          'Seasonal chores (heating tune-up, leaf raking, spring lawn care, etc.) only show when that season is near',
+          'Heavy maintenance (pressure wash, aerate lawn, dryer vent…) lives in Summary → When You Can — Add to Today when you’re ready',
+          'Today stays a lighter, achievable list; bigger work doesn’t pile on until you pull it over',
           'Library default task names use Title Case, with small words like and / or / at left lower mid-phrase',
           'Bills support weekly, biweekly, monthly, quarterly, and yearly cadence',
           'Multi pay-date bills multiply the amount by days selected',
@@ -9178,6 +9253,7 @@
       if (!state.calendarCache) state.calendarCache = null;
       // Title Case + seasonal windows for preset library items already on the list
       if (typeof syncPresetLibraryOntoHabits === 'function') syncPresetLibraryOntoHabits();
+      if (typeof clearExpiredPullToTodayFlags === 'function') clearExpiredPullToTodayFlags();
 
     }
 
@@ -12208,7 +12284,8 @@
       const today = todayStr();
       let pool = state.habits.filter(h => {
         if (isCompletedToday(h.id)) return false;
-        return isDueToday(h);
+        // Match Today tab — don't push parked maintenance into smart suggestions
+        return typeof belongsOnTodayTab === 'function' ? belongsOnTodayTab(h) : isDueToday(h);
       });
 
       if (energy === 1) {
@@ -17341,8 +17418,7 @@
     }
 
     function buildTodayFeed() {
-      // Today tab stays focused on what is actionable *today*.
-      // Weekly+ chores that are not due yet live in Overview (This week).
+      // Today = achievable daily rhythm. Heavy maintenance lives in Summary until pulled.
       const today = todayStr();
       const active = [];
 
@@ -17350,11 +17426,13 @@
         const comps = getCompletions(h.id) || [];
         if (comps.includes(today)) return;
         if (getHabitSkips(h.id).includes(today)) return;
-        if (!isDueToday(h)) return;
+        if (!belongsOnTodayTab(h)) return;
         active.push(h);
       });
 
       active.sort((a, b) => {
+        const pullDiff = (isPulledToToday(b) ? 1 : 0) - (isPulledToToday(a) ? 1 : 0);
+        if (pullDiff !== 0) return pullDiff;
         const overdueDiff = (isHabitOverdue(b) ? 1 : 0) - (isHabitOverdue(a) ? 1 : 0);
         if (overdueDiff !== 0) return overdueDiff;
         return getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy);
@@ -17375,7 +17453,12 @@
           variant: 'life'
         });
       }
-      sections.push({ type: 'habits', label: '', items: active, variant: 'active' });
+      const pulled = active.filter(h => isPulledToToday(h));
+      const rest = active.filter(h => !isPulledToToday(h));
+      if (pulled.length) {
+        sections.push({ type: 'habits', label: 'Pulled onto Today', items: pulled, variant: 'active' });
+      }
+      sections.push({ type: 'habits', label: pulled.length ? 'Today’s rhythm' : '', items: rest, variant: 'active' });
       return sections;
     }
 
@@ -17400,6 +17483,109 @@
       }
 
       return isHabitActiveThisPeriod(habit);
+    }
+
+    /**
+     * Heavy / seasonal / maintenance work stays in Summary by default so Today stays
+     * achievable. User (or an explicit pull) brings them onto Today when ready.
+     */
+    function isParkedForSummary(habit) {
+      if (!habit || habit.is_pro_reminder) return false;
+      if (isDailyTask(habit)) return false;
+      if (habit.parkOnSummary === false) return false;
+      if (habit.parkOnSummary === true) return true;
+
+      const interval = habit.interval_days;
+      const mins = habit.est_minutes || 0;
+      const diff = habit.difficulty || 2;
+      const section = habit.librarySection || '';
+      const title = habit.title || '';
+
+      // Seasonal windows (heating tune-up, leaf raking, etc.)
+      const seasonMonths = typeof getHabitSeasonMonths === 'function' ? getHabitSeasonMonths(habit) : null;
+      if (seasonMonths && seasonMonths.length) return true;
+
+      // Monthly+ maintenance always parks
+      if (interval != null && interval >= 30) return true;
+
+      // Longer / harder biweekly+ projects
+      if (interval != null && interval >= 14 && (mins >= 30 || diff >= 3)) return true;
+
+      // Maintenance library sections (except light weekly yard like mow)
+      if (typeof MAINTENANCE_SECTIONS !== 'undefined' && MAINTENANCE_SECTIONS.includes(section)) {
+        if (interval == null || interval >= 14) return true;
+      }
+
+      // One-off heavy projects
+      if (isOneOffTask(habit) && (mins >= 40 || diff >= 3)) return true;
+
+      // Title cues for big DIY even if metadata is light
+      if (/pressure\s*wash|aerate|overseed|dryer vent|gutter|winterize|deep clean|chimney|tune-?up|mulch garden|flush water heater|roof inspect/i.test(title)) {
+        if (interval == null || interval >= 14 || isOneOffTask(habit)) return true;
+      }
+
+      return false;
+    }
+
+    function isPulledToToday(habit) {
+      return !!(habit && habit.pullToToday === todayStr());
+    }
+
+    /** What the Today tab should show — due now, but not parked maintenance unless pulled. */
+    function belongsOnTodayTab(habit) {
+      if (!isDueToday(habit)) return false;
+      if (isPulledToToday(habit)) return true;
+      if (isParkedForSummary(habit)) return false;
+      return true;
+    }
+
+    function clearExpiredPullToTodayFlags() {
+      const today = todayStr();
+      let changed = false;
+      (state.habits || []).forEach(h => {
+        if (h.pullToToday && h.pullToToday !== today) {
+          delete h.pullToToday;
+          changed = true;
+        }
+      });
+      return changed;
+    }
+
+    function pullHabitToToday(habitId) {
+      const habit = (state.habits || []).find(h => h.id === habitId);
+      if (!habit) {
+        showToast('Task not found');
+        return;
+      }
+      if (!isDueToday(habit)) {
+        showToast('Not due right now — check back in season');
+        return;
+      }
+      habit.pullToToday = todayStr();
+      saveState();
+      renderTasks();
+      if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
+      if (typeof updateSmartBanner === 'function') updateSmartBanner();
+      if (document.getElementById('summary-body')) {
+        try { refreshSummaryModal(summaryMode || 'day'); } catch (_) { /* ignore */ }
+      }
+      if (document.getElementById('summary-kpi-detail-modal')) {
+        try { showSummaryKpiDetail('tasks'); } catch (_) { /* ignore */ }
+      }
+      showToast(`On Today · ${habit.title}`);
+    }
+
+    function releaseHabitFromToday(habitId) {
+      const habit = (state.habits || []).find(h => h.id === habitId);
+      if (!habit || !habit.pullToToday) return;
+      delete habit.pullToToday;
+      saveState();
+      renderTasks();
+      if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
+      if (document.getElementById('summary-body')) {
+        try { refreshSummaryModal(summaryMode || 'day'); } catch (_) { /* ignore */ }
+      }
+      showToast('Moved back to Summary');
     }
 
     // ==================== MOBILE SWIPE ROWS ====================
@@ -18088,6 +18274,9 @@
       comps.sort();
       const afterCount = doneCount + 1;
 
+      // One-day pull expires once done
+      if (habit.pullToToday) delete habit.pullToToday;
+
       logMetricOnComplete(habit);
       const pointsEarned = (typeof isCheatDayFundEnabled === 'function' && isCheatDayFundEnabled())
         ? awardRewardPoints(habit)
@@ -18759,7 +18948,11 @@
 
     function getBriefAlsoOnDeck(brief) {
       const doFirstIds = new Set(brief.doFirst.map(t => t.habit.id));
-      let pool = brief.tasks.filter(t => !doFirstIds.has(t.habit.id));
+      // Parked maintenance is shown in “When You Can” with Add to Today — don’t double-list
+      let pool = brief.tasks.filter(t =>
+        !doFirstIds.has(t.habit.id) &&
+        !(isParkedForSummary(t.habit) && !isPulledToToday(t.habit))
+      );
 
       if (brief.mode === 'week' || brief.mode === 'month') {
         const seen = new Set();
@@ -18771,7 +18964,7 @@
         return pool.slice(0, brief.mode === 'month' ? 10 : 8);
       }
 
-      return pool.slice(3, brief.mode === 'day' ? 8 : 12);
+      return pool.slice(0, brief.mode === 'day' ? 5 : 12);
     }
 
     function collectBriefTasks(mode) {
@@ -18849,13 +19042,16 @@
         // Prefer chores/upcoming on week/month view slightly after true due-today items
         const choreBoostA = (mode === 'week' || mode === 'month') && isNonDailyRecurring(a.habit) ? 5 : 0;
         const choreBoostB = (mode === 'week' || mode === 'month') && isNonDailyRecurring(b.habit) ? 5 : 0;
+        // Parked maintenance ranks after daily rhythm items (Summary “when you can”)
+        const parkA = isParkedForSummary(a.habit) && !isPulledToToday(a.habit) ? 40 : 0;
+        const parkB = isParkedForSummary(b.habit) && !isPulledToToday(b.habit) ? 40 : 0;
         // Time-of-day + weather: demote walks at 2am, outdoor chores in rain, etc.
         const ctxA = getHabitContextPenalty(a.habit, mode);
         const ctxB = getHabitContextPenalty(b.habit, mode);
         const scoreA = (a.daysUntil <= 0 ? 0 : a.daysUntil <= 2 ? 1 : 2) * 100
-          + getEffectiveDifficulty(a.habit, currentEnergy) + choreBoostA + ctxA;
+          + getEffectiveDifficulty(a.habit, currentEnergy) + choreBoostA + ctxA + parkA;
         const scoreB = (b.daysUntil <= 0 ? 0 : b.daysUntil <= 2 ? 1 : 2) * 100
-          + getEffectiveDifficulty(b.habit, currentEnergy) + choreBoostB + ctxB;
+          + getEffectiveDifficulty(b.habit, currentEnergy) + choreBoostB + ctxB + parkB;
         if (scoreA !== scoreB) return scoreA - scoreB;
         return a.date.localeCompare(b.date);
       });
@@ -19094,7 +19290,10 @@
       const bills = collectBriefBills(mode);
       const grocery = (state.groceryMaster || []).filter(g => !g.checked);
       const events = collectBriefEvents(mode);
-      const doFirst = tasks.slice(0, 3);
+      // Focus card prefers daily rhythm items; parked maintenance lives in “When you can”
+      const focusPool = tasks.filter(t => !isParkedForSummary(t.habit) || isPulledToToday(t.habit));
+      const doFirst = (focusPool.length ? focusPool : tasks).slice(0, 3);
+      const parked = tasks.filter(t => isParkedForSummary(t.habit) && !isPulledToToday(t.habit));
       const week = getWeekBounds(todayStr());
       const month = getRemainingMonthBounds(todayStr());
 
@@ -19103,6 +19302,7 @@
         ctx,
         tasks,
         doFirst,
+        parked,
         bills,
         grocery: grocery.slice(0, mode === 'day' ? 6 : mode === 'month' ? 10 : 8),
         groceryTotal: grocery.length,
@@ -19543,6 +19743,7 @@
 
         ${renderBriefFocusCard(brief)}
         ${renderBriefUpNext(brief)}
+        ${renderBriefWhenYouCanPanel(brief)}
 
         <div class="summary-panels">
           ${renderBriefSchedulePanel(brief)}
@@ -19551,6 +19752,47 @@
 
         ${shortTip ? `<div class="summary-footnote">${escapeBriefHtml(shortTip)}</div>` : ''}
       `;
+    }
+
+    function renderBriefWhenYouCanPanel(brief) {
+      const parked = brief.parked || (brief.tasks || []).filter(t =>
+        isParkedForSummary(t.habit) && !isPulledToToday(t.habit)
+      );
+      if (!parked.length) return '';
+      const show = parked.slice(0, 6);
+      const more = parked.length - show.length;
+      return `
+        <div class="summary-panel summary-when-you-can" aria-label="Bigger tasks when you have time">
+          <div class="summary-panel-hdr">
+            <div class="summary-panel-title"><i class="fa-solid fa-screwdriver-wrench text-harbor-primary-light"></i> When You Can</div>
+            <span class="summary-panel-count">${parked.length}</span>
+          </div>
+          <div class="text-[10px] text-harbor-muted leading-snug mb-2">
+            Bigger or seasonal work stays here so Today stays light. Pull one on when you have the time and energy.
+          </div>
+          ${show.map(item => {
+            const h = item.habit;
+            const mins = h.est_minutes ? `${h.est_minutes} min` : '';
+            const freq = isDailyTask(h) ? 'Daily' : formatIntervalLabel(h.interval_days);
+            const due = (item.daysUntil ?? 0) <= 0
+              ? 'Due in this period'
+              : item.daysUntil === 1
+                ? 'Tomorrow'
+                : formatBriefDateLabel(item.date);
+            return `
+              <div class="summary-when-row">
+                <div class="summary-when-main">
+                  <div class="summary-when-title">${escapeBriefHtml(h.title)}</div>
+                  <div class="summary-when-meta">${escapeBriefHtml(due)} · ${escapeBriefHtml(freq)}${mins ? ` · ${escapeBriefHtml(mins)}` : ''}</div>
+                </div>
+                <button type="button" class="summary-pull-today-btn" data-pull-habit="${escapeBriefHtml(h.id)}"
+                  onclick="event.preventDefault(); event.stopPropagation(); pullHabitToToday('${escapeBriefHtml(h.id)}')">
+                  Add to Today
+                </button>
+              </div>`;
+          }).join('')}
+          ${more > 0 ? `<div class="text-[10px] text-harbor-muted mt-1.5">+${more} more — open Tasks above for the full list</div>` : ''}
+        </div>`;
     }
 
     function closeSummaryKpiDetail() {
@@ -19581,7 +19823,7 @@
           const h = item?.habit;
           if (!h) return '';
           const due = (item.daysUntil ?? 0) <= 0
-            ? 'Due today'
+            ? 'Due now'
             : item.daysUntil === 1
               ? 'Tomorrow'
               : formatBriefDateLabel(item.date);
@@ -19591,10 +19833,26 @@
               ? 'Daily'
               : formatIntervalLabel(h.interval_days);
           const mins = h.est_minutes != null ? `${h.est_minutes || 0} min` : '';
+          const parked = isParkedForSummary(h);
+          const pulled = isPulledToToday(h);
+          const onToday = belongsOnTodayTab(h);
+          let actionHtml = '';
+          if (parked && !pulled && isDueToday(h)) {
+            actionHtml = `<button type="button" class="summary-pull-today-btn" data-pull-habit="${escapeBriefHtml(h.id)}"
+              onclick="event.preventDefault(); event.stopPropagation(); pullHabitToToday('${escapeBriefHtml(h.id)}')">Add to Today</button>`;
+          } else if (pulled) {
+            actionHtml = `<button type="button" class="summary-pull-today-btn is-on" data-release-habit="${escapeBriefHtml(h.id)}"
+              onclick="event.preventDefault(); event.stopPropagation(); releaseHabitFromToday('${escapeBriefHtml(h.id)}')">On Today · Undo</button>`;
+          } else if (onToday) {
+            actionHtml = `<span class="summary-kpi-detail-side text-harbor-muted">On Today</span>`;
+          }
+          const badge = parked && !pulled
+            ? '<span class="summary-park-badge">Summary</span>'
+            : '';
           return `
             <div class="summary-kpi-detail-row">
               <div class="summary-kpi-detail-main">
-                <div class="summary-kpi-detail-title">${escapeBriefHtml(h.title || 'Untitled')}</div>
+                <div class="summary-kpi-detail-title">${escapeBriefHtml(h.title || 'Untitled')}${badge}</div>
                 <div class="summary-kpi-detail-meta">
                   <span>${escapeBriefHtml(due)}</span>
                   <span>·</span>
@@ -19602,6 +19860,7 @@
                   ${mins ? `<span>·</span><span>${escapeBriefHtml(mins)}</span>` : ''}
                 </div>
               </div>
+              ${actionHtml}
             </div>`;
         }).filter(Boolean).join('');
       }
@@ -23190,9 +23449,11 @@
       updateSummaryLauncher();
       const kindNote = shouldTrackStreak(taskToAdd)
         ? ' · daily habit (streaks)'
-        : isNonDailyRecurring(taskToAdd)
-          ? ' · chore (Summary when due)'
-          : '';
+        : isParkedForSummary(taskToAdd)
+          ? ' · lives in Summary until you Add to Today'
+          : isNonDailyRecurring(taskToAdd)
+            ? ' · chore when due'
+            : '';
       showToast(`✓ ${taskToAdd.title} added${kindNote}`);
     }
 
