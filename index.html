@@ -7667,7 +7667,7 @@
         <div id="task-list"></div>
         <div id="app-version-foot" class="app-version-foot" aria-label="App version">
           <button type="button" class="app-version-foot-btn" onclick="showReleaseNotes()" title="What's new">
-            Harbor <span class="tabular-nums" id="app-version-foot-label">0.9.0</span>
+            Harbor <span class="tabular-nums" id="app-version-foot-label">0.9.1</span>
           </button>
         </div>
       </div>
@@ -7930,16 +7930,16 @@
     // ==================== CONFIG & STATE ====================
     const STORAGE_KEY = 'harbor_state_v1';
 
-    // Feedback: set recipientEmail to your inbox (FormSubmit delivers there).
-    // Optional: add a Web3Forms access key at https://web3forms.com to override FormSubmit.
     // Product version (semver). Pre-1.0: feature-complete late beta / RC territory.
     // Bump MINOR for larger feature sets, PATCH for fixes. Reserve 1.0.0 for store launch.
-    const HARBOR_VERSION = '0.9.0';
+    const HARBOR_VERSION = '0.9.1';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 181;
+    const HARBOR_BUILD_NUMBER = 182;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
+    // Feedback delivery: recipientEmail is required (FormSubmit + mailto fallback).
+    // Optional web3formsAccessKey from https://web3forms.com is tried first when set.
     const FEEDBACK_CONFIG = {
       recipientEmail: 'Taylorsanders12360@gmail.com',
       web3formsAccessKey: '',
@@ -7949,6 +7949,15 @@
 
     /** User-facing changelog (newest first). Keep short and plain — not a git log. */
     const HARBOR_CHANGELOG = [
+      {
+        version: '0.9.1',
+        date: '2026-07-10',
+        title: 'Feedback delivery & free-time hours',
+        highlights: [
+          'Feedback always emails the builder when online — retries queued notes and honest send status',
+          'Smart Suggestions approximate free time in hours, not raw minutes'
+        ]
+      },
       {
         version: '0.9.0',
         date: '2026-07-10',
@@ -14346,6 +14355,34 @@
       return m ? `${h}h ${m}m` : `${h}h`;
     }
 
+    /**
+     * Approximate free time in hours for Smart Suggestions / brief copy.
+     * Rounds to the nearest half hour so "127 min" → "about 2 hours".
+     */
+    function formatFreeTimeHours(mins, opts = {}) {
+      const m = Math.max(0, Math.round(Number(mins) || 0));
+      if (m <= 0) return opts.zeroLabel || 'no free time';
+      let hours = Math.round((m / 60) * 2) / 2;
+      if (hours < 0.5) hours = 0.5;
+      const approx = opts.bare ? '' : 'about ';
+      if (hours === 0.5) return `${approx}½ hour`;
+      if (hours === 1) return `${approx}1 hour`;
+      if (hours === 1.5) return `${approx}1½ hours`;
+      if (hours % 1 === 0) return `${approx}${hours} hours`;
+      return `${approx}${hours} hours`;
+    }
+
+    /** Compact hour label for tight UI (e.g. schedule pill): ~2h, ~1.5h, <1h */
+    function formatFreeTimeHoursCompact(mins) {
+      const m = Math.max(0, Math.round(Number(mins) || 0));
+      if (m <= 0) return '0h';
+      let hours = Math.round((m / 60) * 2) / 2;
+      if (hours < 0.5) hours = 0.5;
+      if (hours < 1) return '~½h';
+      if (hours % 1 === 0) return `~${hours}h`;
+      return `~${hours}h`;
+    }
+
     function getWorkScheduleLabel(ws) {
       if (!ws || ws.mode === 'flexible') return 'Flexible';
       if (ws.mode === 'off') return 'Off today';
@@ -14485,8 +14522,8 @@
 
     function formatScheduleLoadLabel(avail) {
       const free = avail?.dayFreeMinutes ?? 0;
-      if (free >= 45) return `${formatDurationShort(free)} free`;
-      if (free > 0) return `${formatDurationShort(free)} left`;
+      if (free >= 45) return `${formatFreeTimeHoursCompact(free)} free`;
+      if (free > 0) return `${formatFreeTimeHoursCompact(free)} left`;
       return 'Packed today';
     }
 
@@ -17845,6 +17882,8 @@
       return {
         app: FEEDBACK_CONFIG.appName,
         version: FEEDBACK_CONFIG.appVersion,
+        build: typeof HARBOR_BUILD !== 'undefined' ? HARBOR_BUILD : null,
+        buildNumber: typeof HARBOR_BUILD_NUMBER !== 'undefined' ? HARBOR_BUILD_NUMBER : null,
         url: location.href,
         tab: currentTab,
         lifePanel: currentLifePanel,
@@ -17854,8 +17893,15 @@
         groceryCount: (state.groceryMaster || []).filter(g => !g.checked).length,
         userAgent: navigator.userAgent,
         screen: `${window.innerWidth}x${window.innerHeight}`,
+        online: typeof navigator.onLine === 'boolean' ? navigator.onLine : null,
         timestamp: new Date().toISOString()
       };
+    }
+
+    function getFeedbackSubject(payload) {
+      const cat = payload?.category || 'General';
+      const ver = FEEDBACK_CONFIG.appVersion || HARBOR_VERSION || '';
+      return `${FEEDBACK_CONFIG.appName} ${ver} Feedback: ${cat}`;
     }
 
     function formatFeedbackBody(payload) {
@@ -17863,30 +17909,189 @@
       return [
         `Category: ${payload.category}`,
         `Rating: ${payload.rating || '—'}/5`,
+        `Reply-to: ${payload.replyEmail || '(none provided)'}`,
         '',
         payload.message,
         '',
         '--- Context ---',
-        `Tab: ${ctx.tab}`,
+        `App: ${ctx.app || FEEDBACK_CONFIG.appName} ${ctx.version || ''} ${ctx.build || ''}`.trim(),
+        `Tab: ${ctx.tab}${ctx.lifePanel ? ' / ' + ctx.lifePanel : ''}`,
         `Energy: ${ctx.energy}`,
         `Tasks: ${ctx.taskCount}`,
         `Bills: ${ctx.billCount}`,
         `Grocery (unchecked): ${ctx.groceryCount}`,
         `URL: ${ctx.url}`,
         `Screen: ${ctx.screen}`,
+        `Online: ${ctx.online}`,
+        `UA: ${ctx.userAgent || ''}`,
         `Time: ${ctx.timestamp}`
       ].join('\n');
     }
 
-    function logFeedbackLocally(payload) {
+    function upsertFeedbackLog(entry) {
       if (!state.feedbackLog) state.feedbackLog = [];
-      state.feedbackLog.unshift({
-        id: 'fb-' + Date.now(),
-        ...payload,
-        sentAt: new Date().toISOString()
-      });
+      const id = entry.id || ('fb-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6));
+      const next = { ...entry, id, updatedAt: new Date().toISOString() };
+      const idx = state.feedbackLog.findIndex(f => f.id === id);
+      if (idx >= 0) state.feedbackLog[idx] = { ...state.feedbackLog[idx], ...next };
+      else state.feedbackLog.unshift(next);
       state.feedbackLog = state.feedbackLog.slice(0, 50);
       saveState();
+      return next;
+    }
+
+    function openFeedbackMailto(payload, bodyText) {
+      const to = FEEDBACK_CONFIG.recipientEmail || '';
+      const subject = getFeedbackSubject(payload);
+      const href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+      try {
+        const a = document.createElement('a');
+        a.href = href;
+        a.rel = 'noopener';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return true;
+      } catch (_) {
+        try {
+          window.location.href = href;
+          return true;
+        } catch (e2) {
+          return false;
+        }
+      }
+    }
+
+    async function parseJsonSafe(res) {
+      try {
+        return await res.json();
+      } catch (_) {
+        return null;
+      }
+    }
+
+    /** Try Web3Forms (most reliable when access key is configured). */
+    async function deliverFeedbackViaWeb3Forms(payload, bodyText) {
+      const key = (FEEDBACK_CONFIG.web3formsAccessKey || '').trim();
+      if (!key) return { ok: false, skipped: true };
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: key,
+          subject: getFeedbackSubject(payload),
+          from_name: payload.replyEmail ? 'Harbor User' : 'Harbor Feedback',
+          email: payload.replyEmail || FEEDBACK_CONFIG.recipientEmail,
+          replyto: payload.replyEmail || FEEDBACK_CONFIG.recipientEmail,
+          message: bodyText,
+          to: FEEDBACK_CONFIG.recipientEmail,
+          botcheck: ''
+        })
+      });
+      const data = await parseJsonSafe(res);
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || `Web3Forms HTTP ${res.status}`);
+      }
+      return { ok: true, via: 'web3forms' };
+    }
+
+    /**
+     * FormSubmit AJAX (JSON). First submission to a new address may require
+     * confirming the activation email in the inbox — until then delivery fails.
+     */
+    async function deliverFeedbackViaFormSubmitJson(payload, bodyText) {
+      const to = (FEEDBACK_CONFIG.recipientEmail || '').trim();
+      if (!to) return { ok: false, skipped: true };
+      const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(to)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          name: payload.replyEmail ? 'Harbor User' : 'Harbor Feedback',
+          // Real-looking reply address; fake domains are often rejected by FormSubmit
+          email: payload.replyEmail || to,
+          _replyto: payload.replyEmail || to,
+          message: bodyText,
+          _subject: getFeedbackSubject(payload),
+          _template: 'table',
+          _captcha: 'false',
+          _honey: '',
+          category: payload.category || 'General',
+          rating: payload.rating != null ? String(payload.rating) : '',
+          app_version: FEEDBACK_CONFIG.appVersion || '',
+          build: typeof HARBOR_BUILD !== 'undefined' ? HARBOR_BUILD : ''
+        })
+      });
+      const data = await parseJsonSafe(res);
+      // FormSubmit returns { success: "true" | true, message: "..." } or error text
+      const success = data && (data.success === true || data.success === 'true');
+      if (!res.ok || !success) {
+        const msg = data?.message || data?.error || `FormSubmit JSON HTTP ${res.status}`;
+        throw new Error(typeof msg === 'string' ? msg : 'FormSubmit JSON failed');
+      }
+      return { ok: true, via: 'formsubmit-json' };
+    }
+
+    /** FormSubmit form-urlencoded fallback (some networks block JSON posts). */
+    async function deliverFeedbackViaFormSubmitForm(payload, bodyText) {
+      const to = (FEEDBACK_CONFIG.recipientEmail || '').trim();
+      if (!to) return { ok: false, skipped: true };
+      const body = new URLSearchParams();
+      body.set('name', payload.replyEmail ? 'Harbor User' : 'Harbor Feedback');
+      body.set('email', payload.replyEmail || to);
+      body.set('_replyto', payload.replyEmail || to);
+      body.set('message', bodyText);
+      body.set('_subject', getFeedbackSubject(payload));
+      body.set('_template', 'table');
+      body.set('_captcha', 'false');
+      body.set('_honey', '');
+      body.set('category', payload.category || 'General');
+      body.set('rating', payload.rating != null ? String(payload.rating) : '');
+      body.set('app_version', FEEDBACK_CONFIG.appVersion || '');
+      body.set('build', typeof HARBOR_BUILD !== 'undefined' ? HARBOR_BUILD : '');
+
+      const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(to)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/json'
+        },
+        body: body.toString()
+      });
+      const data = await parseJsonSafe(res);
+      const success = data && (data.success === true || data.success === 'true');
+      if (!res.ok || !success) {
+        const msg = data?.message || data?.error || `FormSubmit form HTTP ${res.status}`;
+        throw new Error(typeof msg === 'string' ? msg : 'FormSubmit form failed');
+      }
+      return { ok: true, via: 'formsubmit-form' };
+    }
+
+    /**
+     * Deliver feedback email through every available channel until one succeeds.
+     * Never claims success unless a provider acknowledges the send.
+     */
+    async function deliverFeedbackEmail(payload, bodyText) {
+      const errors = [];
+      const attempts = [
+        () => deliverFeedbackViaWeb3Forms(payload, bodyText),
+        () => deliverFeedbackViaFormSubmitJson(payload, bodyText),
+        () => deliverFeedbackViaFormSubmitForm(payload, bodyText)
+      ];
+      for (const attempt of attempts) {
+        try {
+          const result = await attempt();
+          if (result?.skipped) continue;
+          if (result?.ok) return result;
+        } catch (err) {
+          errors.push(String(err?.message || err));
+        }
+      }
+      return {
+        ok: false,
+        errors,
+        needsActivation: errors.some(e => /activat|confirm|verify|blacklist|disabled/i.test(e))
+      };
     }
 
     async function submitFeedback(formData) {
@@ -17900,63 +18105,139 @@
 
       if (!payload.message) {
         showToast('Please describe your feedback');
-        return false;
+        return { ok: false, reason: 'empty' };
+      }
+
+      if (!FEEDBACK_CONFIG.recipientEmail && !FEEDBACK_CONFIG.web3formsAccessKey) {
+        showToast('Feedback email is not configured', 'warn');
+        return { ok: false, reason: 'config' };
       }
 
       const bodyText = formatFeedbackBody(payload);
+      const logEntry = upsertFeedbackLog({
+        ...payload,
+        bodyText,
+        delivery: 'sending',
+        sentAt: new Date().toISOString()
+      });
 
-      try {
-        if (FEEDBACK_CONFIG.web3formsAccessKey) {
-          const res = await fetch('https://api.web3forms.com/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({
-              access_key: FEEDBACK_CONFIG.web3formsAccessKey,
-              subject: `${FEEDBACK_CONFIG.appName} Feedback: ${payload.category}`,
-              from_name: payload.replyEmail ? 'Harbor User' : 'Anonymous Harbor User',
-              email: payload.replyEmail || FEEDBACK_CONFIG.recipientEmail,
-              message: bodyText
-            })
-          });
-          const data = await res.json();
-          if (!data.success) throw new Error(data.message || 'Web3Forms failed');
-        } else if (FEEDBACK_CONFIG.recipientEmail) {
-          const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(FEEDBACK_CONFIG.recipientEmail)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({
-              name: payload.replyEmail || 'Anonymous',
-              email: payload.replyEmail || 'noreply@harbor.app',
-              message: bodyText,
-              _subject: `${FEEDBACK_CONFIG.appName} Feedback: ${payload.category}`,
-              _template: 'table'
-            })
-          });
-          const data = await res.json();
-          if (!data.success) throw new Error('FormSubmit failed');
-        } else {
-          const mailto = `mailto:?subject=${encodeURIComponent(FEEDBACK_CONFIG.appName + ' Feedback')}&body=${encodeURIComponent(bodyText)}`;
-          window.location.href = mailto;
-        }
-
-        logFeedbackLocally({ ...payload, delivery: 'sent' });
-        return true;
-      } catch (err) {
-        logFeedbackLocally({ ...payload, delivery: 'queued', error: String(err) });
+      // Offline: queue + open mail client so the note still reaches you
+      if (typeof navigator.onLine === 'boolean' && !navigator.onLine) {
+        upsertFeedbackLog({
+          id: logEntry.id,
+          delivery: 'queued',
+          error: 'offline'
+        });
+        openFeedbackMailto(payload, bodyText);
         try {
           await navigator.clipboard.writeText(bodyText);
-          showToast('Could not send online — feedback copied to clipboard');
-        } catch (_) {
-          showToast('Saved on this device — could not email feedback right now', 'warn');
-        }
-        return true;
+        } catch (_) { /* optional */ }
+        return {
+          ok: false,
+          queued: true,
+          mailto: true,
+          reason: 'offline',
+          message: 'You look offline — saved on this device and opened your email app as backup.'
+        };
       }
+
+      const result = await deliverFeedbackEmail(payload, bodyText);
+      if (result.ok) {
+        upsertFeedbackLog({
+          id: logEntry.id,
+          delivery: 'sent',
+          via: result.via,
+          error: null,
+          sentAt: new Date().toISOString()
+        });
+        return { ok: true, via: result.via };
+      }
+
+      // Failed online delivery — keep queued for retry and force a real mailto to the builder
+      upsertFeedbackLog({
+        id: logEntry.id,
+        delivery: 'queued',
+        error: (result.errors || []).join(' | ') || 'delivery failed',
+        needsActivation: !!result.needsActivation
+      });
+      openFeedbackMailto(payload, bodyText);
+      try {
+        await navigator.clipboard.writeText(bodyText);
+      } catch (_) { /* optional */ }
+
+      let message = 'Could not send automatically — opened your email app and copied the note as backup.';
+      if (result.needsActivation) {
+        message = 'Email service may need activation — check the builder inbox for a FormSubmit confirm link, and use the email draft that just opened.';
+      }
+      return {
+        ok: false,
+        queued: true,
+        mailto: true,
+        reason: 'delivery',
+        needsActivation: !!result.needsActivation,
+        message
+      };
+    }
+
+    /** Retry any feedback that never left the device (queued / failed). */
+    async function flushPendingFeedback(opts = {}) {
+      const silent = !!opts.silent;
+      const pending = (state.feedbackLog || []).filter(f =>
+        f && f.message && (f.delivery === 'queued' || f.delivery === 'failed' || f.delivery === 'sending')
+      );
+      if (!pending.length) return { sent: 0, left: 0 };
+      if (typeof navigator.onLine === 'boolean' && !navigator.onLine) {
+        return { sent: 0, left: pending.length, offline: true };
+      }
+
+      let sent = 0;
+      for (const item of pending.slice(0, 8)) {
+        const payload = {
+          category: item.category || 'General',
+          rating: item.rating || null,
+          message: item.message,
+          replyEmail: item.replyEmail || '',
+          context: item.context || getFeedbackContextSnapshot()
+        };
+        const bodyText = item.bodyText || formatFeedbackBody(payload);
+        try {
+          const result = await deliverFeedbackEmail(payload, bodyText);
+          if (result.ok) {
+            upsertFeedbackLog({
+              id: item.id,
+              delivery: 'sent',
+              via: result.via,
+              error: null,
+              sentAt: new Date().toISOString()
+            });
+            sent += 1;
+          } else {
+            upsertFeedbackLog({
+              id: item.id,
+              delivery: 'queued',
+              error: (result.errors || []).join(' | ')
+            });
+          }
+        } catch (err) {
+          upsertFeedbackLog({
+            id: item.id,
+            delivery: 'queued',
+            error: String(err?.message || err)
+          });
+        }
+      }
+      const left = (state.feedbackLog || []).filter(f => f.delivery === 'queued' || f.delivery === 'failed').length;
+      if (!silent && sent > 0) {
+        showToast(sent === 1 ? 'Sent 1 saved feedback note' : `Sent ${sent} saved feedback notes`);
+      }
+      return { sent, left };
     }
 
     function showFeedbackModal() {
       const modal = document.createElement('div');
       modal.id = 'feedback-modal';
       modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[70]';
+      const pendingCount = (state.feedbackLog || []).filter(f => f.delivery === 'queued' || f.delivery === 'failed').length;
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
         <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
@@ -17965,7 +18246,8 @@
             <span>Send Feedback</span>
             <button type="button" onclick="this.closest('#feedback-modal').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
-          <p class="text-xs text-harbor-muted mb-4 leading-relaxed">Help shape Harbor — bugs, ideas, and UX notes go straight to the builder.</p>
+          <p class="text-xs text-harbor-muted mb-4 leading-relaxed">Bugs, ideas, and UX notes go to the Harbor builder by email. If the web send fails, your mail app opens as a backup so nothing is lost.</p>
+          ${pendingCount ? `<p class="text-[11px] text-amber-700/90 dark:text-amber-300/90 mb-3 leading-snug">${pendingCount} earlier note${pendingCount === 1 ? '' : 's'} waiting to resend — Harbor will retry automatically when online.</p>` : ''}
 
           <label class="block text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5">Category</label>
           <select id="fb-category" class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-3 mb-3 outline-none text-harbor-text text-sm">
@@ -17993,7 +18275,7 @@
           <button type="button" id="fb-submit" class="w-full py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold active:opacity-90">
             Send feedback
           </button>
-          <p class="text-[10px] text-harbor-muted text-center mt-2 leading-relaxed">Includes anonymous context (tab, task counts) to help debug.</p>
+          <p class="text-[10px] text-harbor-muted text-center mt-2 leading-relaxed">Includes anonymous context (tab, task counts, version) to help debug. Delivered to ${escapeBriefHtml(FEEDBACK_CONFIG.recipientEmail || 'the builder')}.</p>
         </div>
       `;
       document.body.appendChild(modal);
@@ -18010,19 +18292,31 @@
       submitBtn.onclick = async () => {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Sending…';
-        const ok = await submitFeedback({
+        const result = await submitFeedback({
           category: modal.querySelector('#fb-category').value,
           rating: selectedRating,
           message: modal.querySelector('#fb-message').value,
           replyEmail: modal.querySelector('#fb-email').value
         });
-        if (ok) {
-          showToast('Thanks — feedback sent!');
+        if (result?.ok) {
+          showToast('Thanks — feedback emailed to the builder!');
           modal.remove();
-        } else {
+          return;
+        }
+        if (result?.reason === 'empty' || result?.reason === 'config') {
           submitBtn.disabled = false;
           submitBtn.textContent = 'Send feedback';
+          return;
         }
+        // Queued / mailto backup still "accepted" from the user's POV — don't lose the note
+        if (result?.queued || result?.mailto) {
+          showToast(result.message || 'Saved — email backup opened so the builder still gets it.', 'warn');
+          modal.remove();
+          return;
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send feedback';
+        showToast(result?.message || 'Could not send — try again', 'warn');
       };
 
       setTimeout(() => modal.querySelector('#fb-message')?.focus(), 80);
@@ -18417,7 +18711,8 @@
           return `Low-energy day — if you do one thing, make it ${top.title.toLowerCase()}. Everything else can wait.`;
         }
         if (events.length && ctx.bestGap?.minutes >= 20 && !isQuietHours()) {
-          return `${events.length} event${events.length > 1 ? 's' : ''} on the calendar · ~${ctx.bestGap.minutes} min free${ctx.bestGap.beforeEvent ? ` before ${ctx.bestGap.beforeEvent}` : ''} for tasks.`;
+          const gapHrs = formatFreeTimeHours(ctx.bestGap.minutes);
+          return `${events.length} event${events.length > 1 ? 's' : ''} on the calendar · ${gapHrs} free${ctx.bestGap.beforeEvent ? ` before ${ctx.bestGap.beforeEvent}` : ''} for tasks.`;
         }
         return `${taskCount} task${taskCount === 1 ? '' : 's'} sorted for your ${energyWord} energy — timed for right now.`;
       }
@@ -18457,7 +18752,7 @@
       } else if (mode === 'day' && outdoor.length && rainRisk?.risky) {
         parts.push(`Rain risk this afternoon — consider moving ${outdoor[0].habit.title.toLowerCase()} or tackling it early.`);
       } else if (mode === 'day' && ctx.freeTime >= 60 && !isQuietHours(mins)) {
-        parts.push(`~${ctx.freeTime} minutes of flexible time in your 7am–10pm window.`);
+        parts.push(`${formatFreeTimeHours(ctx.freeTime)} of flexible time in your 7am–10pm window.`);
       }
 
       if (mode === 'month') {
@@ -20462,7 +20757,7 @@
             type: 'habit',
             habit: fit,
             cta: 'Show',
-            reason: `~${ctx.bestGap.minutes} min open${until} — room for <strong>${escapeBriefHtml(fit.title)}</strong>.`
+            reason: `${formatFreeTimeHours(ctx.bestGap.minutes)} open${until} — room for <strong>${escapeBriefHtml(fit.title)}</strong>.`
           });
         }
       }
@@ -20526,7 +20821,7 @@
             type: 'habit',
             habit: match,
             cta: 'Show',
-            reason: `About ${ctx.freeTime} min free on the calendar — <strong>${escapeBriefHtml(match.title)}</strong> should fit.`
+            reason: `${formatFreeTimeHours(ctx.freeTime)} free on the calendar — <strong>${escapeBriefHtml(match.title)}</strong> should fit.`
           });
         }
       }
@@ -27229,11 +27524,19 @@
         if (typeof consumePendingChallengeLink === 'function') consumePendingChallengeLink();
 
         setTimeout(fetchRealWeather, 600);
+        syncAppVersionFoot();
+
+        // Retry any feedback that never reached email (silent background flush)
+        setTimeout(() => {
+          try { flushPendingFeedback({ silent: true }); } catch (_) { /* ignore */ }
+        }, 1800);
+        window.addEventListener('online', () => {
+          try { flushPendingFeedback({ silent: false }); } catch (_) { /* ignore */ }
+        });
         
-        window.HARBOR = { state, renderTasks, renderTodayFeed, completeHabit, setEnergy, simulateContextChange, addGroceryItem, markBillPaid, factoryReset: factoryResetApp };
+        window.HARBOR = { state, renderTasks, renderTodayFeed, completeHabit, setEnergy, simulateContextChange, addGroceryItem, markBillPaid, factoryReset: factoryResetApp, flushPendingFeedback };
         if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
           console.log('%c[Harbor] Ready · ' + getHarborVersionMeta(), 'color:#2F9B8C');
-          syncAppVersionFoot();
         }
     }
 
