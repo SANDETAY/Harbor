@@ -498,6 +498,13 @@
       --swipe-reveal: 8.5rem;
       /* Contain paints so action colors don't flash during scroll */
       contain: paint;
+      /*
+        Critical: overflow:hidden makes flex min-size 0, so a tall Today list was
+        shrinking every row into thin stacked strips (unreadable). Never shrink rows.
+      */
+      flex-shrink: 0;
+      min-height: min-content;
+      align-self: stretch;
     }
 
     .swipe-row-actions {
@@ -559,6 +566,16 @@
       flex-direction: column;
       gap: 0.55rem;
       padding-bottom: 0.35rem;
+      /* Scroll the list; children keep natural height (see .swipe-row flex-shrink) */
+      align-content: flex-start;
+    }
+
+    /* Non-swipe feed cards (bills, grocery, events) in Today must not compress either */
+    #task-list > .habit-row,
+    #task-list > .harbor-card,
+    #task-list > .cheat-day-today-banner,
+    #task-list > .feed-section-label {
+      flex-shrink: 0;
     }
 
     #task-list .habit-card,
@@ -7086,7 +7103,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v167';
+    const HARBOR_BUILD = 'v168';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
