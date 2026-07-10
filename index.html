@@ -905,31 +905,31 @@
     .life-subnav {
       position: relative;
       display: flex;
-      gap: 0.3rem;
-      padding: 0.3rem;
-      margin-bottom: 1rem;
-      border-radius: 1rem;
-      border: 1px solid rgb(var(--harbor-border));
-      background: rgba(22, 32, 38, 0.85);
+      gap: 0.25rem;
+      padding: 0.28rem;
+      margin-bottom: 0.85rem;
+      border-radius: var(--harbor-radius-md);
+      border: 1px solid rgb(var(--harbor-border) / 0.9);
+      background: rgb(var(--harbor-surface) / 0.88);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
     }
 
     /* Sliding pill behind active Life chip */
     .life-chip-indicator {
       position: absolute;
-      top: 0.3rem;
-      bottom: 0.3rem;
+      top: 0.28rem;
+      bottom: 0.28rem;
       left: 0;
       width: 25%;
-      border-radius: 0.75rem;
-      background: linear-gradient(180deg, rgba(47, 155, 140, 0.48) 0%, rgba(47, 155, 140, 0.26) 100%);
-      box-shadow: 0 1px 0 rgba(107, 191, 176, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border-radius: calc(var(--harbor-radius-md) - 0.15rem);
+      background: linear-gradient(180deg, rgba(47, 155, 140, 0.42) 0%, rgba(47, 155, 140, 0.22) 100%);
+      box-shadow: 0 1px 0 rgba(107, 191, 176, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
       pointer-events: none;
       z-index: 0;
       opacity: 1;
       transition:
-        transform 0.42s var(--harbor-ease-out),
-        width 0.42s var(--harbor-ease-out);
+        transform var(--harbor-duration-slow) var(--harbor-ease-out),
+        width var(--harbor-duration-slow) var(--harbor-ease-out);
       will-change: transform, width;
     }
 
@@ -938,12 +938,13 @@
       z-index: 1;
       flex: 1;
       min-width: 0;
-      padding: 0.55rem 0.22rem;
+      padding: 0.52rem 0.2rem;
       border: none;
-      border-radius: 0.75rem;
+      border-radius: calc(var(--harbor-radius-md) - 0.15rem);
       background: transparent;
-      color: rgba(154, 170, 178, 0.88);
-      font-size: clamp(0.62rem, 2.7vw, 0.78rem);
+      color: rgb(var(--harbor-muted) / 0.92);
+      font-family: var(--harbor-font);
+      font-size: clamp(0.62rem, 2.7vw, 0.76rem);
       font-weight: 650;
       letter-spacing: -0.02em;
       cursor: pointer;
@@ -951,7 +952,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      transition: color 0.25s ease, transform 0.15s var(--harbor-ease-out);
+      transition: color var(--harbor-duration) ease, transform var(--harbor-duration-fast) var(--harbor-ease-out);
     }
 
     .life-nav-tab:hover {
@@ -976,19 +977,23 @@
       align-items: center;
       gap: 0.7rem;
       text-align: left;
-      padding: 0.75rem 0.85rem;
+      padding: 0.72rem 0.8rem;
       margin-bottom: 0.55rem;
-      border-radius: 1rem;
-      border: 1px solid rgba(47, 155, 140, 0.35);
-      background: linear-gradient(135deg, rgba(47, 155, 140, 0.14) 0%, rgba(22, 32, 38, 0.9) 55%);
+      border-radius: var(--harbor-radius-lg);
+      border: 1px solid rgba(47, 155, 140, 0.28);
+      background: linear-gradient(145deg, rgba(47, 155, 140, 0.12) 0%, rgb(var(--harbor-surface) / 0.95) 58%);
       color: rgb(var(--harbor-text));
       cursor: pointer;
-      transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+      box-shadow: var(--harbor-shadow-sm);
+      transition:
+        border-color var(--harbor-duration-fast) ease,
+        background var(--harbor-duration) ease,
+        transform var(--harbor-duration-fast) var(--harbor-ease-out);
     }
 
     .work-hours-card:hover {
-      border-color: rgba(47, 155, 140, 0.55);
-      background: linear-gradient(135deg, rgba(47, 155, 140, 0.2) 0%, rgba(22, 32, 38, 0.95) 55%);
+      border-color: rgba(47, 155, 140, 0.45);
+      background: linear-gradient(145deg, rgba(47, 155, 140, 0.16) 0%, rgb(var(--harbor-raised) / 0.9) 58%);
     }
 
     .work-hours-card:active {
@@ -997,38 +1002,53 @@
 
     .work-hours-icon {
       flex-shrink: 0;
-      width: 2.25rem;
-      height: 2.25rem;
-      border-radius: 0.75rem;
+      width: 2.15rem;
+      height: 2.15rem;
+      border-radius: var(--harbor-radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(47, 155, 140, 0.22);
+      background: rgba(47, 155, 140, 0.18);
       color: rgb(var(--harbor-primary-light));
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
 
     .work-hours-cta {
       flex-shrink: 0;
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       font-weight: 700;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.03em;
       color: rgb(var(--harbor-primary-light));
-      padding: 0.35rem 0.55rem;
-      border-radius: 999px;
-      border: 1px solid rgba(47, 155, 140, 0.4);
-      background: rgba(47, 155, 140, 0.12);
+      padding: 0.32rem 0.55rem;
+      border-radius: var(--harbor-radius-pill);
+      border: 1px solid rgba(47, 155, 140, 0.32);
+      background: rgba(47, 155, 140, 0.1);
     }
 
     .work-hours-card--set {
-      border-color: rgba(47, 155, 140, 0.28);
-      background: linear-gradient(135deg, rgba(47, 155, 140, 0.1) 0%, rgba(22, 32, 38, 0.88) 60%);
+      border-color: rgb(var(--harbor-border) / 0.95);
+      background: rgb(var(--harbor-surface));
     }
 
     .work-hours-card--set .work-hours-cta {
       color: rgb(var(--harbor-muted));
       border-color: rgb(var(--harbor-border));
       background: rgb(var(--harbor-raised));
+    }
+
+    /* Life list rows share Today density */
+    #life-panel-schedule .space-y-2,
+    #life-panel-grocery .space-y-2,
+    #life-panel-bills .space-y-2,
+    #life-panel-subscriptions .space-y-2,
+    #subscriptions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    #tab-content-life {
+      padding-top: 0.7rem;
     }
 
     .tab-content.tab-enter {
@@ -1085,11 +1105,10 @@
     .streak-off-card {
       position: relative;
       overflow: hidden;
-      border-radius: 1.25rem;
-      border: 1px solid rgba(47, 155, 140, 0.35);
+      border-radius: var(--harbor-radius-xl);
+      border: 1px solid rgb(var(--harbor-border) / 0.95);
       background:
-        radial-gradient(ellipse at 12% 0%, rgba(107, 191, 176, 0.16) 0%, transparent 55%),
-        radial-gradient(ellipse at 100% 100%, rgba(196, 165, 116, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 12% 0%, rgba(107, 191, 176, 0.12) 0%, transparent 55%),
         rgb(var(--harbor-surface));
       padding: 0.9rem 0.95rem 0.85rem;
       box-shadow: var(--harbor-shadow-sm);
@@ -1103,7 +1122,7 @@
       width: 4.5rem;
       height: 4.5rem;
       border-radius: 999px;
-      background: radial-gradient(circle, rgba(47, 155, 140, 0.18) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(47, 155, 140, 0.12) 0%, transparent 70%);
       pointer-events: none;
     }
 
@@ -1117,10 +1136,10 @@
     }
 
     .streak-off-title {
-      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      font-family: var(--harbor-font-display);
       font-weight: 600;
-      font-size: 1.05rem;
-      letter-spacing: -0.02em;
+      font-size: 1.02rem;
+      letter-spacing: -0.025em;
       color: rgb(var(--harbor-text));
     }
 
@@ -1136,10 +1155,19 @@
       align-items: center;
       gap: 0.55rem;
       padding: 0.55rem 0.6rem;
-      border-radius: 0.85rem;
-      background: rgba(10, 31, 30, 0.35);
-      border: 1px solid rgb(var(--harbor-border));
+      border-radius: var(--harbor-radius-md);
+      background: rgb(var(--harbor-raised) / 0.55);
+      border: 1px solid rgb(var(--harbor-border) / 0.9);
       margin-top: 0.4rem;
+    }
+
+    #tab-content-streaks {
+      padding-top: 0.7rem;
+    }
+
+    #streaks-list .swipe-row,
+    #streaks-list .harbor-card {
+      border-radius: var(--harbor-radius-xl);
     }
 
     .streak-off-row.is-you {
@@ -1618,8 +1646,8 @@
     }
 
     .modal-overlay-blur {
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(18px) saturate(1.1);
+      -webkit-backdrop-filter: blur(18px) saturate(1.1);
     }
 
     /*
@@ -1632,11 +1660,15 @@
     }
     body > .fixed.inset-0.modal-overlay-blur,
     body > .fixed.inset-0[class*="bg-harbor-bg"] {
-      background-color: rgba(6, 14, 14, 0.88) !important;
+      background-color: rgba(4, 14, 13, 0.86) !important;
     }
     html[data-theme="dark"] body > .fixed.inset-0.modal-overlay-blur,
     html[data-theme="dark"] body > .fixed.inset-0[class*="bg-harbor-bg"] {
-      background-color: rgba(0, 0, 0, 0.9) !important;
+      background-color: rgba(0, 0, 0, 0.88) !important;
+    }
+    html[data-theme="light"] body > .fixed.inset-0.modal-overlay-blur,
+    html[data-theme="light"] body > .fixed.inset-0[class*="bg-harbor-bg"] {
+      background-color: rgba(16, 40, 36, 0.42) !important;
     }
     /* Keep day-events sheet above Summary when both open */
     body > #summary-day-events-modal {
@@ -1799,17 +1831,25 @@
 
     .modal-sheet {
       animation: sheetUp var(--harbor-duration-slow) var(--harbor-ease-out) forwards;
+      border-radius: var(--harbor-radius-xl) var(--harbor-radius-xl) 0 0 !important;
+      box-shadow: var(--harbor-shadow-md);
+      border-top: 1px solid rgb(var(--harbor-border) / 0.85);
+      max-height: min(92vh, 100dvh);
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
     }
 
     .modal-grab-pill {
-      width: 2.35rem;
-      height: 0.22rem;
+      width: 2.25rem;
+      height: 0.2rem;
       border-radius: var(--harbor-radius-pill);
-      background: rgb(var(--harbor-border));
-      margin: 0 auto 0.85rem;
+      background: rgb(var(--harbor-muted) / 0.45);
+      margin: 0.15rem auto 0.9rem;
       flex-shrink: 0;
       touch-action: none;
-      opacity: 0.85;
+      opacity: 0.9;
     }
 
     /* Stylish small close control (replaces × on sheets) */
@@ -1818,29 +1858,37 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      padding: 0.28rem 0.72rem;
+      padding: 0.3rem 0.75rem;
       min-height: 1.55rem;
-      border-radius: 999px;
+      border-radius: var(--harbor-radius-pill);
       font-size: 0.62rem;
       font-weight: 700;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      color: rgba(200, 214, 210, 0.78);
-      background: rgba(18, 28, 34, 0.55);
-      border: 1px solid rgba(143, 184, 176, 0.22);
+      color: rgb(var(--harbor-muted));
+      background: rgb(var(--harbor-raised) / 0.9);
+      border: 1px solid rgb(var(--harbor-border));
       box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
-      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+      transition:
+        color var(--harbor-duration-fast) ease,
+        background var(--harbor-duration-fast) ease,
+        border-color var(--harbor-duration-fast) ease,
+        transform var(--harbor-duration-fast) var(--harbor-ease-out);
       line-height: 1;
-      font-family: inherit;
+      font-family: var(--harbor-font);
       cursor: pointer;
     }
 
     .modal-close-chip:hover,
     .modal-close-chip:focus-visible {
-      color: #f0f5f3;
-      border-color: rgba(107, 191, 176, 0.45);
-      background: rgba(47, 155, 140, 0.16);
+      color: rgb(var(--harbor-text));
+      border-color: rgba(107, 191, 176, 0.4);
+      background: rgba(47, 155, 140, 0.14);
       outline: none;
+    }
+
+    .modal-close-chip:active {
+      transform: scale(0.97);
     }
 
     .modal-close-chip:active {
@@ -2309,9 +2357,24 @@
       white-space: nowrap;
     }
     .sub-tracked-card {
-      transition: transform 0.15s ease, opacity 0.15s ease;
+      border-radius: var(--harbor-radius-xl);
+      box-shadow: var(--harbor-shadow-sm);
+      transition:
+        transform var(--harbor-duration-fast) var(--harbor-ease-out),
+        opacity var(--harbor-duration) ease,
+        border-color var(--harbor-duration) ease;
     }
     .sub-tracked-card:active { transform: scale(0.985); }
+
+    /* Life import / secondary full-width actions */
+    #life-panel-schedule > .flex.gap-2 > button,
+    #life-panel-grocery .chip-tool-link {
+      transition:
+        background var(--harbor-duration-fast) ease,
+        border-color var(--harbor-duration-fast) ease,
+        color var(--harbor-duration-fast) ease,
+        transform var(--harbor-duration-fast) var(--harbor-ease-out);
+    }
     .sub-tracked-pause {
       font-size: 0.625rem;
       color: rgb(var(--harbor-muted));
@@ -2579,9 +2642,10 @@
     }
 
     .settings-section-title {
-      font-size: 0.68rem;
+      font-family: var(--harbor-font);
+      font-size: 0.66rem;
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: rgb(var(--harbor-muted));
     }
@@ -2593,9 +2657,10 @@
     }
 
     .settings-card {
-      border: 1px solid rgb(var(--harbor-border));
-      border-radius: 1rem;
-      background: rgb(var(--harbor-raised) / 0.45);
+      border: 1px solid rgb(var(--harbor-border) / 0.9);
+      border-radius: var(--harbor-radius-lg);
+      background: rgb(var(--harbor-raised) / 0.4);
+      box-shadow: var(--harbor-shadow-sm);
       overflow: hidden;
     }
 
@@ -2604,8 +2669,8 @@
       align-items: center;
       justify-content: space-between;
       gap: 0.75rem;
-      padding: 0.8rem 0.85rem;
-      border-bottom: 1px solid rgb(var(--harbor-border) / 0.75);
+      padding: 0.78rem 0.85rem;
+      border-bottom: 1px solid rgb(var(--harbor-border) / 0.65);
     }
 
     .settings-row:last-child {
@@ -3378,14 +3443,15 @@
       min-height: 42vh;
       overflow-x: hidden;
       overflow-y: auto;
-      border-radius: 1.5rem 1.5rem 0 0;
-      border-top: 1px solid rgb(var(--harbor-border));
+      border-radius: var(--harbor-radius-xl) var(--harbor-radius-xl) 0 0;
+      border-top: 1px solid rgb(var(--harbor-border) / 0.9);
       background:
-        radial-gradient(ellipse 90% 50% at 50% -10%, rgba(47, 155, 140, 0.16) 0%, transparent 55%),
+        radial-gradient(ellipse 90% 50% at 50% -10%, rgba(47, 155, 140, 0.12) 0%, transparent 55%),
         rgb(var(--harbor-surface));
-      box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+      box-shadow: var(--harbor-shadow-md), 0 -10px 36px rgba(0, 0, 0, 0.28);
       -webkit-overflow-scrolling: touch;
       isolation: isolate;
+      animation: sheetUp var(--harbor-duration-slow) var(--harbor-ease-out) forwards;
     }
 
     body.summary-open #site-root {
@@ -4414,16 +4480,25 @@
     }
 
     .cal-format-chip {
-      padding: 0.35rem 0.85rem;
-      border-radius: 999px;
-      border: 1px solid rgb(var(--harbor-border));
-      background: rgb(var(--harbor-raised));
+      padding: 0.38rem 0.8rem;
+      border-radius: var(--harbor-radius-pill);
+      border: 1px solid rgb(var(--harbor-border) / 0.95);
+      background: rgb(var(--harbor-raised) / 0.85);
       color: rgb(var(--harbor-muted));
+      font-family: var(--harbor-font);
       font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
+      font-weight: 650;
+      letter-spacing: 0.02em;
       cursor: pointer;
-      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+      transition:
+        border-color var(--harbor-duration-fast) ease,
+        background var(--harbor-duration-fast) ease,
+        color var(--harbor-duration-fast) ease,
+        transform var(--harbor-duration-fast) var(--harbor-ease-out);
+    }
+
+    .cal-format-chip:active {
+      transform: scale(0.98);
     }
 
     .cal-format-chip.is-active {
@@ -4486,11 +4561,11 @@
     /* Harbor Day card — sleek minimal */
     .harbor-day-card {
       position: relative;
-      margin-top: 0.75rem;
-      padding: 1.1rem 1.05rem 1rem;
-      border-radius: 1.35rem;
+      margin-top: 0.65rem;
+      padding: 1.05rem 1rem 0.95rem;
+      border-radius: var(--harbor-radius-xl);
       background: rgb(var(--harbor-surface));
-      border: 1px solid rgb(var(--harbor-border) / 0.85);
+      border: 1px solid rgb(var(--harbor-border) / 0.88);
       box-shadow: var(--harbor-shadow-sm);
       overflow: hidden;
     }
@@ -5811,7 +5886,7 @@
       </div>
 
       <!-- LIFE TAB -->
-      <div id="tab-content-life" class="tab-content px-5 pt-3 pb-6 bg-harbor-bg hidden">
+      <div id="tab-content-life" class="tab-content px-5 pb-6 bg-transparent hidden">
         <div class="life-subnav" role="tablist" aria-label="Life sections">
           <button type="button" role="tab" aria-selected="true" onclick="switchLifePanel('schedule')" id="life-panel-tab-schedule"
             class="life-nav-tab life-panel-active">Schedule</button>
@@ -5928,7 +6003,7 @@
       </div>
 
       <!-- STREAKS TAB -->
-      <div id="tab-content-streaks" class="tab-content px-5 pt-3 pb-6 bg-harbor-bg hidden">
+      <div id="tab-content-streaks" class="tab-content px-5 pb-6 bg-transparent hidden">
         <div id="streak-off-panel" class="mb-4" aria-label="Streak-Offs">
           <!-- Filled by renderStreakOffPanel(); static fallback if JS lags -->
           <div class="streak-off-card">
@@ -6056,7 +6131,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v137';
+    const HARBOR_BUILD = 'v138';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
