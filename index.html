@@ -1687,7 +1687,9 @@
       border-radius: var(--harbor-radius-xl) var(--harbor-radius-xl) 0 0 !important;
       box-shadow: var(--harbor-shadow-md);
       border-top: 1px solid rgb(var(--harbor-border) / 0.85);
-      max-height: min(92vh, 100dvh);
+      /* Leave room for iPhone status bar / Dynamic Island when sheet is tall */
+      max-height: min(92vh, calc(100dvh - env(safe-area-inset-top, 0px) - 0.5rem));
+      max-height: min(92svh, calc(100svh - env(safe-area-inset-top, 0px) - 0.5rem));
       overflow-x: hidden;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
@@ -5898,7 +5900,31 @@
       color: rgb(var(--harbor-muted));
     }
 
-    /* Custom reward sheet (+ My Reward) */
+    /* Custom reward sheet (+ My Reward) — clear status bar on notched iPhones */
+    #custom-reward-modal,
+    #metric-input-modal {
+      padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
+      box-sizing: border-box;
+      /* Keep sheet from stretching under the clock when content is tall */
+      align-items: flex-end !important;
+    }
+    @media (min-width: 768px) {
+      #custom-reward-modal,
+      #metric-input-modal {
+        align-items: center !important;
+        padding: 1.5rem;
+        padding-top: max(1.5rem, env(safe-area-inset-top, 0px));
+      }
+    }
+    #custom-reward-modal .reward-sheet,
+    #metric-input-modal .metric-sheet {
+      max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 0.75rem - env(keyboard-inset-height, 0px));
+      max-height: calc(100svh - env(safe-area-inset-top, 0px) - 0.75rem - env(keyboard-inset-height, 0px));
+      margin-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
+      padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important;
+    }
     #custom-reward-modal .reward-sheet {
       background:
         linear-gradient(165deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 40%, rgb(var(--harbor-surface)) 100%);
@@ -5911,6 +5937,20 @@
       background: linear-gradient(165deg, rgba(28, 48, 44, 0.95) 0%, rgb(var(--harbor-surface)) 55%);
       border-top-color: rgba(72, 178, 162, 0.16);
       box-shadow: 0 -12px 40px rgba(0, 8, 6, 0.55), 0 0 0 1px rgba(154, 214, 202, 0.06) inset;
+    }
+    #custom-reward-modal .reward-sheet-header {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin: -0.15rem -0.15rem 1rem;
+      padding: 0.15rem 0.15rem 0.65rem;
+      background: linear-gradient(180deg, rgb(var(--harbor-surface)) 70%, transparent 100%);
+    }
+    html[data-theme="dark"] #custom-reward-modal .reward-sheet-header {
+      background: linear-gradient(180deg, rgb(var(--harbor-surface)) 75%, transparent 100%);
     }
     #custom-reward-modal .reward-preview {
       width: 3.25rem;
@@ -7520,7 +7560,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v172';
+    const HARBOR_BUILD = 'v173';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -21929,10 +21969,10 @@
 
         modal.innerHTML = `
           <div class="absolute inset-0" data-reward-dismiss="1"></div>
-          <div class="modal-sheet reward-sheet relative w-full sm:max-w-md bg-harbor-surface border-t sm:border border-harbor-border rounded-t-3xl sm:rounded-3xl p-5 text-sm mb-[max(0.35rem,env(keyboard-inset-height,0px))]"
+          <div class="modal-sheet reward-sheet relative w-full sm:max-w-md bg-harbor-surface border-t sm:border border-harbor-border rounded-t-3xl sm:rounded-3xl px-5 pt-3 pb-5 text-sm"
             role="dialog" aria-modal="true" aria-labelledby="custom-reward-title" onclick="event.stopPropagation()">
             <div class="modal-grab-pill" aria-hidden="true"></div>
-            <div class="flex items-start gap-3 mb-4">
+            <div class="reward-sheet-header">
               <div class="reward-preview" id="reward-preview-emoji" aria-hidden="true">${selectedEmoji}</div>
               <div class="min-w-0 flex-1">
                 <div id="custom-reward-title" class="font-semibold text-base text-harbor-text leading-tight">${title}</div>
