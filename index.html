@@ -5898,6 +5898,100 @@
       color: rgb(var(--harbor-muted));
     }
 
+    /* Custom reward sheet (+ My Reward) */
+    #custom-reward-modal .reward-sheet {
+      background:
+        linear-gradient(165deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 40%, rgb(var(--harbor-surface)) 100%);
+      border-top: 1px solid rgba(47, 155, 140, 0.18);
+      box-shadow:
+        0 -8px 32px rgba(18, 48, 44, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+    }
+    html[data-theme="dark"] #custom-reward-modal .reward-sheet {
+      background: linear-gradient(165deg, rgba(28, 48, 44, 0.95) 0%, rgb(var(--harbor-surface)) 55%);
+      border-top-color: rgba(72, 178, 162, 0.16);
+      box-shadow: 0 -12px 40px rgba(0, 8, 6, 0.55), 0 0 0 1px rgba(154, 214, 202, 0.06) inset;
+    }
+    #custom-reward-modal .reward-preview {
+      width: 3.25rem;
+      height: 3.25rem;
+      border-radius: 1.05rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.55rem;
+      flex-shrink: 0;
+      background: linear-gradient(155deg, rgba(47, 155, 140, 0.18) 0%, rgba(47, 155, 140, 0.06) 100%);
+      border: 1px solid rgba(47, 155, 140, 0.2);
+      box-shadow: 0 4px 14px rgba(47, 155, 140, 0.12);
+    }
+    html[data-theme="dark"] #custom-reward-modal .reward-preview {
+      background: linear-gradient(155deg, rgba(72, 178, 162, 0.2) 0%, rgba(28, 48, 44, 0.6) 100%);
+      border-color: rgba(72, 178, 162, 0.22);
+    }
+    #custom-reward-modal .reward-field {
+      width: 100%;
+      border-radius: 1rem;
+      border: 1.5px solid rgba(47, 155, 140, 0.2);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgb(var(--harbor-raised)) 100%);
+      padding: 0.85rem 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      color: rgb(var(--harbor-text));
+      outline: none;
+      font-family: var(--harbor-font);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    html[data-theme="dark"] #custom-reward-modal .reward-field {
+      border-color: rgba(72, 178, 162, 0.2);
+      background: linear-gradient(180deg, rgba(28, 48, 44, 0.9) 0%, rgb(var(--harbor-raised)) 100%);
+    }
+    #custom-reward-modal .reward-field:focus {
+      border-color: rgba(47, 155, 140, 0.5);
+      box-shadow: 0 0 0 3px rgba(47, 155, 140, 0.14);
+    }
+    #custom-reward-modal .reward-field::placeholder {
+      color: rgb(var(--harbor-muted) / 0.55);
+      font-weight: 500;
+    }
+    #custom-reward-modal .reward-emoji-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    #custom-reward-modal .reward-emoji-btn {
+      width: 2.45rem;
+      height: 2.45rem;
+      border-radius: 0.85rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      font-size: 1.15rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    #custom-reward-modal .reward-emoji-btn.is-on {
+      border-color: transparent;
+      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      box-shadow: 0 3px 12px rgba(47, 155, 140, 0.28);
+      transform: scale(1.04);
+    }
+    #custom-reward-modal .reward-save-btn {
+      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      color: #fff;
+      box-shadow:
+        0 4px 16px rgba(47, 155, 140, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+    }
+    #custom-reward-modal .reward-save-btn:active {
+      opacity: 0.92;
+      transform: scale(0.99);
+    }
+
     .proj-milestone {
       margin-top: 0.65rem;
       font-size: 0.72rem;
@@ -7426,7 +7520,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v171';
+    const HARBOR_BUILD = 'v172';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -21797,12 +21891,159 @@
       return treat;
     }
 
+    const HARBOR_REWARD_EMOJI_PICKS = ['🎁', '☕', '🎬', '🍕', '🛁', '📚', '🎮', '🍫', '🎧', '🛍️', '🌙', '🏖️', '🧁', '🎨', '💤', '✨'];
+
+    function closeCustomHarborTreatModal(result) {
+      const modal = document.getElementById('custom-reward-modal');
+      if (!modal) return;
+      const resolve = modal._rewardResolve;
+      modal._rewardResolve = null;
+      modal.remove();
+      if (!document.querySelector('body > .fixed.inset-0')) {
+        document.body.classList.remove('harbor-modal-open');
+      }
+      if (typeof resolve === 'function') resolve(result ?? null);
+    }
+
+    /**
+     * Harbor-styled custom reward sheet (replaces browser prompt for + My Reward).
+     * Resolves to { label, emoji } or null.
+     */
+    function showCustomHarborTreatModal(options = {}) {
+      return new Promise((resolve) => {
+        closeCustomHarborTreatModal(null);
+
+        const title = options.title || 'My reward';
+        const subtitle = options.subtitle || 'Name something you’re looking forward to — a treat, outing, or quiet rest.';
+        const confirmLabel = options.confirmLabel || 'Save reward';
+        let selectedEmoji = (options.defaultEmoji || '🎁').trim().slice(0, 4) || '🎁';
+        const defaultLabel = options.defaultLabel != null ? String(options.defaultLabel) : '';
+        const safeDefault = typeof escapeBriefHtml === 'function'
+          ? escapeBriefHtml(defaultLabel).replace(/"/g, '&quot;')
+          : defaultLabel.replace(/"/g, '&quot;');
+
+        const modal = document.createElement('div');
+        modal.id = 'custom-reward-modal';
+        modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end sm:items-center justify-center harbor-modal-overlay';
+        modal._rewardResolve = resolve;
+
+        modal.innerHTML = `
+          <div class="absolute inset-0" data-reward-dismiss="1"></div>
+          <div class="modal-sheet reward-sheet relative w-full sm:max-w-md bg-harbor-surface border-t sm:border border-harbor-border rounded-t-3xl sm:rounded-3xl p-5 text-sm mb-[max(0.35rem,env(keyboard-inset-height,0px))]"
+            role="dialog" aria-modal="true" aria-labelledby="custom-reward-title" onclick="event.stopPropagation()">
+            <div class="modal-grab-pill" aria-hidden="true"></div>
+            <div class="flex items-start gap-3 mb-4">
+              <div class="reward-preview" id="reward-preview-emoji" aria-hidden="true">${selectedEmoji}</div>
+              <div class="min-w-0 flex-1">
+                <div id="custom-reward-title" class="font-semibold text-base text-harbor-text leading-tight">${title}</div>
+                <div class="text-[11px] text-harbor-muted mt-1 leading-snug">${subtitle}</div>
+              </div>
+              <button type="button" class="modal-close-chip" data-reward-dismiss="1" aria-label="Close">Close</button>
+            </div>
+
+            <label class="block text-[11px] font-semibold text-harbor-muted uppercase tracking-wider mb-1.5" for="custom-reward-label">Reward name</label>
+            <input id="custom-reward-label" class="reward-field mb-4" type="text" maxlength="40"
+              value="${safeDefault}"
+              placeholder="e.g. Latte, movie night, long bath…"
+              autocomplete="off" enterkeyhint="done" spellcheck="true" autocapitalize="sentences">
+
+            <div class="text-[11px] font-semibold text-harbor-muted uppercase tracking-wider mb-1.5">Pick an emoji</div>
+            <div class="reward-emoji-grid mb-3" id="reward-emoji-grid" role="group" aria-label="Emoji">
+              ${HARBOR_REWARD_EMOJI_PICKS.map(e => `
+                <button type="button" class="reward-emoji-btn${e === selectedEmoji ? ' is-on' : ''}" data-emoji="${e}" aria-label="Emoji ${e}">${e}</button>
+              `).join('')}
+            </div>
+            <label class="block text-[10px] text-harbor-muted mb-1" for="custom-reward-emoji-custom">Or type your own</label>
+            <input id="custom-reward-emoji-custom" class="reward-field mb-5" type="text" maxlength="4"
+              value="" placeholder="Optional custom emoji"
+              autocomplete="off" inputmode="text">
+
+            <div class="flex gap-2">
+              <button type="button" data-reward-dismiss="1"
+                class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold text-sm active:bg-harbor-border">
+                Cancel
+              </button>
+              <button type="button" id="custom-reward-save"
+                class="reward-save-btn flex-[1.35] py-3 rounded-2xl font-semibold text-sm">
+                ${confirmLabel}
+              </button>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(modal);
+        document.body.classList.add('harbor-modal-open');
+
+        const labelInput = modal.querySelector('#custom-reward-label');
+        const customEmoji = modal.querySelector('#custom-reward-emoji-custom');
+        const preview = modal.querySelector('#reward-preview-emoji');
+        const grid = modal.querySelector('#reward-emoji-grid');
+
+        const setEmoji = (emoji, fromGrid = true) => {
+          selectedEmoji = (emoji || '🎁').trim().slice(0, 4) || '🎁';
+          if (preview) preview.textContent = selectedEmoji;
+          grid?.querySelectorAll('.reward-emoji-btn').forEach(btn => {
+            btn.classList.toggle('is-on', btn.dataset.emoji === selectedEmoji);
+          });
+          if (fromGrid && customEmoji) customEmoji.value = '';
+        };
+
+        grid?.querySelectorAll('.reward-emoji-btn').forEach(btn => {
+          btn.addEventListener('click', () => setEmoji(btn.dataset.emoji, true));
+        });
+
+        customEmoji?.addEventListener('input', () => {
+          const v = (customEmoji.value || '').trim();
+          if (v) {
+            selectedEmoji = v.slice(0, 4);
+            if (preview) preview.textContent = selectedEmoji;
+            grid?.querySelectorAll('.reward-emoji-btn').forEach(btn => btn.classList.remove('is-on'));
+          }
+        });
+
+        const submit = () => {
+          const label = (labelInput?.value || '').trim();
+          if (!label) {
+            showToast('Enter a reward name', 'warn');
+            labelInput?.focus();
+            return;
+          }
+          const fromCustom = (customEmoji?.value || '').trim();
+          const emoji = (fromCustom || selectedEmoji || '🎁').slice(0, 4);
+          closeCustomHarborTreatModal({ label, emoji });
+        };
+
+        modal.querySelectorAll('[data-reward-dismiss]').forEach(el => {
+          el.addEventListener('click', () => closeCustomHarborTreatModal(null));
+        });
+        modal.querySelector('#custom-reward-save')?.addEventListener('click', submit);
+        labelInput?.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            submit();
+          } else if (e.key === 'Escape') {
+            closeCustomHarborTreatModal(null);
+          }
+        });
+
+        requestAnimationFrame(() => {
+          labelInput?.focus();
+          if (defaultLabel) labelInput?.select?.();
+        });
+      });
+    }
+
     function promptCustomHarborTreat() {
-      const label = prompt('What reward are you working toward?', '');
-      if (label == null) return;
-      const emoji = prompt('Pick an emoji for it (optional)', '🎁') || '🎁';
-      const treat = addCustomHarborTreat(label, emoji.trim() || '🎁');
-      if (treat) showToast(`${treat.emoji} Saved: ${treat.label}`);
+      showCustomHarborTreatModal({
+        title: 'My reward',
+        subtitle: 'Something you’re working toward — coffee, a movie, quiet time…',
+        confirmLabel: 'Save reward',
+        defaultEmoji: '🎁'
+      }).then((result) => {
+        if (!result) return;
+        const treat = addCustomHarborTreat(result.label, result.emoji);
+        if (treat) showToast(`${treat.emoji} Saved: ${treat.label}`);
+      });
     }
 
     // Session UI state for compact Harbor Day
@@ -22425,14 +22666,23 @@
       });
 
       modal.querySelector('#cheat-custom-treat')?.addEventListener('click', () => {
-        const label = prompt('What reward are you claiming?', selectedTreat?.label || '');
-        if (label == null) return;
-        const emoji = prompt('Emoji (optional)', selectedTreat?.emoji || '🎁') || '🎁';
-        const treat = addCustomHarborTreat(label, emoji.trim() || '🎁');
-        if (!treat) return;
-        // Re-open claim modal with new treat selected (list grew)
-        modal.remove();
-        showCheatDayRedeemModal(options);
+        showCustomHarborTreatModal({
+          title: 'What are you claiming?',
+          subtitle: 'Name the treat for this Harbor Day — or make a new one.',
+          confirmLabel: 'Use this reward',
+          defaultLabel: selectedTreat?.label || '',
+          defaultEmoji: selectedTreat?.emoji || '🎁'
+        }).then((result) => {
+          if (!result) return;
+          const treat = addCustomHarborTreat(result.label, result.emoji);
+          if (!treat) return;
+          // Re-open claim modal with new treat selected (list grew)
+          modal.remove();
+          if (!document.querySelector('body > .fixed.inset-0')) {
+            document.body.classList.remove('harbor-modal-open');
+          }
+          showCheatDayRedeemModal(options);
+        });
       });
 
       syncConfirm();
