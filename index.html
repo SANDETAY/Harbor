@@ -509,14 +509,15 @@
       font-size: var(--harbor-text-base);
       line-height: 1.45;
       letter-spacing: -0.011em;
-      background-color: rgb(var(--harbor-bg));
-      /* Subtle splash wash — continuous with launch screen */
+      /* Splash-continuous dawn wash (must stay visible — frames stay transparent) */
+      background-color: #081C1B !important;
       background-image: linear-gradient(
-        168deg,
-        rgb(var(--harbor-dawn) / 0.55) 0%,
-        rgb(var(--harbor-bg)) 38%,
-        rgb(var(--harbor-bg)) 100%
-      );
+        175deg,
+        #0A3A38 0%,
+        #0A2422 32%,
+        #081C1B 62%,
+        #0C2824 100%
+      ) !important;
       background-attachment: fixed;
       color: rgb(var(--harbor-text));
       overflow: hidden;
@@ -525,16 +526,38 @@
     }
 
     html[data-theme="light"] body {
+      background-color: #F0F6F4 !important;
       background-image: linear-gradient(
         180deg,
-        rgb(var(--harbor-mint) / 0.65) 0%,
-        rgb(var(--harbor-bg)) 42%,
-        rgb(var(--harbor-bg)) 100%
-      );
+        #E8F2EE 0%,
+        #F3F7F6 40%,
+        #F0F6F4 100%
+      ) !important;
     }
 
     html[data-theme="dark"] body {
-      background-image: none;
+      background-color: #060808 !important;
+      background-image: linear-gradient(
+        180deg,
+        #0E1212 0%,
+        #060808 55%,
+        #050606 100%
+      ) !important;
+    }
+
+    /* Let the splash wash show through solid Tailwind bg utilities on the shell */
+    .app-frame.bg-harbor-bg,
+    #app-chrome,
+    #app-scroll,
+    .main-nav.bg-harbor-bg,
+    .tab-content.bg-harbor-bg,
+    #tab-content-library.bg-harbor-bg {
+      background-color: transparent !important;
+      background-image: none !important;
+    }
+
+    .app-frame {
+      background: transparent !important;
     }
     
     .font-display {
@@ -622,14 +645,31 @@
     #task-list {
       display: flex;
       flex-direction: column;
-      gap: 0.45rem;
+      gap: 0.55rem;
       padding-bottom: 0.35rem;
     }
 
     #task-list .habit-card,
     #task-list .swipe-row-content.habit-card {
-      border-color: rgb(var(--harbor-border) / 0.88);
-      box-shadow: var(--harbor-shadow-sm);
+      border: 1px solid rgba(107, 191, 176, 0.16) !important;
+      background:
+        linear-gradient(165deg, rgba(28, 62, 58, 0.55) 0%, rgba(16, 42, 40, 0.92) 100%) !important;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.05) inset,
+        0 8px 24px rgba(2, 14, 13, 0.35) !important;
+    }
+
+    html[data-theme="light"] #task-list .habit-card,
+    html[data-theme="light"] #task-list .swipe-row-content.habit-card {
+      border-color: rgba(47, 155, 140, 0.14) !important;
+      background: linear-gradient(165deg, #ffffff 0%, #f3f8f6 100%) !important;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 6px 18px rgba(16, 48, 44, 0.07) !important;
+    }
+
+    html[data-theme="dark"] #task-list .habit-card,
+    html[data-theme="dark"] #task-list .swipe-row-content.habit-card {
+      border-color: rgba(255, 255, 255, 0.08) !important;
+      background: linear-gradient(165deg, #1a1a1a 0%, #121212 100%) !important;
     }
 
     #task-list .task-complete-hit {
@@ -847,6 +887,8 @@
       position: relative;
       gap: 0.35rem;
       padding-bottom: 0.15rem;
+      border-bottom-color: rgba(107, 191, 176, 0.12) !important;
+      background: transparent !important;
     }
 
     /* Sliding active chip on main tabs */
@@ -1271,7 +1313,7 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      background: rgb(var(--harbor-bg));
+      background: transparent !important;
     }
 
     .app-frame {
@@ -1281,7 +1323,7 @@
       flex: 1;
       min-height: 0;
       overflow: hidden;
-      background: rgb(var(--harbor-bg));
+      background: transparent !important;
       display: flex;
       flex-direction: column;
     }
@@ -1291,14 +1333,32 @@
       flex-shrink: 0;
       position: relative;
       z-index: 50; /* keep header menu above weather banner / chrome */
-      border-bottom: 1px solid rgb(var(--harbor-border) / 0.85);
+      border-bottom: 1px solid rgba(107, 191, 176, 0.14);
       background: linear-gradient(
         180deg,
-        rgb(var(--harbor-surface) / 0.92) 0%,
-        rgb(var(--harbor-bg) / 0.88) 100%
+        rgba(16, 42, 40, 0.72) 0%,
+        rgba(8, 28, 27, 0.4) 100%
       );
-      backdrop-filter: blur(16px) saturate(1.15);
-      -webkit-backdrop-filter: blur(16px) saturate(1.15);
+      backdrop-filter: blur(20px) saturate(1.2);
+      -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    }
+
+    html[data-theme="light"] .site-header {
+      border-bottom-color: rgba(47, 155, 140, 0.12);
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.82) 0%,
+        rgba(243, 247, 246, 0.5) 100%
+      );
+    }
+
+    html[data-theme="dark"] .site-header {
+      border-bottom-color: rgba(255, 255, 255, 0.06);
+      background: linear-gradient(
+        180deg,
+        rgba(18, 18, 18, 0.88) 0%,
+        rgba(7, 7, 7, 0.5) 100%
+      );
     }
 
     .site-header-inner {
@@ -1548,10 +1608,22 @@
     }
 
     .energy-btn.is-idle {
-      background: rgb(var(--harbor-surface) / 0.72);
-      border: 1px solid rgb(var(--harbor-border) / 0.9);
+      background: rgba(16, 42, 40, 0.55);
+      border: 1px solid rgba(107, 191, 176, 0.14);
       color: rgb(var(--harbor-muted));
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    html[data-theme="light"] .energy-btn.is-idle {
+      background: rgba(255, 255, 255, 0.72);
+      border-color: rgba(47, 155, 140, 0.16);
+    }
+
+    html[data-theme="dark"] .energy-btn.is-idle {
+      background: rgba(28, 28, 28, 0.75);
+      border-color: rgba(255, 255, 255, 0.08);
     }
 
     .energy-btn.is-idle:hover {
@@ -5743,9 +5815,9 @@
 
   </style>
 </head>
-<body class="bg-harbor-bg text-harbor-text is-splash-active">
+<body class="text-harbor-text is-splash-active">
   <div id="site-root" class="site-root">
-    <div class="app-frame bg-harbor-bg">
+    <div class="app-frame">
 
       <header id="site-header" class="site-header">
         <div class="site-header-inner">
@@ -5856,7 +5928,7 @@
       </div>
 
       <!-- Tab Navigation -->
-      <div id="main-nav-bar" class="main-nav px-5 pt-2 flex border-b border-harbor-border bg-harbor-bg" role="tablist" aria-label="Main navigation">
+      <div id="main-nav-bar" class="main-nav px-5 pt-2 flex border-b border-harbor-border" role="tablist" aria-label="Main navigation">
         <button type="button" role="tab" aria-selected="true" onclick="switchTab('today')" id="tab-today"
           class="main-nav-tab nav-active">Today</button>
         <button type="button" role="tab" aria-selected="false" onclick="switchTab('life')" id="tab-life"
@@ -6131,7 +6203,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v138';
+    const HARBOR_BUILD = 'v139';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -21577,7 +21649,7 @@
               </div>
             </section>
 
-            <div class="settings-build-meta">Harbor ${HARBOR_BUILD}</div>
+            <div class="settings-build-meta">Harbor ${HARBOR_BUILD} · Coastal OS</div>
           </div>
 
           <div class="settings-sheet-footer flex gap-x-3">
