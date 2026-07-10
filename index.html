@@ -1523,8 +1523,9 @@
     html[data-theme="harbor"] body > .fixed.inset-0[class*="bg-harbor-bg"] {
       background-color: rgba(16, 40, 36, 0.42) !important;
     }
-    /* Keep day-events sheet above Summary when both open */
-    body > #summary-day-events-modal {
+    /* Keep day-events / KPI detail sheets above Summary when both open */
+    body > #summary-day-events-modal,
+    body > #summary-kpi-detail-modal {
       z-index: 320 !important;
     }
     body > #summary-modal {
@@ -3295,7 +3296,7 @@
       display: inline-flex;
       align-items: center;
       gap: 0.28rem;
-      padding: 0.12rem 0.45rem 0.12rem 0.28rem;
+      padding: 0.14rem 0.5rem;
       border-radius: 999px;
       font-size: 0.58rem;
       font-weight: 650;
@@ -3304,6 +3305,10 @@
       max-width: 7.5rem;
       border: 1px solid transparent;
       background: rgba(255, 255, 255, 0.04);
+    }
+    /* Text-only chip (no inner swatch — title already has the color dot) */
+    .person-chip--text {
+      padding: 0.14rem 0.52rem;
     }
     .person-chip span {
       overflow: hidden;
@@ -4323,6 +4328,75 @@
       background: rgba(8, 18, 18, 0.55);
     }
 
+    #summary-kpi-detail-modal {
+      z-index: 270;
+    }
+
+    #summary-kpi-detail-modal .summary-kpi-detail-sheet {
+      max-height: min(78vh, 36rem);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .summary-kpi-detail-list {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      flex: 1;
+      min-height: 0;
+      margin: 0 -0.15rem;
+      padding: 0 0.15rem 0.25rem;
+    }
+
+    .summary-kpi-detail-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 0.9rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      margin-bottom: 0.4rem;
+    }
+
+    .summary-kpi-detail-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .summary-kpi-detail-row--person {
+      border-left: 3px solid var(--person-color, rgb(var(--harbor-primary)));
+    }
+
+    .summary-kpi-detail-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .summary-kpi-detail-title {
+      font-size: 0.88rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-text));
+      line-height: 1.25;
+    }
+
+    .summary-kpi-detail-meta {
+      font-size: 0.68rem;
+      color: rgb(var(--harbor-muted));
+      margin-top: 0.2rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem 0.5rem;
+    }
+
+    .summary-kpi-detail-side {
+      font-size: 0.72rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-primary-light));
+      white-space: nowrap;
+      flex-shrink: 0;
+      padding-top: 0.1rem;
+    }
+
     #summary-day-events-modal .summary-day-events-sheet {
       position: relative;
       z-index: 1;
@@ -4622,6 +4696,28 @@
       background: rgb(var(--harbor-raised));
       box-shadow: var(--harbor-shadow-sm);
       min-width: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      font: inherit;
+      color: inherit;
+      width: 100%;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button.summary-kpi:hover {
+      border-color: rgba(47, 155, 140, 0.5);
+      box-shadow: var(--harbor-shadow-sm), 0 0 0 1px rgba(47, 155, 140, 0.12);
+    }
+
+    button.summary-kpi:active {
+      transform: scale(0.97);
+    }
+
+    button.summary-kpi:focus-visible {
+      outline: 2px solid rgb(var(--harbor-primary));
+      outline-offset: 2px;
     }
 
     .summary-kpi.is-hot {
@@ -7667,7 +7763,7 @@
         <div id="task-list"></div>
         <div id="app-version-foot" class="app-version-foot" aria-label="App version">
           <button type="button" class="app-version-foot-btn" onclick="showReleaseNotes()" title="What's new">
-            Harbor <span class="tabular-nums" id="app-version-foot-label">0.9.2</span>
+            Harbor <span class="tabular-nums" id="app-version-foot-label">0.9.3</span>
           </button>
         </div>
       </div>
@@ -7932,9 +8028,9 @@
 
     // Product version (semver). Pre-1.0: feature-complete late beta / RC territory.
     // Bump MINOR for larger feature sets, PATCH for fixes. Reserve 1.0.0 for store launch.
-    const HARBOR_VERSION = '0.9.2';
+    const HARBOR_VERSION = '0.9.3';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 183;
+    const HARBOR_BUILD_NUMBER = 184;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -7952,6 +8048,16 @@
 
     /** User-facing changelog (newest first). Keep short and plain — not a git log. */
     const HARBOR_CHANGELOG = [
+      {
+        version: '0.9.3',
+        date: '2026-07-10',
+        title: 'Summary lists, chores & family tags',
+        highlights: [
+          'Tap the Tasks, Events, Bills, or Grocery boxes in Summary to open the full list for that range',
+          'Weekly chores (for example, mow the lawn) now show on Today and in Summary as soon as you add them',
+          'Family member tags on events keep the color on the event title — no extra filler circle next to the name'
+        ]
+      },
       {
         version: '0.9.2',
         date: '2026-07-10',
@@ -10036,13 +10142,19 @@
     function renderPersonChipHtml(personId, options = {}) {
       const person = getHouseholdPerson(personId);
       if (!person) return '';
-      const { showName = true, size = 'sm' } = options;
+      const { showName = true, size = 'sm', showSwatch = false } = options;
       const sw = size === 'lg' ? 'person-swatch person-swatch--lg' : 'person-swatch';
       if (!showName) {
         return `<span class="${sw}" style="background:${escapeBriefHtml(person.color)}" title="${escapeBriefHtml(person.name)}" aria-label="${escapeBriefHtml(person.name)}"></span>`;
       }
-      return `<span class="person-chip" style="border-color:${escapeBriefHtml(person.color)}55;color:${escapeBriefHtml(person.color)}">
-        <span class="${sw}" style="background:${escapeBriefHtml(person.color)}"></span>
+      // Name chip uses color via border/text only — event title already has the person swatch
+      if (showSwatch) {
+        return `<span class="person-chip" style="border-color:${escapeBriefHtml(person.color)}55;color:${escapeBriefHtml(person.color)}">
+          <span class="${sw}" style="background:${escapeBriefHtml(person.color)}"></span>
+          <span>${escapeBriefHtml(person.name)}</span>
+        </span>`;
+      }
+      return `<span class="person-chip person-chip--text" style="border-color:${escapeBriefHtml(person.color)}55;color:${escapeBriefHtml(person.color)};background:${escapeBriefHtml(person.color)}1a">
         <span>${escapeBriefHtml(person.name)}</span>
       </span>`;
     }
@@ -11707,10 +11819,10 @@
 
     function isHabitActiveThisPeriod(habit) {
       if (isOneOffTask(habit) || isDailyTask(habit)) return true;
-      const addedDate = getHabitAddedDate(habit);
-      const addedKey = getHabitPeriodKey(habit, addedDate);
-      const currentKey = getHabitPeriodKey(habit);
-      if (addedKey === currentKey && !isFirstDayOfPeriod(habit, addedDate)) return false;
+      // Active for the whole current period until completed.
+      // Mid-week / mid-month adds (e.g. “Mow the lawn” weekly) must show immediately —
+      // previously they stayed hidden until the next period start, so they “vanished”
+      // from Today and Summary after add.
       return !habitCompletedInCurrentPeriod(habit);
     }
 
@@ -19242,22 +19354,22 @@
         <div class="text-[11px] text-harbor-muted mb-2 font-medium tracking-wide">${escapeBriefHtml(periodLabel)}</div>
 
         <div class="summary-kpis" aria-label="At a glance">
-          <div class="summary-kpi${kpiTasksHot ? ' is-live' : ''}">
+          <button type="button" class="summary-kpi${kpiTasksHot ? ' is-live' : ''}" data-summary-kpi="tasks" aria-label="View ${taskN} task${taskN === 1 ? '' : 's'}">
             <div class="summary-kpi-val">${taskN}</div>
             <div class="summary-kpi-lbl">Tasks</div>
-          </div>
-          <div class="summary-kpi${eventN ? ' is-live' : ''}">
+          </button>
+          <button type="button" class="summary-kpi${eventN ? ' is-live' : ''}" data-summary-kpi="events" aria-label="View ${eventN} event${eventN === 1 ? '' : 's'}">
             <div class="summary-kpi-val">${eventN}</div>
             <div class="summary-kpi-lbl">Events</div>
-          </div>
-          <div class="summary-kpi${kpiBillsHot ? ' is-hot' : ''}">
+          </button>
+          <button type="button" class="summary-kpi${kpiBillsHot ? ' is-hot' : ''}" data-summary-kpi="bills" aria-label="View ${billN} bill${billN === 1 ? '' : 's'}">
             <div class="summary-kpi-val">${billN}</div>
             <div class="summary-kpi-lbl">Bills</div>
-          </div>
-          <div class="summary-kpi${groceryN ? ' is-live' : ''}">
+          </button>
+          <button type="button" class="summary-kpi${groceryN ? ' is-live' : ''}" data-summary-kpi="grocery" aria-label="View ${groceryN} grocery item${groceryN === 1 ? '' : 's'}">
             <div class="summary-kpi-val">${groceryN}</div>
             <div class="summary-kpi-lbl">Grocery</div>
-          </div>
+          </button>
         </div>
 
         ${renderBriefFocusCard(brief)}
@@ -19272,10 +19384,220 @@
       `;
     }
 
+    function closeSummaryKpiDetail() {
+      document.getElementById('summary-kpi-detail-modal')?.remove();
+    }
+
+    function flattenBriefEvents(brief) {
+      if (!brief) return [];
+      if (brief.mode === 'day') {
+        return (brief.events || []).map(e => ({ ...e, dayLabel: 'Today' }));
+      }
+      const out = [];
+      (brief.events || []).forEach(day => {
+        (day.events || []).forEach(e => {
+          out.push({ ...e, dayLabel: day.label || formatBriefDateLabel(day.date || e.date) });
+        });
+      });
+      return out;
+    }
+
+    function renderSummaryKpiDetailRows(kind, brief) {
+      if (kind === 'tasks') {
+        const tasks = brief.tasks || [];
+        if (!tasks.length) {
+          return `<div class="summary-empty py-4 text-center">No tasks in this range. Add one from Today or the Library.</div>`;
+        }
+        return tasks.map(item => {
+          const h = item.habit;
+          const due = item.daysUntil <= 0
+            ? 'Due today'
+            : item.daysUntil === 1
+              ? 'Tomorrow'
+              : formatBriefDateLabel(item.date);
+          const freq = isOneOffTask(h)
+            ? 'One-time'
+            : isDailyTask(h)
+              ? 'Daily'
+              : formatIntervalLabel(h.interval_days);
+          const mins = h.est_minutes != null ? `${h.est_minutes || 0} min` : '';
+          return `
+            <div class="summary-kpi-detail-row">
+              <div class="summary-kpi-detail-main">
+                <div class="summary-kpi-detail-title">${escapeBriefHtml(h.title)}</div>
+                <div class="summary-kpi-detail-meta">
+                  <span>${escapeBriefHtml(due)}</span>
+                  <span>·</span>
+                  <span>${escapeBriefHtml(freq)}</span>
+                  ${mins ? `<span>·</span><span>${escapeBriefHtml(mins)}</span>` : ''}
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      if (kind === 'events') {
+        const events = flattenBriefEvents(brief);
+        if (!events.length) {
+          return `<div class="summary-empty py-4 text-center">No events in this range. Add one from Life → Schedule.</div>`;
+        }
+        return events.map(e => {
+          const person = getHouseholdPerson(e.personId);
+          const style = person ? ` style="--person-color:${escapeBriefHtml(person.color)}"` : '';
+          const cls = person ? 'summary-kpi-detail-row summary-kpi-detail-row--person' : 'summary-kpi-detail-row';
+          const time = e.time ? formatScheduleEventTime(e.time) : '—';
+          return `
+            <div class="${cls}"${style}>
+              <div class="summary-kpi-detail-side">${escapeBriefHtml(time)}</div>
+              <div class="summary-kpi-detail-main">
+                <div class="summary-kpi-detail-title flex items-center gap-1.5">
+                  ${person ? `<span class="person-swatch" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
+                  <span>${escapeBriefHtml(e.title)}</span>
+                </div>
+                <div class="summary-kpi-detail-meta">
+                  ${e.dayLabel ? `<span>${escapeBriefHtml(e.dayLabel)}</span>` : ''}
+                  ${person ? renderPersonChipHtml(person.id) : ''}
+                  ${e.durationMin ? `<span>${e.durationMin} min</span>` : ''}
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      if (kind === 'bills') {
+        const bills = brief.bills || [];
+        if (!bills.length) {
+          return `<div class="summary-empty py-4 text-center">No bills due in this range. Manage them in Life → Bills.</div>`;
+        }
+        return bills.map(b => {
+          const st = getBillStatus(b);
+          const days = getDaysUntilBillDue(b);
+          const due = st === 'overdue'
+            ? 'Overdue'
+            : st === 'due_today'
+              ? 'Due today'
+              : days === 1
+                ? 'Due tomorrow'
+                : `Due in ${days}d`;
+          return `
+            <div class="summary-kpi-detail-row">
+              <div class="summary-kpi-detail-main">
+                <div class="summary-kpi-detail-title">${escapeBriefHtml(b.name)}</div>
+                <div class="summary-kpi-detail-meta">
+                  <span>${escapeBriefHtml(due)}</span>
+                  ${b.autopay ? `<span>·</span><span>Autopay</span>` : ''}
+                </div>
+              </div>
+              <div class="summary-kpi-detail-side">${escapeBriefHtml(formatBillAmount(b.amount))}</div>
+            </div>`;
+        }).join('');
+      }
+
+      if (kind === 'grocery') {
+        const items = (state.groceryMaster || []).filter(g => !g.checked);
+        if (!items.length) {
+          return `<div class="summary-empty py-4 text-center">Grocery list is clear. Add items in Life → Grocery.</div>`;
+        }
+        return items.map(g => `
+          <div class="summary-kpi-detail-row">
+            <div class="summary-kpi-detail-main">
+              <div class="summary-kpi-detail-title">${escapeBriefHtml(g.name)}</div>
+              ${g.qty || g.note ? `<div class="summary-kpi-detail-meta">${escapeBriefHtml([g.qty, g.note].filter(Boolean).join(' · '))}</div>` : ''}
+            </div>
+          </div>`).join('');
+      }
+
+      return `<div class="summary-empty py-4 text-center">Nothing to show.</div>`;
+    }
+
+    function showSummaryKpiDetail(kind) {
+      if (!kind) return;
+      closeSummaryKpiDetail();
+      let brief;
+      try {
+        brief = buildSummary(summaryMode || 'day');
+      } catch (err) {
+        console.error('[Harbor] KPI detail failed', err);
+        showToast('Couldn’t open that list');
+        return;
+      }
+
+      const titles = {
+        tasks: 'Tasks',
+        events: 'Events',
+        bills: 'Bills',
+        grocery: 'Grocery'
+      };
+      const title = titles[kind] || 'Details';
+      const counts = {
+        tasks: (brief.tasks || []).length,
+        events: flattenBriefEvents(brief).length,
+        bills: (brief.bills || []).length,
+        grocery: (state.groceryMaster || []).filter(g => !g.checked).length
+      };
+      const count = counts[kind] ?? 0;
+      const jump = {
+        tasks: { label: 'Open Today', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('today'); } },
+        events: { label: 'Full schedule', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('life'); switchLifePanel('schedule'); } },
+        bills: { label: 'Open Bills', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('life'); switchLifePanel('bills'); } },
+        grocery: { label: 'Open Grocery', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('life'); switchLifePanel('grocery'); } }
+      }[kind];
+
+      const modal = document.createElement('div');
+      modal.id = 'summary-kpi-detail-modal';
+      modal.className = 'modal-overlay-blur';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-label', title);
+      modal.innerHTML = `
+        <div class="absolute inset-0" data-kpi-detail-backdrop="1"></div>
+        <div class="summary-kpi-detail-sheet summary-day-events-sheet modal-sheet p-5 text-sm" data-sheet-panel="1">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-lg mb-0.5 flex items-center justify-between gap-2">
+            <span>${escapeBriefHtml(title)}</span>
+            <button type="button" class="modal-close-chip" data-kpi-detail-close="1" aria-label="Close">Close</button>
+          </div>
+          <div class="text-[11px] text-harbor-muted mb-3">
+            ${count} item${count === 1 ? '' : 's'} · ${escapeBriefHtml(
+              brief.mode === 'day' ? 'Today' : brief.mode === 'month' ? 'This month' : 'This week'
+            )}
+          </div>
+          <div class="summary-kpi-detail-list" id="summary-kpi-detail-list">
+            ${renderSummaryKpiDetailRows(kind, brief)}
+          </div>
+          ${jump ? `<button type="button" id="summary-kpi-detail-jump"
+            class="w-full mt-3 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-semibold text-harbor-primary-light active:bg-harbor-border">
+            ${escapeBriefHtml(jump.label)} <i class="fa-solid fa-arrow-right text-[9px] ml-1"></i>
+          </button>` : ''}
+        </div>`;
+      document.body.appendChild(modal);
+
+      modal.querySelector('[data-kpi-detail-backdrop]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeSummaryKpiDetail();
+      });
+      modal.querySelector('[data-kpi-detail-close]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeSummaryKpiDetail();
+      });
+      modal.querySelector('.summary-kpi-detail-sheet')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      modal.querySelector('#summary-kpi-detail-jump')?.addEventListener('click', () => {
+        if (jump?.action) jump.action();
+      });
+      requestAnimationFrame(() => {
+        if (modal.isConnected) wireSheetSwipeToDismiss(modal);
+      });
+    }
+
     function closeSummaryModal() {
       document.getElementById('summary-modal')?.remove();
       document.body.classList.remove('summary-open');
       closeSummaryDayEventsModal();
+      closeSummaryKpiDetail();
     }
 
     // ==================== SHEET SWIPE-TO-DISMISS ====================
@@ -19297,6 +19619,10 @@
       }
       if (id === 'summary-day-events-modal') {
         closeSummaryDayEventsModal();
+        return;
+      }
+      if (id === 'summary-kpi-detail-modal') {
+        closeSummaryKpiDetail();
         return;
       }
       if (id === 'app-menu-sheet' || overlay.classList.contains('app-menu-sheet')) {
@@ -19568,7 +19894,17 @@
     function wireSummaryModal(container) {
       if (!container) return;
       container.querySelectorAll('[data-brief-mode]').forEach(btn => {
-        btn.onclick = () => refreshSummaryModal(btn.dataset.briefMode);
+        btn.onclick = () => {
+          closeSummaryKpiDetail();
+          refreshSummaryModal(btn.dataset.briefMode);
+        };
+      });
+      container.querySelectorAll('[data-summary-kpi]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          showSummaryKpiDetail(btn.dataset.summaryKpi);
+        };
       });
       // Delegated day taps (backup for inline onclick on month cells)
       if (container.dataset.summaryDayWired !== '1') {

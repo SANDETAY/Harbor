@@ -1,9 +1,8 @@
 # Harbor session save — pick up later
 
 **Saved:** 2026-07-10  
-**Product version:** **0.9.2** (beta, pre-1.0)  
-**Build:** **183** (`HARBOR_BUILD` / SW cache `harbor-preview-v183`)  
-**Commit:** `047da4a` on `main` (pushed to `origin/main`)  
+**Product version:** **0.9.3** (beta, pre-1.0)  
+**Build:** **184** (`HARBOR_BUILD` / SW cache `harbor-preview-v184`)  
 **Repo:** https://github.com/SANDETAY/Harbor  
 **Local path:** `C:\Users\Taylor\Rythm`  
 **Live PWA:** https://sandetay.github.io/Harbor/
@@ -20,6 +19,9 @@
 | Smart Suggestions free time in **hours** (not minutes) | Done (v182) |
 | Feedback: honest send status, queue + retry, mailto backup | Done (v182) |
 | **Web3Forms** primary feedback email | Done (v183) |
+| Summary KPI boxes open full Tasks / Events / Bills / Grocery lists | Done (v184) |
+| Weekly chores visible mid-period (no vanish after add) | Done (v184) |
+| Family event tags: name chip without extra swatch circle | Done (v184) |
 
 ### Feedback (important)
 
@@ -33,8 +35,8 @@
 
 | Layer | Value | Role |
 |--------|--------|------|
-| Product | `0.9.2` | User-facing semver (reserve `1.0.0` for store launch) |
-| Build | `183` | Cache bust + support |
+| Product | `0.9.3` | User-facing semver (reserve `1.0.0` for store launch) |
+| Build | `184` | Cache bust + support |
 | Channel | `beta` | Until stable 1.0 |
 
 ## How to resume
@@ -49,7 +51,7 @@ git pull origin main
 
 In chat: **“Load harbor”** (or open this repo) and continue from this save.
 
-Hard-refresh the live site (or reinstall PWA) so SW cache **`harbor-preview-v183`** loads. Footer / menu should show **Harbor 0.9.2**.
+Hard-refresh the live site (or reinstall PWA) so SW cache **`harbor-preview-v184`** loads. Footer / menu should show **Harbor 0.9.3**.
 
 ## Untracked local files (not committed)
 
@@ -63,8 +65,7 @@ Hard-refresh the live site (or reinstall PWA) so SW cache **`harbor-preview-v183
 - Ship more polish from device feedback
 - Capacitor / TestFlight path when ready for stores
 - Commit `package-lock.json` if you want reproducible npm installs
-- Bump to `0.9.3` / build `184` on the next ship
 
 ## Tag
 
-Git tag: `save/v0.9.2-183-2026-07-10` (points at this commit)
+Git tag: create `save/v0.9.3-184-2026-07-10` after push if you want a resume anchor
