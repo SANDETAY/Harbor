@@ -6315,6 +6315,67 @@
       border-color: rgb(var(--harbor-primary-light));
       color: #fff;
     }
+    .bill-cycle-chip {
+      flex: 1 1 auto;
+      min-width: 4.5rem;
+      padding: 0.5rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+    .bill-cycle-chip.is-selected {
+      background: rgba(var(--harbor-primary), 0.18);
+      border-color: rgb(var(--harbor-primary-light));
+      color: rgb(var(--harbor-primary-light));
+    }
+    .student-pricing-toggle input.student-pricing-switch {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 2.5rem;
+      height: 1.4rem;
+      border-radius: 999px;
+      background: rgb(var(--harbor-border));
+      position: relative;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      flex-shrink: 0;
+    }
+    .student-pricing-toggle input.student-pricing-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 1rem;
+      height: 1rem;
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+      transition: transform 0.15s ease;
+    }
+    .student-pricing-toggle input.student-pricing-switch:checked {
+      background: rgb(var(--harbor-primary));
+    }
+    .student-pricing-toggle input.student-pricing-switch:checked::after {
+      transform: translateX(1.1rem);
+    }
+    .sub-tier-student-badge {
+      display: inline-block;
+      margin-left: 0.35rem;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-primary-light));
+      background: rgba(var(--harbor-primary), 0.14);
+      border-radius: 999px;
+      padding: 0.1rem 0.4rem;
+      vertical-align: middle;
+    }
 
     /* ── Splash: crisp minimal mark + modern wordmark (vector, no video) ── */
     .splash-screen-harbor {
@@ -7632,6 +7693,14 @@
           <div class="text-[10px] text-harbor-muted leading-snug mb-2 px-0.5">
             Netflix, gym, software — things that <strong class="text-harbor-text">renew</strong>. One-off bills and rent go under <strong class="text-harbor-primary-light">Bills</strong>.
           </div>
+          <label class="student-pricing-toggle flex items-center justify-between gap-3 mb-2.5 px-3 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border cursor-pointer select-none">
+            <div class="min-w-0">
+              <div class="text-xs font-semibold text-harbor-text">Student status</div>
+              <div class="text-[10px] text-harbor-muted leading-snug">Use discounted student prices where services offer them</div>
+            </div>
+            <input id="student-pricing-toggle" type="checkbox" class="student-pricing-switch flex-shrink-0"
+              onchange="toggleStudentPricing(this.checked)" aria-label="Student status pricing">
+          </label>
           <div id="subs-monthly-total" class="hidden mb-2"></div>
           <div id="subscriptions-list" class="space-y-2.5 mb-3"></div>
           <button type="button" id="subs-browse-btn" class="chip-tool-btn w-full mb-2" onclick="toggleSubsBrowse()"
@@ -7768,7 +7837,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v179';
+    const HARBOR_BUILD = 'v180';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -8008,8 +8077,8 @@
         homeUrl: 'https://www.spotify.com/account/',
         manageUrl: 'https://www.spotify.com/account/subscription/', name: 'Spotify', brandColor: '#1DB954', matchPattern: /spotify/i,
         tiers: [
-          { id: 'student', label: 'Student', amount: 5.99, cycle: 'monthly' },
-          { id: 'individual', label: 'Individual', amount: 11.99, cycle: 'monthly' },
+          { id: 'student', label: 'Student', amount: 5.99, cycle: 'monthly', studentAmount: 5.99 },
+          { id: 'individual', label: 'Individual', amount: 11.99, cycle: 'monthly', studentAmount: 5.99 },
           { id: 'duo', label: 'Duo', amount: 16.99, cycle: 'monthly' },
           { id: 'family', label: 'Family', amount: 19.99, cycle: 'monthly' }
         ]
@@ -8029,7 +8098,7 @@
         homeUrl: 'https://auth.hulu.com/web/login',
         manageUrl: 'https://secure.hulu.com/account', name: 'Hulu', brandColor: '#1CE783', matchPattern: /hulu/i,
         tiers: [
-          { id: 'ads', label: 'With ads', amount: 9.99, cycle: 'monthly' },
+          { id: 'ads', label: 'With ads', amount: 9.99, cycle: 'monthly', studentAmount: 1.99 },
           { id: 'no-ads', label: 'No ads', amount: 18.99, cycle: 'monthly' },
           { id: 'live', label: 'Live TV + Hulu', amount: 82.99, cycle: 'monthly' }
         ]
@@ -8049,7 +8118,7 @@
         homeUrl: 'https://www.youtube.com/',
         manageUrl: 'https://www.youtube.com/paid_memberships', name: 'YouTube Premium', brandColor: '#FF0000', matchPattern: /youtube|google\s*youtube/i,
         tiers: [
-          { id: 'individual', label: 'Individual', amount: 13.99, cycle: 'monthly' },
+          { id: 'individual', label: 'Individual', amount: 13.99, cycle: 'monthly', studentAmount: 7.99 },
           { id: 'family', label: 'Family', amount: 22.99, cycle: 'monthly' }
         ]
       },
@@ -8078,15 +8147,15 @@
         homeUrl: 'https://www.amazon.com/gp/css/homepage.html',
         manageUrl: 'https://www.amazon.com/gp/primecentral', name: 'Amazon Prime', brandColor: '#00A8E1', matchPattern: /amazon prime|amzn\.com\/bill|prime video/i,
         tiers: [
-          { id: 'monthly', label: 'Monthly', amount: 14.99, cycle: 'monthly' },
-          { id: 'yearly', label: 'Yearly', amount: 139, cycle: 'yearly' }
+          { id: 'monthly', label: 'Monthly', amount: 14.99, cycle: 'monthly', studentAmount: 7.49 },
+          { id: 'yearly', label: 'Yearly', amount: 139, cycle: 'yearly', studentAmount: 69 }
         ]
       },
       {
         id: 'microsoft-365',
         manageUrl: 'https://account.microsoft.com/services', name: 'Microsoft 365', brandColor: '#D83B01', matchPattern: /microsoft|office 365|msft/i,
         tiers: [
-          { id: 'personal', label: 'Personal', amount: 9.99, cycle: 'monthly' },
+          { id: 'personal', label: 'Personal', amount: 9.99, cycle: 'monthly', studentAmount: 0 },
           { id: 'family', label: 'Family', amount: 12.99, cycle: 'monthly' }
         ]
       },
@@ -8094,9 +8163,9 @@
         id: 'adobe',
         manageUrl: 'https://account.adobe.com/plans', name: 'Adobe Creative Cloud', brandColor: '#FF0000', matchPattern: /adobe/i,
         tiers: [
-          { id: 'photography', label: 'Photography (1 TB)', amount: 22.99, cycle: 'monthly' },
-          { id: 'single-app', label: 'Single App', amount: 22.99, cycle: 'monthly' },
-          { id: 'all-apps', label: 'All Apps', amount: 59.99, cycle: 'monthly' }
+          { id: 'photography', label: 'Photography (1 TB)', amount: 22.99, cycle: 'monthly', studentAmount: 19.99 },
+          { id: 'single-app', label: 'Single App', amount: 22.99, cycle: 'monthly', studentAmount: 19.99 },
+          { id: 'all-apps', label: 'All Apps', amount: 59.99, cycle: 'monthly', studentAmount: 34.99 }
         ]
       },
       {
@@ -8125,7 +8194,7 @@
         id: 'paramount',
         manageUrl: 'https://www.paramountplus.com/account/', name: 'Paramount+', brandColor: '#0064FF', matchPattern: /paramount/i,
         tiers: [
-          { id: 'essential', label: 'Essential', amount: 7.99, cycle: 'monthly' },
+          { id: 'essential', label: 'Essential', amount: 7.99, cycle: 'monthly', studentAmount: 5.99 },
           { id: 'showtime', label: 'With Showtime', amount: 12.99, cycle: 'monthly' }
         ]
       },
@@ -8143,7 +8212,7 @@
         homeUrl: 'https://chatgpt.com/auth/login',
         manageUrl: 'https://chatgpt.com/#settings', name: 'ChatGPT', brandColor: '#412991', matchPattern: /openai|chatgpt/i,
         tiers: [
-          { id: 'plus', label: 'Plus', amount: 20, cycle: 'monthly' },
+          { id: 'plus', label: 'Plus', amount: 20, cycle: 'monthly', studentAmount: 10 },
           { id: 'pro', label: 'Pro', amount: 200, cycle: 'monthly' }
         ]
       },
@@ -8535,6 +8604,7 @@
           cheatDayFundEnabled: true,
           calendarAllowCorsHelper: false,
           mealPresetsVersion: MEAL_PRESETS_VERSION,
+          studentPricing: false,
           householdProfiles: [
             { id: 'me', name: 'Me', role: 'me', color: '#2F9B8C' }
           ]
@@ -8629,6 +8699,9 @@
       }
       if (state.settings.calendarNudgeDismissed === undefined) {
         state.settings.calendarNudgeDismissed = false;
+      }
+      if (state.settings.studentPricing === undefined) {
+        state.settings.studentPricing = false;
       }
       // Theme: harbor = mint day (default), dark = coastal night.
       // Legacy: mono→dark, light→harbor. Only harbor + dark remain.
@@ -12857,8 +12930,56 @@
       return formatBillDueDaysList(getBillDueDays(bill));
     }
 
+    const BILL_RECURRENCE_OPTIONS = [
+      { id: 'weekly', label: 'Weekly' },
+      { id: 'biweekly', label: 'Biweekly' },
+      { id: 'monthly', label: 'Monthly' },
+      { id: 'quarterly', label: 'Quarterly' },
+      { id: 'yearly', label: 'Yearly' }
+    ];
+
+    function formatBillRecurrenceLabel(recurrence) {
+      const hit = BILL_RECURRENCE_OPTIONS.find(o => o.id === (recurrence || 'monthly'));
+      return hit?.label || 'Monthly';
+    }
+
+    function formatBillRecurrenceShort(recurrence) {
+      if (recurrence === 'weekly') return '/wk';
+      if (recurrence === 'biweekly') return '/2wk';
+      if (recurrence === 'quarterly') return '/qtr';
+      if (recurrence === 'yearly') return '/yr';
+      return '/mo';
+    }
+
+    /** Convert a bill's stored period total into a monthly-equivalent for spend summaries. */
+    function getBillMonthlyEquivalent(bill) {
+      if (!bill || bill.amount == null || isNaN(bill.amount)) return 0;
+      const amt = Number(bill.amount) || 0;
+      const rec = bill.recurrence || 'monthly';
+      if (rec === 'weekly') return amt * (52 / 12);
+      if (rec === 'biweekly') return amt * (26 / 12);
+      if (rec === 'quarterly') return amt / 3;
+      if (rec === 'yearly') return amt / 12;
+      return amt;
+    }
+
     function getMonthlyBillsTotal() {
-      return state.bills.reduce((sum, bill) => sum + (bill.amount || 0), 0);
+      return (state.bills || []).reduce((sum, bill) => sum + getBillMonthlyEquivalent(bill), 0);
+    }
+
+    /**
+     * Amount entered is per pay date. Multiple due days → period total = amount × day count.
+     * Returns { amountPerPayment, amount } where amount is the full period total stored on the bill.
+     */
+    function resolveBillAmountForPayDates(rawAmount, dueDays) {
+      if (rawAmount == null || rawAmount === '' || isNaN(Number(rawAmount))) {
+        return { amountPerPayment: null, amount: null };
+      }
+      const per = Math.round(Number(rawAmount) * 100) / 100;
+      const days = Array.isArray(dueDays) ? dueDays.length : 1;
+      const multiplier = Math.max(1, days || 1);
+      const total = Math.round(per * multiplier * 100) / 100;
+      return { amountPerPayment: per, amount: total };
     }
 
     function getBillDueDate(bill, refDate) {
@@ -12887,8 +13008,31 @@
       if (!bill.lastPaid) return false;
       const paid = new Date(bill.lastPaid);
       const now = new Date();
-      if (bill.recurrence === 'yearly') {
+      const rec = bill.recurrence || 'monthly';
+      if (rec === 'yearly') {
         return paid.getFullYear() === now.getFullYear();
+      }
+      if (rec === 'quarterly') {
+        const paidQ = Math.floor(paid.getMonth() / 3);
+        const nowQ = Math.floor(now.getMonth() / 3);
+        return paid.getFullYear() === now.getFullYear() && paidQ === nowQ;
+      }
+      if (rec === 'weekly') {
+        const startOfWeek = (d) => {
+          const x = new Date(d);
+          x.setHours(0, 0, 0, 0);
+          const day = x.getDay();
+          x.setDate(x.getDate() - day);
+          return x.getTime();
+        };
+        return startOfWeek(paid) === startOfWeek(now);
+      }
+      if (rec === 'biweekly') {
+        const ms = 14 * 86400000;
+        const epoch = new Date(now.getFullYear(), 0, 1).getTime();
+        const paidBucket = Math.floor((paid.getTime() - epoch) / ms);
+        const nowBucket = Math.floor((now.getTime() - epoch) / ms);
+        return paidBucket === nowBucket;
       }
       return paid.getFullYear() === now.getFullYear() && paid.getMonth() === now.getMonth();
     }
@@ -12945,20 +13089,27 @@
       return '$' + Number(amount).toLocaleString(undefined, { maximumFractionDigits: 0 });
     }
 
-    function addBill(name, dueDays, amount, autopay) {
+    function addBill(name, dueDays, amount, autopay, recurrence) {
       name = normalizeUserText(name);
       const days = (Array.isArray(dueDays) ? dueDays : [dueDays || 1])
         .map(d => Math.min(31, Math.max(1, parseInt(d, 10) || 1)))
         .filter((d, i, arr) => arr.indexOf(d) === i)
         .sort((a, b) => a - b);
 
+      const rec = BILL_RECURRENCE_OPTIONS.some(o => o.id === recurrence) ? recurrence : 'monthly';
+      // amount here is already the period total (per-payment × due-day count when multi-pay)
+      const resolved = (amount != null && typeof amount === 'object' && 'amount' in amount)
+        ? amount
+        : resolveBillAmountForPayDates(amount, days);
+
       const bill = {
         id: 'bill-' + Date.now(),
         name: name.trim(),
-        amount: amount != null ? parseFloat(amount) : null,
+        amount: resolved.amount,
+        amountPerPayment: resolved.amountPerPayment,
         dueDays: days,
         dueDay: days[0],
-        recurrence: 'monthly',
+        recurrence: rec,
         autopay: !!autopay,
         category: 'other'
       };
@@ -12968,7 +13119,13 @@
       renderTodayFeed();
       updateSmartBanner();
       const dueLabel = formatBillDueDaysList(days);
-      showToast(`Bill added: ${bill.name} (${dueLabel})`);
+      const recLabel = formatBillRecurrenceLabel(rec);
+      const amtNote = bill.amount != null
+        ? (days.length > 1 && bill.amountPerPayment != null
+          ? ` · ${formatBillAmount(bill.amountPerPayment)} × ${days.length} = ${formatBillAmount(bill.amount)}`
+          : ` · ${formatBillAmount(bill.amount)}${formatBillRecurrenceShort(rec)}`)
+        : '';
+      showToast(`Bill added: ${bill.name} (${recLabel} · ${dueLabel}${amtNote})`);
       return bill;
     }
 
@@ -12979,6 +13136,7 @@
     function showAddBillModal() {
       closeAddBillModal();
       const selectedDays = new Set();
+      let selectedRecurrence = 'monthly';
 
       const modal = document.createElement('div');
       modal.id = 'add-bill-modal';
@@ -12998,18 +13156,62 @@
             else selectedDays.add(d);
             renderDayGrid();
             updateSelectedLabel();
+            updateAmountHint();
           };
           grid.appendChild(btn);
         }
+      }
+
+      function renderCycleChips() {
+        const row = modal.querySelector('#bill-cycle-row');
+        if (!row) return;
+        row.innerHTML = BILL_RECURRENCE_OPTIONS.map(opt => `
+          <button type="button" class="bill-cycle-chip${opt.id === selectedRecurrence ? ' is-selected' : ''}" data-cycle="${opt.id}">
+            ${opt.label}
+          </button>`).join('');
+        row.querySelectorAll('.bill-cycle-chip').forEach(btn => {
+          btn.onclick = () => {
+            selectedRecurrence = btn.dataset.cycle || 'monthly';
+            renderCycleChips();
+            updateSelectedLabel();
+            updateAmountHint();
+          };
+        });
       }
 
       function updateSelectedLabel() {
         const label = modal.querySelector('#bill-selected-days');
         if (!label) return;
         const sorted = [...selectedDays].sort((a, b) => a - b);
+        const period = selectedRecurrence === 'monthly' ? 'each month'
+          : selectedRecurrence === 'quarterly' ? 'each quarter'
+          : selectedRecurrence === 'yearly' ? 'each year'
+          : selectedRecurrence === 'weekly' ? 'each week (day of month still used for reminders)'
+          : selectedRecurrence === 'biweekly' ? 'every two weeks (day of month still used for reminders)'
+          : 'each period';
         label.textContent = sorted.length
-          ? `Due on the ${formatBillDueDaysList(sorted)}`
-          : 'Tap day(s) due each month';
+          ? `Due on the ${formatBillDueDaysList(sorted)} ${period}`
+          : `Tap day(s) due ${period}`;
+      }
+
+      function updateAmountHint() {
+        const hint = modal.querySelector('#bill-amount-hint');
+        if (!hint) return;
+        const amountStr = modal.querySelector('#bill-amount-input')?.value.trim() || '';
+        const raw = amountStr ? parseFloat(amountStr) : null;
+        const days = selectedDays.size || 0;
+        if (raw == null || isNaN(raw) || days < 1) {
+          hint.textContent = days > 1
+            ? 'Amount is per pay date — multi-day bills multiply automatically'
+            : 'Optional · amount charged on each pay date';
+          return;
+        }
+        const resolved = resolveBillAmountForPayDates(raw, [...selectedDays]);
+        if (days > 1) {
+          hint.textContent = `${formatBillAmount(resolved.amountPerPayment)} × ${days} pay dates = ${formatBillAmount(resolved.amount)}${formatBillRecurrenceShort(selectedRecurrence)} total`;
+        } else {
+          hint.textContent = `${formatBillAmount(resolved.amount)}${formatBillRecurrenceShort(selectedRecurrence)}`;
+        }
       }
 
       modal.innerHTML = `
@@ -13018,7 +13220,7 @@
           <div class="flex items-center justify-between mb-4">
             <div>
               <div class="font-semibold text-lg text-harbor-text">Add Bill</div>
-              <div class="text-[10px] text-harbor-muted mt-0.5">Track monthly due dates</div>
+              <div class="text-[10px] text-harbor-muted mt-0.5">Track due dates and how often you pay</div>
             </div>
             <button type="button" onclick="closeAddBillModal()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
@@ -13027,11 +13229,15 @@
           <input id="bill-name-input" type="text" placeholder="e.g. Rent, Electric"
             class="w-full bg-harbor-raised border border-harbor-border focus:border-harbor-primary rounded-2xl px-4 py-3 mb-3 outline-none text-harbor-text placeholder:text-harbor-muted">
 
-          <label class="block text-xs text-harbor-muted mb-1">Amount <span class="text-harbor-muted/70">(optional)</span></label>
+          <label class="block text-xs text-harbor-muted mb-1">Amount <span class="text-harbor-muted/70">(per pay date, optional)</span></label>
           <input id="bill-amount-input" type="number" min="0" step="0.01" placeholder="0.00"
-            class="w-full bg-harbor-raised border border-harbor-border focus:border-harbor-primary rounded-2xl px-4 py-3 mb-4 outline-none text-harbor-text placeholder:text-harbor-muted">
+            class="w-full bg-harbor-raised border border-harbor-border focus:border-harbor-primary rounded-2xl px-4 py-3 outline-none text-harbor-text placeholder:text-harbor-muted">
+          <div id="bill-amount-hint" class="text-[10px] text-harbor-muted mt-1 mb-3">Optional · amount charged on each pay date</div>
 
-          <label class="block text-xs text-harbor-muted mb-2">Due day(s) each month</label>
+          <label class="block text-xs text-harbor-muted mb-2">How often</label>
+          <div id="bill-cycle-row" class="flex flex-wrap gap-1.5 mb-4"></div>
+
+          <label class="block text-xs text-harbor-muted mb-2">Due day(s)</label>
           <div id="bill-day-grid" class="grid grid-cols-7 gap-1.5 mb-2"></div>
           <div id="bill-selected-days" class="text-[10px] text-harbor-primary-light mb-4">Tap day(s) due each month</div>
 
@@ -13055,7 +13261,11 @@
 
       document.body.appendChild(modal);
       renderDayGrid();
+      renderCycleChips();
       updateSelectedLabel();
+      updateAmountHint();
+
+      modal.querySelector('#bill-amount-input')?.addEventListener('input', updateAmountHint);
 
       modal.querySelector('#bill-save-btn').onclick = () => {
         const name = modal.querySelector('#bill-name-input').value.trim();
@@ -13068,9 +13278,11 @@
           return;
         }
         const amountStr = modal.querySelector('#bill-amount-input').value.trim();
-        const amount = amountStr ? parseFloat(amountStr) : null;
+        const rawAmount = amountStr ? parseFloat(amountStr) : null;
+        const days = [...selectedDays];
+        const resolved = resolveBillAmountForPayDates(rawAmount, days);
         const autopay = modal.querySelector('#bill-autopay-input').checked;
-        addBill(name, [...selectedDays], amount, autopay);
+        addBill(name, days, resolved, autopay, selectedRecurrence);
         closeAddBillModal();
       };
 
@@ -13111,7 +13323,7 @@
       const billsWithAmount = state.bills.filter(b => b.amount > 0).length;
       if (totalEl) {
         if (monthlyTotal > 0) {
-          totalEl.textContent = `${formatBillAmount(monthlyTotal)}/mo across ${billsWithAmount} bill${billsWithAmount === 1 ? '' : 's'}`;
+          totalEl.textContent = `${formatBillAmount(monthlyTotal)}/mo equivalent · ${billsWithAmount} bill${billsWithAmount === 1 ? '' : 's'}`;
           totalEl.classList.remove('hidden');
         } else {
           totalEl.classList.add('hidden');
@@ -13146,11 +13358,23 @@
         const style = statusStyles[status] || statusStyles.upcoming;
         const days = getDaysUntilBillDue(bill);
         const dueDates = formatBillDueDaysLabel(bill);
-        const dueLabel = status === 'paid' ? 'Paid this month'
+        const paidPeriod = (bill.recurrence === 'yearly') ? 'this year'
+          : (bill.recurrence === 'quarterly') ? 'this quarter'
+          : (bill.recurrence === 'weekly') ? 'this week'
+          : (bill.recurrence === 'biweekly') ? 'this period'
+          : 'this month';
+        const dueLabel = status === 'paid' ? `Paid ${paidPeriod}`
           : status === 'autopay' ? `Autopay • ${dueDates}`
           : status === 'due_today' ? `Due today (${dueDates})`
           : status === 'overdue' ? `Overdue (${dueDates})`
           : days === 1 ? `Due tomorrow (${dueDates})` : `Due in ${days} days (${dueDates})`;
+        const recLabel = formatBillRecurrenceLabel(bill.recurrence || 'monthly');
+        const payDays = getBillDueDays(bill);
+        const amountLabel = bill.amount != null
+          ? (payDays.length > 1 && bill.amountPerPayment != null
+            ? `${formatBillAmount(bill.amount)}${formatBillRecurrenceShort(bill.recurrence)} (${formatBillAmount(bill.amountPerPayment)} × ${payDays.length})`
+            : `${formatBillAmount(bill.amount)}${formatBillRecurrenceShort(bill.recurrence)}`)
+          : '';
 
         const card = document.createElement('div');
         card.className = 'bg-harbor-surface border border-harbor-border rounded-3xl px-4 py-3 flex items-center gap-x-3';
@@ -13163,8 +13387,9 @@
             <div class="font-medium leading-tight">${bill.name}</div>
             <div class="flex items-center gap-x-2 mt-0.5 flex-wrap">
               <span class="text-[10px] px-1.5 py-px rounded-full ${style.badge}">${style.label}</span>
+              <span class="text-[10px] px-1.5 py-px rounded-full bg-harbor-border/50 text-harbor-muted">${recLabel}</span>
               <span class="text-xs text-harbor-muted">${dueLabel}</span>
-              ${bill.amount ? `<span class="text-xs text-harbor-text font-medium">${formatBillAmount(bill.amount)}</span>` : ''}
+              ${amountLabel ? `<span class="text-xs text-harbor-text font-medium">${amountLabel}</span>` : ''}
             </div>
           </div>
           <div class="flex flex-col gap-y-1 items-end">
@@ -15418,11 +15643,80 @@
       bindSwipeRows(container);
     }
 
+    function isStudentPricingEnabled() {
+      return !!state?.settings?.studentPricing;
+    }
+
+    function tierHasStudentPricing(tier) {
+      return tier != null && tier.studentAmount != null && !isNaN(Number(tier.studentAmount));
+    }
+
+    function getTierListAmount(tier) {
+      if (!tier) return 0;
+      if (isStudentPricingEnabled() && tierHasStudentPricing(tier)) {
+        return Number(tier.studentAmount);
+      }
+      return Number(tier.amount) || 0;
+    }
+
+    function getVisibleSubscriptionTiers(preset) {
+      const tiers = preset?.tiers || [];
+      if (!isStudentPricingEnabled()) return tiers;
+      // When student pricing is on, hide dedicated Student tiers if Individual (etc.) already has studentAmount
+      const hasInlineStudent = tiers.some(t => t.id !== 'student' && tierHasStudentPricing(t));
+      if (!hasInlineStudent) return tiers;
+      return tiers.filter(t => t.id !== 'student' && !/^student$/i.test(t.label || ''));
+    }
+
+    function applyStudentPricingToTrackedSubscriptions() {
+      let changed = 0;
+      (state.subscriptions || []).forEach(sub => {
+        if (!sub.presetId || !sub.tierId) return;
+        const preset = getSubscriptionPresetById(sub.presetId);
+        const tier = getSubscriptionPresetTier(preset, sub.tierId);
+        if (!tier || !tierHasStudentPricing(tier)) return;
+        const next = getTierListAmount(tier);
+        if (Number(sub.amount) !== next) {
+          sub.amount = next;
+          changed += 1;
+        }
+      });
+      return changed;
+    }
+
+    function toggleStudentPricing(enabled) {
+      if (!state.settings) state.settings = {};
+      state.settings.studentPricing = !!enabled;
+      const changed = applyStudentPricingToTrackedSubscriptions();
+      saveState();
+      syncStudentPricingToggleUi();
+      renderSubscriptions();
+      updateSmartBanner();
+      if (enabled) {
+        showToast(changed
+          ? `Student pricing on · updated ${changed} subscription${changed === 1 ? '' : 's'}`
+          : 'Student pricing on · applicable plans show student rates');
+      } else {
+        showToast(changed
+          ? `Student pricing off · restored ${changed} list price${changed === 1 ? '' : 's'}`
+          : 'Student pricing off');
+      }
+    }
+
+    function syncStudentPricingToggleUi() {
+      const el = document.getElementById('student-pricing-toggle');
+      if (el) el.checked = isStudentPricingEnabled();
+    }
+
     function getSubscriptionsMonthlyTotal() {
       return (state.subscriptions || []).reduce((sum, s) => {
         if (!s.active && s.active !== undefined) return sum;
         const amt = s.amount || 0;
-        return sum + (s.cycle === 'yearly' ? amt / 12 : amt);
+        if (s.cycle === 'yearly') return sum + amt / 12;
+        if (s.cycle === 'quarterly') return sum + amt / 3;
+        if (s.cycle === 'weekly') return sum + amt * (52 / 12);
+        if (s.cycle === 'biweekly') return sum + amt * (26 / 12);
+        return sum + amt;
       }, 0);
     }
 
@@ -15434,6 +15728,22 @@
         minimumFractionDigits: hasCents ? 2 : 0,
         maximumFractionDigits: 2
       });
+    }
+
+    function formatSubscriptionCycleShort(cycle) {
+      if (cycle === 'yearly') return 'yr';
+      if (cycle === 'quarterly') return 'qtr';
+      if (cycle === 'weekly') return 'wk';
+      if (cycle === 'biweekly') return '2wk';
+      return 'mo';
+    }
+
+    function formatSubscriptionCycleLabel(cycle) {
+      if (cycle === 'yearly') return 'Yearly';
+      if (cycle === 'quarterly') return 'Quarterly';
+      if (cycle === 'weekly') return 'Weekly';
+      if (cycle === 'biweekly') return 'Biweekly';
+      return 'Monthly';
     }
 
     function getSubscriptionPresetById(presetId) {
@@ -15491,13 +15801,14 @@
     }
 
     function getPresetPriceRangeLabel(preset) {
-      const tiers = preset.tiers || [];
+      const tiers = getVisibleSubscriptionTiers(preset);
       if (!tiers.length) return '';
-      const amounts = tiers.map(t => t.amount);
+      const amounts = tiers.map(t => getTierListAmount(t));
       const min = Math.min(...amounts);
       const max = Math.max(...amounts);
-      if (min === max) return `${formatSubscriptionAmount(min)}/mo`;
-      return `${formatSubscriptionAmount(min)}–${formatSubscriptionAmount(max)}`;
+      const studentNote = isStudentPricingEnabled() && tiers.some(tierHasStudentPricing) ? ' student' : '';
+      if (min === max) return `${formatSubscriptionAmount(min)}/mo${studentNote}`;
+      return `${formatSubscriptionAmount(min)}–${formatSubscriptionAmount(max)}${studentNote}`;
     }
 
     function subscriptionMatchesSearch(preset, query) {
@@ -15573,8 +15884,9 @@
     function quickAddSubscriptionPreset(presetId) {
       const preset = getSubscriptionPresetById(presetId);
       if (!preset) return;
-      if ((preset.tiers || []).length <= 1) {
-        const tier = preset.tiers?.[0];
+      const tiers = getVisibleSubscriptionTiers(preset);
+      if (tiers.length <= 1) {
+        const tier = tiers[0] || preset.tiers?.[0];
         const name = getSubscriptionDisplayName(preset, tier);
         if (findExistingSubscription(name, preset.id, tier?.id)) {
           showToast(`Already tracking ${name}`);
@@ -15582,7 +15894,7 @@
         }
         if (addSubscriptionRecord({
           name,
-          amount: tier?.amount || 0,
+          amount: getTierListAmount(tier),
           cycle: tier?.cycle || 'monthly',
           renewalDay: 1,
           source: 'preset',
@@ -15600,6 +15912,16 @@
     function showSubscriptionTierModal(presetId) {
       const preset = getSubscriptionPresetById(presetId);
       if (!preset) return;
+      const tiers = getVisibleSubscriptionTiers(preset);
+      if (!tiers.length) return;
+
+      // Prefer a student-discounted individual plan when student pricing is on
+      let defaultIdx = tiers.findIndex(t => !isPresetTierTracked(preset.id, t.id));
+      if (defaultIdx < 0) defaultIdx = 0;
+      if (isStudentPricingEnabled()) {
+        const studentIdx = tiers.findIndex(t => !isPresetTierTracked(preset.id, t.id) && tierHasStudentPricing(t));
+        if (studentIdx >= 0) defaultIdx = studentIdx;
+      }
 
       const modal = document.createElement('div');
       modal.id = 'sub-tier-modal';
@@ -15614,16 +15936,22 @@
               <div class="text-[10px] text-harbor-muted">${getPresetPriceRangeLabel(preset)}</div>
             </div>
           </div>
-          <div class="text-xs text-harbor-muted mb-4">Select your plan tier (US pricing, Jul 2026).</div>
+          <div class="text-xs text-harbor-muted mb-4">Select your plan tier (US pricing${isStudentPricingEnabled() ? ', student rates where offered' : ''}, Jul 2026).</div>
           <div class="space-y-2 mb-4" id="sub-tier-list">
-            ${(preset.tiers || []).map((tier, idx) => {
+            ${tiers.map((tier, idx) => {
               const tracked = isPresetTierTracked(preset.id, tier.id);
+              const amount = getTierListAmount(tier);
+              const studentOn = isStudentPricingEnabled() && tierHasStudentPricing(tier);
+              const listPrice = Number(tier.amount) || 0;
+              const priceLine = studentOn && listPrice !== amount
+                ? `<span class="line-through opacity-60 mr-1">${formatSubscriptionAmount(listPrice)}</span>${formatSubscriptionAmount(amount)}/${formatSubscriptionCycleShort(tier.cycle)}`
+                : `${formatSubscriptionAmount(amount)}/${formatSubscriptionCycleShort(tier.cycle)}`;
               return `
-                <label class="sub-tier-row flex items-start gap-3 px-3 py-3 rounded-2xl border border-harbor-border bg-harbor-raised cursor-pointer ${tracked ? 'opacity-45' : ''} ${idx === 0 && !tracked ? 'is-selected' : ''}">
-                  <input type="checkbox" class="sub-tier-check mt-0.5" data-tier-id="${tier.id}" ${tracked ? 'disabled' : ''} ${idx === 0 && !tracked ? 'checked' : ''}>
+                <label class="sub-tier-row flex items-start gap-3 px-3 py-3 rounded-2xl border border-harbor-border bg-harbor-raised cursor-pointer ${tracked ? 'opacity-45' : ''} ${idx === defaultIdx && !tracked ? 'is-selected' : ''}">
+                  <input type="checkbox" class="sub-tier-check mt-0.5" data-tier-id="${tier.id}" ${tracked ? 'disabled' : ''} ${idx === defaultIdx && !tracked ? 'checked' : ''}>
                   <div class="flex-1 min-w-0">
-                    <div class="font-medium text-harbor-text">${tier.label}</div>
-                    <div class="text-xs text-harbor-muted">${formatSubscriptionAmount(tier.amount)}/${tier.cycle === 'yearly' ? 'yr' : 'mo'}</div>
+                    <div class="font-medium text-harbor-text">${tier.label}${studentOn ? '<span class="sub-tier-student-badge">Student</span>' : ''}</div>
+                    <div class="text-xs text-harbor-muted">${priceLine}</div>
                   </div>
                   ${tracked ? '<span class="text-[10px] text-harbor-muted">Added</span>' : ''}
                 </label>`;
@@ -15675,7 +16003,7 @@
         const name = getSubscriptionDisplayName(preset, tier);
         if (addSubscriptionRecord({
           name,
-          amount: tier.amount,
+          amount: getTierListAmount(tier),
           cycle: tier.cycle || 'monthly',
           renewalDay: 1,
           source: 'preset',
@@ -15703,7 +16031,10 @@
           <input id="sub-amount" type="number" min="0" step="0.01" placeholder="Amount"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-3 mb-2 outline-none text-harbor-text">
           <select id="sub-cycle" class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-3 mb-2 outline-none text-harbor-text">
-            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Biweekly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="quarterly">Quarterly</option>
             <option value="yearly">Yearly</option>
           </select>
           <input id="sub-renewal" type="number" min="1" max="31" placeholder="Renewal day of month (1-31)"
@@ -15719,9 +16050,10 @@
       document.body.appendChild(modal);
 
       if (preset) {
-        const tier = preset.tiers?.[0];
+        const tiers = getVisibleSubscriptionTiers(preset);
+        const tier = tiers[0] || preset.tiers?.[0];
         modal.querySelector('#sub-name').value = getSubscriptionDisplayName(preset, tier);
-        modal.querySelector('#sub-amount').value = tier?.amount || '';
+        modal.querySelector('#sub-amount').value = getTierListAmount(tier) || '';
         modal.querySelector('#sub-cycle').value = tier?.cycle || 'monthly';
         modal.querySelector('#sub-renewal').value = 1;
       }
@@ -15732,6 +16064,8 @@
         const amount = parseFloat(modal.querySelector('#sub-amount').value) || 0;
         const cycle = modal.querySelector('#sub-cycle').value;
         const renewalDay = parseInt(modal.querySelector('#sub-renewal').value, 10) || 1;
+        const tiers = preset ? getVisibleSubscriptionTiers(preset) : [];
+        const tier = tiers[0] || preset?.tiers?.[0];
         if (addSubscriptionRecord({
           name,
           amount,
@@ -15739,8 +16073,8 @@
           renewalDay,
           source: preset ? 'preset' : 'manual',
           presetId: preset?.id || null,
-          tierId: preset?.tiers?.[0]?.id || null,
-          tierLabel: preset?.tiers?.[0]?.label || null
+          tierId: tier?.id || null,
+          tierLabel: tier?.label || null
         })) {
           modal.remove();
           showToast(`Subscription added: ${name}`);
@@ -15852,7 +16186,7 @@
 
     function buildDetectedSubscriptionItem({ preset, amount, cycle, renewalDay, key, confidence, occurrences, sampleDescription }) {
       const tier = preset ? matchPresetTierByAmount(preset, amount) : null;
-      const resolvedAmount = tier?.amount ?? Math.round(amount * 100) / 100;
+      const resolvedAmount = tier ? getTierListAmount(tier) : Math.round(amount * 100) / 100;
       const resolvedCycle = tier?.cycle || cycle || 'monthly';
       const name = preset && tier
         ? getSubscriptionDisplayName(preset, tier)
@@ -16075,7 +16409,12 @@
       if (!preset?.tiers?.length) return null;
       return preset.tiers.reduce((best, tier) => {
         if (!best) return tier;
-        return Math.abs(tier.amount - amount) < Math.abs(best.amount - amount) ? tier : best;
+        const tAmt = getTierListAmount(tier);
+        const bAmt = getTierListAmount(best);
+        // Also consider list price so bank imports still match student-priced services
+        const tDist = Math.min(Math.abs(tAmt - amount), Math.abs((Number(tier.amount) || 0) - amount));
+        const bDist = Math.min(Math.abs(bAmt - amount), Math.abs((Number(best.amount) || 0) - amount));
+        return tDist < bDist ? tier : best;
       }, null);
     }
 
@@ -16289,6 +16628,8 @@
       const totalEl = document.getElementById('subs-monthly-total');
       if (!container) return;
 
+      syncStudentPricingToggleUi();
+
       // Brands stay secondary — only paint when Browse is open
       if (subsBrowseOpen) renderSubscriptionPresets();
       const browseBtn = document.getElementById('subs-browse-btn');
@@ -16309,7 +16650,7 @@
           totalEl.innerHTML = `
             <div class="bg-gradient-to-br from-harbor-raised to-harbor-surface border border-harbor-border rounded-3xl px-4 py-3 flex items-center justify-between">
               <div>
-                <div class="feed-section-label text-harbor-muted mb-0.5">Monthly spend</div>
+                <div class="feed-section-label text-harbor-muted mb-0.5">Monthly spend${isStudentPricingEnabled() ? ' · student' : ''}</div>
                 <div class="font-display text-xl text-harbor-text">${formatSubscriptionAmount(monthly)}<span class="text-sm text-harbor-muted font-normal">/mo</span></div>
               </div>
               <div class="text-right">
@@ -16358,13 +16699,17 @@
       filteredSubs.forEach(sub => {
         const active = sub.active !== false;
         const preset = resolveSubscriptionPreset(sub);
-        const cycleLabel = sub.cycle === 'yearly' ? 'Yearly' : 'Monthly';
+        const cycleLabel = formatSubscriptionCycleLabel(sub.cycle || 'monthly');
+        const tier = sub.tierId ? getSubscriptionPresetTier(preset, sub.tierId) : null;
+        const studentBadge = isStudentPricingEnabled() && tierHasStudentPricing(tier)
+          ? '<span class="sub-tier-student-badge">Student</span>'
+          : '';
         const card = document.createElement('div');
         card.className = `sub-tracked-card harbor-card bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 ${active ? '' : 'opacity-55'}`;
         card.innerHTML = `
           ${subscriptionBrandLogoHtml(preset || sub, 'md')}
           <div class="flex-1 min-w-0">
-            <div class="font-medium truncate text-[0.9rem]">${escapeSubscriptionHtml(sub.name)}</div>
+            <div class="font-medium truncate text-[0.9rem]">${escapeSubscriptionHtml(sub.name)}${studentBadge}</div>
             <div class="text-[11px] text-harbor-muted truncate">${sub.tierLabel ? `${escapeSubscriptionHtml(sub.tierLabel)} · ` : ''}${cycleLabel} · renews ${ordinalDay(sub.renewalDay || 1)}</div>
           </div>
           <div class="text-right flex-shrink-0">
