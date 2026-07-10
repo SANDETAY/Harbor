@@ -82,52 +82,79 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Outfit:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
 
-    /* ── BASE (default): Splash-inspired Harbor teal ──
-       Deep teal · warm stone text · seafoam · dawn accent
-       RGB channels so Tailwind /20 opacity works. */
+    /* ═══════════════════════════════════════════════════════════
+       Harbor Visual System v1 — “Coastal OS”
+       Splash is the north star: dawn teal → seafoam, warm stone type.
+       RGB channels so Tailwind opacity utilities work.
+       ═══════════════════════════════════════════════════════════ */
     :root, html[data-theme="harbor"] {
-      --harbor-bg: 10 31 30;              /* #0A1F1E */
-      --harbor-surface: 18 46 44;         /* #122E2C */
-      --harbor-raised: 26 60 57;          /* #1A3C39 */
-      --harbor-border: 42 79 74;          /* #2A4F4A */
-      --harbor-primary: 47 155 140;       /* #2F9B8C */
-      --harbor-primary-light: 107 191 176;/* #6BBFB0 */
-      --harbor-accent: 196 165 116;       /* #C4A574 */
-      --harbor-text: 240 235 227;         /* #F0EBE3 */
-      --harbor-muted: 143 168 163;        /* #8FA8A3 */
-      --harbor-low: 212 146 122;          /* #D4927A */
-      --harbor-med: 212 181 106;          /* #D4B56A */
-      --harbor-high: 47 155 140;          /* #2F9B8C */
+      /* Surfaces — splash gradient distilled */
+      --harbor-bg: 8 28 27;               /* #081C1B deeper dawn */
+      --harbor-surface: 16 42 40;         /* #102A28 soft card */
+      --harbor-raised: 24 54 51;          /* #183633 lifted row */
+      --harbor-border: 38 72 68;          /* #264844 quieter edge */
+      --harbor-primary: 47 155 140;       /* #2F9B8C brand action */
+      --harbor-primary-light: 122 196 182;/* #7AC4B6 seafoam text */
+      --harbor-accent: 196 165 116;       /* #C4A574 warm stone (rare) */
+      --harbor-text: 244 239 230;         /* #F4EFE6 warm off-white */
+      --harbor-muted: 148 170 165;        /* #94AAA5 */
+      --harbor-low: 212 146 122;          /* energy only */
+      --harbor-med: 212 181 106;
+      --harbor-high: 47 155 140;
+      --harbor-dawn: 10 58 56;            /* #0A3A38 splash top */
+      --harbor-mint: 216 228 222;         /* #D8E4DE splash bottom */
+
+      /* Motion — water, not bounce */
       --harbor-ease-out: cubic-bezier(0.32, 0.72, 0, 1);
-      --harbor-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 4px 18px rgba(4, 22, 20, 0.32);
-      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 12px 36px rgba(4, 22, 20, 0.42);
-      --harbor-glow-primary: 0 0 0 1px rgba(107, 191, 176, 0.22);
-      --harbor-dawn: 10 58 56;            /* #0A3A38 */
+      --harbor-ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
+      --harbor-duration-fast: 0.16s;
+      --harbor-duration: 0.28s;
+      --harbor-duration-slow: 0.42s;
+
+      /* Elevation */
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.045) inset, 0 4px 20px rgba(2, 16, 15, 0.38);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.055) inset, 0 14px 40px rgba(2, 16, 15, 0.48);
+      --harbor-glow-primary: 0 0 0 1px rgba(122, 196, 182, 0.2);
+
+      /* Radius scale */
+      --harbor-radius-sm: 0.65rem;
+      --harbor-radius-md: 1rem;
+      --harbor-radius-lg: 1.25rem;
+      --harbor-radius-xl: 1.5rem;
+      --harbor-radius-pill: 999px;
+
+      /* Type */
+      --harbor-font: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+      --harbor-font-display: 'Outfit', 'Space Grotesk', system-ui, sans-serif;
+      --harbor-text-xs: 0.68rem;
+      --harbor-text-sm: 0.8125rem;
+      --harbor-text-base: 0.9375rem;
+      --harbor-text-lg: 1.0625rem;
+
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-top: env(safe-area-inset-top, 0px);
       color-scheme: dark;
     }
 
-    /* ── DARK MODE (settings toggle ON): sleek noir redesign ──
-       True black · graphite · silver · pure white accents */
+    /* ── DARK MODE: noir with a whisper of teal (still Harbor) ── */
     html[data-theme="dark"] {
-      --harbor-bg: 7 7 7;                /* #070707 */
-      --harbor-surface: 18 18 18;         /* #121212 */
-      --harbor-raised: 28 28 28;          /* #1C1C1C */
-      --harbor-border: 42 42 42;          /* #2A2A2A */
-      --harbor-primary: 245 245 245;      /* #F5F5F5 */
-      --harbor-primary-light: 255 255 255;/* #FFFFFF */
-      --harbor-accent: 180 180 180;       /* #B4B4B4 */
-      --harbor-text: 245 245 245;         /* #F5F5F5 */
-      --harbor-muted: 140 140 140;        /* #8C8C8C */
-      --harbor-low: 200 200 200;          /* energy still readable in mono */
+      --harbor-bg: 6 8 8;
+      --harbor-surface: 16 18 18;
+      --harbor-raised: 26 28 28;
+      --harbor-border: 40 44 44;
+      --harbor-primary: 240 242 242;
+      --harbor-primary-light: 255 255 255;
+      --harbor-accent: 160 175 172;
+      --harbor-text: 244 245 245;
+      --harbor-muted: 138 144 144;
+      --harbor-low: 200 200 200;
       --harbor-med: 220 220 220;
       --harbor-high: 245 245 245;
-      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 6px 20px rgba(0, 0, 0, 0.55);
-      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 14px 40px rgba(0, 0, 0, 0.65);
-      --harbor-glow-primary: 0 0 0 1px rgba(255, 255, 255, 0.16);
-      --harbor-dawn: 12 12 12;
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 6px 20px rgba(0, 0, 0, 0.55);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 14px 40px rgba(0, 0, 0, 0.65);
+      --harbor-glow-primary: 0 0 0 1px rgba(255, 255, 255, 0.14);
+      --harbor-dawn: 10 12 12;
+      --harbor-mint: 28 32 32;
       color-scheme: dark;
     }
 
@@ -222,24 +249,25 @@
       color: #070707;
     }
 
-    /* ── LIGHT MODE: sleek seafoam with Harbor teal accents ── */
+    /* ── LIGHT MODE: splash seafoam day ── */
     html[data-theme="light"] {
-      --harbor-bg: 243 247 246;             /* #F3F7F6 soft mint wash */
-      --harbor-surface: 255 255 255;        /* #FFFFFF cards */
-      --harbor-raised: 236 243 241;         /* #ECF3F1 raised rows */
-      --harbor-border: 206 222 218;         /* #CEDEDA soft teal border */
-      --harbor-primary: 47 155 140;         /* #2F9B8C same brand teal */
-      --harbor-primary-light: 38 130 118;   /* #268276 deeper teal for text on light */
-      --harbor-accent: 176 138 72;          /* #B08A48 warm gold */
-      --harbor-text: 18 36 34;              /* #122422 deep ink */
-      --harbor-muted: 90 112 108;           /* #5A706C */
-      --harbor-low: 196 110 86;             /* coral energy */
+      --harbor-bg: 240 246 244;             /* near splash mint wash */
+      --harbor-surface: 255 255 255;
+      --harbor-raised: 232 241 238;
+      --harbor-border: 200 218 214;
+      --harbor-primary: 47 155 140;
+      --harbor-primary-light: 32 118 108;
+      --harbor-accent: 168 132 72;
+      --harbor-text: 16 34 32;
+      --harbor-muted: 88 110 106;
+      --harbor-low: 196 110 86;
       --harbor-med: 184 148 48;
       --harbor-high: 47 155 140;
-      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 4px 16px rgba(18, 48, 44, 0.07);
-      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 12px 32px rgba(18, 48, 44, 0.1);
-      --harbor-glow-primary: 0 0 0 1px rgba(47, 155, 140, 0.22);
-      --harbor-dawn: 220 236 232;           /* soft mint for dawn accents */
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 4px 18px rgba(16, 48, 44, 0.06);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.98) inset, 0 14px 36px rgba(16, 48, 44, 0.09);
+      --harbor-glow-primary: 0 0 0 1px rgba(47, 155, 140, 0.18);
+      --harbor-dawn: 220 236 232;
+      --harbor-mint: 216 228 222;
       color-scheme: light;
     }
 
@@ -477,19 +505,50 @@
     }
 
     body {
-      font-family: 'Inter', system-ui, sans-serif;
+      font-family: var(--harbor-font);
+      font-size: var(--harbor-text-base);
+      line-height: 1.45;
+      letter-spacing: -0.011em;
       background-color: rgb(var(--harbor-bg));
+      /* Subtle splash wash — continuous with launch screen */
+      background-image: linear-gradient(
+        168deg,
+        rgb(var(--harbor-dawn) / 0.55) 0%,
+        rgb(var(--harbor-bg)) 38%,
+        rgb(var(--harbor-bg)) 100%
+      );
+      background-attachment: fixed;
       color: rgb(var(--harbor-text));
       overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    html[data-theme="light"] body {
+      background-image: linear-gradient(
+        180deg,
+        rgb(var(--harbor-mint) / 0.65) 0%,
+        rgb(var(--harbor-bg)) 42%,
+        rgb(var(--harbor-bg)) 100%
+      );
+    }
+
+    html[data-theme="dark"] body {
+      background-image: none;
     }
     
     .font-display {
-      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      font-family: var(--harbor-font-display);
       font-weight: 600;
+      letter-spacing: -0.02em;
     }
 
     .habit-card {
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      transition:
+        transform var(--harbor-duration-fast) var(--harbor-ease-out),
+        box-shadow var(--harbor-duration) ease,
+        border-color var(--harbor-duration) ease,
+        background-color var(--harbor-duration) ease;
     }
     
     .habit-card:active {
@@ -499,8 +558,8 @@
     .swipe-row {
       position: relative;
       overflow: hidden;
-      border-radius: 1.5rem;
-      margin-bottom: 0.5rem;
+      border-radius: var(--harbor-radius-xl);
+      margin-bottom: 0.55rem;
       --swipe-reveal: 8.75rem;
       /* Contain paints so action colors don't flash during scroll */
       contain: paint;
@@ -688,7 +747,12 @@
 
     .harbor-card {
       box-shadow: var(--harbor-shadow-sm);
-      transition: transform 0.18s var(--harbor-ease-out), box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+      border-radius: var(--harbor-radius-xl);
+      transition:
+        transform var(--harbor-duration-fast) var(--harbor-ease-out),
+        box-shadow var(--harbor-duration) ease,
+        border-color var(--harbor-duration) ease,
+        background-color var(--harbor-duration) ease;
     }
 
     .harbor-card:hover {
@@ -700,23 +764,41 @@
     }
 
     .harbor-empty {
-      background: radial-gradient(ellipse at 50% 0%, rgba(47, 155, 140, 0.08) 0%, transparent 65%), rgb(var(--harbor-surface));
-      border: 1px solid rgb(var(--harbor-border));
-      border-radius: 1.25rem;
-      padding: 2rem 1.25rem;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(47, 155, 140, 0.1) 0%, transparent 62%),
+        rgb(var(--harbor-surface));
+      border: 1px solid rgb(var(--harbor-border) / 0.9);
+      border-radius: var(--harbor-radius-xl);
+      box-shadow: var(--harbor-shadow-sm);
+      padding: 2.1rem 1.35rem;
       text-align: center;
     }
 
     .harbor-empty-icon {
       font-size: 1.75rem;
       margin-bottom: 0.65rem;
-      opacity: 0.9;
+      opacity: 0.88;
     }
 
     .section-header {
-      font-size: 1rem;
-      letter-spacing: -0.02em;
+      font-family: var(--harbor-font-display);
+      font-size: var(--harbor-text-lg);
+      letter-spacing: -0.025em;
       font-weight: 600;
+    }
+
+    /* Shared sheet / list rhythm */
+    .modal-sheet {
+      border-radius: var(--harbor-radius-xl) var(--harbor-radius-xl) 0 0;
+      box-shadow: var(--harbor-shadow-md);
+    }
+
+    .feed-section-label {
+      font-size: 0.68rem;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
     }
 
     .main-nav {
@@ -732,15 +814,15 @@
       bottom: 0.35rem;
       left: 0;
       width: 25%;
-      border-radius: 0.75rem 0.75rem 0.35rem 0.35rem;
-      background: linear-gradient(180deg, rgba(47, 155, 140, 0.32) 0%, rgba(47, 155, 140, 0.12) 100%);
-      box-shadow: inset 0 -3px 0 rgb(var(--harbor-primary));
+      border-radius: var(--harbor-radius-md) var(--harbor-radius-md) 0.35rem 0.35rem;
+      background: linear-gradient(180deg, rgba(47, 155, 140, 0.28) 0%, rgba(47, 155, 140, 0.08) 100%);
+      box-shadow: inset 0 -2.5px 0 rgb(var(--harbor-primary));
       pointer-events: none;
       z-index: 0;
       opacity: 1;
       transition:
-        transform 0.42s var(--harbor-ease-out),
-        width 0.42s var(--harbor-ease-out);
+        transform var(--harbor-duration-slow) var(--harbor-ease-out),
+        width var(--harbor-duration-slow) var(--harbor-ease-out);
       will-change: transform, width;
     }
 
@@ -751,12 +833,13 @@
       padding: 0.7rem 0.3rem 0.65rem;
       border: none;
       background: transparent;
-      color: rgba(154, 170, 178, 0.78);
-      font-size: 0.9rem;
+      color: rgb(var(--harbor-muted) / 0.88);
+      font-family: var(--harbor-font);
+      font-size: 0.88rem;
       font-weight: 650;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.015em;
       cursor: pointer;
-      border-radius: 0.75rem 0.75rem 0 0;
+      border-radius: var(--harbor-radius-md) var(--harbor-radius-md) 0 0;
       border-bottom: 3px solid transparent;
       transition: color 0.25s ease, background 0.25s ease, transform 0.15s var(--harbor-ease-out);
     }
@@ -1668,17 +1751,18 @@
     }
 
     .modal-sheet {
-      animation: sheetUp 0.34s var(--harbor-ease-out) forwards;
+      animation: sheetUp var(--harbor-duration-slow) var(--harbor-ease-out) forwards;
     }
 
     .modal-grab-pill {
-      width: 2.5rem;
-      height: 0.25rem;
-      border-radius: 999px;
+      width: 2.35rem;
+      height: 0.22rem;
+      border-radius: var(--harbor-radius-pill);
       background: rgb(var(--harbor-border));
-      margin: 0 auto 0.75rem;
+      margin: 0 auto 0.85rem;
       flex-shrink: 0;
       touch-action: none;
+      opacity: 0.85;
     }
 
     /* Stylish small close control (replaces × on sheets) */
@@ -2225,17 +2309,17 @@
     }
 
     .habit-row {
-      transition: background-color 0.1s ease;
+      transition: background-color var(--harbor-duration-fast) ease;
     }
     
     .habit-row:hover {
-      background-color: rgb(var(--harbor-raised));
+      background-color: rgb(var(--harbor-raised) / 0.72);
     }
 
     .suggestion-card {
-      background: linear-gradient(145deg, rgba(30, 58, 74, 0.95), rgb(var(--harbor-surface)));
+      background: linear-gradient(155deg, rgba(20, 52, 50, 0.96), rgb(var(--harbor-surface)));
       box-shadow: var(--harbor-shadow-sm), var(--harbor-glow-primary);
-      border-left: 3px solid rgb(var(--harbor-accent)) !important;
+      border-left: 2.5px solid rgb(var(--harbor-primary-light)) !important;
     }
 
     .smart-banner-enter {
@@ -5912,7 +5996,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v134';
+    const HARBOR_BUILD = 'v135';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
