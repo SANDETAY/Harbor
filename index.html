@@ -2081,6 +2081,60 @@
       box-shadow: none;
     }
 
+    /* Weather forecast sheet — sticky header + independent scroll body */
+    #weather-forecast-modal,
+    #weather-access-modal,
+    .weather-access-modal {
+      z-index: 280 !important;
+    }
+    #weather-forecast-modal > [data-weather-sheet],
+    #weather-access-modal > [data-weather-sheet],
+    .weather-access-modal > [data-weather-sheet] {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-height: min(88vh, 100dvh);
+      min-height: 0;
+      overflow: hidden; /* scroll lives in .weather-sheet-body */
+      background: rgb(var(--harbor-surface));
+      border-top: 1px solid rgb(var(--harbor-border));
+      border-radius: 1.25rem 1.25rem 0 0;
+      padding: 0;
+      box-shadow: var(--harbor-shadow-md);
+      touch-action: pan-y;
+    }
+    #weather-forecast-modal > .absolute.inset-0,
+    #weather-access-modal > .absolute.inset-0,
+    .weather-access-modal > .absolute.inset-0 {
+      z-index: 1;
+    }
+    .weather-sheet-head {
+      flex-shrink: 0;
+      padding: 0.65rem 1.15rem 0.55rem;
+      border-bottom: 1px solid rgb(var(--harbor-border) / 0.7);
+      background: rgb(var(--harbor-surface));
+      position: relative;
+      z-index: 3;
+    }
+    .weather-sheet-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
+      padding: 0.85rem 1.15rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+    }
+    body.weather-modal-open {
+      overflow: hidden;
+    }
+    body.weather-modal-open #site-root {
+      pointer-events: none !important;
+    }
+
     .library-filters-scroll {
       position: relative;
       width: 100%;
@@ -6685,7 +6739,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v155';
+    const HARBOR_BUILD = 'v156';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -16485,11 +16539,12 @@
       let pointerId = null;
 
       const getScrollTop = () => {
-        if (sheet.scrollTop > 0) return sheet.scrollTop;
+        // Prefer dedicated scroll bodies (weather pane, event forms) over the sheet root
         const scroller = sheet.querySelector(
-          '#cal-ev-sheet-scroll, .modal-sheet-event-body, .overflow-y-auto, [data-sheet-scroll]'
+          '[data-sheet-scroll], .weather-sheet-body, #cal-ev-sheet-scroll, .modal-sheet-event-body, .overflow-y-auto'
         );
-        return scroller ? scroller.scrollTop : 0;
+        if (scroller && scroller !== sheet) return scroller.scrollTop || 0;
+        return sheet.scrollTop || 0;
       };
 
       const resetSheet = () => {
@@ -17071,57 +17126,74 @@
       document.getElementById('weather-forecast-modal')?.remove();
       document.getElementById('weather-access-modal')?.remove();
       document.querySelectorAll('.weather-access-modal').forEach(el => el.remove());
+      document.body.classList.remove('weather-modal-open');
       // Prevent the same tap from hitting the weather strip underneath and reopening
       weatherModalCloseGuardUntil = Date.now() + 450;
+    }
+
+    function wireWeatherModalDismiss(modal) {
+      if (!modal) return;
+      // Direct close handlers — more reliable than bubbled capture on mobile
+      modal.querySelectorAll('[data-weather-dismiss]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          closeWeatherModal();
+        });
+      });
+      // Backdrop only (not the sheet)
+      const backdrop = modal.querySelector(':scope > .absolute.inset-0[data-weather-dismiss], :scope > [data-weather-backdrop]');
+      if (backdrop) {
+        backdrop.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          closeWeatherModal();
+        });
+      }
     }
 
     function showWeatherAccessPrompt() {
       if (Date.now() < weatherModalCloseGuardUntil) return;
       closeWeatherModal();
+      weatherModalCloseGuardUntil = 0;
 
       const modal = document.createElement('div');
       modal.id = 'weather-access-modal';
       modal.className = 'weather-access-modal fixed inset-0 bg-harbor-bg/75 flex items-end sm:items-center justify-center z-[60]';
       modal.innerHTML = `
-        <div class="absolute inset-0" data-weather-dismiss="1"></div>
-        <div class="relative w-full sm:max-w-md bg-harbor-surface border border-harbor-border sm:rounded-3xl rounded-t-3xl p-5 shadow-xl"
-          data-weather-sheet="1">
-          <div class="modal-grab-pill" aria-hidden="true"></div>
-          <div class="flex items-start justify-between gap-3 mb-3">
-            <div>
-              <div class="text-xs uppercase tracking-wider text-harbor-muted font-semibold">Weather</div>
-              <div class="text-base font-semibold text-harbor-text mt-1">See your local forecast</div>
+        <div class="absolute inset-0" data-weather-backdrop="1" data-weather-dismiss="1" aria-hidden="true"></div>
+        <div class="relative w-full sm:max-w-md" data-weather-sheet="1" role="dialog" aria-modal="true" aria-label="Weather access">
+          <div class="weather-sheet-head">
+            <div class="modal-grab-pill" aria-hidden="true"></div>
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-xs uppercase tracking-wider text-harbor-muted font-semibold">Weather</div>
+                <div class="text-base font-semibold text-harbor-text mt-1">See your local forecast</div>
+              </div>
+              <button type="button" data-weather-dismiss="1" class="modal-close-chip" aria-label="Close">Close</button>
             </div>
-            <button type="button" data-weather-dismiss="1" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
-          <p class="text-xs text-harbor-muted leading-relaxed mb-4">
-            Connect location for live hourly weather that helps Harbor time outdoor tasks.
-            Or preview a sample day so you can explore the app.
-          </p>
-          <div class="space-y-2">
-            <button type="button" id="weather-enable-location"
-              class="w-full py-3 rounded-2xl bg-harbor-primary text-white text-sm font-semibold active:opacity-90">
-              <i class="fa-solid fa-location-crosshairs mr-1.5"></i>Use my location
-            </button>
-            <button type="button" id="weather-simulate"
-              class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-medium text-harbor-text active:bg-harbor-border">
-              <i class="fa-solid fa-cloud-sun mr-1.5 text-harbor-primary-light"></i>Preview sample weather
-            </button>
+          <div class="weather-sheet-body" data-sheet-scroll="1">
+            <p class="text-xs text-harbor-muted leading-relaxed mb-4">
+              Connect location for live hourly weather that helps Harbor time outdoor tasks.
+              Or preview a sample day so you can explore the app.
+            </p>
+            <div class="space-y-2">
+              <button type="button" id="weather-enable-location"
+                class="w-full py-3 rounded-2xl bg-harbor-primary text-white text-sm font-semibold active:opacity-90">
+                <i class="fa-solid fa-location-crosshairs mr-1.5"></i>Use my location
+              </button>
+              <button type="button" id="weather-simulate"
+                class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-medium text-harbor-text active:bg-harbor-border">
+                <i class="fa-solid fa-cloud-sun mr-1.5 text-harbor-primary-light"></i>Preview sample weather
+              </button>
+            </div>
           </div>
         </div>
       `;
       document.body.appendChild(modal);
-      modal.addEventListener('click', (e) => {
-        if (e.target.closest('[data-weather-dismiss]')) {
-          e.preventDefault();
-          e.stopPropagation();
-          closeWeatherModal();
-        }
-      });
-      modal.querySelector('[data-weather-sheet]')?.addEventListener('click', (e) => {
-        // Clicks on sheet content should not fall through to page
-        if (!e.target.closest('[data-weather-dismiss]')) e.stopPropagation();
-      });
+      document.body.classList.add('weather-modal-open');
+      wireWeatherModalDismiss(modal);
       modal.querySelector('#weather-enable-location').onclick = (e) => {
         e.stopPropagation();
         closeWeatherModal();
@@ -17160,73 +17232,67 @@
       const current = data.current || data.items[0];
       const paneTitle = data.hasOutdoorTasks ? 'Outdoor Weather' : 'Weather Forecast';
       const taskLine = data.hasOutdoorTasks
-        ? `<div class="text-xs text-harbor-muted mb-3 px-1">Relevant for: ${data.taskNames}</div>`
+        ? `<div class="text-xs text-harbor-muted mb-3 px-1">Relevant for: ${escapeBriefHtml(data.taskNames || '')}</div>`
         : '';
 
       const modal = document.createElement('div');
       modal.id = 'weather-forecast-modal';
       modal.className = 'fixed inset-0 bg-harbor-bg/75 flex items-end z-[60]';
       modal.innerHTML = `
-        <div class="absolute inset-0" data-weather-dismiss="1"></div>
-        <div class="relative w-full max-h-[85vh] bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 overflow-y-auto"
-          data-weather-sheet="1">
-          <div class="modal-grab-pill" aria-hidden="true"></div>
-          <div class="flex items-start justify-between mb-4 gap-3">
-            <div class="min-w-0">
-              <div class="text-xs uppercase tracking-wider text-harbor-muted font-semibold">${paneTitle}</div>
-              <div class="text-sm text-harbor-primary-light mt-1 leading-snug">${data.advice}</div>
+        <div class="absolute inset-0" data-weather-backdrop="1" data-weather-dismiss="1" aria-hidden="true"></div>
+        <div data-weather-sheet="1" role="dialog" aria-modal="true" aria-label="${paneTitle}">
+          <div class="weather-sheet-head">
+            <div class="modal-grab-pill" aria-hidden="true"></div>
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0 pr-2">
+                <div class="text-xs uppercase tracking-wider text-harbor-muted font-semibold">${paneTitle}</div>
+                <div class="text-sm text-harbor-primary-light mt-1 leading-snug">${data.advice || ''}</div>
+              </div>
+              <button type="button" data-weather-dismiss="1" class="modal-close-chip flex-shrink-0" aria-label="Close weather">Close</button>
             </div>
-            <button type="button" data-weather-dismiss="1" class="modal-close-chip flex-shrink-0" aria-label="Close weather">Close</button>
           </div>
-
-          <div class="rounded-2xl bg-harbor-raised/70 border border-harbor-border p-4 mb-4">
-            <div class="flex items-center gap-4">
-              <div class="text-5xl leading-none">${getWeatherIcon(current?.wDesc || data.conditionLabel)}</div>
-              <div class="flex-1 min-w-0">
-                <div class="text-3xl font-semibold text-harbor-text leading-none">${formatWeatherTemp(current?.temp)}</div>
-                <div class="text-sm text-harbor-muted mt-1">${data.conditionLabel}</div>
-                <div class="text-[11px] text-harbor-muted mt-2 leading-relaxed">
-                  High ${formatWeatherTemp(data.highTemp)} · Low ${formatWeatherTemp(data.lowTemp)} · Wind ~${data.avgWind} km/h
-                  ${data.maxPrecip >= 20 ? ` · Up to ${data.maxPrecip}% rain` : ''}
+          <div class="weather-sheet-body" data-sheet-scroll="1">
+            <div class="rounded-2xl bg-harbor-raised/70 border border-harbor-border p-4 mb-4">
+              <div class="flex items-center gap-4">
+                <div class="text-5xl leading-none">${getWeatherIcon(current?.wDesc || data.conditionLabel)}</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-3xl font-semibold text-harbor-text leading-none">${formatWeatherTemp(current?.temp)}</div>
+                  <div class="text-sm text-harbor-muted mt-1">${data.conditionLabel || ''}</div>
+                  <div class="text-[11px] text-harbor-muted mt-2 leading-relaxed">
+                    High ${formatWeatherTemp(data.highTemp)} · Low ${formatWeatherTemp(data.lowTemp)} · Wind ~${data.avgWind} km/h
+                    ${data.maxPrecip >= 20 ? ` · Up to ${data.maxPrecip}% rain` : ''}
+                  </div>
                 </div>
               </div>
             </div>
+
+            ${taskLine}
+
+            <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-2 px-0.5">Next 24 hours</div>
+            <div class="space-y-1.5 mb-3" id="weather-pane-hours"></div>
+
+            <div class="text-xs text-harbor-muted leading-relaxed px-0.5">
+              ${data.bestTime && data.bestScore >= 3
+                ? `Peak conditions around <span class="text-harbor-primary-light font-medium">${data.bestTime}</span>. `
+                : ''}
+              ${data.hasOutdoorTasks
+                ? (data.anyRain
+                    ? 'Highlighted rows show the best outdoor windows. Rain risk rises in rose-tinted hours.'
+                    : 'Green-tinted hours are best for yard work, walks, and outdoor chores.')
+                : (data.anyRain
+                    ? 'Rose-tinted hours have higher rain chance. Plan accordingly.'
+                    : 'Hour-by-hour breakdown through tomorrow.')}
+            </div>
+
+            <button type="button" data-weather-dismiss="1"
+              class="w-full mt-4 py-3 bg-harbor-raised border border-harbor-border active:bg-harbor-border rounded-2xl text-sm font-medium text-harbor-text">Close</button>
           </div>
-
-          ${taskLine}
-
-          <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-2 px-0.5">Next 24 hours</div>
-          <div class="space-y-1.5 mb-3" id="weather-pane-hours"></div>
-
-          <div class="text-xs text-harbor-muted leading-relaxed px-0.5">
-            ${data.bestTime && data.bestScore >= 3
-              ? `Peak conditions around <span class="text-harbor-primary-light font-medium">${data.bestTime}</span>. `
-              : ''}
-            ${data.hasOutdoorTasks
-              ? (data.anyRain
-                  ? 'Highlighted rows show the best outdoor windows. Rain risk rises in rose-tinted hours.'
-                  : 'Green-tinted hours are best for yard work, walks, and outdoor chores.')
-              : (data.anyRain
-                  ? 'Rose-tinted hours have higher rain chance. Plan accordingly.'
-                  : 'Hour-by-hour breakdown through tomorrow.')}
-          </div>
-
-          <button type="button" data-weather-dismiss="1"
-            class="w-full mt-4 py-3 bg-harbor-raised border border-harbor-border active:bg-harbor-border rounded-2xl text-sm font-medium text-harbor-text">Close</button>
         </div>
       `;
 
       document.body.appendChild(modal);
-      modal.addEventListener('click', (e) => {
-        if (e.target.closest('[data-weather-dismiss]')) {
-          e.preventDefault();
-          e.stopPropagation();
-          closeWeatherModal();
-        }
-      });
-      modal.querySelector('[data-weather-sheet]')?.addEventListener('click', (e) => {
-        if (!e.target.closest('[data-weather-dismiss]')) e.stopPropagation();
-      });
+      document.body.classList.add('weather-modal-open');
+      wireWeatherModalDismiss(modal);
 
       const hoursEl = modal.querySelector('#weather-pane-hours');
       let lastDayKey = null;
