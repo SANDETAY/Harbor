@@ -4475,30 +4475,60 @@
     /* Full-viewport cover so safe-area / home-indicator never shows app black under splash */
     #splash-screen.splash-screen-harbor {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       width: 100%;
+      width: 100vw;
       height: 100%;
+      height: 100vh;
+      height: 100dvh;
       min-height: 100vh;
       min-height: 100dvh;
       min-height: -webkit-fill-available;
       z-index: 100;
+      /* Pull into iOS safe areas so no mint/white strip under the video */
+      padding: 0;
+      margin: 0;
     }
 
-    /* Grok Imagine splash video — first ~2s, full bleed */
+    /* Grok Imagine splash video — first ~2s.
+       Source is portrait (~2:3). Use contain by default so the full logo stays
+       visible on wide web viewports; cover only on tall phone-like frames. */
     .splash-video {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      max-width: none;
+      max-height: none;
+      object-fit: contain;
       object-position: center center;
       z-index: 1;
       background: #0a3a38;
       pointer-events: none;
+      /* Prefer sharper decode/upscale where the engine supports it */
+      image-rendering: -webkit-optimize-contrast;
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
 
     .splash-video.is-ready {
       opacity: 1;
+    }
+
+    /* Tall phone frames: fill edge-to-edge (still centered on the mark) */
+    .splash-video.fit-cover {
+      object-fit: cover;
+      object-position: center 46%;
+    }
+
+    /* Wide / desktop: keep full frame, teal letterbox (no cropped anchor) */
+    .splash-video.fit-contain {
+      object-fit: contain;
+      object-position: center center;
     }
 
     /* When video is driving the splash, hide the CSS brand/wave fallback */
@@ -4510,8 +4540,19 @@
       pointer-events: none;
     }
 
+    .splash-screen-harbor.has-video-splash {
+      /* Deep teal under video — kills mint/white gap under home indicator */
+      background: #0a3a38 !important;
+    }
+
     .splash-screen-harbor.has-video-splash .splash-video {
       opacity: 1;
+    }
+
+    html.is-splash-active.has-video-splash-bg,
+    body.is-splash-active.has-video-splash-bg {
+      background-color: #0a3a38 !important;
+      background-image: none !important;
     }
 
     .splash-screen-harbor.is-hidden {
@@ -5785,7 +5826,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v122';
+    const HARBOR_BUILD = 'v123';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -22495,12 +22536,31 @@
       } catch (_) { /* ignore */ }
     }
 
+    /** Portrait Imagine clips look wrong with cover on wide screens (crops the mark). */
+    function fitSplashVideoToViewport(video) {
+      if (!video) return;
+      const vw = Math.max(window.innerWidth || 0, document.documentElement?.clientWidth || 0);
+      const vh = Math.max(window.innerHeight || 0, document.documentElement?.clientHeight || 0);
+      if (!vw || !vh) return;
+      const viewAspect = vw / vh;
+      const vidW = video.videoWidth || 448;
+      const vidH = video.videoHeight || 672;
+      const vidAspect = vidW / vidH;
+      // Cover only when the viewport is phone-tall relative to the clip.
+      // Otherwise contain so the full anchor + slogan stay in frame on desktop/web.
+      const useCover = viewAspect <= vidAspect * 1.02 && vh >= vw;
+      video.classList.toggle('fit-cover', useCover);
+      video.classList.toggle('fit-contain', !useCover);
+    }
+
     function hideSplash() {
       const splash = document.getElementById('splash-screen');
       if (!splash) return;
       stopSplashVideo();
       splash.classList.add('is-hidden');
       splash.classList.remove('is-revealing', 'is-active', 'has-video-splash');
+      document.body.classList.remove('has-video-splash-bg');
+      document.documentElement.classList.remove('has-video-splash-bg');
       splash.style.display = 'none';
       splash.style.opacity = '';
       splash.style.clipPath = '';
@@ -22626,14 +22686,16 @@
 
       document.body.classList.add('is-splash-active');
       document.documentElement.classList.add('is-splash-active');
-      // Match browser chrome / home-indicator to splash bottom mint (not app black)
+      // Deep teal chrome while splash is up (avoids mint/white home-indicator strip under video)
       try {
         const metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (metaTheme) metaTheme.setAttribute('content', '#d8e4de');
+        if (metaTheme) metaTheme.setAttribute('content', '#0a3a38');
       } catch (_) { /* ignore */ }
 
       if (splash) {
         splash.classList.remove('is-hidden', 'is-revealing', 'has-video-splash');
+        document.body.classList.remove('has-video-splash-bg');
+        document.documentElement.classList.remove('has-video-splash-bg');
         splash.style.display = 'block';
         splash.style.opacity = '1';
         splash.style.clipPath = '';
@@ -22770,7 +22832,10 @@
         const armVideoMode = () => {
           videoMode = true;
           splash?.classList.add('has-video-splash');
+          document.body.classList.add('has-video-splash-bg');
+          document.documentElement.classList.add('has-video-splash-bg');
           video.classList.add('is-ready');
+          fitSplashVideoToViewport(video);
           // Hard stop slightly after 2s in case timeupdate is sparse on some devices
           cutTimer = setTimeout(finishVideoSplash, VIDEO_CUT_S * 1000 + 120);
           // Absolute safety so splash never hangs
@@ -22778,6 +22843,10 @@
             if (!revealed) finishVideoSplash();
           }, VIDEO_HARD_TIMEOUT_MS);
         };
+
+        const onMeta = () => fitSplashVideoToViewport(video);
+        video.addEventListener('loadedmetadata', onMeta, { once: true });
+        if (video.readyState >= 1) fitSplashVideoToViewport(video);
 
         if (playPromise && typeof playPromise.then === 'function') {
           playPromise.then(armVideoMode).catch(() => {
