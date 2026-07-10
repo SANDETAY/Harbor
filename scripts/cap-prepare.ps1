@@ -37,9 +37,8 @@ foreach ($f in $files) {
   }
 }
 
-# Capacitor apps usually load index.html; ensure a clean entry
 if (-not (Test-Path (Join-Path $out "index.html"))) {
-  throw "index.html missing — cannot prepare Capacitor webDir"
+  throw "index.html missing - cannot prepare Capacitor webDir"
 }
 
 Write-Host "Prepared $out for Capacitor (webDir)."

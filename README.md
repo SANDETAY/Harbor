@@ -104,15 +104,44 @@ Settings → **Factory Reset** restores the first-time experience.
 ```
 Rythm/   (repo: SANDETAY/Harbor)
   index.html              # Full Harbor app
+  privacy.html            # Public privacy policy (store URL)
   manifest.webmanifest    # PWA install config
   sw.js                   # Offline cache for assets
+  capacitor.config.json   # Store shell config
+  docs/                   # Free/Pro, calendar v1, privacy, shipping
   harbor-mark.svg         # Anchor mark (vector)
   harbor-icon-*.png       # PWA / home-screen icons
   netlify.toml            # Deploy headers
-  package.json            # Local dev server
+  package.json            # Dev server + Capacitor scripts
   scripts/
-    create-deploy-zip.ps1 # One-click Netlify Drop zip
+    create-deploy-zip.ps1
+    cap-prepare.ps1       # Copy web assets for Capacitor
 ```
+
+## Product & shipping
+
+| Doc | Purpose |
+|-----|---------|
+| [docs/FREE-VS-PRO.md](docs/FREE-VS-PRO.md) | Free vs Pro matrix |
+| [docs/CALENDAR-V1.md](docs/CALENDAR-V1.md) | Calendar v1 — helper off by default |
+| [docs/PRIVACY.md](docs/PRIVACY.md) | Privacy policy (source) |
+| [privacy.html](privacy.html) | Live privacy page for store listings |
+| [docs/SHIPPING.md](docs/SHIPPING.md) | Capacitor, TestFlight, Play |
+
+Privacy URL after Pages deploy: **https://sandetay.github.io/Harbor/privacy.html**
+
+### Capacitor (needs Node.js 20+)
+
+```powershell
+cd C:\Users\Taylor\Rythm
+npm install
+npm run cap:prepare
+npx cap add android
+# On a Mac: npx cap add ios
+npm run cap:sync
+```
+
+TestFlight **before** ads or complex pricing — see [docs/SHIPPING.md](docs/SHIPPING.md).
 
 ## License
 
