@@ -8123,7 +8123,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 189;
+    const HARBOR_BUILD_NUMBER = 190;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -8154,6 +8154,7 @@
           'Biweekly chore tags say “Every 2 weeks” (not fortnight)',
           'Seasonal chores (heating tune-up, leaf raking, spring lawn care, etc.) only show when that season is near',
           'Heavy maintenance (pressure wash, aerate lawn, dryer vent…) lives in Summary → When You Can — Add to Today when you’re ready',
+          'Comprehensive “plan ahead” detection: travel (cabin, mountains, out of town), long blocks, projects, big errands, life events — freeform titles included',
           'Today stays a lighter, achievable list; bigger work doesn’t pile on until you pull it over',
           'Library default task names use Title Case, with small words like and / or / at left lower mid-phrase',
           'Bills support weekly, biweekly, monthly, quarterly, and yearly cadence',
@@ -13265,7 +13266,7 @@
         const title = normalizeUserText(rawTitle);
         if (title !== rawTitle) titleInput.value = title;
         const inf = inferTaskDefaults(title);
-        const minutes = parseInt(modal.querySelector('#qt-minutes').value, 10) || inf.est_minutes;
+        let minutes = parseInt(modal.querySelector('#qt-minutes').value, 10) || inf.est_minutes;
         let interval;
         if (selectedKind === 'task' || isSchedulingTaskTitle(title)) {
           interval = 0;
@@ -13287,13 +13288,27 @@
         const trackStreak = selectedKind === 'habit';
         const isRecurring = interval != null && interval !== 0;
         const editId = options.editHabitId || options.editTaskId;
+        // Draft for park scoring — boost time/energy on travel & project language so Today stays light
+        let difficulty = selectedDiff;
+        const parkProbe = {
+          title,
+          note: '',
+          interval_days: interval,
+          est_minutes: minutes,
+          difficulty,
+          is_preset: false
+        };
+        if (typeof getTaskParkScore === 'function' && getTaskParkScore(parkProbe) >= 2) {
+          if (!minutes || minutes < 60) minutes = Math.max(minutes || 0, 90);
+          if (difficulty < 3) difficulty = 3;
+        }
         const task = {
           id: isEdit ? editId : ((mode === 'library' || isRecurring) ? 'custom-lib-' : 'custom-') + Date.now(),
           title,
           category: (mode === 'library' || isRecurring) ? 'personal' : 'custom',
           interval_days: interval,
           est_minutes: minutes,
-          difficulty: selectedDiff,
+          difficulty,
           is_preset: false,
           is_personal: mode === 'library' || isRecurring,
           librarySection: (mode === 'library' || isRecurring) ? 'Personal' : undefined,
@@ -13362,9 +13377,14 @@
           renderLibrary();
           renderStreaks();
           const kindLabel = selectedKind === 'habit' ? 'habit' : selectedKind === 'chore' ? 'chore' : 'task';
-          const where = selectedKind === 'chore' && !isDueToday(task)
-            ? ' · due later in Summary'
-            : selectedKind === 'habit' ? ' · streaks on' : '';
+          let where = '';
+          if (typeof isParkedForSummary === 'function' && isParkedForSummary(task)) {
+            where = ' · in Summary until you Add to Today';
+          } else if (selectedKind === 'chore' && !isDueToday(task)) {
+            where = ' · due later in Summary';
+          } else if (selectedKind === 'habit') {
+            where = ' · streaks on';
+          }
           showToast(`Added ${kindLabel}: ${title}${where}`);
         }
         closeQuickTaskModal();
@@ -17486,45 +17506,193 @@
     }
 
     /**
-     * Heavy / seasonal / maintenance work stays in Summary by default so Today stays
-     * achievable. User (or an explicit pull) brings them onto Today when ready.
+     * Comprehensive “does this belong on Today by default?” scoring.
+     * Freeform titles count (e.g. “Clean cabin in the mountains”) — not only library presets.
+     * Signals stack; score ≥ 2 parks in Summary until the user pulls to Today.
+     */
+    function getTaskParkSignals(habit) {
+      if (!habit) return [];
+      const title = habit.title || '';
+      const note = habit.note || '';
+      const text = `${title} ${note}`.toLowerCase().replace(/\s+/g, ' ');
+      const mins = Number(habit.est_minutes) || 0;
+      const diff = Number(habit.difficulty) || 2;
+      const interval = habit.interval_days;
+      const section = habit.librarySection || '';
+      const signals = [];
+      const add = (reason, weight) => signals.push({ reason, weight });
+
+      // ── Duration (explicit minutes) ──────────────────────────────────
+      if (mins >= 120) add('long-block', 4);
+      else if (mins >= 90) add('long-block', 3);
+      else if (mins >= 60) add('hour-plus', 2);
+      else if (mins >= 45 && !isDailyTask(habit)) add('long-chore', 1);
+
+      // Duration phrases in the title when minutes weren’t set high
+      if (/\b(\d+)\s*(hour|hr|hrs)\b/.test(text)) {
+        const hrs = parseInt(text.match(/\b(\d+)\s*(hour|hr|hrs)\b/)[1], 10);
+        if (hrs >= 3) add('long-block', 4);
+        else if (hrs >= 2) add('long-block', 3);
+        else if (hrs >= 1) add('hour-plus', 2);
+      }
+      if (/all\s*day|full\s*day|entire day|whole day|half[\s-]?day|multi[\s-]?day|overnight|weekend project|spend the (day|weekend)/i.test(text)) {
+        add('long-block', 4);
+      }
+
+      // ── Travel / distant places (cabin, mountains, out of town…) ─────
+      if (
+        /\b(cabin|cottage|lake\s*house|beach\s*house|vacation\s*home|chalet|airbnb|vrbo|timeshare)\b/.test(text) ||
+        /\b(mountains?|upstate|out of town|out-of-town|another (city|state|county)|across (the )?(state|country)|road\s*trip)\b/.test(text) ||
+        /\b(campsite|campground|camping trip|ski (trip|lodge)|hunting (cabin|lodge)|fishing (cabin|camp))\b/.test(text) ||
+        /\b(parents?'?|in-?laws?'?|grandma'?s?|grandpa'?s?|grandparents?'?)\s+(house|place|home)\b/.test(text) ||
+        /\b(storage unit|warehouse|self[\s-]?storage|pod|u-?haul)\b/.test(text)
+      ) {
+        add('travel-destination', 3);
+      }
+
+      if (
+        /\b(drive to|drive up|drive down|drive out|fly to|flight to|head up to|get up to|get out to|go up to|trip to|travel to|commute to|take the (train|bus|ferry)|uber to|road to)\b/.test(text) ||
+        /\b(hours? (away|drive|from here)|long drive|long haul|out of the way)\b/.test(text)
+      ) {
+        add('travel-plus-task', 2);
+      }
+
+      // Errand that implies leaving + a stop that eats the block
+      if (
+        /\b(dmv|courthouse|passport|consulate|embassy|hospital|surgery center|specialist|orthodont|dentist appointment|doctor appointment)\b/.test(text) ||
+        /\b(closing|settlement|title company|jury duty|court date|deposition|notary)\b/.test(text)
+      ) {
+        add('life-errand-block', 3);
+      }
+
+      // ── Project / overhaul language ──────────────────────────────────
+      if (
+        /\b(deep clean|overhaul|renovat|remodel|demo\b|demolish|rebuild|rewire|repipe|refinish|restain|reseal)\b/.test(text) ||
+        /\b(reorganize|declutter|purge|pack up|unpack|move (in|out)|estate sale|spring cleaning|fall cleaning)\b/.test(text) ||
+        /\b(whole house|entire (house|garage|attic|basement|apartment)|every room|top to bottom)\b/.test(text) ||
+        /\b(garage|attic|basement|crawl ?space|shed|barn|workshop)\b/.test(text) &&
+          /\b(clean|organiz|clear|purge|sort|empty|paint|insulat)\b/.test(text)
+      ) {
+        add('project', 3);
+      }
+
+      // ── Heavy home / yard / auto DIY ─────────────────────────────────
+      if (
+        /\b(pressure\s*wash|power\s*wash|aerate|overseed|winteriz|tune-?up|chimney|gutter|dryer vent|roof (inspect|repair|replace)|flush water heater|water heater|septic|sump pump)\b/.test(text) ||
+        /\b(paint (the )?(house|exterior|fence|deck|garage)|stain (the )?deck|reseal driveway|asphalt|concrete|fence (build|repair|stain))\b/.test(text) ||
+        /\b(install |replace )?(flooring|hardwood|tile|carpet|hot water|furnace|boiler|hvac|water softener|garbage disposal)\b/.test(text) ||
+        /\b(tree (removal|trim|cut)|stump|landscap|hardscap|retaining wall|irrigation|sprinkler blow)\b/.test(text) ||
+        /\b(brake job|timing belt|transmission|engine (work|swap)|detail (the )?(car|truck|boat)|boat (winteriz|launch)|rv |camper )\b/.test(text)
+      ) {
+        add('heavy-diy', 2);
+      }
+
+      // ── Life events / blocks that aren’t “quick tasks” ───────────────
+      if (
+        /\b(wedding|funeral|memorial|reunion|graduation|conference|convention|retreat|workshop weekend|volunteer day|blood drive|charity (run|event))\b/.test(text) ||
+        /\b(help .* move|moving day|load the truck|unload the truck)\b/.test(text)
+      ) {
+        add('life-event', 3);
+      }
+
+      // ── Seasonal windows ────────────────────────────────────────────
+      const seasonMonths = typeof getHabitSeasonMonths === 'function' ? getHabitSeasonMonths(habit) : null;
+      if (seasonMonths && seasonMonths.length) add('seasonal', 2);
+
+      // ── Cadence / library section ────────────────────────────────────
+      if (interval != null && interval >= 90) add('quarterly+', 3);
+      else if (interval != null && interval >= 30) add('monthly+', 2);
+      else if (interval != null && interval >= 14 && (mins >= 30 || diff >= 3)) add('biweekly-heavy', 2);
+
+      if (typeof MAINTENANCE_SECTIONS !== 'undefined' && MAINTENANCE_SECTIONS.includes(section)) {
+        if (interval == null || interval >= 14) add('maintenance-section', 2);
+      }
+
+      // ── Difficulty combos ───────────────────────────────────────────
+      if (diff >= 3 && mins >= 35) add('hard-and-long', 2);
+      if (diff >= 3 && isOneOffTask(habit) && mins >= 25) add('hard-oneoff', 2);
+      if (diff >= 3 && isOneOffTask(habit) && mins === 0) add('hard-oneoff-unknown-time', 1);
+
+      // ── One-off default: unknown-length custom projects ──────────────
+      // Freeform one-offs with no tiny time estimate often are “do this someday”
+      if (isOneOffTask(habit) && mins === 0 && diff >= 2 && text.length >= 12) {
+        if (!isDailyRhythmTitle(text)) add('open-ended-oneoff', 1);
+      }
+      if (isOneOffTask(habit) && mins >= 40) add('oneoff-long', 2);
+
+      return signals;
+    }
+
+    /** Light daily rhythm titles that should stay on Today even if duration is longer (walk, gym…). */
+    function isDailyRhythmTitle(text) {
+      const t = String(text || '').toLowerCase();
+      return /\b(walk|run|jog|steps|gym|workout|exercise|stretch|mobility|yoga|pilates|meditat|journal|read\b|floss|vitamin|make (the )?bed|drink water|pray|prayer|bike ride|swim|laps|push-?ups|core work)\b/.test(t);
+    }
+
+    function isDailyRhythmTask(habit) {
+      if (!habit || !isDailyTask(habit)) return false;
+      if (habit.unit === 'steps' || habit.unit === 'miles' || habit.unit === 'mi' || habit.unit === 'pages') return true;
+      if (isDailyRhythmTitle(`${habit.title || ''} ${habit.note || ''}`)) return true;
+      const mins = Number(habit.est_minutes) || 0;
+      const diff = Number(habit.difficulty) || 2;
+      // Tiny unlabeled dailies stay on Today
+      return mins > 0 && mins <= 25 && diff <= 2;
+    }
+
+    function getTaskParkScore(habit) {
+      return getTaskParkSignals(habit).reduce((sum, s) => sum + (s.weight || 0), 0);
+    }
+
+    function getTaskParkReasonLabel(habit) {
+      const signals = getTaskParkSignals(habit).slice().sort((a, b) => b.weight - a.weight);
+      if (!signals.length) return '';
+      const map = {
+        'long-block': 'Long block',
+        'hour-plus': '1+ hour',
+        'long-chore': 'Longer chore',
+        'travel-destination': 'Trip / travel',
+        'travel-plus-task': 'Travel + task',
+        'life-errand-block': 'Big errand',
+        'project': 'Big project',
+        'heavy-diy': 'Heavy DIY',
+        'life-event': 'Life event',
+        'seasonal': 'Seasonal',
+        'quarterly+': 'Rare maintenance',
+        'monthly+': 'Maintenance',
+        'biweekly-heavy': 'Bigger chore',
+        'maintenance-section': 'Maintenance',
+        'hard-and-long': 'Hard + long',
+        'hard-oneoff': 'Hard project',
+        'hard-oneoff-unknown-time': 'Project',
+        'open-ended-oneoff': 'Plan ahead',
+        'oneoff-long': 'Long one-off'
+      };
+      return map[signals[0].reason] || 'Plan ahead';
+    }
+
+    /**
+     * Heavy / travel / seasonal / project work stays in Summary by default so Today
+     * stays achievable. Pull onto Today when ready.
      */
     function isParkedForSummary(habit) {
       if (!habit || habit.is_pro_reminder) return false;
-      if (isDailyTask(habit)) return false;
       if (habit.parkOnSummary === false) return false;
       if (habit.parkOnSummary === true) return true;
 
-      const interval = habit.interval_days;
-      const mins = habit.est_minutes || 0;
-      const diff = habit.difficulty || 2;
-      const section = habit.librarySection || '';
-      const title = habit.title || '';
+      const signals = getTaskParkSignals(habit);
+      const score = signals.reduce((sum, s) => sum + (s.weight || 0), 0);
+      if (score <= 0) return false;
 
-      // Seasonal windows (heating tune-up, leaf raking, etc.)
-      const seasonMonths = typeof getHabitSeasonMonths === 'function' ? getHabitSeasonMonths(habit) : null;
-      if (seasonMonths && seasonMonths.length) return true;
-
-      // Monthly+ maintenance always parks
-      if (interval != null && interval >= 30) return true;
-
-      // Longer / harder biweekly+ projects
-      if (interval != null && interval >= 14 && (mins >= 30 || diff >= 3)) return true;
-
-      // Maintenance library sections (except light weekly yard like mow)
-      if (typeof MAINTENANCE_SECTIONS !== 'undefined' && MAINTENANCE_SECTIONS.includes(section)) {
-        if (interval == null || interval >= 14) return true;
+      // Daily fitness / tiny habits stay on Today unless travel/project weight is strong
+      if (isDailyRhythmTask(habit)) {
+        const heavy = signals
+          .filter(s => /travel|project|life-event|long-block|destination|errand|diy/i.test(s.reason))
+          .reduce((sum, s) => sum + s.weight, 0);
+        return heavy >= 3;
       }
 
-      // One-off heavy projects
-      if (isOneOffTask(habit) && (mins >= 40 || diff >= 3)) return true;
-
-      // Title cues for big DIY even if metadata is light
-      if (/pressure\s*wash|aerate|overseed|dryer vent|gutter|winterize|deep clean|chimney|tune-?up|mulch garden|flush water heater|roof inspect/i.test(title)) {
-        if (interval == null || interval >= 14 || isOneOffTask(habit)) return true;
-      }
-
-      return false;
+      // Anything else: modest score parks (comprehensive freeform coverage)
+      return score >= 2;
     }
 
     function isPulledToToday(habit) {
@@ -19773,17 +19941,18 @@
           ${show.map(item => {
             const h = item.habit;
             const mins = h.est_minutes ? `${h.est_minutes} min` : '';
-            const freq = isDailyTask(h) ? 'Daily' : formatIntervalLabel(h.interval_days);
+            const freq = isDailyTask(h) ? 'Daily' : isOneOffTask(h) ? 'One-time' : formatIntervalLabel(h.interval_days);
             const due = (item.daysUntil ?? 0) <= 0
-              ? 'Due in this period'
+              ? 'Ready when you are'
               : item.daysUntil === 1
                 ? 'Tomorrow'
                 : formatBriefDateLabel(item.date);
+            const why = getTaskParkReasonLabel(h);
             return `
               <div class="summary-when-row">
                 <div class="summary-when-main">
                   <div class="summary-when-title">${escapeBriefHtml(h.title)}</div>
-                  <div class="summary-when-meta">${escapeBriefHtml(due)} · ${escapeBriefHtml(freq)}${mins ? ` · ${escapeBriefHtml(mins)}` : ''}</div>
+                  <div class="summary-when-meta">${escapeBriefHtml(due)}${why ? ` · ${escapeBriefHtml(why)}` : ''} · ${escapeBriefHtml(freq)}${mins ? ` · ${escapeBriefHtml(mins)}` : ''}</div>
                 </div>
                 <button type="button" class="summary-pull-today-btn" data-pull-habit="${escapeBriefHtml(h.id)}"
                   onclick="event.preventDefault(); event.stopPropagation(); pullHabitToToday('${escapeBriefHtml(h.id)}')">
@@ -19846,8 +20015,9 @@
           } else if (onToday) {
             actionHtml = `<span class="summary-kpi-detail-side text-harbor-muted">On Today</span>`;
           }
+          const why = parked ? getTaskParkReasonLabel(h) : '';
           const badge = parked && !pulled
-            ? '<span class="summary-park-badge">Summary</span>'
+            ? `<span class="summary-park-badge">${escapeBriefHtml(why || 'Summary')}</span>`
             : '';
           return `
             <div class="summary-kpi-detail-row">
