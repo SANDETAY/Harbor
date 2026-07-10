@@ -8050,7 +8050,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 187;
+    const HARBOR_BUILD_NUMBER = 188;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -8078,6 +8078,9 @@
         title: 'Life tools, Summary & subscriptions',
         highlights: [
           'Browser tab title: Harbor · One App For the Whole Day',
+          'Biweekly chore tags say “Every 2 weeks” (not fortnight)',
+          'Seasonal chores (heating tune-up, leaf raking, spring lawn care, etc.) only show on Today when that season is near',
+          'Library default task names use Title Case, with small words like and / or / at left lower mid-phrase',
           'Bills support weekly, biweekly, monthly, quarterly, and yearly cadence',
           'Multi pay-date bills multiply the amount by days selected',
           'Student status shows discounted rates only when browsing popular services (e.g. Amazon Prime yearly) — not rewritten across your active list',
@@ -9173,6 +9176,8 @@
         });
       }
       if (!state.calendarCache) state.calendarCache = null;
+      // Title Case + seasonal windows for preset library items already on the list
+      if (typeof syncPresetLibraryOntoHabits === 'function') syncPresetLibraryOntoHabits();
 
     }
 
@@ -9233,6 +9238,53 @@
       'Your Custom Tasks'
     ];
 
+    /** Title Case for library defaults — small words stay lower unless first/last. */
+    const TITLE_CASE_SMALL_WORDS = new Set([
+      'a', 'an', 'the', 'and', 'or', 'but', 'for', 'nor', 'on', 'at', 'to', 'by',
+      'of', 'in', 'as', 'vs', 'via', 'per', 'from', 'with', 'into', 'onto', 'over'
+    ]);
+
+    function toHarborTitleCase(input) {
+      if (input == null || typeof input !== 'string') return input;
+      const str = input.trim();
+      if (!str) return str;
+
+      const titleCaseWord = (word, forceCap) => {
+        if (!word) return word;
+        // Keep slash-compounds like A/C, vitamins/supplements handled per segment
+        if (word.includes('/') && word.length > 1) {
+          return word.split('/').map((seg, i) => titleCaseWord(seg, forceCap || i === 0)).join('/');
+        }
+        if (word.includes('-')) {
+          return word.split('-').map((seg, i) => titleCaseWord(seg, true)).join('-');
+        }
+        const lower = word.toLowerCase();
+        if (/^(hvac)$/i.test(word)) return 'HVAC';
+        if (/^(a\/c|ac)$/i.test(word)) return word.toLowerCase() === 'ac' && word.length === 2 ? 'AC' : 'A/C';
+        if (/^(co)$/i.test(word)) return 'CO';
+        if (/^(diy|tv|id|us|uk)$/i.test(word)) return word.toUpperCase();
+        if (!forceCap && TITLE_CASE_SMALL_WORDS.has(lower)) return lower;
+        // Leading punctuation like (spring)
+        const m = lower.match(/^([^a-z0-9]*)([a-z0-9].*)$/i);
+        if (!m) return word;
+        const [, pre, rest] = m;
+        return pre + rest.charAt(0).toUpperCase() + rest.slice(1);
+      };
+
+      // Split on spaces but keep them
+      const tokens = str.split(/(\s+)/);
+      const wordIdxs = [];
+      tokens.forEach((t, i) => {
+        if (t && !/^\s+$/.test(t)) wordIdxs.push(i);
+      });
+      return tokens.map((t, i) => {
+        if (!t || /^\s+$/.test(t)) return t;
+        const isFirst = i === wordIdxs[0];
+        const isLast = i === wordIdxs[wordIdxs.length - 1];
+        return titleCaseWord(t, isFirst || isLast);
+      }).join('');
+    }
+
     const PRESET_LIBRARY = [
       // Daily Habits
       { id: 'make-bed', title: 'Make the bed', librarySection: 'Daily Habits', category: 'home', interval_days: null, est_minutes: 3, difficulty: 1, is_preset: true },
@@ -9263,33 +9315,33 @@
       { id: 'tire-pressure', title: 'Check tire pressure', librarySection: 'Monthly Maintenance', category: 'car', interval_days: 30, est_minutes: 8, difficulty: 1, is_preset: true },
       { id: 'bills-review', title: 'Review bills & subscriptions', librarySection: 'Monthly Maintenance', category: 'personal', interval_days: 30, est_minutes: 15, difficulty: 1, is_preset: true },
 
-      // Quarterly (~90 days)
-      { id: 'pre-emergent', title: 'Apply pre-emergent herbicide', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 30, difficulty: 2, is_preset: true, note: 'Early spring before soil hits ~55°F' },
-      { id: 'post-emergent', title: 'Apply post-emergent weed control', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 25, difficulty: 2, is_preset: true, note: 'When weeds are actively growing' },
-      { id: 'fertilize-spring', title: 'Fertilize lawn (spring)', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 30, difficulty: 2, is_preset: true },
-      { id: 'fertilize-summer', title: 'Fertilize lawn (summer)', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 30, difficulty: 2, is_preset: true },
-      { id: 'fertilize-fall', title: 'Fertilize lawn (fall)', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 30, difficulty: 2, is_preset: true },
+      // Quarterly (~90 days) — seasonMonths: 0=Jan…11=Dec (includes lead-in month)
+      { id: 'pre-emergent', title: 'Apply pre-emergent herbicide', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 30, difficulty: 2, is_preset: true, note: 'Early spring before soil hits ~55°F', seasonMonths: [1, 2, 3] },
+      { id: 'post-emergent', title: 'Apply post-emergent weed control', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 25, difficulty: 2, is_preset: true, note: 'When weeds are actively growing', seasonMonths: [3, 4, 5, 6, 7] },
+      { id: 'fertilize-spring', title: 'Fertilize lawn (spring)', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 30, difficulty: 2, is_preset: true, seasonMonths: [2, 3, 4] },
+      { id: 'fertilize-summer', title: 'Fertilize lawn (summer)', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 30, difficulty: 2, is_preset: true, seasonMonths: [5, 6, 7] },
+      { id: 'fertilize-fall', title: 'Fertilize lawn (fall)', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 30, difficulty: 2, is_preset: true, seasonMonths: [8, 9, 10] },
       { id: 'range-hood-filter', title: 'Clean or replace range hood filter', librarySection: 'Quarterly', category: 'home', interval_days: 90, est_minutes: 15, difficulty: 2, is_preset: true },
       { id: 'washer-hoses', title: 'Inspect washing machine hoses', librarySection: 'Quarterly', category: 'home', interval_days: 90, est_minutes: 10, difficulty: 1, is_preset: true },
-      { id: 'mower-blade', title: 'Sharpen lawn mower blade', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 25, difficulty: 2, is_preset: true },
+      { id: 'mower-blade', title: 'Sharpen lawn mower blade', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 25, difficulty: 2, is_preset: true, seasonMonths: [2, 3, 4, 5] },
       { id: 'window-tracks', title: 'Clean window tracks & sills', librarySection: 'Quarterly', category: 'home', interval_days: 90, est_minutes: 25, difficulty: 2, is_preset: true },
       { id: 'oil-change', title: 'Change engine oil', librarySection: 'Quarterly', category: 'car', interval_days: 90, est_minutes: 45, difficulty: 2, is_preset: true, note: 'Or per manufacturer interval' },
       { id: 'tire-rotate', title: 'Rotate tires', librarySection: 'Quarterly', category: 'car', interval_days: 90, est_minutes: 30, difficulty: 2, is_preset: true },
       { id: 'car-fluids', title: 'Check all vehicle fluid levels', librarySection: 'Quarterly', category: 'car', interval_days: 90, est_minutes: 12, difficulty: 1, is_preset: true },
-      { id: 'grub-control', title: 'Apply lawn grub control', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 25, difficulty: 2, is_preset: true, note: 'Early to mid summer' },
+      { id: 'grub-control', title: 'Apply lawn grub control', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 25, difficulty: 2, is_preset: true, note: 'Early to mid summer', seasonMonths: [5, 6, 7] },
 
       // Semi-Annual (~180 days)
       { id: 'fridge-coils', title: 'Vacuum refrigerator coils', librarySection: 'Semi-Annual', category: 'home', interval_days: 180, est_minutes: 20, difficulty: 2, is_preset: true },
       { id: 'fridge-water-filter', title: 'Replace refrigerator water filter', librarySection: 'Semi-Annual', category: 'home', interval_days: 180, est_minutes: 10, difficulty: 1, is_preset: true },
       { id: 'smoke-detectors', title: 'Test smoke & CO detectors', librarySection: 'Semi-Annual', category: 'home', interval_days: 180, est_minutes: 10, difficulty: 1, is_preset: true },
       { id: 'caulk-grout', title: 'Inspect caulk & grout (bath/kitchen)', librarySection: 'Semi-Annual', category: 'home', interval_days: 180, est_minutes: 20, difficulty: 2, is_preset: true },
-      { id: 'clean-gutters', title: 'Clean gutters & downspouts', librarySection: 'Semi-Annual', category: 'home', interval_days: 180, est_minutes: 60, difficulty: 3, is_preset: true, note: 'Spring and fall' },
-      { id: 'trim-hedges', title: 'Trim hedges & shrubs', librarySection: 'Semi-Annual', category: 'yard', interval_days: 180, est_minutes: 40, difficulty: 2, is_preset: true },
-      { id: 'mulch-beds', title: 'Mulch garden beds', librarySection: 'Semi-Annual', category: 'yard', interval_days: 180, est_minutes: 45, difficulty: 3, is_preset: true },
-      { id: 'rake-leaves', title: 'Rake leaves / yard debris', librarySection: 'Semi-Annual', category: 'yard', interval_days: 180, est_minutes: 40, difficulty: 2, is_preset: true },
-      { id: 'hvac-spring-tuneup', title: 'A/C tune-up before summer', librarySection: 'Semi-Annual', category: 'hvac', interval_days: 180, est_minutes: 15, difficulty: 2, is_preset: true, note: 'Schedule pro service — spring' },
-      { id: 'hvac-fall-tuneup', title: 'Heating tune-up before winter', librarySection: 'Semi-Annual', category: 'hvac', interval_days: 180, est_minutes: 15, difficulty: 2, is_preset: true, note: 'Schedule pro service — fall' },
-      { id: 'humidifier-pad', title: 'Replace whole-house humidifier pad', librarySection: 'Semi-Annual', category: 'hvac', interval_days: 180, est_minutes: 15, difficulty: 2, is_preset: true },
+      { id: 'clean-gutters', title: 'Clean gutters & downspouts', librarySection: 'Semi-Annual', category: 'home', interval_days: 180, est_minutes: 60, difficulty: 3, is_preset: true, note: 'Spring and fall', seasonMonths: [2, 3, 4, 8, 9, 10] },
+      { id: 'trim-hedges', title: 'Trim hedges & shrubs', librarySection: 'Semi-Annual', category: 'yard', interval_days: 180, est_minutes: 40, difficulty: 2, is_preset: true, seasonMonths: [3, 4, 5, 6, 7, 8] },
+      { id: 'mulch-beds', title: 'Mulch garden beds', librarySection: 'Semi-Annual', category: 'yard', interval_days: 180, est_minutes: 45, difficulty: 3, is_preset: true, seasonMonths: [2, 3, 4, 8, 9] },
+      { id: 'rake-leaves', title: 'Rake leaves / yard debris', librarySection: 'Semi-Annual', category: 'yard', interval_days: 180, est_minutes: 40, difficulty: 2, is_preset: true, seasonMonths: [8, 9, 10, 11] },
+      { id: 'hvac-spring-tuneup', title: 'A/C tune-up before summer', librarySection: 'Semi-Annual', category: 'hvac', interval_days: 180, est_minutes: 15, difficulty: 2, is_preset: true, note: 'Schedule pro service — spring', seasonMonths: [1, 2, 3, 4] },
+      { id: 'hvac-fall-tuneup', title: 'Heating tune-up before winter', librarySection: 'Semi-Annual', category: 'hvac', interval_days: 180, est_minutes: 15, difficulty: 2, is_preset: true, note: 'Schedule pro service — fall', seasonMonths: [7, 8, 9, 10] },
+      { id: 'humidifier-pad', title: 'Replace whole-house humidifier pad', librarySection: 'Semi-Annual', category: 'hvac', interval_days: 180, est_minutes: 15, difficulty: 2, is_preset: true, seasonMonths: [8, 9, 10, 11] },
       { id: 'wiper-blades', title: 'Replace windshield wiper blades', librarySection: 'Semi-Annual', category: 'car', interval_days: 180, est_minutes: 10, difficulty: 1, is_preset: true },
       { id: 'cabin-air-filter', title: 'Replace car cabin air filter', librarySection: 'Semi-Annual', category: 'car', interval_days: 180, est_minutes: 12, difficulty: 1, is_preset: true },
       { id: 'dental-cleaning', title: 'Schedule dental cleaning', librarySection: 'Semi-Annual', category: 'health', interval_days: 180, est_minutes: 5, difficulty: 1, is_preset: true, note: 'Book appointment' },
@@ -9297,25 +9349,25 @@
       // Annual (~365 days)
       { id: 'flush-water-heater', title: 'Flush water heater tank', librarySection: 'Annual', category: 'home', interval_days: 365, est_minutes: 30, difficulty: 3, is_preset: true },
       { id: 'smoke-batteries', title: 'Replace smoke detector batteries', librarySection: 'Annual', category: 'home', interval_days: 365, est_minutes: 15, difficulty: 1, is_preset: true },
-      { id: 'aerate-lawn', title: 'Aerate lawn', librarySection: 'Annual', category: 'yard', interval_days: 365, est_minutes: 60, difficulty: 3, is_preset: true, note: 'Fall is ideal for cool-season grass' },
-      { id: 'overseed-lawn', title: 'Overseed thin lawn areas', librarySection: 'Annual', category: 'yard', interval_days: 365, est_minutes: 45, difficulty: 3, is_preset: true },
-      { id: 'winterize-sprinklers', title: 'Winterize sprinkler system', librarySection: 'Annual', category: 'yard', interval_days: 365, est_minutes: 30, difficulty: 2, is_preset: true, note: 'Before first hard freeze' },
+      { id: 'aerate-lawn', title: 'Aerate lawn', librarySection: 'Annual', category: 'yard', interval_days: 365, est_minutes: 60, difficulty: 3, is_preset: true, note: 'Fall is ideal for cool-season grass', seasonMonths: [8, 9] },
+      { id: 'overseed-lawn', title: 'Overseed thin lawn areas', librarySection: 'Annual', category: 'yard', interval_days: 365, est_minutes: 45, difficulty: 3, is_preset: true, seasonMonths: [8, 9] },
+      { id: 'winterize-sprinklers', title: 'Winterize sprinkler system', librarySection: 'Annual', category: 'yard', interval_days: 365, est_minutes: 30, difficulty: 2, is_preset: true, note: 'Before first hard freeze', seasonMonths: [8, 9, 10] },
       { id: 'garage-door-service', title: 'Service garage door & lubricate', librarySection: 'Annual', category: 'home', interval_days: 365, est_minutes: 25, difficulty: 2, is_preset: true },
       { id: 'roof-inspection', title: 'Inspect roof for damage', librarySection: 'Annual', category: 'home', interval_days: 365, est_minutes: 30, difficulty: 2, is_preset: true },
-      { id: 'chimney-inspect', title: 'Inspect / sweep chimney', librarySection: 'Annual', category: 'home', interval_days: 365, est_minutes: 10, difficulty: 2, is_preset: true, note: 'Schedule pro if needed' },
+      { id: 'chimney-inspect', title: 'Inspect / sweep chimney', librarySection: 'Annual', category: 'home', interval_days: 365, est_minutes: 10, difficulty: 2, is_preset: true, note: 'Schedule pro if needed', seasonMonths: [8, 9, 10] },
       { id: 'annual-physical', title: 'Schedule annual physical', librarySection: 'Annual', category: 'health', interval_days: 365, est_minutes: 5, difficulty: 1, is_preset: true },
-      { id: 'car-battery-test', title: 'Test car battery', librarySection: 'Annual', category: 'car', interval_days: 365, est_minutes: 8, difficulty: 1, is_preset: true },
+      { id: 'car-battery-test', title: 'Test car battery', librarySection: 'Annual', category: 'car', interval_days: 365, est_minutes: 8, difficulty: 1, is_preset: true, seasonMonths: [10, 11, 0, 1] },
 
       // Yard & Lawn Care (also in schedules above — grouped for browse)
-      { id: 'edge-lawn', title: 'Edge lawn & walkways', librarySection: 'Yard & Lawn Care', category: 'yard', interval_days: 14, est_minutes: 25, difficulty: 2, is_preset: true },
-      { id: 'weed-beds', title: 'Weed flower & garden beds', librarySection: 'Yard & Lawn Care', category: 'yard', interval_days: 14, est_minutes: 20, difficulty: 2, is_preset: true },
-      { id: 'prune-trees', title: 'Prune dead branches (light)', librarySection: 'Yard & Lawn Care', category: 'yard', interval_days: 180, est_minutes: 35, difficulty: 3, is_preset: true },
-      { id: 'deck-wash', title: 'Pressure wash deck / patio', librarySection: 'Yard & Lawn Care', category: 'yard', interval_days: 365, est_minutes: 60, difficulty: 3, is_preset: true },
+      { id: 'edge-lawn', title: 'Edge lawn & walkways', librarySection: 'Yard & Lawn Care', category: 'yard', interval_days: 14, est_minutes: 25, difficulty: 2, is_preset: true, seasonMonths: [3, 4, 5, 6, 7, 8, 9] },
+      { id: 'weed-beds', title: 'Weed flower & garden beds', librarySection: 'Yard & Lawn Care', category: 'yard', interval_days: 14, est_minutes: 20, difficulty: 2, is_preset: true, seasonMonths: [3, 4, 5, 6, 7, 8, 9] },
+      { id: 'prune-trees', title: 'Prune dead branches (light)', librarySection: 'Yard & Lawn Care', category: 'yard', interval_days: 180, est_minutes: 35, difficulty: 3, is_preset: true, seasonMonths: [1, 2, 3, 10, 11] },
+      { id: 'deck-wash', title: 'Pressure wash deck / patio', librarySection: 'Yard & Lawn Care', category: 'yard', interval_days: 365, est_minutes: 60, difficulty: 3, is_preset: true, seasonMonths: [4, 5, 6, 7, 8] },
 
       // HVAC & Climate
       { id: 'thermostat-batteries', title: 'Replace thermostat batteries', librarySection: 'HVAC & Climate', category: 'hvac', interval_days: 365, est_minutes: 5, difficulty: 1, is_preset: true },
-      { id: 'ac-clear-debris', title: 'Clear debris from outdoor A/C unit', librarySection: 'HVAC & Climate', category: 'hvac', interval_days: 90, est_minutes: 15, difficulty: 1, is_preset: true },
-      { id: 'furnace-filter-check', title: 'Check furnace filter (heating season)', librarySection: 'HVAC & Climate', category: 'hvac', interval_days: 30, est_minutes: 5, difficulty: 1, is_preset: true },
+      { id: 'ac-clear-debris', title: 'Clear debris from outdoor A/C unit', librarySection: 'HVAC & Climate', category: 'hvac', interval_days: 90, est_minutes: 15, difficulty: 1, is_preset: true, seasonMonths: [2, 3, 4, 5, 6, 7, 8] },
+      { id: 'furnace-filter-check', title: 'Check furnace filter (heating season)', librarySection: 'HVAC & Climate', category: 'hvac', interval_days: 30, est_minutes: 5, difficulty: 1, is_preset: true, seasonMonths: [9, 10, 11, 0, 1, 2] },
 
       // Home Interior & Exterior
       { id: 'hvac-vents', title: 'Vacuum HVAC supply vents', librarySection: 'Home Interior & Exterior', category: 'home', interval_days: 90, est_minutes: 20, difficulty: 1, is_preset: true },
@@ -9345,6 +9397,23 @@
       { id: 'meditate', title: 'Meditate', librarySection: 'Mind & Growth', category: 'mind', interval_days: null, est_minutes: 5, difficulty: 1, is_preset: true },
       { id: 'journal', title: 'Journal / reflect', librarySection: 'Mind & Growth', category: 'mind', interval_days: null, est_minutes: 10, difficulty: 1, is_preset: true }
     ];
+
+    // Normalize every library default to Title Case (small words stay lower mid-phrase)
+    PRESET_LIBRARY.forEach(t => {
+      if (t.title) t.title = toHarborTitleCase(t.title);
+    });
+
+    function syncPresetLibraryOntoHabits() {
+      const byId = new Map(PRESET_LIBRARY.map(p => [p.id, p]));
+      (state.habits || []).forEach(h => {
+        const p = byId.get(h.id);
+        if (!p) return;
+        // Keep library titles & seasonal windows in sync for preset-origin tasks
+        if (p.title) h.title = p.title;
+        if (Array.isArray(p.seasonMonths)) h.seasonMonths = p.seasonMonths.slice();
+        else if (h.seasonMonths && p.seasonMonths == null && h.is_preset) delete h.seasonMonths;
+      });
+    }
 
     function getTaskFilterType(task) {
       const section = task.librarySection || '';
@@ -11837,12 +11906,109 @@
     function getPeriodActiveLabel(habit) {
       const d = habit.interval_days;
       if (d === 7) return 'This week';
-      if (d === 14) return 'This fortnight';
+      if (d === 14) return 'Every 2 weeks';
       if (d >= 25 && d <= 35) return 'This month';
       if (d >= 85 && d <= 95) return 'This quarter';
       if (d >= 175 && d <= 185) return 'This half-year';
       if (d >= 360) return 'This year';
       return 'This cycle';
+    }
+
+    // ── Seasonal relevance ──────────────────────────────────────────────
+    // seasonMonths: 0=Jan … 11=Dec when a task should surface (includes lead-in).
+    // null / missing = year-round. Used so “Heating tune-up before winter” stays
+    // off Today in July but appears as fall approaches.
+
+    function expandMonthsWithLead(coreMonths, lead = 1) {
+      const set = new Set();
+      (coreMonths || []).forEach(m => {
+        const month = ((Number(m) % 12) + 12) % 12;
+        set.add(month);
+        for (let i = 1; i <= lead; i++) set.add((month - i + 12) % 12);
+      });
+      return [...set].sort((a, b) => a - b);
+    }
+
+    function inferSeasonMonthsFromText(text) {
+      const t = String(text || '').toLowerCase();
+      if (!t.trim()) return null;
+      const months = new Set();
+      const add = (list) => list.forEach(m => months.add(((m % 12) + 12) % 12));
+
+      // Explicit “before / for” season phrasing (highest priority)
+      if (/before winter|for winter|pre-winter|heating\s*tune|furnace tune|winteriz/.test(t)) {
+        add([7, 8, 9, 10]); // Aug–Nov (lead + fall)
+      }
+      if (/before summer|for summer|pre-summer|a\/c\s*tune|ac\s*tune|cooling tune|air condition/.test(t)) {
+        add([1, 2, 3, 4]); // Feb–May
+      }
+      if (/before spring|early spring|pre-emergent/.test(t)) add([1, 2, 3]);
+      if (/rake leaves|leaf clean|leaf debris/.test(t)) add([8, 9, 10, 11]);
+      if (/winterize sprinkler|blow out (the )?irrigation|close the pool|pool close|winterize pool/.test(t)) {
+        add([8, 9, 10]);
+      }
+      if (/open the pool|pool open|open pool/.test(t)) add([2, 3, 4]);
+      if (/chimney|fireplace/.test(t)) add([8, 9, 10]);
+      if (/heating season|furnace filter/.test(t)) add([9, 10, 11, 0, 1, 2]);
+      if (/car battery|cold weather battery/.test(t)) add([10, 11, 0, 1]);
+
+      // Named season words (if not already matched more specifically)
+      if (!months.size) {
+        if (/\bspring\b/.test(t)) add(expandMonthsWithLead([2, 3, 4], 1));
+        if (/\bsummer\b/.test(t)) add(expandMonthsWithLead([5, 6, 7], 1));
+        if (/\b(fall|autumn)\b/.test(t)) add(expandMonthsWithLead([8, 9, 10], 1));
+        if (/\bwinter\b/.test(t)) add(expandMonthsWithLead([11, 0, 1], 1));
+      }
+
+      // Seasonal lawn care cues without year-round mowing
+      if (/aerate|overseed|grub control|fertiliz\w* (lawn )?\(?(spring|summer|fall|autumn)/.test(t)) {
+        if (/spring/.test(t)) add([2, 3, 4]);
+        if (/summer/.test(t)) add([5, 6, 7]);
+        if (/fall|autumn/.test(t)) add([8, 9, 10]);
+        if (/grub/.test(t)) add([5, 6, 7]);
+        if (/aerate|overseed/.test(t) && !/spring|summer/.test(t)) add([8, 9]);
+      }
+
+      return months.size ? [...months].sort((a, b) => a - b) : null;
+    }
+
+    function getHabitSeasonMonths(habit) {
+      if (!habit) return null;
+      if (Array.isArray(habit.seasonMonths) && habit.seasonMonths.length) {
+        return habit.seasonMonths.map(Number).filter(m => m >= 0 && m <= 11);
+      }
+      try {
+        const preset = (typeof PRESET_LIBRARY !== 'undefined' ? PRESET_LIBRARY : [])
+          .find(p => p.id === habit.id);
+        if (preset && Array.isArray(preset.seasonMonths) && preset.seasonMonths.length) {
+          return preset.seasonMonths.slice();
+        }
+      } catch (_) { /* ignore */ }
+      return inferSeasonMonthsFromText(`${habit.title || ''} ${habit.note || ''}`);
+    }
+
+    function isHabitInSeason(habit, dateStr) {
+      const months = getHabitSeasonMonths(habit);
+      if (!months || !months.length) return true;
+      const ds = dateStr || todayStr();
+      const m = new Date(ds + 'T12:00:00').getMonth();
+      return months.includes(m);
+    }
+
+    function getNextInSeasonMonthLabel(habit) {
+      const months = getHabitSeasonMonths(habit);
+      if (!months || !months.length) return '';
+      const now = new Date(todayStr() + 'T12:00:00').getMonth();
+      let best = null;
+      for (let ahead = 0; ahead < 12; ahead++) {
+        const m = (now + ahead) % 12;
+        if (months.includes(m)) {
+          best = m;
+          break;
+        }
+      }
+      if (best == null) return '';
+      return new Date(2026, best, 1).toLocaleDateString(undefined, { month: 'short' });
     }
 
     function getDaysUntilNextPeriodStart(habit) {
@@ -11921,6 +12087,10 @@
     }
 
     function formatUpcomingLabel(habit, daysUntil) {
+      if (!isHabitInSeason(habit)) {
+        const when = getNextInSeasonMonthLabel(habit);
+        return when ? `In season · ${when}` : 'Out of season';
+      }
       if (isNonDailyRecurring(habit) && isHabitActiveThisPeriod(habit)) {
         return getPeriodActiveLabel(habit);
       }
@@ -12002,6 +12172,19 @@
 
     function getDaysUntilHabitDue(habit) {
       if (isOneOffTask(habit)) return 0;
+      if (!isHabitInSeason(habit)) {
+        // Days until the 1st of the next in-season month (so lists don't treat it as due now)
+        const months = getHabitSeasonMonths(habit) || [];
+        if (!months.length) return 0;
+        const today = new Date(todayStr() + 'T12:00:00');
+        for (let ahead = 1; ahead <= 12; ahead++) {
+          const probe = new Date(today.getFullYear(), today.getMonth() + ahead, 1, 12, 0, 0);
+          if (months.includes(probe.getMonth())) {
+            return Math.max(1, Math.round((probe - today) / 86400000));
+          }
+        }
+        return 90;
+      }
       if (!habit.interval_days || habit.interval_days <= 1) return 0;
       if (isHabitActiveThisPeriod(habit)) return 0;
       return getDaysUntilNextPeriodStart(habit);
@@ -17205,6 +17388,9 @@
       if (getHabitSkips(habit.id).includes(today)) return false;
       if (getHabitPasses(habit.id).includes(today)) return false;
 
+      // Seasonal chores stay off Today until their window (e.g. heating tune-up in fall)
+      if (!isHabitInSeason(habit, today)) return false;
+
       if (isOneOffTask(habit)) {
         return comps.length === 0;
       }
@@ -18536,6 +18722,7 @@
     function isHabitScheduledOn(habit, dateStr) {
       const comps = getCompletions(habit.id) || [];
       if (comps.includes(dateStr)) return false;
+      if (!isHabitInSeason(habit, dateStr)) return false;
       if (isOneOffTask(habit)) return comps.length === 0 && dateStr === todayStr();
       if (isDailyTask(habit)) return true;
       return getNextDueDate(habit) === dateStr;
