@@ -7782,7 +7782,7 @@
         <div id="task-list"></div>
         <div id="app-version-foot" class="app-version-foot" aria-label="App version">
           <button type="button" class="app-version-foot-btn" onclick="showReleaseNotes()" title="What's new">
-            Harbor <span class="tabular-nums" id="app-version-foot-label">0.9.3</span>
+            Harbor <span class="tabular-nums" id="app-version-foot-label">0.9</span>
           </button>
         </div>
       </div>
@@ -7913,16 +7913,14 @@
           <label class="student-pricing-toggle flex items-center justify-between gap-3 mb-2.5 px-3 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border cursor-pointer select-none">
             <div class="min-w-0">
               <div class="text-xs font-semibold text-harbor-text">Student status</div>
-              <div class="text-[10px] text-harbor-muted leading-snug">Use discounted student prices where services offer them</div>
+              <div class="text-[10px] text-harbor-muted leading-snug">When browsing popular services, show student rates where offered (e.g. Amazon Prime yearly)</div>
             </div>
             <input id="student-pricing-toggle" type="checkbox" class="student-pricing-switch flex-shrink-0"
               onchange="toggleStudentPricing(this.checked)" aria-label="Student status pricing">
           </label>
-          <div id="subs-monthly-total" class="hidden mb-2"></div>
-          <div id="subscriptions-list" class="space-y-2.5 mb-3"></div>
           <button type="button" id="subs-browse-btn" class="chip-tool-btn w-full mb-2" onclick="toggleSubsBrowse()"
             aria-expanded="false">Browse popular services</button>
-          <div id="subs-browse-panel" class="hidden">
+          <div id="subs-browse-panel" class="hidden mb-3">
             <div class="relative mb-2.5">
               <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-harbor-muted text-xs"></i>
               <input id="subscription-search" type="search" placeholder="Search Netflix, gym, Spotify…"
@@ -7931,6 +7929,8 @@
             </div>
             <div id="subscription-preset-chips" class="mb-1"></div>
           </div>
+          <div id="subs-monthly-total" class="hidden mb-2"></div>
+          <div id="subscriptions-list" class="space-y-2.5 mb-3"></div>
         </div>
       </div>
 
@@ -8045,11 +8045,12 @@
     // ==================== CONFIG & STATE ====================
     const STORAGE_KEY = 'harbor_state_v1';
 
-    // Product version (semver). Pre-1.0: feature-complete late beta / RC territory.
-    // Bump MINOR for larger feature sets, PATCH for fixes. Reserve 1.0.0 for store launch.
-    const HARBOR_VERSION = '0.9.3';
+    // Product train (pre-1.0). Stay on 0.9 until store launch — do NOT burn 0.9.1/0.9.2/…
+    // for every ship. Day-to-day ships only bump HARBOR_BUILD_NUMBER (cache + support).
+    // Changelog is one entry per calendar day: append highlights to that day’s list.
+    const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 185;
+    const HARBOR_BUILD_NUMBER = 186;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -8065,52 +8066,33 @@
       appVersion: HARBOR_VERSION
     };
 
-    /** User-facing changelog (newest first). Keep short and plain — not a git log. */
+    /**
+     * User-facing changelog (newest day first).
+     * One entry per calendar day — keep adding highlights to today’s block; don’t mint
+     * a new version number for every fix. Product version stays on the 0.9 train until 1.0.
+     */
     const HARBOR_CHANGELOG = [
       {
-        version: '0.9.3',
+        version: '0.9',
         date: '2026-07-10',
-        title: 'Summary lists, chores & family tags',
+        title: 'Life tools, Summary & subscriptions',
         highlights: [
-          'Tap the Tasks, Events, Bills, or Grocery boxes in Summary to open the full list for that range',
-          'Weekly chores (for example, mow the lawn) now show on Today and in Summary as soon as you add them',
-          'Family member tags on events keep the color on the event title — no extra filler circle next to the name',
-          'Summary list sheet layout fixed so tapped boxes actually show your items'
-        ]
-      },
-      {
-        version: '0.9.2',
-        date: '2026-07-10',
-        title: 'Reliable feedback email',
-        highlights: [
-          'Web3Forms enabled for primary feedback delivery to the builder inbox',
-          'FormSubmit and mail-app backup still kick in if the primary path fails'
-        ]
-      },
-      {
-        version: '0.9.1',
-        date: '2026-07-10',
-        title: 'Feedback delivery & free-time hours',
-        highlights: [
-          'Feedback always emails the builder when online — retries queued notes and honest send status',
-          'Smart Suggestions approximate free time in hours, not raw minutes'
-        ]
-      },
-      {
-        version: '0.9.0',
-        date: '2026-07-10',
-        title: 'Life tools & launch runway',
-        highlights: [
-          'Student status toggle with discounted rates on applicable subscriptions',
           'Bills support weekly, biweekly, monthly, quarterly, and yearly cadence',
           'Multi pay-date bills multiply the amount by days selected',
+          'Student status shows discounted rates only when browsing popular services (e.g. Amazon Prime yearly) — not rewritten across your active list',
+          'Browse popular services sits above your active subscriptions',
+          'Smart Suggestions approximate free time in hours, not raw minutes',
+          'Feedback emails the builder when online — Web3Forms primary, with FormSubmit and mail-app backup',
+          'Tap Tasks, Events, Bills, or Grocery in Summary for the full list',
+          'Weekly chores (like mow the lawn) show on Today and Summary as soon as you add them',
+          'Family tags on events: color on the title, no extra filler circle by the name',
+          'Summary list sheets open correctly as a bottom panel',
           'Streaks ranked by satisfaction; Harbor Day and custom rewards polished',
-          'Privacy policy, Free vs Pro notes, and Capacitor path for store builds',
-          'Habit Outlook pride lines, metric sheets, and safer mobile task layout'
+          'Privacy policy, Free vs Pro notes, and Capacitor path for store builds'
         ]
       },
       {
-        version: '0.8.0',
+        version: '0.8',
         date: '2026-07-09',
         title: 'Harbor identity & coastal UI',
         highlights: [
@@ -8122,7 +8104,7 @@
         ]
       },
       {
-        version: '0.7.0',
+        version: '0.7',
         date: '2026-07-08',
         title: 'Daily rhythm foundations',
         highlights: [
@@ -10723,6 +10705,7 @@
       closeAppMenu();
       document.getElementById('release-notes-modal')?.remove();
       const entries = Array.isArray(HARBOR_CHANGELOG) ? HARBOR_CHANGELOG : [];
+      const todayIso = typeof todayStr === 'function' ? todayStr() : new Date().toISOString().slice(0, 10);
       const modal = document.createElement('div');
       modal.id = 'release-notes-modal';
       modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[62]';
@@ -10738,19 +10721,23 @@
             Harbor <span class="tabular-nums font-semibold text-harbor-text">${getHarborVersionShort()}</span>
             <span class="opacity-70">· build ${HARBOR_BUILD_NUMBER}</span>
             ${HARBOR_CHANNEL && HARBOR_CHANNEL !== 'stable' ? ` · ${HARBOR_CHANNEL}` : ''}
+            <span class="block mt-1 opacity-80">Notes are grouped by day on the ${getHarborVersionShort()} train until 1.0.</span>
           </div>
           <div class="space-y-0">
-            ${entries.length ? entries.map((entry, idx) => `
+            ${entries.length ? entries.map((entry, idx) => {
+              const dayTag = entry.date === todayIso ? ' · today' : (idx === 0 ? ' · latest' : '');
+              return `
               <article class="release-notes-entry"${idx === 0 ? ' data-current="true"' : ''}>
                 <div class="release-notes-head">
-                  <span class="release-notes-ver">${escapeBriefHtml(entry.version || '')}${idx === 0 ? ' · current' : ''}</span>
-                  <span class="release-notes-date">${escapeBriefHtml(formatReleaseNotesDate(entry.date))}</span>
+                  <span class="release-notes-ver">${escapeBriefHtml(formatReleaseNotesDate(entry.date) || entry.version || '')}${dayTag}</span>
+                  <span class="release-notes-date">Harbor ${escapeBriefHtml(entry.version || HARBOR_VERSION)}</span>
                 </div>
                 ${entry.title ? `<div class="release-notes-title">${escapeBriefHtml(entry.title)}</div>` : ''}
                 <ul class="release-notes-list">
                   ${(entry.highlights || []).map(h => `<li>${escapeBriefHtml(h)}</li>`).join('')}
                 </ul>
-              </article>`).join('') : `
+              </article>`;
+            }).join('') : `
               <div class="text-sm text-harbor-muted text-center py-6">No release notes yet.</div>`}
           </div>
           <button type="button" onclick="this.closest('.fixed').remove()"
@@ -16071,39 +16058,17 @@
       return tiers.filter(t => t.id !== 'student' && !/^student$/i.test(t.label || ''));
     }
 
-    function applyStudentPricingToTrackedSubscriptions() {
-      let changed = 0;
-      (state.subscriptions || []).forEach(sub => {
-        if (!sub.presetId || !sub.tierId) return;
-        const preset = getSubscriptionPresetById(sub.presetId);
-        const tier = getSubscriptionPresetTier(preset, sub.tierId);
-        if (!tier || !tierHasStudentPricing(tier)) return;
-        const next = getTierListAmount(tier);
-        if (Number(sub.amount) !== next) {
-          sub.amount = next;
-          changed += 1;
-        }
-      });
-      return changed;
-    }
-
     function toggleStudentPricing(enabled) {
       if (!state.settings) state.settings = {};
       state.settings.studentPricing = !!enabled;
-      const changed = applyStudentPricingToTrackedSubscriptions();
       saveState();
       syncStudentPricingToggleUi();
+      // Student rates apply only when browsing / adding from popular services — never rewrite active list amounts
+      if (subsBrowseOpen) renderSubscriptionPresets();
       renderSubscriptions();
-      updateSmartBanner();
-      if (enabled) {
-        showToast(changed
-          ? `Student pricing on · updated ${changed} subscription${changed === 1 ? '' : 's'}`
-          : 'Student pricing on · applicable plans show student rates');
-      } else {
-        showToast(changed
-          ? `Student pricing off · restored ${changed} list price${changed === 1 ? '' : 's'}`
-          : 'Student pricing off');
-      }
+      showToast(enabled
+        ? 'Student pricing on · browse popular services to see student rates'
+        : 'Student pricing off · browse shows list prices again');
     }
 
     function syncStudentPricingToggleUi() {
@@ -17053,7 +17018,7 @@
           totalEl.innerHTML = `
             <div class="bg-gradient-to-br from-harbor-raised to-harbor-surface border border-harbor-border rounded-3xl px-4 py-3 flex items-center justify-between">
               <div>
-                <div class="feed-section-label text-harbor-muted mb-0.5">Monthly spend${isStudentPricingEnabled() ? ' · student' : ''}</div>
+                <div class="feed-section-label text-harbor-muted mb-0.5">Monthly spend</div>
                 <div class="font-display text-xl text-harbor-text">${formatSubscriptionAmount(monthly)}<span class="text-sm text-harbor-muted font-normal">/mo</span></div>
               </div>
               <div class="text-right">
@@ -17103,16 +17068,12 @@
         const active = sub.active !== false;
         const preset = resolveSubscriptionPreset(sub);
         const cycleLabel = formatSubscriptionCycleLabel(sub.cycle || 'monthly');
-        const tier = sub.tierId ? getSubscriptionPresetTier(preset, sub.tierId) : null;
-        const studentBadge = isStudentPricingEnabled() && tierHasStudentPricing(tier)
-          ? '<span class="sub-tier-student-badge">Student</span>'
-          : '';
         const card = document.createElement('div');
         card.className = `sub-tracked-card harbor-card bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 ${active ? '' : 'opacity-55'}`;
         card.innerHTML = `
           ${subscriptionBrandLogoHtml(preset || sub, 'md')}
           <div class="flex-1 min-w-0">
-            <div class="font-medium truncate text-[0.9rem]">${escapeSubscriptionHtml(sub.name)}${studentBadge}</div>
+            <div class="font-medium truncate text-[0.9rem]">${escapeSubscriptionHtml(sub.name)}</div>
             <div class="text-[11px] text-harbor-muted truncate">${sub.tierLabel ? `${escapeSubscriptionHtml(sub.tierLabel)} · ` : ''}${cycleLabel} · renews ${ordinalDay(sub.renewalDay || 1)}</div>
           </div>
           <div class="text-right flex-shrink-0">
