@@ -7690,7 +7690,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v177';
+    const HARBOR_BUILD = 'v178';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -25927,7 +25927,7 @@
           <div class="flex items-center justify-between mb-3">
             <div>
               <div class="font-semibold text-lg">Calendar URL</div>
-              <div class="text-[11px] text-harbor-muted mt-0.5">Google secret ICS · network helper on by default</div>
+              <div class="text-[11px] text-harbor-muted mt-0.5">Secret ICS · direct fetch · helper off unless enabled</div>
             </div>
             <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
@@ -25940,7 +25940,7 @@
             <button type="button" id="schedule-ics-add" class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">Add & sync</button>
             <button type="button" id="schedule-ics-refresh" class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-medium">Refresh all</button>
           </div>
-          <p class="text-[10px] text-harbor-muted mb-2 leading-relaxed">Feed URLs stay on this device and are masked in the list. Google blocks direct browser downloads, so Harbor may use a third-party network helper (see Menu → Privacy). You can turn that off in Settings.</p>
+          <p class="text-[10px] text-harbor-muted mb-2 leading-relaxed">Feed URLs stay on this device and are masked in the list. Harbor fetches the calendar host <strong class="text-harbor-text">directly</strong> only. Google often blocks that in browsers — use <strong class="text-harbor-text">Import file</strong>, or turn on <strong class="text-harbor-text">Allow network helper</strong> in Settings (third party may see the URL).</p>
           <button type="button" onclick="this.closest('.fixed').remove(); showScheduleImportModal()"
             class="w-full py-2.5 rounded-2xl text-xs text-harbor-primary-light font-medium">Or import an .ics file instead</button>
         </div>
@@ -26353,8 +26353,10 @@
 
         setTimeout(fetchRealWeather, 600);
         
-        window.HARBOR = { state, renderTasks, renderTodayFeed, completeHabit, setEnergy, simulateContextChange, addGroceryItem, markBillPaid, factoryReset: factoryResetApp, challenges: () => state.challenges };
-        console.log('%c[Harbor] Prototype ready. Build your harbor.', 'color:#2F9B8C');
+        window.HARBOR = { state, renderTasks, renderTodayFeed, completeHabit, setEnergy, simulateContextChange, addGroceryItem, markBillPaid, factoryReset: factoryResetApp };
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+          console.log('%c[Harbor] Ready · ' + (typeof HARBOR_BUILD !== 'undefined' ? HARBOR_BUILD : ''), 'color:#2F9B8C');
+        }
     }
 
     function runSplashSequence(onComplete) {
