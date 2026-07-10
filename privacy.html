@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index, follow">
+  <title>Privacy Policy — Harbor</title>
+  <meta name="description" content="Privacy Policy for Harbor life management app. Local-first; no ads; optional weather and calendar features.">
+  <link rel="icon" type="image/png" sizes="32x32" href="harbor-favicon-32.png">
+  <style>
+    :root {
+      --bg: #D6E8E2;
+      --surface: #F4F9F7;
+      --text: #122E2C;
+      --muted: #5A736E;
+      --primary: #2F9B8C;
+      --border: rgba(18, 46, 44, 0.12);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0A1614;
+        --surface: #12201D;
+        --text: #E8F2EE;
+        --muted: #8FA8A3;
+        --primary: #56C4B4;
+        --border: rgba(154, 214, 202, 0.12);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      padding: 1.5rem 1.1rem 3rem;
+    }
+    main {
+      max-width: 40rem;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 1.5rem 1.35rem 2rem;
+      box-shadow: 0 8px 28px rgba(18, 46, 44, 0.06);
+    }
+    h1 { font-size: 1.45rem; letter-spacing: -0.02em; margin: 0 0 0.35rem; }
+    h2 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; color: var(--primary); }
+    p, li { font-size: 0.92rem; color: var(--text); }
+    .muted { color: var(--muted); font-size: 0.82rem; }
+    a { color: var(--primary); }
+    ul { padding-left: 1.2rem; }
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--primary);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.2rem 0.55rem;
+      margin-bottom: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="badge">Harbor · Local-first</div>
+    <h1>Privacy Policy</h1>
+    <p class="muted">Last updated: July 10, 2026 · Full detail also in the repository <code>docs/PRIVACY.md</code>.</p>
+
+    <p><strong>Harbor</strong> is a calm life-management app. In version 1 it is <strong>local-first</strong>: your plans live on your device. No Harbor account is required. No ads. We do not sell personal data.</p>
+
+    <h2>Data on your device</h2>
+    <p>Tasks, streaks, bills, groceries, subscriptions, household labels, calendar events you create or import, calendar feed URLs you paste, themes, and optional profile fields are stored in <strong>on-device storage</strong> (for example browser local storage or app storage). Clearing site data, uninstalling, or losing a device without a backup can erase this data.</p>
+
+    <h2>What may leave your device</h2>
+    <ul>
+      <li><strong>Weather:</strong> if you allow location, approximate location may be sent to a forecast provider (such as Open-Meteo) to show a forecast.</li>
+      <li><strong>Calendar URL:</strong> Harbor fetches feeds <strong>directly</strong> from the calendar host by default. A <strong>network helper</strong> (third-party proxy) is <strong>off unless you enable it</strong> in Settings; if enabled, that helper may see the full feed URL (including secret tokens). Prefer <strong>Import file (.ics)</strong> for maximum privacy.</li>
+      <li><strong>Feedback:</strong> messages you send may go through a feedback delivery service. Do not include secrets.</li>
+      <li><strong>Hosting / updates:</strong> loading the web app or store updates may create ordinary server or CDN logs under those providers’ policies.</li>
+    </ul>
+
+    <h2>Sharing with others</h2>
+    <p>Profile or data export creates a file on your device. You choose how to share it. v1 does not provide live cloud couple-sync.</p>
+
+    <h2>Children</h2>
+    <p>Harbor is not directed at children under 13.</p>
+
+    <h2>Changes</h2>
+    <p>If we add accounts, cloud sync, or change calendar networking defaults, we will update this policy before those features ship.</p>
+
+    <h2>Contact</h2>
+    <p>Use in-app Feedback, or the support contact on the App Store / Play listing when published.</p>
+
+    <p class="muted" style="margin-top:1.75rem"><a href="./index.html">← Back to Harbor</a></p>
+  </main>
+</body>
+</html>

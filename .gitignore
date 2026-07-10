@@ -1,4 +1,12 @@
 node_modules/
-rhythm-webapp-deploy.zip
+native-www/
+ios/
+android/
+.idea/
+*.log
 .DS_Store
 Thumbs.db
+dist/
+.cap-build/
+harbor-webapp-deploy.zip
+rhythm-webapp-deploy.zip

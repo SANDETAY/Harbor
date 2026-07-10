@@ -1,0 +1,15 @@
+{
+  "appId": "com.sandetay.harbor",
+  "appName": "Harbor",
+  "webDir": "native-www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "backgroundColor": "#D6E8E2",
+      "showSpinner": false
+    }
+  }
+}

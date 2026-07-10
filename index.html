@@ -7690,7 +7690,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v176';
+    const HARBOR_BUILD = 'v177';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -7758,9 +7758,9 @@
         tipIndex: 0,
         weatherUnit: 'fahrenheit',
         cheatDayFundEnabled: true,
-        // Browser can't read most Google/Outlook ICS feeds directly (CORS). Helper is ON by default;
-        // user can turn it off in Settings for max privacy (file import still works).
-        calendarAllowCorsHelper: true,
+        // v1 locked: network helper OFF by default (no surprise third-party proxy).
+        // User may opt in under Settings. File import never needs a helper.
+        calendarAllowCorsHelper: false,
         mealPresetsVersion: MEAL_PRESETS_VERSION,
         // Household members for color-coded schedule events (spouse, kids, etc.)
         householdProfiles: [
@@ -8455,7 +8455,7 @@
           calendarSources: [],
           routineLevel: null,
           cheatDayFundEnabled: true,
-          calendarAllowCorsHelper: true,
+          calendarAllowCorsHelper: false,
           mealPresetsVersion: MEAL_PRESETS_VERSION,
           householdProfiles: [
             { id: 'me', name: 'Me', role: 'me', color: '#2F9B8C' }
@@ -8672,13 +8672,14 @@
       if (!Array.isArray(state.settings.calendarFeeds)) {
         state.settings.calendarFeeds = [];
       }
-      // v104: Google/Outlook ICS almost always needs a CORS helper in the browser.
-      // Migrate once so existing installs stop failing with "Direct fetch blocked".
-      if (state.settings.calendarCorsHelperDefaultV2 !== true) {
-        state.settings.calendarAllowCorsHelper = true;
-        state.settings.calendarCorsHelperDefaultV2 = true;
+      // v177 calendar lock: helper OFF unless the user opts in (no surprise proxy).
+      // One-time migration for upgrades; new installs already default false.
+      if (state.settings.calendarCorsHelperV1Lock !== true) {
+        state.settings.calendarAllowCorsHelper = false;
+        state.settings.calendarCorsHelperV1Lock = true;
+        state.settings.calendarCorsHelperDefaultV2 = true; // mark prior migration consumed
       } else if (state.settings.calendarAllowCorsHelper !== true && state.settings.calendarAllowCorsHelper !== false) {
-        state.settings.calendarAllowCorsHelper = true;
+        state.settings.calendarAllowCorsHelper = false;
       }
       persistCalendarEventIds();
       if (!state.healthSyncs) state.healthSyncs = {};
@@ -10167,7 +10168,7 @@
             <div class="privacy-block">
               <h4><i class="fa-solid fa-cloud text-harbor-primary-light mr-1.5"></i>What may leave your device</h4>
               <p><strong class="text-harbor-text">Weather:</strong> if you enable real location/weather, approximate location is sent to Open-Meteo (or similar) to fetch a forecast. City name in your profile is optional and only used on-device unless you use weather features that need it.</p>
-              <p><strong class="text-harbor-text">Calendar feeds:</strong> if you add an iCal (ICS) URL, Harbor first tries to download it directly from the calendar host (Google, Outlook, etc.). Most hosts block that in the browser for security (CORS), so <strong>by default</strong> Harbor may retry through a <strong>third-party network helper</strong> (CORS proxy) so your schedule can load. That helper can see the full feed URL — including secret Google calendar tokens — only for the fetch. Feed URLs and events are still stored only on this device afterward. Turn off <strong>Allow network helper</strong> in Settings if you prefer never to use a proxy, then use <strong>Import file</strong> (.ics) instead. You can remove a feed anytime.</p>
+              <p><strong class="text-harbor-text">Calendar feeds:</strong> if you add an iCal (ICS) URL, Harbor fetches it <strong>directly</strong> from the calendar host (Google, Outlook, etc.). A <strong>third-party network helper</strong> is <strong>off by default</strong>. If you turn <strong>Allow network helper</strong> on in Settings, a helper may see the full feed URL (including secret tokens) only for that fetch. Prefer <strong>Import file</strong> (.ics) for maximum privacy — it never uses a helper. Feed URLs and events stay on this device afterward. You can remove a feed anytime.</p>
               <p><strong class="text-harbor-text">Feedback:</strong> if you send feedback, the message and optional contact details go to the feedback provider you submit to (configured by the app). Do not include secrets you don’t want shared.</p>
             </div>
             <div class="privacy-block">
@@ -24442,7 +24443,7 @@
       const currentTheme = getAppTheme();
       const darkModeOn = currentTheme === 'dark';
       const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
-      const corsHelperOn = state.settings.calendarAllowCorsHelper !== false;
+      const corsHelperOn = state.settings.calendarAllowCorsHelper === true;
       
       modal.innerHTML = `
         <div onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="absolute inset-0"></div>
@@ -24520,7 +24521,8 @@
               <div class="settings-card">
                 <div class="settings-card-block">
                   <p class="settings-help-text mb-2">
-                    Paste a <strong>secret iCal URL</strong> (ends with <strong>basic.ics</strong>). Harbor tries the calendar host first; if the browser blocks it (common with Google), the network helper keeps events loading. <strong>Import File</strong> never needs a helper.
+                    <strong>Recommended:</strong> <strong>Import File</strong> (.ics) — stays private on this device.
+                    Optional: paste a <strong>secret iCal URL</strong> (ends with <strong>basic.ics</strong>). Harbor fetches the host <strong>directly</strong> only — network helper is <strong>off</strong> unless you enable it below (Google often blocks direct browser access).
                   </p>
                   <div id="settings-calendar-feeds" class="space-y-2 mb-2"></div>
                   <div class="flex gap-2 mb-2">
@@ -24544,7 +24546,7 @@
                   <div class="settings-row-copy">
                     <div class="settings-row-title">Allow Network Helper</div>
                     <div class="settings-row-desc">
-                      <strong class="text-harbor-text">On by default</strong> so Google and Outlook secret ICS links work. When needed, a <strong class="text-harbor-text">third-party</strong> helper may see your feed URL. Turn off and use Import File for maximum privacy.
+                      <strong class="text-harbor-text">Off by default</strong> (v1 privacy lock). When on, a <strong class="text-harbor-text">third-party</strong> helper may see your feed URL so blocked ICS links can load. Prefer <strong>Import File</strong> if you want zero middleman.
                     </div>
                   </div>
                   <button type="button" id="calendar-cors-helper-toggle" role="switch" aria-checked="${corsHelperOn ? 'true' : 'false'}"
@@ -25588,8 +25590,8 @@
     }
 
     function isCalendarCorsHelperAllowed() {
-      // Default ON — browsers cannot read most Google/Outlook ICS feeds without a CORS helper
-      return state.settings.calendarAllowCorsHelper !== false;
+      // v1 lock: opt-in only (explicit true). No surprise third-party proxy.
+      return state.settings.calendarAllowCorsHelper === true;
     }
 
     function looksLikeIcsCalendarText(text) {
