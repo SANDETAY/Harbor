@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Harbor">
   <meta name="format-detection" content="telephone=no">
-  <meta name="theme-color" content="#E8F2EE" id="meta-theme-color">
+  <meta name="theme-color" content="#D6E8E2" id="meta-theme-color">
   <script>
     // Apply saved theme before paint to avoid flash
-    // harbor = light mint (default, splash-inspired) · light = same mint · dark = noir
+    // harbor = soft mint day (default) · light = same mint · dark = noir
     (function () {
       try {
         var raw = localStorage.getItem('harbor_state_v1');
@@ -32,7 +32,7 @@
         document.documentElement.style.colorScheme = t === 'dark' ? 'dark' : 'light';
         var meta = document.querySelector('meta[name="theme-color"]');
         if (meta) {
-          meta.setAttribute('content', t === 'dark' ? '#070707' : '#E8F2EE');
+          meta.setAttribute('content', t === 'dark' ? '#070707' : '#D6E8E2');
         }
       } catch (e) { /* ignore */ }
     })();
@@ -83,26 +83,26 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Outfit:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
 
     /* ═══════════════════════════════════════════════════════════
-       Harbor Visual System v2 — light coastal (splash mint)
-       Default app = peaceful splash bottom: soft mint, white cards,
-       deep teal actions. Dark is optional noir.
+       Harbor Visual System v2.1 — light coastal (splash mint)
+       Soft seafoam day: mint wash + tinted cards (not pure white).
+       Deep teal actions. Dark is optional noir.
        ═══════════════════════════════════════════════════════════ */
     :root, html[data-theme="harbor"], html[data-theme="light"] {
-      /* Splash-inspired light surfaces */
-      --harbor-bg: 232 242 238;           /* #E8F2EE soft mint wash */
-      --harbor-surface: 255 255 255;      /* pure white cards */
-      --harbor-raised: 244 249 247;       /* #F4F9F7 soft raised */
-      --harbor-border: 206 222 216;       /* #CEDDD8 airy edge */
+      /* Splash-inspired mint surfaces — never sterile white */
+      --harbor-bg: 214 232 226;           /* #D6E8E2 deeper mint wash */
+      --harbor-surface: 236 245 241;      /* #ECF5F1 soft mint card */
+      --harbor-raised: 224 237 232;       /* #E0EDE8 lifted row */
+      --harbor-border: 186 210 202;       /* #BAD2CA green-gray edge */
       --harbor-primary: 47 155 140;       /* #2F9B8C brand teal */
       --harbor-primary-light: 28 112 102; /* #1C7066 deep teal text */
       --harbor-accent: 176 138 72;        /* warm stone (rare) */
       --harbor-text: 18 40 37;            /* #122825 deep ink */
-      --harbor-muted: 96 118 113;         /* #607671 */
+      --harbor-muted: 86 110 104;         /* #566E68 */
       --harbor-low: 196 110 86;
       --harbor-med: 184 148 48;
       --harbor-high: 47 155 140;
-      --harbor-dawn: 220 236 232;
-      --harbor-mint: 216 228 222;         /* #D8E4DE splash bottom */
+      --harbor-dawn: 200 224 216;         /* #C8E0D8 */
+      --harbor-mint: 200 220 212;         /* #C8DCD4 splash-ish mid */
 
       /* Motion */
       --harbor-ease-out: cubic-bezier(0.32, 0.72, 0, 1);
@@ -111,10 +111,10 @@
       --harbor-duration: 0.28s;
       --harbor-duration-slow: 0.4s;
 
-      /* Soft Apple-like elevation */
-      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 2px 8px rgba(18, 48, 44, 0.05), 0 8px 24px rgba(18, 48, 44, 0.04);
-      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 1) inset, 0 12px 40px rgba(18, 48, 44, 0.1);
-      --harbor-glow-primary: 0 0 0 1px rgba(47, 155, 140, 0.16);
+      /* Soft elevation — mint, not paper */
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.55) inset, 0 2px 10px rgba(18, 48, 44, 0.06), 0 8px 22px rgba(18, 48, 44, 0.045);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.65) inset, 0 12px 36px rgba(18, 48, 44, 0.1);
+      --harbor-glow-primary: 0 0 0 1px rgba(47, 155, 140, 0.18);
 
       --harbor-radius-sm: 0.7rem;
       --harbor-radius-md: 1rem;
@@ -264,7 +264,7 @@
     html[data-theme="harbor"] .today-voice-btn,
     html[data-theme="light"] .chip-voice-btn,
     html[data-theme="light"] .today-voice-btn {
-      background: #FFFFFF;
+      background: rgb(var(--harbor-surface));
       border-color: rgb(var(--harbor-border));
       color: rgb(var(--harbor-text));
       box-shadow: var(--harbor-shadow-sm);
@@ -318,9 +318,9 @@
 
     html[data-theme="harbor"] .modal-close-chip,
     html[data-theme="light"] .modal-close-chip {
-      color: rgba(18, 40, 37, 0.65);
-      background: rgba(255, 255, 255, 0.9);
-      border-color: rgba(47, 155, 140, 0.18);
+      color: rgba(18, 40, 37, 0.7);
+      background: rgb(var(--harbor-raised));
+      border-color: rgba(47, 155, 140, 0.2);
     }
 
     /* ── Settings switches (explicit CSS so knobs always render) ── */
@@ -406,8 +406,8 @@
       gap: 0.5rem;
       padding: 0.75rem 0.8rem;
       border-radius: 1.05rem;
-      border: 1px solid rgba(47, 155, 140, 0.12);
-      background: #FFFFFF;
+      border: 1px solid rgba(47, 155, 140, 0.16);
+      background: rgb(var(--harbor-raised) / 0.75);
       box-shadow: var(--harbor-shadow-sm);
       min-width: 0;
       transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
@@ -498,8 +498,8 @@
     }
 
     html {
-      /* Soft mint wash — matches splash landing / light coastal default */
-      background-color: #E8F2EE;
+      /* Deeper mint wash — coastal, not blank paper */
+      background-color: #D6E8E2;
     }
     html[data-theme="dark"] {
       background-color: #060808;
@@ -510,14 +510,14 @@
       font-size: var(--harbor-text-base);
       line-height: 1.45;
       letter-spacing: -0.011em;
-      /* Light coastal — matches splash mint landing */
-      background-color: #E8F2EE !important;
+      /* Soft seafoam day — stays in mint family top-to-bottom */
+      background-color: #D6E8E2 !important;
       background-image: linear-gradient(
-        180deg,
-        #D8E4DE 0%,
-        #E8F2EE 28%,
-        #F4F9F7 72%,
-        #FFFFFF 100%
+        175deg,
+        #C5DCD4 0%,
+        #D6E8E2 26%,
+        #E0EDE8 62%,
+        #E8F2EE 100%
       ) !important;
       background-attachment: fixed;
       color: rgb(var(--harbor-text));
@@ -642,10 +642,11 @@
 
     #task-list .habit-card,
     #task-list .swipe-row-content.habit-card {
-      border: 1px solid rgba(47, 155, 140, 0.1) !important;
-      background: #FFFFFF !important;
+      border: 1px solid rgba(47, 155, 140, 0.14) !important;
+      background:
+        linear-gradient(165deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 100%) !important;
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 1) inset,
+        0 1px 0 rgba(255, 255, 255, 0.55) inset,
         0 4px 16px rgba(18, 48, 44, 0.06),
         0 1px 2px rgba(18, 48, 44, 0.04) !important;
     }
@@ -939,9 +940,11 @@
       padding: 0.28rem;
       margin-bottom: 0.85rem;
       border-radius: var(--harbor-radius-md);
-      border: 1px solid rgba(47, 155, 140, 0.12);
-      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(47, 155, 140, 0.16);
+      background: rgba(236, 245, 241, 0.82);
       box-shadow: var(--harbor-shadow-sm);
+      backdrop-filter: blur(12px) saturate(1.08);
+      -webkit-backdrop-filter: blur(12px) saturate(1.08);
     }
 
     html[data-theme="dark"] .life-subnav {
@@ -1023,8 +1026,9 @@
       padding: 0.8rem 0.9rem;
       margin-bottom: 0.55rem;
       border-radius: var(--harbor-radius-xl);
-      border: 1px solid rgba(47, 155, 140, 0.12);
-      background: #FFFFFF;
+      border: 1px solid rgba(47, 155, 140, 0.16);
+      background:
+        linear-gradient(155deg, rgba(255, 255, 255, 0.4) 0%, rgb(var(--harbor-surface)) 55%);
       color: rgb(var(--harbor-text));
       cursor: pointer;
       box-shadow: var(--harbor-shadow-sm);
@@ -1287,7 +1291,7 @@
       font-weight: 700;
       border: 1px solid rgb(var(--harbor-border));
       color: rgb(var(--harbor-muted));
-      background: rgba(255, 255, 255, 0.72);
+      background: rgb(var(--harbor-raised) / 0.9);
     }
 
     .streak-off-chip.is-live {
@@ -1354,14 +1358,14 @@
       flex-shrink: 0;
       position: relative;
       z-index: 50;
-      border-bottom: 1px solid rgba(47, 155, 140, 0.1);
+      border-bottom: 1px solid rgba(47, 155, 140, 0.14);
       background: linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.86) 0%,
-        rgba(232, 242, 238, 0.72) 100%
+        rgba(214, 232, 226, 0.92) 0%,
+        rgba(224, 237, 232, 0.78) 100%
       );
-      backdrop-filter: blur(22px) saturate(1.15);
-      -webkit-backdrop-filter: blur(22px) saturate(1.15);
+      backdrop-filter: blur(22px) saturate(1.2);
+      -webkit-backdrop-filter: blur(22px) saturate(1.2);
     }
 
     html[data-theme="dark"] .site-header {
@@ -1544,8 +1548,9 @@
       min-width: 0;
       max-width: none;
       box-sizing: border-box;
-      background: #FFFFFF;
-      border: 1px solid rgba(47, 155, 140, 0.1);
+      background:
+        linear-gradient(165deg, rgba(255, 255, 255, 0.35) 0%, rgb(var(--harbor-surface)) 100%);
+      border: 1px solid rgba(47, 155, 140, 0.14);
       border-radius: var(--harbor-radius-xl);
       padding: 0.8rem 0.9rem 0.75rem;
       box-shadow: var(--harbor-shadow-sm);
@@ -1624,8 +1629,8 @@
     }
 
     .energy-btn.is-idle {
-      background: rgba(255, 255, 255, 0.78);
-      border: 1px solid rgba(47, 155, 140, 0.12);
+      background: rgba(236, 245, 241, 0.88);
+      border: 1px solid rgba(47, 155, 140, 0.16);
       color: rgb(var(--harbor-muted));
       box-shadow: var(--harbor-shadow-sm);
       backdrop-filter: blur(10px);
@@ -1691,10 +1696,10 @@
     }
 
     .status-bar {
-      background: rgba(255, 255, 255, 0.88);
-      border-top: 1px solid rgba(47, 155, 140, 0.1);
-      backdrop-filter: blur(16px) saturate(1.1);
-      -webkit-backdrop-filter: blur(16px) saturate(1.1);
+      background: rgba(224, 237, 232, 0.92);
+      border-top: 1px solid rgba(47, 155, 140, 0.14);
+      backdrop-filter: blur(16px) saturate(1.15);
+      -webkit-backdrop-filter: blur(16px) saturate(1.15);
       padding-bottom: calc(0.5rem + var(--safe-bottom));
     }
     html[data-theme="dark"] .status-bar {
@@ -2107,11 +2112,12 @@
     }
 
     .onboarding-option {
-      border: 1px solid rgba(47, 155, 140, 0.12);
+      border: 1px solid rgba(47, 155, 140, 0.16);
       border-radius: 1.25rem;
       padding: 1rem;
       cursor: pointer;
-      background: #FFFFFF;
+      background:
+        linear-gradient(165deg, rgba(255, 255, 255, 0.4) 0%, rgb(var(--harbor-surface)) 100%);
       box-shadow: var(--harbor-shadow-sm);
       backdrop-filter: blur(8px);
     }
@@ -2133,10 +2139,11 @@
     }
 
     .onboarding-feature {
-      border: 1px solid rgba(47, 155, 140, 0.12);
+      border: 1px solid rgba(47, 155, 140, 0.16);
       border-radius: 1.1rem;
       padding: 0.85rem 0.95rem;
-      background: #FFFFFF;
+      background:
+        linear-gradient(165deg, rgba(255, 255, 255, 0.35) 0%, rgb(var(--harbor-surface)) 100%);
       box-shadow: var(--harbor-shadow-sm);
       display: flex;
       align-items: flex-start;
@@ -2528,9 +2535,10 @@
     }
 
     .suggestion-card {
-      background: #FFFFFF !important;
+      background:
+        linear-gradient(155deg, rgba(255, 255, 255, 0.4) 0%, rgb(var(--harbor-surface)) 100%) !important;
       box-shadow: var(--harbor-shadow-sm) !important;
-      border: 1px solid rgba(47, 155, 140, 0.12) !important;
+      border: 1px solid rgba(47, 155, 140, 0.14) !important;
       border-left: 3px solid #2F9B8C !important;
       border-radius: var(--harbor-radius-xl) !important;
     }
@@ -2760,9 +2768,10 @@
     }
 
     .settings-card {
-      border: 1px solid rgba(47, 155, 140, 0.1);
+      border: 1px solid rgba(47, 155, 140, 0.14);
       border-radius: var(--harbor-radius-xl);
-      background: #FFFFFF;
+      background:
+        linear-gradient(165deg, rgba(255, 255, 255, 0.35) 0%, rgb(var(--harbor-surface)) 100%);
       box-shadow: var(--harbor-shadow-sm);
       overflow: hidden;
     }
@@ -3555,10 +3564,10 @@
       overflow-x: hidden;
       overflow-y: auto;
       border-radius: var(--harbor-radius-xl) var(--harbor-radius-xl) 0 0;
-      border-top: 1px solid rgba(47, 155, 140, 0.12);
+      border-top: 1px solid rgba(47, 155, 140, 0.14);
       background:
-        radial-gradient(ellipse 90% 50% at 50% -10%, rgba(47, 155, 140, 0.08) 0%, transparent 55%),
-        #FFFFFF;
+        radial-gradient(ellipse 90% 50% at 50% -10%, rgba(47, 155, 140, 0.1) 0%, transparent 55%),
+        rgb(var(--harbor-surface));
       box-shadow: var(--harbor-shadow-md), 0 -8px 32px rgba(18, 48, 44, 0.1);
       -webkit-overflow-scrolling: touch;
       isolation: isolate;
@@ -4682,8 +4691,9 @@
       margin-top: 0.65rem;
       padding: 1.15rem 1.1rem 1.05rem;
       border-radius: var(--harbor-radius-xl);
-      background: #FFFFFF;
-      border: 1px solid rgba(47, 155, 140, 0.1);
+      background:
+        linear-gradient(165deg, rgba(255, 255, 255, 0.4) 0%, rgb(var(--harbor-surface)) 55%, rgb(var(--harbor-raised)) 100%);
+      border: 1px solid rgba(47, 155, 140, 0.14);
       box-shadow: var(--harbor-shadow-sm);
       overflow: hidden;
     }
@@ -4783,8 +4793,8 @@
       100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
     }
     .cheat-day-today-banner {
-      background: linear-gradient(155deg, rgba(47, 155, 140, 0.1), rgba(255, 255, 255, 0.94));
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      background: linear-gradient(155deg, rgba(47, 155, 140, 0.14), rgb(var(--harbor-surface)));
+      border: 1px solid rgba(47, 155, 140, 0.18);
     }
     html[data-theme="dark"] .cheat-day-today-banner {
       background: linear-gradient(155deg, rgba(255, 255, 255, 0.06), rgba(18, 18, 18, 0.9));
@@ -6254,7 +6264,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v140';
+    const HARBOR_BUILD = 'v141';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -18977,7 +18987,7 @@
 
     function themeMetaColor(theme) {
       if (theme === 'dark') return '#070707';
-      return '#E8F2EE'; // harbor + light share splash mint
+      return '#D6E8E2'; // harbor + light share soft mint day
     }
 
     function applyAppTheme(theme) {
@@ -21547,7 +21557,7 @@
                   </div>
                   <div class="theme-teal-hint mt-2">
                     <span class="theme-teal-dot" aria-hidden="true"></span>
-                    <span>Default is <strong class="text-harbor-text">Harbor mint</strong> — soft seafoam, white cards, teal accents.</span>
+                    <span>Default is <strong class="text-harbor-text">Harbor mint</strong> — soft seafoam wash, mint cards, teal accents.</span>
                   </div>
                 </div>
               </div>
@@ -23357,7 +23367,7 @@
         if (metaTheme) {
           metaTheme.setAttribute(
             'content',
-            typeof themeMetaColor === 'function' ? themeMetaColor(theme) : (theme === 'dark' ? '#070707' : '#E8F2EE')
+            typeof themeMetaColor === 'function' ? themeMetaColor(theme) : (theme === 'dark' ? '#070707' : '#D6E8E2')
           );
         }
       } catch (_) { /* ignore */ }
@@ -23514,7 +23524,7 @@
           if (metaTheme) {
             metaTheme.setAttribute(
               'content',
-              theme === 'dark' ? '#070707' : '#E8F2EE'
+              theme === 'dark' ? '#070707' : '#D6E8E2'
             );
           }
         } catch (_) { /* ignore */ }
