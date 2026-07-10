@@ -1256,6 +1256,21 @@
       margin-bottom: 0;
     }
 
+    .library-column-header {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgb(var(--harbor-surface)) 88%, transparent 100%);
+    }
+    html[data-theme="dark"] .library-column-header {
+      background: linear-gradient(180deg, rgb(var(--harbor-surface)) 78%, transparent 100%);
+    }
+    .library-column-header .feed-section-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+    }
+    .library-column-header span[aria-hidden="true"] {
+      font-size: 1rem;
+      line-height: 1;
+    }
+
     .energy-btn {
       --energy-accent: rgb(var(--harbor-primary));
       min-height: 3.15rem;
@@ -2260,7 +2275,31 @@
     }
 
     .library-task-card {
-      transition: transform 0.15s ease, border-color 0.2s ease, background-color 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(155deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 72%);
+      border: 1px solid rgba(47, 155, 140, 0.14);
+      border-radius: 1rem;
+      padding: 0.7rem 0.8rem;
+      box-shadow: var(--harbor-shadow-sm);
+      transition: transform 0.15s ease, border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    html[data-theme="dark"] .library-task-card {
+      background: linear-gradient(160deg, rgba(32, 52, 48, 0.95) 0%, rgb(var(--harbor-surface)) 100%);
+      border-color: rgb(var(--harbor-border) / 0.9);
+    }
+    .library-task-card:hover {
+      border-color: rgba(47, 155, 140, 0.28);
+      box-shadow: var(--harbor-shadow-md);
+    }
+    .library-task-card.is-added {
+      border-color: rgba(47, 155, 140, 0.42);
+      background:
+        linear-gradient(155deg, rgba(47, 155, 140, 0.1) 0%, rgb(var(--harbor-surface)) 70%);
+    }
+    html[data-theme="dark"] .library-task-card.is-added {
+      background: linear-gradient(160deg, rgba(72, 178, 162, 0.12) 0%, rgb(var(--harbor-surface)) 100%);
     }
     .library-task-card.just-added {
       animation: libPop 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
@@ -2269,6 +2308,140 @@
       0% { transform: scale(1); border-color: rgb(var(--harbor-border)); }
       40% { transform: scale(1.02); border-color: rgb(var(--harbor-primary-light)); background-color: #3d9a8b22; }
       100% { transform: scale(1); }
+    }
+
+    .library-task-inner {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.7rem;
+    }
+    .library-task-icon {
+      width: 2.45rem;
+      height: 2.45rem;
+      flex-shrink: 0;
+      border-radius: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      line-height: 1;
+      border: 1px solid transparent;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+    html[data-theme="dark"] .library-task-icon {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    .library-task-icon.tone-mint { background: rgba(47, 155, 140, 0.14); border-color: rgba(47, 155, 140, 0.18); }
+    .library-task-icon.tone-sky { background: rgba(56, 189, 248, 0.14); border-color: rgba(56, 189, 248, 0.2); }
+    .library-task-icon.tone-amber { background: rgba(251, 191, 36, 0.16); border-color: rgba(251, 191, 36, 0.22); }
+    .library-task-icon.tone-rose { background: rgba(251, 113, 133, 0.14); border-color: rgba(251, 113, 133, 0.2); }
+    .library-task-icon.tone-violet { background: rgba(167, 139, 250, 0.15); border-color: rgba(167, 139, 250, 0.22); }
+    .library-task-icon.tone-emerald { background: rgba(52, 211, 153, 0.14); border-color: rgba(52, 211, 153, 0.2); }
+    .library-task-icon.tone-orange { background: rgba(251, 146, 60, 0.15); border-color: rgba(251, 146, 60, 0.22); }
+    .library-task-icon.tone-slate { background: rgba(148, 163, 184, 0.14); border-color: rgba(148, 163, 184, 0.2); }
+
+    .library-task-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .library-task-title {
+      font-size: 0.88rem;
+      font-weight: 650;
+      letter-spacing: -0.015em;
+      line-height: 1.25;
+      color: rgb(var(--harbor-text));
+    }
+    .library-task-note {
+      margin-top: 0.28rem;
+      font-size: 0.68rem;
+      line-height: 1.35;
+      color: rgb(var(--harbor-muted));
+    }
+    .library-task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.28rem;
+      margin-top: 0.4rem;
+    }
+    .library-meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.22rem;
+      font-size: 0.62rem;
+      font-weight: 650;
+      letter-spacing: 0.01em;
+      padding: 0.18rem 0.45rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .library-meta-chip i {
+      font-size: 0.55rem;
+      opacity: 0.85;
+    }
+    .library-meta-chip.chip-energy-low {
+      background: rgba(47, 155, 140, 0.12);
+      color: rgb(var(--harbor-primary-light));
+      border-color: rgba(47, 155, 140, 0.18);
+    }
+    .library-meta-chip.chip-energy-med {
+      background: rgba(245, 158, 11, 0.12);
+      color: #d97706;
+      border-color: rgba(245, 158, 11, 0.2);
+    }
+    html[data-theme="dark"] .library-meta-chip.chip-energy-med {
+      color: #fbbf24;
+    }
+    .library-meta-chip.chip-energy-high {
+      background: rgba(244, 63, 94, 0.12);
+      color: #e11d48;
+      border-color: rgba(244, 63, 94, 0.18);
+    }
+    html[data-theme="dark"] .library-meta-chip.chip-energy-high {
+      color: #fb7185;
+    }
+    .library-meta-chip.chip-time {
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      border-color: rgb(var(--harbor-border) / 0.85);
+    }
+    .library-meta-chip.chip-cadence {
+      background: rgba(47, 155, 140, 0.08);
+      color: rgb(var(--harbor-primary-light));
+      border-color: rgba(47, 155, 140, 0.14);
+    }
+    .library-meta-chip.chip-pro {
+      background: rgba(14, 165, 233, 0.12);
+      color: #0284c7;
+      border-color: rgba(14, 165, 233, 0.2);
+    }
+    html[data-theme="dark"] .library-meta-chip.chip-pro {
+      color: #7dd3fc;
+    }
+    .library-meta-chip.chip-metric {
+      background: rgba(99, 102, 241, 0.1);
+      color: #6366f1;
+      border-color: rgba(99, 102, 241, 0.18);
+    }
+    html[data-theme="dark"] .library-meta-chip.chip-metric {
+      color: #a5b4fc;
+    }
+    .library-task-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.3rem;
+      flex-shrink: 0;
+      padding-top: 0.05rem;
+    }
+    .library-task-actions .lib-add-btn,
+    .library-task-actions .lib-pro-btn,
+    .library-task-actions .lib-goto-pro-btn {
+      border-radius: 0.75rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
     }
 
     .habit-row {
@@ -6377,7 +6550,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v153';
+    const HARBOR_BUILD = 'v154';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -19189,6 +19362,123 @@
       return map[section] || '•';
     }
 
+    /** Soft visual for each default library task — emoji + tone for the icon tile */
+    const LIBRARY_TASK_VISUALS = {
+      'make-bed': { emoji: '🛏️', tone: 'sky' },
+      'drink-water': { emoji: '💧', tone: 'sky' },
+      'floss': { emoji: '😁', tone: 'mint' },
+      'vitamins': { emoji: '💊', tone: 'violet' },
+      'dryer-lint': { emoji: '🧺', tone: 'amber' },
+      'walk-5k': { emoji: '🚶', tone: 'emerald' },
+      'outdoor-time': { emoji: '🌤️', tone: 'amber' },
+      'mow-lawn': { emoji: '🌾', tone: 'emerald' },
+      'robot-vacuum': { emoji: '🤖', tone: 'slate' },
+      'call-family': { emoji: '📞', tone: 'violet' },
+      'bedsheets': { emoji: '🛌', tone: 'sky' },
+      'trash-recycle': { emoji: '♻️', tone: 'emerald' },
+      'meal-prep': { emoji: '🥗', tone: 'orange' },
+      'water-plants': { emoji: '🪴', tone: 'emerald' },
+      'bathroom-clean': { emoji: '🚿', tone: 'sky' },
+      'hvac-filter': { emoji: '💨', tone: 'sky' },
+      'dishwasher-filter': { emoji: '🍽️', tone: 'slate' },
+      'disposal-clean': { emoji: '🚰', tone: 'slate' },
+      'washer-gasket': { emoji: '🫧', tone: 'sky' },
+      'microwave-clean': { emoji: '📻', tone: 'slate' },
+      'unused-drains': { emoji: '🌊', tone: 'sky' },
+      'tire-pressure': { emoji: '🛞', tone: 'slate' },
+      'bills-review': { emoji: '💳', tone: 'violet' },
+      'pre-emergent': { emoji: '🌱', tone: 'emerald' },
+      'post-emergent': { emoji: '🪴', tone: 'emerald' },
+      'fertilize-spring': { emoji: '🌸', tone: 'rose' },
+      'fertilize-summer': { emoji: '☀️', tone: 'amber' },
+      'fertilize-fall': { emoji: '🍂', tone: 'orange' },
+      'range-hood-filter': { emoji: '🍳', tone: 'orange' },
+      'washer-hoses': { emoji: '🔗', tone: 'slate' },
+      'mower-blade': { emoji: '⚙️', tone: 'slate' },
+      'window-tracks': { emoji: '🪟', tone: 'sky' },
+      'oil-change': { emoji: '🛢️', tone: 'slate' },
+      'tire-rotate': { emoji: '🔄', tone: 'slate' },
+      'car-fluids': { emoji: '🧪', tone: 'sky' },
+      'grub-control': { emoji: '🐛', tone: 'emerald' },
+      'fridge-coils': { emoji: '🧊', tone: 'sky' },
+      'fridge-water-filter': { emoji: '💧', tone: 'sky' },
+      'smoke-detectors': { emoji: '🚨', tone: 'rose' },
+      'caulk-grout': { emoji: '🧰', tone: 'orange' },
+      'clean-gutters': { emoji: '🏠', tone: 'orange' },
+      'trim-hedges': { emoji: '✂️', tone: 'emerald' },
+      'mulch-beds': { emoji: '🪵', tone: 'amber' },
+      'rake-leaves': { emoji: '🍁', tone: 'orange' },
+      'hvac-spring-tuneup': { emoji: '❄️', tone: 'sky' },
+      'hvac-fall-tuneup': { emoji: '🔥', tone: 'orange' },
+      'humidifier-pad': { emoji: '💨', tone: 'sky' },
+      'wiper-blades': { emoji: '🌧️', tone: 'sky' },
+      'cabin-air-filter': { emoji: '🌬️', tone: 'mint' },
+      'dental-cleaning': { emoji: '🦷', tone: 'sky' },
+      'flush-water-heater': { emoji: '♨️', tone: 'orange' },
+      'smoke-batteries': { emoji: '🔋', tone: 'amber' },
+      'aerate-lawn': { emoji: '🕳️', tone: 'emerald' },
+      'overseed-lawn': { emoji: '🌾', tone: 'emerald' },
+      'winterize-sprinklers': { emoji: '❄️', tone: 'sky' },
+      'garage-door-service': { emoji: '🚪', tone: 'slate' },
+      'roof-inspection': { emoji: '🏠', tone: 'orange' },
+      'chimney-inspect': { emoji: '🪵', tone: 'orange' },
+      'annual-physical': { emoji: '🩺', tone: 'rose' },
+      'car-battery-test': { emoji: '🔋', tone: 'amber' },
+      'edge-lawn': { emoji: '🟩', tone: 'emerald' },
+      'weed-beds': { emoji: '🌼', tone: 'emerald' },
+      'prune-trees': { emoji: '🌳', tone: 'emerald' },
+      'deck-wash': { emoji: '💦', tone: 'sky' },
+      'thermostat-batteries': { emoji: '🌡️', tone: 'amber' },
+      'ac-clear-debris': { emoji: '🍃', tone: 'mint' },
+      'furnace-filter-check': { emoji: '🔥', tone: 'orange' },
+      'hvac-vents': { emoji: '🌀', tone: 'sky' },
+      'deep-vacuum': { emoji: '🧹', tone: 'violet' },
+      'fridge-clean': { emoji: '🧊', tone: 'sky' },
+      'oven-clean': { emoji: '🔥', tone: 'orange' },
+      'exterior-caulk': { emoji: '🖌️', tone: 'amber' },
+      'dryer-vent': { emoji: '🔥', tone: 'rose' },
+      'car-wash': { emoji: '✨', tone: 'sky' },
+      'car-interior': { emoji: '🧽', tone: 'mint' },
+      'brake-check': { emoji: '🛑', tone: 'rose' },
+      'stretch': { emoji: '🧘', tone: 'violet' },
+      'eye-exam': { emoji: '👁️', tone: 'sky' },
+      'dermatologist': { emoji: '🧴', tone: 'rose' },
+      'text-friend': { emoji: '💬', tone: 'violet' },
+      'date-night': { emoji: '💕', tone: 'rose' },
+      'thank-you-note': { emoji: '✉️', tone: 'amber' },
+      'read': { emoji: '📖', tone: 'amber' },
+      'meditate': { emoji: '🧘', tone: 'violet' },
+      'journal': { emoji: '✍️', tone: 'mint' }
+    };
+
+    function getLibraryTaskVisual(task) {
+      if (!task) return { emoji: '✨', tone: 'mint' };
+      if (task.emoji) return { emoji: task.emoji, tone: task.tone || 'mint' };
+      if (LIBRARY_TASK_VISUALS[task.id]) return LIBRARY_TASK_VISUALS[task.id];
+
+      const cat = (task.category || '').toLowerCase();
+      const section = (task.librarySection || '').toLowerCase();
+      const title = (task.title || '').toLowerCase();
+      if (cat === 'yard' || /yard|lawn/.test(section)) return { emoji: '🌿', tone: 'emerald' };
+      if (cat === 'car' || /car|auto/.test(section)) return { emoji: '🚗', tone: 'slate' };
+      if (cat === 'hvac' || /hvac|climate/.test(section)) return { emoji: '❄️', tone: 'sky' };
+      if (cat === 'health' || /health|wellness/.test(section)) return { emoji: '💚', tone: 'rose' };
+      if (cat === 'social' || /social|people/.test(section)) return { emoji: '💬', tone: 'violet' };
+      if (cat === 'mind' || /mind|growth/.test(section)) return { emoji: '🧠', tone: 'violet' };
+      if (cat === 'personal' || /personal|custom/.test(section)) return { emoji: '⭐', tone: 'amber' };
+      if (/water|drink/.test(title)) return { emoji: '💧', tone: 'sky' };
+      if (/walk|run|steps/.test(title)) return { emoji: '🚶', tone: 'emerald' };
+      if (/read|book/.test(title)) return { emoji: '📖', tone: 'amber' };
+      if (/clean|wash|vacuum/.test(title)) return { emoji: '✨', tone: 'mint' };
+      return { emoji: '⚓', tone: 'mint' };
+    }
+
+    function getLibraryEnergyChipClass(diff) {
+      if (diff <= 1) return 'chip-energy-low';
+      if (diff === 2) return 'chip-energy-med';
+      return 'chip-energy-high';
+    }
+
     function renderLibraryTaskRow(task, container) {
       const alreadyAdded = state.habits.some(h => h.id === task.id);
       const proOpt = getTaskProOption(task);
@@ -19196,55 +19486,64 @@
       const isPersonal = isPersonalLibraryTask(task);
       const diff = task.difficulty || 2;
       const intervalLabel = formatIntervalLabel(task.interval_days);
+      const visual = getLibraryTaskVisual(task);
+      const energyLabel = getDifficultyLabel(diff);
+      const metricChip = (task.target_value && task.unit)
+        ? `<span class="library-meta-chip chip-metric"><i class="fa-solid fa-chart-line" aria-hidden="true"></i>${task.target_value.toLocaleString()} ${task.unit}</span>`
+        : '';
 
       const div = document.createElement('div');
-      div.className = `library-task-card harbor-card bg-harbor-raised/70 border ${alreadyAdded || proScheduled ? 'border-harbor-primary/50' : 'border-harbor-border/80'} rounded-2xl px-3.5 py-2.5 mb-2`;
+      div.className = `library-task-card${alreadyAdded || proScheduled ? ' is-added' : ''}`;
 
-      const proBadge = proOpt
-        ? '<span class="text-[9px] px-1.5 py-px rounded-full bg-sky-900/45 text-sky-300 font-semibold">Pro option</span>'
-        : '';
       let actionCol = '';
 
       if (isPersonal) {
         const statusChip = alreadyAdded
-          ? `<span class="text-[10px] px-2 py-1 rounded-xl bg-harbor-primary/20 text-harbor-primary-light font-semibold">✓ Added</span>`
-          : `<button class="lib-add-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl bg-harbor-primary hover:bg-harbor-primary-light text-white">+ Add</button>`;
-        actionCol = `<div class="flex flex-col gap-1 items-end">
+          ? `<span class="text-[10px] px-2.5 py-1.5 rounded-xl bg-harbor-primary/20 text-harbor-primary-light font-semibold">✓ Added</span>`
+          : `<button type="button" class="lib-add-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl bg-harbor-primary hover:bg-harbor-primary-light text-white">+ Add</button>`;
+        actionCol = `<div class="library-task-actions">
             <button type="button" class="lib-edit-btn text-[10px] text-harbor-primary-light font-medium px-1">Edit</button>
             ${statusChip}
           </div>`;
       } else if (alreadyAdded) {
-        actionCol = `<div class="flex flex-col gap-1 items-end">
+        actionCol = `<div class="library-task-actions">
             <button type="button" class="lib-edit-btn text-[10px] text-harbor-primary-light font-medium px-1">Edit</button>
             <span class="text-[10px] px-2.5 py-1.5 rounded-xl bg-harbor-primary/20 text-harbor-primary-light font-semibold">✓ Added</span>
           </div>`;
       } else if (proScheduled) {
-        actionCol = `<div class="flex flex-col gap-1 items-end">
-            <button type="button" class="lib-goto-pro-btn text-[10px] px-2.5 py-1.5 rounded-xl bg-sky-900/40 text-sky-300 font-semibold whitespace-nowrap">On Today →</button>
+        actionCol = `<div class="library-task-actions">
+            <button type="button" class="lib-goto-pro-btn text-[10px] px-2.5 py-1.5 rounded-xl bg-sky-600/90 text-white font-semibold whitespace-nowrap">On Today →</button>
             <button type="button" class="lib-add-btn text-[9px] text-harbor-muted hover:text-harbor-text">+ Add DIY</button>
           </div>`;
       } else if (proOpt) {
-        // Hard / hire-friendly chores: pro path first, DIY still available
-        actionCol = `<div class="flex flex-col gap-1 items-end">
+        actionCol = `<div class="library-task-actions">
             <button type="button" class="lib-pro-btn px-2.5 py-1.5 text-[10px] font-semibold rounded-xl bg-sky-600 hover:bg-sky-500 text-white whitespace-nowrap">Schedule Pro</button>
             <button type="button" class="lib-add-btn text-[9px] text-harbor-muted hover:text-harbor-text">+ Add DIY</button>
           </div>`;
       } else {
-        actionCol = `<button type="button" class="lib-add-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl bg-harbor-primary hover:bg-harbor-primary-light text-white">+ Add</button>`;
+        actionCol = `<div class="library-task-actions">
+            <button type="button" class="lib-add-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl bg-harbor-primary hover:bg-harbor-primary-light text-white">+ Add</button>
+          </div>`;
       }
 
+      const proChip = proOpt
+        ? `<span class="library-meta-chip chip-pro"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i>Pro option</span>`
+        : '';
+
       div.innerHTML = `
-        <div class="flex justify-between items-start gap-2">
-          <div class="flex-1 min-w-0">
-            <div class="font-medium text-sm leading-tight text-harbor-text">${task.title}</div>
-            <div class="flex flex-wrap items-center gap-1 mt-1">
-              ${proBadge}
-              <span class="text-[9px] px-1.5 py-px rounded-full ${getEnergyBadgeClass(diff)}">${getDifficultyLabel(diff)}</span>
-              <span class="text-[9px] text-harbor-muted">${task.est_minutes}m</span>
-              <span class="text-[9px] px-1.5 py-px rounded bg-harbor-surface/80 text-harbor-primary-light/90">${intervalLabel}</span>
+        <div class="library-task-inner">
+          <div class="library-task-icon tone-${visual.tone}" aria-hidden="true">${visual.emoji}</div>
+          <div class="library-task-body">
+            <div class="library-task-title">${escapeBriefHtml(task.title)}</div>
+            ${task.note ? `<div class="library-task-note line-clamp-2">${escapeBriefHtml(task.note)}</div>` : ''}
+            <div class="library-task-meta">
+              ${proChip}
+              <span class="library-meta-chip ${getLibraryEnergyChipClass(diff)}"><i class="fa-solid fa-bolt" aria-hidden="true"></i>${energyLabel}</span>
+              <span class="library-meta-chip chip-time"><i class="fa-regular fa-clock" aria-hidden="true"></i>${task.est_minutes || 0} min</span>
+              <span class="library-meta-chip chip-cadence"><i class="fa-regular fa-calendar" aria-hidden="true"></i>${intervalLabel}</span>
+              ${metricChip}
             </div>
-            ${task.note ? `<div class="text-[9px] text-harbor-muted mt-1 leading-snug line-clamp-2">${task.note}</div>` : ''}
-            ${proScheduled ? `<div class="text-[9px] text-sky-300/90 mt-1">Booking reminder is on <strong>Today</strong></div>` : ''}
+            ${proScheduled ? `<div class="library-task-note" style="color:rgb(56,189,248)">Booking reminder is on <strong>Today</strong></div>` : ''}
           </div>
           ${actionCol}
         </div>
