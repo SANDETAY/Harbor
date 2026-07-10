@@ -2085,7 +2085,13 @@
     #weather-forecast-modal,
     #weather-access-modal,
     .weather-access-modal {
-      z-index: 280 !important;
+      z-index: 320 !important;
+      /* Keep sheet clear of notch / status bar / dynamic island */
+      padding-top: max(env(safe-area-inset-top, 0px), 2.75rem);
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
+      box-sizing: border-box;
+      align-items: flex-end;
     }
     #weather-forecast-modal > [data-weather-sheet],
     #weather-access-modal > [data-weather-sheet],
@@ -2095,7 +2101,7 @@
       display: flex;
       flex-direction: column;
       width: 100%;
-      max-height: min(88vh, 100dvh);
+      max-height: 100%; /* of padded overlay → never under status bar */
       min-height: 0;
       overflow: hidden; /* scroll lives in .weather-sheet-body */
       background: rgb(var(--harbor-surface));
@@ -2104,19 +2110,37 @@
       padding: 0;
       box-shadow: var(--harbor-shadow-md);
       touch-action: pan-y;
+      pointer-events: auto;
     }
     #weather-forecast-modal > .absolute.inset-0,
     #weather-access-modal > .absolute.inset-0,
     .weather-access-modal > .absolute.inset-0 {
       z-index: 1;
+      /* Backdrop fills full screen including under status bar */
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
     }
     .weather-sheet-head {
       flex-shrink: 0;
-      padding: 0.65rem 1.15rem 0.55rem;
+      padding: 0.85rem 1.15rem 0.7rem;
       border-bottom: 1px solid rgb(var(--harbor-border) / 0.7);
       background: rgb(var(--harbor-surface));
       position: relative;
-      z-index: 3;
+      z-index: 5;
+      pointer-events: auto;
+    }
+    .weather-sheet-head .modal-close-chip {
+      position: relative;
+      z-index: 6;
+      min-height: 2.15rem;
+      min-width: 3.6rem;
+      padding: 0.45rem 0.95rem;
+      font-size: 0.72rem;
+      pointer-events: auto !important;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
     .weather-sheet-body {
       flex: 1 1 auto;
@@ -2127,6 +2151,7 @@
       overscroll-behavior: contain;
       touch-action: pan-y;
       padding: 0.85rem 1.15rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+      pointer-events: auto;
     }
     body.weather-modal-open {
       overflow: hidden;
@@ -6739,7 +6764,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v156';
+    const HARBOR_BUILD = 'v157';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -16512,6 +16537,11 @@
       if (!overlay || overlay.nodeType !== 1) return;
       if (overlay.dataset.sheetSwipeBound === '1') return;
       if (!overlay.classList.contains('fixed') && overlay.id !== 'summary-modal') return;
+      // Weather pane uses its own dismiss wiring — swipe capture steals Close taps on iOS
+      if (overlay.id === 'weather-forecast-modal' || overlay.id === 'weather-access-modal' ||
+          overlay.classList.contains('weather-access-modal')) {
+        return;
+      }
 
       const sheet = findSheetPanel(overlay);
       if (!sheet) return;
@@ -17122,34 +17152,53 @@
 
     let weatherModalCloseGuardUntil = 0;
 
-    function closeWeatherModal() {
+    function closeWeatherModal(e) {
+      if (e) {
+        try {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation?.();
+        } catch (_) { /* ignore */ }
+      }
       document.getElementById('weather-forecast-modal')?.remove();
       document.getElementById('weather-access-modal')?.remove();
       document.querySelectorAll('.weather-access-modal').forEach(el => el.remove());
       document.body.classList.remove('weather-modal-open');
-      // Prevent the same tap from hitting the weather strip underneath and reopening
-      weatherModalCloseGuardUntil = Date.now() + 450;
+      // Long enough to block iOS click-through reopening the weather strip
+      weatherModalCloseGuardUntil = Date.now() + 900;
     }
+    // Expose for inline onclick handlers (most reliable on mobile Safari)
+    window.closeWeatherModal = closeWeatherModal;
 
     function wireWeatherModalDismiss(modal) {
       if (!modal) return;
-      // Direct close handlers — more reliable than bubbled capture on mobile
-      modal.querySelectorAll('[data-weather-dismiss]').forEach(el => {
-        el.addEventListener('click', (e) => {
+
+      const dismiss = (e) => {
+        if (e) {
           e.preventDefault();
           e.stopPropagation();
-          closeWeatherModal();
+          if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        }
+        closeWeatherModal();
+      };
+
+      // Capture-phase on the overlay — fires even when something stops bubble
+      modal.addEventListener('pointerup', (e) => {
+        if (e.target.closest('[data-weather-dismiss], [data-weather-backdrop]')) dismiss(e);
+      }, true);
+      modal.addEventListener('click', (e) => {
+        if (e.target.closest('[data-weather-dismiss], [data-weather-backdrop]')) dismiss(e);
+      }, true);
+
+      // Explicit bindings on every dismiss control
+      modal.querySelectorAll('[data-weather-dismiss], .modal-close-chip').forEach(el => {
+        el.style.pointerEvents = 'auto';
+        el.addEventListener('click', dismiss);
+        el.addEventListener('pointerup', (e) => {
+          // pointerup can fire without a clean click on some WebViews
+          if (e.pointerType === 'touch' || e.pointerType === 'pen') dismiss(e);
         });
       });
-      // Backdrop only (not the sheet)
-      const backdrop = modal.querySelector(':scope > .absolute.inset-0[data-weather-dismiss], :scope > [data-weather-backdrop]');
-      if (backdrop) {
-        backdrop.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          closeWeatherModal();
-        });
-      }
     }
 
     function showWeatherAccessPrompt() {
@@ -17166,11 +17215,12 @@
           <div class="weather-sheet-head">
             <div class="modal-grab-pill" aria-hidden="true"></div>
             <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
+              <div class="min-w-0 pr-2">
                 <div class="text-xs uppercase tracking-wider text-harbor-muted font-semibold">Weather</div>
                 <div class="text-base font-semibold text-harbor-text mt-1">See your local forecast</div>
               </div>
-              <button type="button" data-weather-dismiss="1" class="modal-close-chip" aria-label="Close">Close</button>
+              <button type="button" class="modal-close-chip" data-weather-dismiss="1"
+                onclick="event.preventDefault();event.stopPropagation();closeWeatherModal(event)" aria-label="Close">Close</button>
             </div>
           </div>
           <div class="weather-sheet-body" data-sheet-scroll="1">
@@ -17196,12 +17246,12 @@
       wireWeatherModalDismiss(modal);
       modal.querySelector('#weather-enable-location').onclick = (e) => {
         e.stopPropagation();
-        closeWeatherModal();
+        closeWeatherModal(e);
         fetchRealWeather({ openPane: true });
       };
       modal.querySelector('#weather-simulate').onclick = (e) => {
         e.stopPropagation();
-        closeWeatherModal();
+        closeWeatherModal(e);
         simulateContextChange({ openWeatherPane: true });
       };
     }
@@ -17248,7 +17298,8 @@
                 <div class="text-xs uppercase tracking-wider text-harbor-muted font-semibold">${paneTitle}</div>
                 <div class="text-sm text-harbor-primary-light mt-1 leading-snug">${data.advice || ''}</div>
               </div>
-              <button type="button" data-weather-dismiss="1" class="modal-close-chip flex-shrink-0" aria-label="Close weather">Close</button>
+              <button type="button" class="modal-close-chip flex-shrink-0" data-weather-dismiss="1"
+                onclick="event.preventDefault();event.stopPropagation();closeWeatherModal(event)" aria-label="Close weather">Close</button>
             </div>
           </div>
           <div class="weather-sheet-body" data-sheet-scroll="1">
@@ -17285,7 +17336,8 @@
             </div>
 
             <button type="button" data-weather-dismiss="1"
-              class="w-full mt-4 py-3 bg-harbor-raised border border-harbor-border active:bg-harbor-border rounded-2xl text-sm font-medium text-harbor-text">Close</button>
+              onclick="event.preventDefault();event.stopPropagation();closeWeatherModal(event)"
+              class="w-full mt-4 py-3.5 bg-harbor-raised border border-harbor-border active:bg-harbor-border rounded-2xl text-sm font-semibold text-harbor-text">Close</button>
           </div>
         </div>
       `;
