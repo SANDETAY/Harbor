@@ -5672,6 +5672,136 @@
       border-radius: 999px;
       margin-top: 0.35rem;
     }
+    /* Streak fleet — health strip + grouped fires */
+    .streak-fleet-health {
+      margin-bottom: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(47, 155, 140, 0.16);
+      background:
+        linear-gradient(155deg, rgba(47, 155, 140, 0.1) 0%, rgb(var(--harbor-surface)) 70%);
+      box-shadow: var(--harbor-shadow-sm);
+    }
+    html[data-theme="dark"] .streak-fleet-health {
+      border-color: rgba(72, 178, 162, 0.14);
+      background: linear-gradient(155deg, rgba(47, 155, 140, 0.12) 0%, rgb(var(--harbor-surface)) 75%);
+    }
+    .streak-fleet-health-main {
+      font-size: 0.8rem;
+      font-weight: 650;
+      letter-spacing: -0.015em;
+      line-height: 1.35;
+      color: rgb(var(--harbor-text));
+    }
+    .streak-fleet-health-main strong {
+      color: rgb(var(--harbor-primary-light));
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+    }
+    .streak-fleet-health-soft {
+      margin-top: 0.25rem;
+      font-size: 0.68rem;
+      line-height: 1.35;
+      color: rgb(var(--harbor-muted));
+    }
+    .streak-fleet-section {
+      margin-top: 0.85rem;
+    }
+    .streak-fleet-section:first-of-type {
+      margin-top: 0.15rem;
+    }
+    .streak-fleet-section-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.45rem;
+      font-size: 0.68rem;
+      font-weight: 750;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+    }
+    .streak-fleet-section-label .count {
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      font-variant-numeric: tabular-nums;
+      opacity: 0.85;
+    }
+    .streak-fleet-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+    .streak-fleet-stack.is-dense {
+      gap: 0.4rem;
+    }
+    .streak-more-toggle {
+      width: 100%;
+      margin-top: 0.15rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: 0.95rem;
+      border: 1px dashed rgba(47, 155, 140, 0.28);
+      background: rgb(var(--harbor-raised) / 0.55);
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      text-align: left;
+      font-family: var(--harbor-font);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .streak-more-toggle:active {
+      background: rgb(var(--harbor-raised));
+    }
+    .streak-more-toggle .muted {
+      color: rgb(var(--harbor-muted));
+      font-weight: 550;
+    }
+    /* Dense streak rows — scannable when the fleet is large */
+    .streak-card.is-dense {
+      padding: 0.55rem 0.75rem;
+      border-radius: 0.95rem;
+    }
+    .streak-card.is-dense .streak-card-title {
+      font-size: 0.86rem;
+    }
+    .streak-card.is-dense .streak-card-days {
+      font-size: 1.35rem;
+    }
+    .streak-card.is-dense .streak-card-days-unit {
+      font-size: 0.58rem;
+    }
+    .streak-dense-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem;
+      width: 100%;
+    }
+    .streak-dense-left {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .streak-dense-sub {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .streak-card.is-dense .streak-status-chip {
+      margin-top: 0;
+    }
+    .streak-card.is-dense .streak-week-dots,
+    .streak-card.is-dense .streak-card-meta,
+    .streak-card.is-dense .streak-card-metric {
+      display: none;
+    }
+
     .streak-status-chip.is-done {
       background: rgba(47, 155, 140, 0.14);
       color: rgb(var(--harbor-primary-light));
@@ -7447,12 +7577,12 @@
           <div class="text-[11px] text-harbor-muted leading-snug mt-0.5">See your fire, check the numbers, earn rest.</div>
         </div>
 
-        <!-- 1. Your fires -->
+        <!-- 1. Your fires (grouped watchlist when many) -->
         <div class="flex items-baseline justify-between gap-2 mb-2">
           <div class="section-header font-semibold text-harbor-text text-[0.95rem]">Your fires</div>
           <div id="streaks-count-label" class="text-[10px] text-harbor-muted tabular-nums"></div>
         </div>
-        <div id="streaks-list" class="space-y-2.5"></div>
+        <div id="streaks-list" class="streaks-list-root"></div>
 
         <!-- 2. Habit Outlook -->
         <div class="mt-5" id="habit-outlook-section">
@@ -7560,7 +7690,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v173';
+    const HARBOR_BUILD = 'v174';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -23040,77 +23170,154 @@
       return { at: next, left: next - streak };
     }
 
-    function renderStreakCards() {
-      const container = document.getElementById('streaks-list');
-      const countLabel = document.getElementById('streaks-count-label');
-      if (!container) return;
-      container.innerHTML = '';
+    // Streaks tab fleet UI — collapse the wall of cards when many fires
+    const STREAK_FLEET_FEW_MAX = 6;       // at or below: simple full list
+    const STREAK_FLEET_BRIGHT_MAX = 5;    // “Bright fires” cap when grouping
+    let streaksMoreFiresOpen = false;
 
-      if (currentProjectionHabit) {
-        const projected = state.habits.find(h => h.id === currentProjectionHabit);
-        if (!projected || !shouldTrackStreak(projected)) currentProjectionHabit = null;
-      }
+    function toggleStreaksMoreFires() {
+      streaksMoreFiresOpen = !streaksMoreFiresOpen;
+      renderStreakCards();
+    }
 
-      // All streak-tracked habits — including day 0 so the tab never feels empty mid-rebuild
-      const rows = state.habits
+    function collectStreakFleetRows() {
+      return state.habits
         .filter(h => shouldTrackStreak(h))
         .map(h => {
           const streak = computeCurrentStreak(h.id);
           const status = getStreakCardStatus(h);
-          const due = isDueToday(h) && !isCompletedToday(h.id);
-          return { habit: h, streak, status, due };
-        })
-        .sort((a, b) => {
-          // Due today first, then higher streak, then title
-          if (a.due !== b.due) return a.due ? -1 : 1;
+          const due = status.id === 'due';
+          const done = status.id === 'done';
+          return { habit: h, streak, status, due, done };
+        });
+    }
+
+    function sortStreakFleetRows(list, mode = 'default') {
+      return [...list].sort((a, b) => {
+        if (mode === 'bright') {
+          // Pride first: done today, then length, then title
+          if (a.done !== b.done) return a.done ? -1 : 1;
           if (b.streak !== a.streak) return b.streak - a.streak;
           return String(a.habit.title || '').localeCompare(String(b.habit.title || ''));
-        });
+        }
+        // Default / needs: due first, then higher streak
+        if (a.due !== b.due) return a.due ? -1 : 1;
+        if (b.streak !== a.streak) return b.streak - a.streak;
+        return String(a.habit.title || '').localeCompare(String(b.habit.title || ''));
+      });
+    }
 
-      if (countLabel) {
-        countLabel.textContent = rows.length
-          ? `${rows.length} habit${rows.length === 1 ? '' : 's'}`
-          : '';
+    /**
+     * Partition fires into watch zones so 15+ habits don’t flood the tab.
+     * needsYou → bright → more (more collapsed by default).
+     */
+    function partitionStreakFleet(rows) {
+      const total = rows.length;
+      if (total <= STREAK_FLEET_FEW_MAX) {
+        return {
+          mode: 'simple',
+          needsYou: [],
+          bright: sortStreakFleetRows(rows, 'default'),
+          more: [],
+          total
+        };
       }
 
-      if (rows.length === 0) {
-        currentProjectionHabit = null;
-        container.innerHTML = harborEmptyHtml(
-          '🔥',
-          'No streak habits yet',
-          'Add a daily habit from Today or Library — that’s what builds fire here.',
-          `<div class="harbor-empty-actions">
-            <button type="button" class="chip-add-btn" onclick="switchTab('today'); showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add habit</button>
-            <button type="button" class="chip-tool-btn" onclick="switchTab('library')">Browse Library</button>
-          </div>`
-        );
-        updateProjectionHint();
-        return;
+      const needsYou = sortStreakFleetRows(rows.filter(r => r.due), 'default');
+      const needsIds = new Set(needsYou.map(r => r.habit.id));
+      let rest = sortStreakFleetRows(rows.filter(r => !needsIds.has(r.habit.id)), 'bright');
+
+      // Keep the open Outlook target visible even if it would live in “more”
+      if (currentProjectionHabit) {
+        const selIdx = rest.findIndex(r => r.habit.id === currentProjectionHabit);
+        if (selIdx >= STREAK_FLEET_BRIGHT_MAX) {
+          const [sel] = rest.splice(selIdx, 1);
+          rest = [sel, ...rest];
+        }
       }
 
-      rows.forEach(({ habit, streak, status }) => {
-        const longest = getLongestStreak(habit.id);
-        const isSelected = currentProjectionHabit === habit.id;
-        const metric = getStreakMetricPreview(habit);
-        const dots = getStreakWeekDots(habit.id);
-        const cardClass = [
-          'streak-card',
-          isSelected ? 'is-selected' : '',
-          status.id === 'done' ? 'is-done-today' : '',
-          status.id === 'due' ? 'is-at-risk' : ''
-        ].filter(Boolean).join(' ');
+      const bright = rest.slice(0, STREAK_FLEET_BRIGHT_MAX);
+      const more = rest.slice(STREAK_FLEET_BRIGHT_MAX);
+      return { mode: 'grouped', needsYou, bright, more, total };
+    }
 
-        const row = document.createElement('div');
-        row.className = 'swipe-row';
-        row.dataset.habitId = habit.id;
-        row.dataset.swipeId = habit.id;
-        row.dataset.swipeType = 'streak';
+    function buildStreakFleetHealthHtml(rows) {
+      if (!rows.length) return '';
+      const total = rows.length;
+      const lit = rows.filter(r => r.done).length;
+      const need = rows.filter(r => r.due).length;
+      const longest = rows.reduce((m, r) => Math.max(m, r.streak || 0), 0);
 
-        const actionsHtml = `
-          <button type="button" class="swipe-action swipe-action-view" data-action="view" aria-label="View outlook"><i class="fa-solid fa-chart-line"></i> Outlook</button>
-          <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Stop streak"><i class="fa-solid fa-trash-can"></i> Remove</button>
-        `;
-        const contentHtml = `
+      let soft;
+      if (need > 0) {
+        soft = need === 1
+          ? 'One fire still needs a spark today — it’s at the top.'
+          : `${need} fires still need a spark today — they’re listed first.`;
+      } else if (lit === total) {
+        soft = 'Every fire is lit today. Enjoy that.';
+      } else {
+        soft = 'Nothing urgent — your longer runs are below.';
+      }
+
+      return `
+        <div class="streak-fleet-health" role="status" aria-live="polite">
+          <div class="streak-fleet-health-main">
+            <strong>${lit}</strong> of <strong>${total}</strong> lit today
+            ${need > 0 ? ` · <strong>${need}</strong> need a spark` : ''}
+            ${longest > 0 ? ` · longest <strong>${longest}</strong>d` : ''}
+          </div>
+          <div class="streak-fleet-health-soft">${soft}</div>
+        </div>
+      `;
+    }
+
+    function buildStreakCardElement(entry, options = {}) {
+      const { dense = false } = options;
+      const { habit, streak, status } = entry;
+      const longest = getLongestStreak(habit.id);
+      const isSelected = currentProjectionHabit === habit.id;
+      const metric = dense ? '' : getStreakMetricPreview(habit);
+      const dots = dense ? [] : getStreakWeekDots(habit.id);
+      const cardClass = [
+        'streak-card',
+        dense ? 'is-dense' : '',
+        isSelected ? 'is-selected' : '',
+        status.id === 'done' ? 'is-done-today' : '',
+        status.id === 'due' ? 'is-at-risk' : ''
+      ].filter(Boolean).join(' ');
+
+      const row = document.createElement('div');
+      row.className = 'swipe-row';
+      row.dataset.habitId = habit.id;
+      row.dataset.swipeId = habit.id;
+      row.dataset.swipeType = 'streak';
+
+      const actionsHtml = `
+        <button type="button" class="swipe-action swipe-action-view" data-action="view" aria-label="View outlook"><i class="fa-solid fa-chart-line"></i> Outlook</button>
+        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Stop streak"><i class="fa-solid fa-trash-can"></i> Remove</button>
+      `;
+
+      const contentHtml = dense
+        ? `
+          <div class="streak-dense-row" onclick="showProjections('${habit.id}')">
+            <div class="streak-dense-left">
+              <div class="streak-card-title truncate">${escapeBriefHtml(habit.title)}</div>
+              <div class="streak-dense-sub">
+                <span class="streak-status-chip ${status.cls}">${status.label}</span>
+                ${longest > streak ? `<span class="text-[10px] text-harbor-muted">Best ${longest}d</span>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <div class="text-right">
+                <div class="streak-card-days">${streak}</div>
+                <div class="streak-card-days-unit">day${streak === 1 ? '' : 's'}</div>
+              </div>
+              <button type="button" onclick="deleteStreak('${habit.id}', event)"
+                class="row-inline-actions text-harbor-muted hover:text-rose-400 text-sm px-1" title="Stop tracking streak">×</button>
+            </div>
+          </div>
+        `
+        : `
           <div class="flex justify-between items-start gap-3 w-full" onclick="showProjections('${habit.id}')">
             <div class="flex-1 min-w-0">
               <div class="streak-card-title truncate">${escapeBriefHtml(habit.title)}</div>
@@ -23131,9 +23338,123 @@
             </div>
           </div>
         `;
-        row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml, cardClass);
-        container.appendChild(row);
+
+      row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml, cardClass);
+      return row;
+    }
+
+    function appendStreakFleetSection(container, { id, label, count, rows, dense }) {
+      if (!rows.length) return;
+      const section = document.createElement('div');
+      section.className = 'streak-fleet-section';
+      if (id) section.id = id;
+      section.innerHTML = `
+        <div class="streak-fleet-section-label">
+          <span>${label}</span>
+          <span class="count">${count != null ? count : rows.length}</span>
+        </div>
+      `;
+      const stack = document.createElement('div');
+      stack.className = `streak-fleet-stack${dense ? ' is-dense' : ''}`;
+      rows.forEach(entry => stack.appendChild(buildStreakCardElement(entry, { dense })));
+      section.appendChild(stack);
+      container.appendChild(section);
+    }
+
+    function renderStreakCards() {
+      const container = document.getElementById('streaks-list');
+      const countLabel = document.getElementById('streaks-count-label');
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (currentProjectionHabit) {
+        const projected = state.habits.find(h => h.id === currentProjectionHabit);
+        if (!projected || !shouldTrackStreak(projected)) currentProjectionHabit = null;
+      }
+
+      const rows = collectStreakFleetRows();
+      const fleet = partitionStreakFleet(rows);
+
+      if (countLabel) {
+        countLabel.textContent = fleet.total
+          ? `${fleet.total} fire${fleet.total === 1 ? '' : 's'}`
+          : '';
+      }
+
+      if (fleet.total === 0) {
+        currentProjectionHabit = null;
+        container.innerHTML = harborEmptyHtml(
+          '🔥',
+          'No streak habits yet',
+          'Add a daily habit from Today or Library — that’s what builds fire here.',
+          `<div class="harbor-empty-actions">
+            <button type="button" class="chip-add-btn" onclick="switchTab('today'); showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add habit</button>
+            <button type="button" class="chip-tool-btn" onclick="switchTab('library')">Browse Library</button>
+          </div>`
+        );
+        updateProjectionHint();
+        return;
+      }
+
+      // Fleet health when there’s more than a couple of fires
+      if (fleet.total >= 3) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = buildStreakFleetHealthHtml(rows);
+        while (wrap.firstChild) container.appendChild(wrap.firstChild);
+      }
+
+      if (fleet.mode === 'simple') {
+        appendStreakFleetSection(container, {
+          id: 'streak-fleet-all',
+          label: 'Your watch',
+          count: fleet.bright.length,
+          rows: fleet.bright,
+          dense: false
+        });
+        bindSwipeRows(container);
+        return;
+      }
+
+      // Grouped watchlist
+      appendStreakFleetSection(container, {
+        id: 'streak-fleet-needs',
+        label: 'Needs you',
+        count: fleet.needsYou.length,
+        rows: fleet.needsYou,
+        dense: false
       });
+      appendStreakFleetSection(container, {
+        id: 'streak-fleet-bright',
+        label: 'Bright fires',
+        count: fleet.bright.length,
+        rows: fleet.bright,
+        dense: false
+      });
+
+      if (fleet.more.length) {
+        const moreWrap = document.createElement('div');
+        moreWrap.className = 'streak-fleet-section';
+        moreWrap.id = 'streak-fleet-more';
+
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'streak-more-toggle';
+        toggle.setAttribute('aria-expanded', streaksMoreFiresOpen ? 'true' : 'false');
+        toggle.onclick = () => toggleStreaksMoreFires();
+        toggle.innerHTML = streaksMoreFiresOpen
+          ? `Hide quieter fires <span class="muted">· ${fleet.more.length}</span>`
+          : `More fires <span class="muted">· ${fleet.more.length} quieter · show</span>`;
+        moreWrap.appendChild(toggle);
+
+        if (streaksMoreFiresOpen) {
+          const stack = document.createElement('div');
+          stack.className = 'streak-fleet-stack is-dense mt-2';
+          fleet.more.forEach(entry => stack.appendChild(buildStreakCardElement(entry, { dense: true })));
+          moreWrap.appendChild(stack);
+        }
+        container.appendChild(moreWrap);
+      }
+
       bindSwipeRows(container);
     }
 
