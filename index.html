@@ -7690,7 +7690,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v174';
+    const HARBOR_BUILD = 'v175';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -23188,20 +23188,70 @@
           const status = getStreakCardStatus(h);
           const due = status.id === 'due';
           const done = status.id === 'done';
-          return { habit: h, streak, status, due, done };
+          const metricType = typeof getHabitMetricType === 'function' ? getHabitMetricType(h) : null;
+          const quantitative = !!metricType;
+          return { habit: h, streak, status, due, done, metricType, quantitative };
         });
+    }
+
+    /**
+     * How “watch-worthy” is this fire for Bright fires?
+     * Measurable habits (walk/steps/miles → weight & body goals, pages, savings)
+     * outrank pure chore-length streaks so Walking doesn’t hide under “quiet.”
+     */
+    function getStreakWatchScore(entry) {
+      const habit = entry.habit;
+      let score = 0;
+
+      // Live streak still matters — but is not the only voice
+      score += Math.min(Number(entry.streak) || 0, 45) * 2;
+
+      if (entry.done) score += 12;
+      else if (entry.status?.id === 'active') score += 10;
+      else if (entry.status?.id === 'quiet') score += 2;
+
+      // Metric type — what people open Outlook for
+      const type = entry.metricType
+        || (typeof getHabitMetricType === 'function' ? getHabitMetricType(habit) : null);
+      if (type === 'steps' || type === 'miles') {
+        // Movement / weight-adjacent goals: strong watch priority
+        score += 48;
+      } else if (type === 'savings') {
+        score += 32;
+      } else if (type === 'pages') {
+        score += 28;
+      } else if (type === 'custom' || entry.quantitative) {
+        score += 26;
+      }
+
+      // Explicit target = intentional goal (e.g. 8k steps, 2 mi walk)
+      if (habit?.target_value != null && Number(habit.target_value) > 0) score += 14;
+
+      // Logged something today → this is an active tracking habit
+      try {
+        if (typeof getTodaysMetricLog === 'function' && getTodaysMetricLog(habit)) score += 16;
+      } catch (_) { /* ignore */ }
+
+      // Slight boost if Outlook is open on this one (already handled by pin, but helps sort)
+      if (currentProjectionHabit && habit?.id === currentProjectionHabit) score += 100;
+
+      return score;
     }
 
     function sortStreakFleetRows(list, mode = 'default') {
       return [...list].sort((a, b) => {
         if (mode === 'bright') {
-          // Pride first: done today, then length, then title
-          if (a.done !== b.done) return a.done ? -1 : 1;
+          const sb = getStreakWatchScore(b) - getStreakWatchScore(a);
+          if (sb !== 0) return sb;
           if (b.streak !== a.streak) return b.streak - a.streak;
           return String(a.habit.title || '').localeCompare(String(b.habit.title || ''));
         }
-        // Default / needs: due first, then higher streak
+        // Needs you / simple: due first, then watch score, then streak
         if (a.due !== b.due) return a.due ? -1 : 1;
+        if (mode === 'default' && list.length > STREAK_FLEET_FEW_MAX) {
+          const sb = getStreakWatchScore(b) - getStreakWatchScore(a);
+          if (sb !== 0) return sb;
+        }
         if (b.streak !== a.streak) return b.streak - a.streak;
         return String(a.habit.title || '').localeCompare(String(b.habit.title || ''));
       });
@@ -23210,6 +23260,8 @@
     /**
      * Partition fires into watch zones so 15+ habits don’t flood the tab.
      * needsYou → bright → more (more collapsed by default).
+     * Bright uses watch score + reserved slots for measurable goals
+     * (walk/steps/miles for body goals, pages, savings, etc.).
      */
     function partitionStreakFleet(rows) {
       const total = rows.length;
@@ -23225,20 +23277,43 @@
 
       const needsYou = sortStreakFleetRows(rows.filter(r => r.due), 'default');
       const needsIds = new Set(needsYou.map(r => r.habit.id));
-      let rest = sortStreakFleetRows(rows.filter(r => !needsIds.has(r.habit.id)), 'bright');
+      const rest = sortStreakFleetRows(rows.filter(r => !needsIds.has(r.habit.id)), 'bright');
+      const brightMax = STREAK_FLEET_BRIGHT_MAX;
 
-      // Keep the open Outlook target visible even if it would live in “more”
-      if (currentProjectionHabit) {
-        const selIdx = rest.findIndex(r => r.habit.id === currentProjectionHabit);
-        if (selIdx >= STREAK_FLEET_BRIGHT_MAX) {
-          const [sel] = rest.splice(selIdx, 1);
-          rest = [sel, ...rest];
+      // Prefer measurable habits first (score already ranks steps/miles highest),
+      // and reserve up to 3 bright slots for them so Walk isn’t buried by chores.
+      const metrics = rest.filter(r => r.quantitative);
+      const chores = rest.filter(r => !r.quantitative);
+      const metricReserve = Math.min(3, metrics.length, brightMax);
+
+      const bright = [];
+      const used = new Set();
+      const take = (entry) => {
+        if (!entry || used.has(entry.habit.id) || bright.length >= brightMax) return;
+        bright.push(entry);
+        used.add(entry.habit.id);
+      };
+
+      metrics.slice(0, metricReserve).forEach(take);
+      // Remaining bright seats: highest watch score overall (already sorted in rest)
+      rest.forEach(take);
+
+      // Outlook selection always stays on the watchlist
+      if (currentProjectionHabit && !used.has(currentProjectionHabit)) {
+        const sel = rest.find(r => r.habit.id === currentProjectionHabit);
+        if (sel) {
+          if (bright.length >= brightMax) {
+            const dropped = bright.pop();
+            if (dropped) used.delete(dropped.habit.id);
+          }
+          bright.unshift(sel);
+          used.add(sel.habit.id);
         }
       }
 
-      const bright = rest.slice(0, STREAK_FLEET_BRIGHT_MAX);
-      const more = rest.slice(STREAK_FLEET_BRIGHT_MAX);
-      return { mode: 'grouped', needsYou, bright, more, total };
+      const brightSorted = sortStreakFleetRows(bright, 'bright');
+      const more = rest.filter(r => !used.has(r.habit.id));
+      return { mode: 'grouped', needsYou, bright: brightSorted, more, total };
     }
 
     function buildStreakFleetHealthHtml(rows) {
