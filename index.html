@@ -21608,7 +21608,7 @@
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-bars text-harbor-muted mr-1.5"></i>Menu (☰)</h4>
-              <p>Profile, Settings, import/export, Privacy, App Tour, and this overview. Also how to keep Harbor on your Home Screen.</p>
+              <p>Profile, Settings, import/export, Privacy, Quick tour, and this overview. Also how to keep Harbor on your Home Screen.</p>
             </div>
           </div>
 
@@ -22304,9 +22304,10 @@
       const genderOptions = [
         { id: '', label: 'Prefer not to say' },
         { id: 'female', label: 'Female' },
-        { id: 'male', label: 'Male' },
-        { id: 'nonbinary', label: 'Non-binary' }
+        { id: 'male', label: 'Male' }
       ];
+      // Legacy value no longer offered in the picker
+      const selectedGender = profile.gender === 'nonbinary' ? '' : (profile.gender || '');
       const focusSet = new Set(profile.focusAreas || []);
       const tz = profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || '—';
 
