@@ -4055,9 +4055,10 @@
       gap: 0.3rem;
       padding: 0.22rem;
       border-radius: 999px;
-      background: rgba(18, 28, 34, 0.55);
+      background: rgb(var(--harbor-raised));
       border: 1px solid rgb(var(--harbor-border));
       margin-bottom: 0.9rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
     }
 
     .summary-toggle-btn {
@@ -4078,9 +4079,9 @@
     }
 
     .summary-toggle-btn.is-active {
-      background: linear-gradient(135deg, rgb(var(--harbor-primary)) 0%, #2d7d72 100%);
+      background: linear-gradient(135deg, #3CB5A6 0%, #2F9B8C 100%);
       color: #fff;
-      box-shadow: 0 4px 14px rgba(47, 155, 140, 0.35);
+      box-shadow: 0 4px 14px rgba(47, 155, 140, 0.28);
     }
 
     /* Summary month glance calendar */
@@ -4113,8 +4114,8 @@
       font-size: 0.68rem;
       font-weight: 650;
       color: rgb(var(--harbor-text));
-      background: rgba(18, 40, 38, 0.45);
-      border: 1px solid transparent;
+      background: rgb(var(--harbor-raised));
+      border: 1px solid rgb(var(--harbor-border) / 0.65);
       line-height: 1;
       width: 100%;
       padding: 0;
@@ -4131,32 +4132,33 @@
     }
 
     .summary-month-cal-day.is-past {
-      color: rgba(143, 168, 163, 0.45);
+      color: rgb(var(--harbor-muted) / 0.55);
       background: transparent;
+      border-color: transparent;
     }
 
     .summary-month-cal-day.is-week:not(.is-past):not(.is-today) {
       background: rgba(47, 155, 140, 0.08);
-      border-color: rgba(47, 155, 140, 0.14);
+      border-color: rgba(47, 155, 140, 0.18);
     }
 
     .summary-month-cal-day.is-today {
-      border-color: rgb(var(--harbor-primary-light));
-      box-shadow: 0 0 0 1px rgba(107, 191, 176, 0.35);
-      color: #fff;
+      border-color: rgb(var(--harbor-primary));
+      box-shadow: 0 0 0 1px rgba(47, 155, 140, 0.22);
+      color: rgb(var(--harbor-text));
       font-weight: 750;
-      background: rgba(47, 155, 140, 0.16);
+      background: rgba(47, 155, 140, 0.14);
     }
 
     .summary-month-cal-day.has-event {
-      border-color: rgba(91, 184, 168, 0.5);
+      border-color: rgba(47, 155, 140, 0.42);
       cursor: pointer;
     }
 
     .summary-month-cal-day.has-event:hover,
     .summary-month-cal-day.has-event:focus-visible {
-      border-color: rgb(var(--harbor-primary-light));
-      background: rgba(47, 155, 140, 0.18);
+      border-color: rgb(var(--harbor-primary));
+      background: rgba(47, 155, 140, 0.16);
       outline: none;
     }
 
@@ -4166,7 +4168,7 @@
 
     .summary-month-cal-day.is-interactive:hover,
     .summary-month-cal-day.is-interactive:focus-visible {
-      border-color: rgba(91, 184, 168, 0.4);
+      border-color: rgba(47, 155, 140, 0.4);
       outline: none;
     }
 
@@ -4174,8 +4176,8 @@
       width: 0.28rem;
       height: 0.28rem;
       border-radius: 999px;
-      background: rgb(var(--harbor-primary-light));
-      box-shadow: 0 0 6px rgba(107, 191, 176, 0.55);
+      background: rgb(var(--harbor-primary));
+      box-shadow: 0 0 5px rgba(47, 155, 140, 0.35);
     }
 
     .summary-month-cal-day.is-past .summary-month-cal-dot {
@@ -4187,16 +4189,16 @@
     .summary-month-cal-hint {
       margin-top: 0.55rem;
       padding-top: 0.4rem;
-      border-top: 1px solid rgba(143, 184, 176, 0.1);
+      border-top: 1px solid rgb(var(--harbor-border) / 0.75);
       font-size: 0.58rem;
       line-height: 1.35;
-      color: rgba(143, 168, 163, 0.7);
+      color: rgb(var(--harbor-muted));
       font-weight: 500;
       text-align: center;
     }
 
     .summary-month-cal-hint strong {
-      color: rgba(200, 214, 210, 0.82);
+      color: rgb(var(--harbor-text));
       font-weight: 650;
     }
 
@@ -4278,18 +4280,19 @@
       padding: 0.55rem 0.35rem 0.5rem;
       text-align: center;
       border: 1px solid rgb(var(--harbor-border));
-      background: rgba(22, 32, 40, 0.65);
+      background: rgb(var(--harbor-raised));
+      box-shadow: var(--harbor-shadow-sm);
       min-width: 0;
     }
 
     .summary-kpi.is-hot {
-      border-color: rgba(251, 191, 36, 0.45);
-      background: linear-gradient(160deg, rgba(251, 191, 36, 0.14), rgba(22, 32, 40, 0.7));
+      border-color: rgba(184, 148, 48, 0.45);
+      background: linear-gradient(160deg, rgba(212, 168, 48, 0.14), rgb(var(--harbor-raised)));
     }
 
     .summary-kpi.is-live {
       border-color: rgba(47, 155, 140, 0.4);
-      background: linear-gradient(160deg, rgba(47, 155, 140, 0.16), rgba(22, 32, 40, 0.7));
+      background: linear-gradient(160deg, rgba(47, 155, 140, 0.12), rgb(var(--harbor-raised)));
     }
 
     .summary-kpi-val {
@@ -4302,7 +4305,7 @@
     }
 
     .summary-kpi.is-hot .summary-kpi-val {
-      color: #fbbf24;
+      color: #a67c12;
     }
 
     .summary-kpi.is-live .summary-kpi-val {
@@ -4326,16 +4329,16 @@
       border-radius: 1.25rem;
       padding: 1rem 1rem 0.95rem;
       margin-bottom: 0.85rem;
-      border: 1px solid rgba(107, 191, 176, 0.4);
+      border: 1px solid rgba(47, 155, 140, 0.28);
       background:
-        radial-gradient(ellipse 80% 70% at 10% 0%, rgba(107, 191, 176, 0.22) 0%, transparent 55%),
-        linear-gradient(155deg, rgba(30, 70, 68, 0.55) 0%, rgba(22, 36, 44, 0.92) 100%);
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        radial-gradient(ellipse 80% 70% at 10% 0%, rgba(47, 155, 140, 0.14) 0%, transparent 55%),
+        linear-gradient(155deg, rgb(var(--harbor-surface)) 0%, rgb(var(--harbor-raised)) 100%);
+      box-shadow: var(--harbor-shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.45);
     }
 
     .summary-focus.is-clear {
       border-color: rgb(var(--harbor-border));
-      background: rgba(22, 32, 40, 0.55);
+      background: rgb(var(--harbor-raised));
       box-shadow: none;
     }
 
@@ -4356,7 +4359,7 @@
       font-weight: 750;
       letter-spacing: -0.03em;
       line-height: 1.25;
-      color: #f3faf8;
+      color: rgb(var(--harbor-text));
     }
 
     .summary-focus-meta {
@@ -4371,15 +4374,15 @@
       font-weight: 600;
       padding: 0.22rem 0.5rem;
       border-radius: 999px;
-      background: rgba(10, 31, 30, 0.45);
-      border: 1px solid rgba(107, 191, 176, 0.22);
-      color: rgba(214, 228, 224, 0.9);
+      background: rgb(var(--harbor-surface));
+      border: 1px solid rgb(var(--harbor-border));
+      color: rgb(var(--harbor-text));
     }
 
     .summary-chip.is-due {
-      border-color: rgba(251, 191, 36, 0.4);
-      color: #fbbf24;
-      background: rgba(251, 191, 36, 0.1);
+      border-color: rgba(184, 148, 48, 0.45);
+      color: #8a6810;
+      background: rgba(212, 168, 48, 0.14);
     }
 
     .summary-upnext {
@@ -4395,15 +4398,16 @@
       gap: 0.6rem;
       padding: 0.55rem 0.7rem;
       border-radius: 0.9rem;
-      background: rgba(22, 32, 40, 0.55);
+      background: rgb(var(--harbor-raised));
       border: 1px solid rgb(var(--harbor-border));
+      box-shadow: var(--harbor-shadow-sm);
     }
 
     .summary-upnext-rank {
       width: 1.4rem;
       height: 1.4rem;
       border-radius: 0.45rem;
-      background: rgba(47, 155, 140, 0.18);
+      background: rgba(47, 155, 140, 0.14);
       color: rgb(var(--harbor-primary-light));
       font-size: 0.68rem;
       font-weight: 750;
@@ -4449,7 +4453,8 @@
     .summary-panel {
       border-radius: 1.1rem;
       border: 1px solid rgb(var(--harbor-border));
-      background: rgba(18, 28, 34, 0.55);
+      background: rgb(var(--harbor-raised));
+      box-shadow: var(--harbor-shadow-sm);
       padding: 0.75rem 0.8rem 0.7rem;
       min-width: 0;
     }
@@ -4485,7 +4490,7 @@
       font-size: 0.62rem;
       font-weight: 700;
       color: rgb(var(--harbor-primary-light));
-      background: rgba(47, 155, 140, 0.14);
+      background: rgba(47, 155, 140, 0.12);
       border-radius: 999px;
       padding: 0.12rem 0.45rem;
     }
@@ -4496,7 +4501,7 @@
       gap: 0.5rem;
       align-items: start;
       padding: 0.4rem 0;
-      border-top: 1px solid rgba(61, 80, 90, 0.35);
+      border-top: 1px solid rgb(var(--harbor-border) / 0.75);
     }
 
     .summary-timeline-row:first-of-type {
@@ -4530,7 +4535,7 @@
       align-items: center;
       gap: 0.55rem;
       padding: 0.45rem 0;
-      border-top: 1px solid rgba(61, 80, 90, 0.35);
+      border-top: 1px solid rgb(var(--harbor-border) / 0.75);
     }
 
     .summary-life-row:first-of-type {
@@ -4550,17 +4555,17 @@
     }
 
     .summary-life-icon.is-bill {
-      background: rgba(251, 191, 36, 0.12);
-      color: #fbbf24;
+      background: rgba(212, 168, 48, 0.16);
+      color: #a67c12;
     }
 
     .summary-life-icon.is-cart {
-      background: rgba(56, 189, 248, 0.12);
-      color: #7dd3fc;
+      background: rgba(14, 116, 144, 0.1);
+      color: #0e7490;
     }
 
     .summary-life-icon.is-chore {
-      background: rgba(47, 155, 140, 0.14);
+      background: rgba(47, 155, 140, 0.12);
       color: rgb(var(--harbor-primary-light));
     }
 
@@ -4612,8 +4617,65 @@
       margin-top: 0.35rem;
       padding: 0.55rem 0.65rem;
       border-radius: 0.75rem;
-      background: rgba(10, 31, 30, 0.35);
-      border: 1px solid rgba(61, 80, 90, 0.4);
+      background: rgb(var(--harbor-raised));
+      border: 1px solid rgb(var(--harbor-border));
+    }
+
+    /* Dark coastal night — slightly deeper cards, brighter accents */
+    html[data-theme="dark"] .summary-toggle {
+      background: rgb(var(--harbor-raised));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    html[data-theme="dark"] .summary-month-cal-day {
+      background: rgb(var(--harbor-raised));
+      border-color: rgb(var(--harbor-border) / 0.85);
+    }
+    html[data-theme="dark"] .summary-month-cal-day.is-today {
+      color: rgb(var(--harbor-text));
+      background: rgba(72, 178, 162, 0.16);
+      border-color: rgb(var(--harbor-primary-light));
+      box-shadow: 0 0 0 1px rgba(72, 178, 162, 0.28);
+    }
+    html[data-theme="dark"] .summary-month-cal-dot {
+      background: rgb(var(--harbor-primary-light));
+      box-shadow: 0 0 6px rgba(72, 178, 162, 0.45);
+    }
+    html[data-theme="dark"] .summary-kpi {
+      background: rgb(var(--harbor-raised));
+    }
+    html[data-theme="dark"] .summary-kpi.is-hot {
+      border-color: rgba(251, 191, 36, 0.4);
+      background: linear-gradient(160deg, rgba(251, 191, 36, 0.12), rgb(var(--harbor-raised)));
+    }
+    html[data-theme="dark"] .summary-kpi.is-hot .summary-kpi-val {
+      color: #fbbf24;
+    }
+    html[data-theme="dark"] .summary-kpi.is-live {
+      border-color: rgba(72, 178, 162, 0.4);
+      background: linear-gradient(160deg, rgba(72, 178, 162, 0.12), rgb(var(--harbor-raised)));
+    }
+    html[data-theme="dark"] .summary-focus {
+      border-color: rgba(72, 178, 162, 0.32);
+      background:
+        radial-gradient(ellipse 80% 70% at 10% 0%, rgba(72, 178, 162, 0.14) 0%, transparent 55%),
+        linear-gradient(155deg, rgb(var(--harbor-surface)) 0%, rgb(var(--harbor-raised)) 100%);
+      box-shadow: var(--harbor-shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    html[data-theme="dark"] .summary-chip.is-due {
+      border-color: rgba(251, 191, 36, 0.4);
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.1);
+    }
+    html[data-theme="dark"] .summary-life-icon.is-bill {
+      background: rgba(251, 191, 36, 0.12);
+      color: #fbbf24;
+    }
+    html[data-theme="dark"] .summary-life-icon.is-cart {
+      background: rgba(56, 189, 248, 0.12);
+      color: #7dd3fc;
+    }
+    html[data-theme="dark"] .summary-stat.is-urgent {
+      color: #fbbf24;
     }
 
     @media (max-width: 380px) {
@@ -6798,7 +6860,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v160';
+    const HARBOR_BUILD = 'v161';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
