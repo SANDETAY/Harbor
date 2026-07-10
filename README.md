@@ -61,7 +61,7 @@ Every `git push` to `main` updates the live site. Testers can also **Add to Home
 | Smart suggestions & tips | Live |
 | Task library (preloaded chores) | Live |
 | Bills, grocery, schedule | Live (local data) |
-| Streaks & Cheat Day Fund | Live |
+| Streaks & Harbor Day | Live |
 | Weather (hourly forecast) | Live (uses device location) |
 | Voice commands | Chrome/Edge only |
 | Calendar (ICS URL + file import) | Live — secret iCal URL and/or .ics file; direct fetch by default (optional network helper) |
