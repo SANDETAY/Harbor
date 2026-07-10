@@ -4316,26 +4316,71 @@
       transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
+    /* Harbor Day card — sleek minimal */
+    .harbor-day-card {
+      position: relative;
+      margin-top: 0.75rem;
+      padding: 1.1rem 1.05rem 1rem;
+      border-radius: 1.35rem;
+      background: rgb(var(--harbor-surface));
+      border: 1px solid rgb(var(--harbor-border) / 0.85);
+      box-shadow: var(--harbor-shadow-sm);
+      overflow: hidden;
+    }
+    .harbor-day-card::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(107, 191, 176, 0.45), transparent);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+    .harbor-day-card.is-earning {
+      animation: cheatFundPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .harbor-day-kicker {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-primary-light));
+      opacity: 0.9;
+    }
+    .harbor-day-pts {
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: rgb(var(--harbor-text));
+      letter-spacing: -0.02em;
+    }
     .cheat-fund-jar {
       position: relative;
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 0.75rem;
+      gap: 0.7rem;
+      margin: 0.85rem 0 0.45rem;
     }
     .cheat-fund-jar-icon {
-      font-size: 2rem;
+      width: 2.1rem;
+      height: 2.1rem;
+      border-radius: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
       line-height: 1;
-      filter: drop-shadow(0 2px 6px rgba(251, 191, 36, 0.35));
+      background: rgba(47, 155, 140, 0.12);
+      border: 1px solid rgba(107, 191, 176, 0.22);
       transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .cheat-fund-jar.is-earning .cheat-fund-jar-icon {
-      transform: scale(1.12) rotate(-6deg);
+      transform: scale(1.06);
     }
     .cheat-fund-track {
       position: relative;
       flex: 1;
-      height: 0.55rem;
+      height: 0.28rem;
       background: rgb(var(--harbor-raised));
       border-radius: 9999px;
       overflow: visible;
@@ -4343,16 +4388,16 @@
     .cheat-fund-fill {
       height: 100%;
       border-radius: 9999px;
-      background: linear-gradient(to right, #d97706, #fbbf24, #fde68a);
+      background: linear-gradient(90deg, rgba(47, 155, 140, 0.55), rgb(var(--harbor-primary-light)));
       transition: width 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
-      box-shadow: 0 0 12px rgba(251, 191, 36, 0.35);
+      box-shadow: 0 0 10px rgba(47, 155, 140, 0.28);
     }
     .cheat-fund-earn-pop {
       animation: cheatFundPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     @keyframes cheatFundPop {
       0% { transform: scale(1); }
-      40% { transform: scale(1.02); }
+      40% { transform: scale(1.01); }
       100% { transform: scale(1); }
     }
     .cheat-fund-reward-chip {
@@ -4366,8 +4411,8 @@
       transition: border-color 0.2s, background 0.2s, transform 0.15s;
     }
     .cheat-fund-reward-chip.is-ready {
-      border-color: rgba(251, 191, 36, 0.55);
-      background: rgba(251, 191, 36, 0.1);
+      border-color: rgba(47, 155, 140, 0.5);
+      background: rgba(47, 155, 140, 0.12);
     }
     .cheat-fund-reward-chip:active { transform: scale(0.97); }
     .cheat-fund-rewards-row {
@@ -4397,18 +4442,21 @@
       100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
     }
     .cheat-day-today-banner {
-      background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(217, 119, 6, 0.08));
-      border: 1px solid rgba(251, 191, 36, 0.35);
+      background: linear-gradient(155deg, rgba(47, 155, 140, 0.14), rgba(18, 46, 44, 0.35));
+      border: 1px solid rgba(107, 191, 176, 0.28);
+    }
+    html[data-theme="light"] .cheat-day-today-banner {
+      background: linear-gradient(155deg, rgba(47, 155, 140, 0.1), rgba(255, 255, 255, 0.9));
     }
     html[data-fun-theme] .cheat-fund-fill {
-      background: linear-gradient(to right, rgb(var(--harbor-primary)), rgb(var(--harbor-primary-light)), #fde68a);
+      background: linear-gradient(to right, rgb(var(--harbor-primary)), rgb(var(--harbor-primary-light)));
     }
     .cheat-fund-milestone {
       position: absolute;
       top: 50%;
       transform: translate(-50%, -50%);
-      width: 0.4rem;
-      height: 0.4rem;
+      width: 0.32rem;
+      height: 0.32rem;
       border-radius: 9999px;
       background: rgb(var(--harbor-border));
       border: 1px solid rgb(var(--harbor-surface));
@@ -4422,8 +4470,47 @@
     }
 
     .cheat-fund-milestone.is-passed {
-      background: #fbbf24;
-      box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25);
+      background: rgb(var(--harbor-primary-light));
+      box-shadow: 0 0 0 2px rgba(47, 155, 140, 0.22);
+    }
+
+    .harbor-day-action {
+      width: 100%;
+      padding: 0.7rem 0.85rem;
+      border-radius: 0.95rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised) / 0.65);
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+    }
+    .harbor-day-action.is-ready {
+      border-color: rgba(107, 191, 176, 0.4);
+      background: rgba(47, 155, 140, 0.1);
+    }
+    .harbor-day-action:disabled {
+      opacity: 0.55;
+    }
+    .harbor-day-action:not(:disabled):active {
+      opacity: 0.9;
+    }
+    .harbor-day-cta {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border-radius: 0.95rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      border: none;
+      background: rgb(var(--harbor-primary));
+      color: #fff;
+    }
+    .harbor-day-cta:disabled {
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      border: 1px solid rgb(var(--harbor-border));
+    }
+    .harbor-day-cta:not(:disabled):active {
+      opacity: 0.92;
     }
     .cheat-treat-btn.is-selected {
       border-color: rgba(47, 155, 140, 0.65);
@@ -5825,7 +5912,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v133';
+    const HARBOR_BUILD = 'v134';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -5839,6 +5926,7 @@
       habits: [],
       completions: {}, // { "habitId": ["2026-01-01", ...] }
       habitSkips: {},    // { "habitId": ["2026-01-07", ...] } — skip breaks streak
+      habitPasses: {},   // { "habitId": ["2026-01-07", ...] } — Pass protects streak
       dailyEnergy: {},   // { "2026-01-01": 1|2|3 }
       customUsage: {},   // track frequency of custom adds
       bills: [],
@@ -5930,23 +6018,24 @@
     const CHEAT_DAY_COST_MIN = 500;
     const CHEAT_DAY_COST_MAX = 800;
 
-    // Option A: only real-life flexibility before Harbor Day — no cosmetic shop
-    const CHEAT_FUND_SMALL_REWARDS = [
-      { id: 'skip', cost: 150, emoji: '🌊', label: 'Pass Once', desc: 'On Today, tap Pass on an easy task — no streak stress' }
-    ];
-    const HARBOR_PASS_COST = 150;
+    // Passes are rare streak-protection credits — earned from milestones, not bought with points
+    const HARBOR_PASS_MAX = 2;
+    const HARBOR_PASS_MILESTONES = [7, 14, 21, 30]; // ~up to 4 earned per habit over a 30-day run; hold max 2
 
     const STREAK_MILESTONE_BONUSES = { 7: 25, 30: 75, 100: 200 };
 
+    // Top downtime / recovery activities people actually chase (leisure + self-care research)
     const CHEAT_DAY_TREATS = [
-      { id: 'coffee', emoji: '☕', label: 'Favorite coffee' },
-      { id: 'takeout', emoji: '🍕', label: 'Takeout night' },
-      { id: 'sweet', emoji: '🍰', label: 'Something sweet' },
-      { id: 'lazy', emoji: '🛋️', label: 'Soft evening' },
-      { id: 'screen', emoji: '📺', label: 'Watch something easy' },
-      { id: 'nap', emoji: '😴', label: 'Guilt-free nap' },
-      { id: 'walk', emoji: '🚶', label: 'Walk with no goal' },
-      { id: 'early', emoji: '🌙', label: 'Early bedtime' }
+      { id: 'sleep', emoji: '😴', label: 'Extra sleep' },
+      { id: 'walk', emoji: '🚶', label: 'Easy outdoor walk' },
+      { id: 'screen', emoji: '📺', label: 'Show or movie' },
+      { id: 'read', emoji: '📖', label: 'Read for fun' },
+      { id: 'coffee', emoji: '☕', label: 'Coffee or tea out' },
+      { id: 'meal', emoji: '🍜', label: 'Comfort meal' },
+      { id: 'bath', emoji: '🛁', label: 'Long shower or bath' },
+      { id: 'people', emoji: '💬', label: 'Time with someone' },
+      { id: 'unplug', emoji: '📵', label: 'Unplug hour' },
+      { id: 'nothing', emoji: '🛋️', label: 'Do absolutely nothing' }
     ];
 
     // How you spend a Harbor Day — rest is flexible, not one-size-fits-all
@@ -6405,6 +6494,7 @@
         rewardBank: { points: 0, totalEarned: 0, cheatDownsUsed: 0, lastCheatDate: null },
         challenges: [],
         habitSkips: {},
+        habitPasses: {},
         feedbackLog: [],
       calendarCache: null,
       customLibrary: [],
@@ -6688,8 +6778,10 @@
       if (!state.rewardBank.cheatDayDates) state.rewardBank.cheatDayDates = [];
       if (!state.rewardBank.badges) state.rewardBank.badges = 0;
       if (state.rewardBank.skipToken == null) state.rewardBank.skipToken = 0;
+      if (!state.rewardBank.passMilestones) state.rewardBank.passMilestones = {};
       if (state.rewardBank.bankedHarborDays == null) state.rewardBank.bankedHarborDays = 0;
       if (state.rewardBank.goalTreat === undefined) state.rewardBank.goalTreat = null;
+      if (!state.habitPasses) state.habitPasses = {};
       if (!state.feedbackLog) state.feedbackLog = [];
       if (state.rewardBank.cheatDaysUsed != null && state.rewardBank.cheatDownsUsed == null) {
         state.rewardBank.cheatDownsUsed = state.rewardBank.cheatDaysUsed;
@@ -7098,8 +7190,12 @@
       return state.habitSkips?.[habitId] || [];
     }
 
+    function getHabitPasses(habitId) {
+      return state.habitPasses?.[habitId] || [];
+    }
+
     function getHabitLastActivityDate(habitId) {
-      const all = [...getCompletions(habitId), ...getHabitSkips(habitId)].sort();
+      const all = [...getCompletions(habitId), ...getHabitSkips(habitId), ...getHabitPasses(habitId)].sort();
       return all.length ? all[all.length - 1] : null;
     }
 
@@ -7117,14 +7213,17 @@
 
       const dateSet = new Set(dates);
       const skipSet = new Set(getHabitSkips(habitId));
+      const passSet = new Set(getHabitPasses(habitId));
 
       for (let i = 0; i < 365; i++) {
         const ds = dateStrLocal(checkDate);
+        // Hard skip breaks the chain
         if (skipSet.has(ds)) break;
         if (dateSet.has(ds)) {
           streak++;
           checkDate.setDate(checkDate.getDate() - 1);
-        } else if (typeof isCheatGraceDay === 'function' && isCheatGraceDay(ds)) {
+        } else if (passSet.has(ds) || (typeof isCheatGraceDay === 'function' && isCheatGraceDay(ds))) {
+          // Pass / Harbor grace: day doesn't break streak (doesn't add a day either)
           checkDate.setDate(checkDate.getDate() - 1);
         } else {
           break;
@@ -13170,6 +13269,7 @@
 
       if (comps.includes(today)) return false;
       if (getHabitSkips(habit.id).includes(today)) return false;
+      if (getHabitPasses(habit.id).includes(today)) return false;
 
       if (isOneOffTask(habit)) {
         return comps.length === 0;
@@ -13528,7 +13628,7 @@
           ${syncedStats ? `<div class="text-[9px] text-sky-300 mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
           <div class="row-inline-actions flex items-center justify-end gap-2 mt-1">
             ${dueToday && !isOneOffTask(habit) ? `<button type="button" onclick="skipRecurringHabit('${habit.id}', event)" class="text-[10px] text-harbor-muted hover:text-amber-300 px-1" title="Skip this cycle — resets streak">Skip</button>` : ''}
-            ${dueToday && (habit.difficulty || 2) <= 1 && (ensureRewardBank().skipToken || 0) > 0 ? `<button type="button" onclick="useSkipToken('${habit.id}', event)" class="text-[10px] text-harbor-primary-light hover:text-harbor-text px-1" title="Pass this easy task once">Pass</button>` : ''}
+            ${dueToday && shouldTrackStreak(habit) && (ensureRewardBank().skipToken || 0) > 0 ? `<button type="button" onclick="useSkipToken('${habit.id}', event)" class="text-[10px] text-harbor-primary-light hover:text-harbor-text px-1" title="Pass — keeps your streak (rare)">Pass</button>` : ''}
             <button type="button" onclick="event.stopImmediatePropagation(); editHabitFromToday('${habit.id}')" class="text-[10px] text-harbor-primary-light font-medium px-1" title="Edit task">Edit</button>
             <button type="button" onclick="event.stopImmediatePropagation(); showHabitDetail('${habit.id}')" class="text-harbor-primary-light text-xs" title="Details">
               <i class="fa-solid fa-info-circle"></i>
@@ -13831,6 +13931,8 @@
       if (typeof markLocalChallengeCheckIns === 'function') {
         streakOffHit = !!markLocalChallengeCheckIns(habit);
       }
+
+      const passAwarded = typeof maybeAwardStreakPass === 'function' ? maybeAwardStreakPass(habit) : false;
       
       // If recurring, we don't add it again until next due — handled by isDueToday
       saveState();
@@ -13852,7 +13954,8 @@
       
       const ptsMsg = pointsEarned ? ` · +${pointsEarned} toward Harbor Day` : '';
       const soMsg = streakOffHit ? ' · Streak-Off ✓' : '';
-      showToast(`Great job! ${habit.title} logged${ptsMsg}${soMsg}`);
+      const passMsg = passAwarded ? ' · 🌊 Pass earned' : '';
+      showToast(`Great job! ${habit.title} logged${ptsMsg}${soMsg}${passMsg}`);
       maybeAdvanceTutorial('habit-complete');
       
       // Gentle autonomous follow-up
@@ -18311,9 +18414,30 @@
       if (!state.rewardBank.cheatDayDates) state.rewardBank.cheatDayDates = [];
       if (!state.rewardBank.badges) state.rewardBank.badges = 0;
       if (state.rewardBank.skipToken == null) state.rewardBank.skipToken = 0;
+      if (!state.rewardBank.passMilestones) state.rewardBank.passMilestones = {};
       if (state.rewardBank.bankedHarborDays == null) state.rewardBank.bankedHarborDays = 0;
       if (state.rewardBank.goalTreat === undefined) state.rewardBank.goalTreat = null;
+      if (!state.habitPasses) state.habitPasses = {};
       return state.rewardBank;
+    }
+
+    /** Rare Passes from streak milestones (7/14/21/30). Hold max HARBOR_PASS_MAX. */
+    function maybeAwardStreakPass(habit) {
+      if (!habit || !shouldTrackStreak(habit)) return false;
+      const bank = ensureRewardBank();
+      if (!bank.passMilestones) bank.passMilestones = {};
+      if (!bank.passMilestones[habit.id]) bank.passMilestones[habit.id] = [];
+      const streak = computeCurrentStreak(habit.id);
+      const hit = HARBOR_PASS_MILESTONES.find(m => streak >= m && !bank.passMilestones[habit.id].includes(m));
+      if (!hit) return false;
+      bank.passMilestones[habit.id].push(hit);
+      const held = bank.skipToken || 0;
+      if (held >= HARBOR_PASS_MAX) {
+        showToast(`🌊 ${habit.title} hit ${hit} days — Pass bank full (max ${HARBOR_PASS_MAX}). Use one first.`, 'info');
+        return false;
+      }
+      bank.skipToken = held + 1;
+      return true;
     }
 
     function isCheatDayFundEnabled() {
@@ -18462,8 +18586,8 @@
     }
 
     function getNextSmallReward() {
-      const bank = ensureRewardBank();
-      return CHEAT_FUND_SMALL_REWARDS.find(r => bank.points < r.cost) || null;
+      // Passes are streak-milestone earned now — no points shop
+      return null;
     }
 
     function lightenHexColor(hex, amount = 0.28) {
@@ -18563,7 +18687,11 @@
         guides.push({ emoji: '✨', label: 'Calm boost', text: 'Open Streaks → tap a measurable habit → read Projected Wins.' });
       }
       if (bank.skipToken) {
-        guides.push({ emoji: '🌊', label: `${bank.skipToken} pass${bank.skipToken === 1 ? '' : 'es'} ready`, text: 'On Today, tap <strong>Pass</strong> on an easy (Low energy) task.' });
+        guides.push({
+          emoji: '🌊',
+          label: `${bank.skipToken} streak pass${bank.skipToken === 1 ? '' : 'es'}`,
+          text: 'On Today, tap <strong>Pass</strong> on a streak habit — keeps your fire without completing it. Rare (max 2 held).'
+        });
       }
       if (state.settings.funThemeUntil && state.settings.funThemeUntil >= todayStr()) {
         const theme = FUN_THEMES.find(t => t.id === state.settings.funTheme);
@@ -18597,58 +18725,38 @@
       return guides;
     }
 
-    function getRewardRedeemToast(reward) {
-      if (reward?.id === 'skip') return '🌊 Pass ready — on Today, tap Pass on an easy task.';
-      return `${reward?.emoji || '⚓'} ${reward?.label || 'Reward'} claimed.`;
-    }
-
-    function redeemSmallReward(rewardId) {
-      // Only Pass Once is offered; ignore legacy ids if somehow called
-      const reward = CHEAT_FUND_SMALL_REWARDS.find(r => r.id === rewardId);
-      if (!reward || reward.id !== 'skip') {
-        showToast('That reward is no longer part of Harbor Day', 'info');
-        return;
-      }
-      const bank = ensureRewardBank();
-      if (bank.points < reward.cost) {
-        showToast(`${reward.cost - bank.points} more pts until Pass Once`);
-        return;
-      }
-      bank.points -= reward.cost;
-      bank.skipToken = (bank.skipToken || 0) + 1;
-      saveState();
-      renderRewardBank();
-      renderStreaks();
-      renderTasks();
-      showToast(getRewardRedeemToast(reward));
-    }
-
     function useSkipToken(habitId, event) {
       if (event) event.stopImmediatePropagation();
       const bank = ensureRewardBank();
       if (!bank.skipToken) {
-        showToast('No passes yet — earn one at 150 pts toward Harbor Day');
+        showToast('No passes yet — earn them at 7, 14, 21, and 30-day streak milestones');
         return;
       }
       const habit = state.habits.find(h => h.id === habitId);
-      if (!habit || (habit.difficulty || 2) > 1) {
-        showToast('Pass works on easy tasks only');
+      if (!habit) return;
+      if (!shouldTrackStreak(habit)) {
+        showToast('Pass only works on streak-enabled habits');
         return;
       }
       if (!isDueToday(habit)) {
-        showToast('This task isn\'t due today');
+        showToast('This habit isn\'t due today');
+        return;
+      }
+      const today = todayStr();
+      if (getHabitPasses(habitId).includes(today)) {
+        showToast('Already passed this habit today');
         return;
       }
       bank.skipToken -= 1;
-      if (!state.habitSkips) state.habitSkips = {};
-      if (!state.habitSkips[habitId]) state.habitSkips[habitId] = [];
-      const today = todayStr();
-      if (!state.habitSkips[habitId].includes(today)) state.habitSkips[habitId].push(today);
+      if (!state.habitPasses) state.habitPasses = {};
+      if (!state.habitPasses[habitId]) state.habitPasses[habitId] = [];
+      state.habitPasses[habitId].push(today);
+      state.habitPasses[habitId].sort();
       saveState();
       renderTasks();
       renderStreaks();
       renderRewardBank();
-      showToast(`🌊 Passed “${habit.title}” for today — no streak stress`);
+      showToast(`🌊 Passed “${habit.title}” — streak protected`);
     }
 
     function showConfetti() {
@@ -18803,15 +18911,15 @@
       const goalBit = goal ? ` toward ${goal.emoji} ${goal.label}` : '';
       if (remaining === 0) {
         return goal
-          ? `⚓ Ready — claim your Harbor Day for ${goal.emoji} ${goal.label} whenever you like.`
-          : '⚓ Meter full — claim a Harbor Day (Moment, Window, Full day, or Bank) whenever you’re ready.';
+          ? `Ready — claim your Harbor Day for ${goal.emoji} ${goal.label} whenever you like.`
+          : 'Meter full — claim a Moment, Window, Full day, or Bank whenever you’re ready.';
       }
       const pace = getCheatDayPaceEstimate();
-      const passCost = HARBOR_PASS_COST || 150;
-      const passLine = bank.points < passCost
-        ? `Pass Once at ${passCost} pts`
-        : 'Pass Once available';
-      return `${passLine} · ~${pace.days} day${pace.days === 1 ? '' : 's'} to Harbor Day${goalBit} at your pace`;
+      const passHeld = bank.skipToken || 0;
+      const passLine = passHeld
+        ? `${passHeld} streak pass${passHeld === 1 ? '' : 'es'} ready`
+        : 'Passes unlock at 7 · 14 · 21 · 30-day streaks';
+      return `${passLine} · ~${pace.days} day${pace.days === 1 ? '' : 's'} to Harbor Day${goalBit}`;
     }
 
     function showCheatDayRedeemModal(options = {}) {
@@ -18945,8 +19053,8 @@
 
       if (!isCheatDayFundEnabled()) {
         panel.innerHTML = `
-          <div class="bg-harbor-surface/60 border border-harbor-border/60 rounded-3xl p-4 text-center">
-            <div class="text-xs text-harbor-muted">Harbor Day is off — enable in Settings if you want earned rest from real progress.</div>
+          <div class="harbor-day-card text-center">
+            <div class="text-xs text-harbor-muted">Harbor Day is off — enable in Settings for earned rest from real progress.</div>
           </div>`;
         return;
       }
@@ -18958,10 +19066,7 @@
       const canRedeem = canRedeemCheatDay();
       const goal = getHarborGoalTreat();
       const banked = bank.bankedHarborDays || 0;
-      const passReward = CHEAT_FUND_SMALL_REWARDS.find(r => r.id === 'skip') || { id: 'skip', cost: 150, emoji: '🌊', label: 'Pass Once' };
-      const passReady = bank.points >= passReward.cost;
-      const passPct = Math.min(99, Math.round((passReward.cost / cost) * 100));
-      const milestoneMarkers = `<span class="cheat-fund-milestone ${passReady ? 'is-passed' : ''}" style="left:${passPct}%" title="Pass Once"></span>`;
+      const passes = bank.skipToken || 0;
 
       const goalChips = CHEAT_DAY_TREATS.map(t => {
         const selected = goal && goal.id === t.id;
@@ -18969,98 +19074,97 @@
       }).join('');
 
       const passHtml = `
-        <button type="button" onclick="redeemSmallReward('skip')"
-          class="w-full mb-2.5 px-3 py-2.5 rounded-2xl border text-left transition-colors ${passReady
-            ? 'border-harbor-primary/45 bg-harbor-primary/12 active:opacity-90'
-            : 'border-harbor-border bg-harbor-raised/60 opacity-80'}"
-          title="${passReward.desc || 'Pass an easy task once'}"
-          ${passReady ? '' : 'disabled'}>
+        <div class="harbor-day-action mb-2 ${passes ? 'is-ready' : ''}">
           <div class="flex items-center gap-2.5">
-            <span class="text-lg leading-none" aria-hidden="true">${passReward.emoji}</span>
+            <span class="text-base leading-none" aria-hidden="true">🌊</span>
             <div class="flex-1 min-w-0">
-              <div class="text-[11px] font-semibold text-harbor-text">Pass Once</div>
-              <div class="text-[9px] text-harbor-muted leading-snug">One easy task, no guilt · ${passReward.cost} pts</div>
-            </div>
-            <div class="text-[10px] font-semibold tabular-nums ${passReady ? 'text-harbor-primary-light' : 'text-harbor-muted'}">
-              ${passReady ? 'Claim' : `${Math.max(0, passReward.cost - bank.points)} pts`}
+              <div class="text-[11px] font-semibold text-harbor-text">Streak Pass${passes ? ` · ${passes}` : ''}</div>
+              <div class="text-[9px] text-harbor-muted leading-snug">
+                ${passes
+                  ? 'On Today, Pass a streak habit to keep the fire without completing it.'
+                  : 'Earn at 7, 14, 21, and 30-day milestones · hold max 2'}
+              </div>
             </div>
           </div>
-        </button>`;
+        </div>`;
 
       const bankedHtml = banked > 0
-        ? `<button type="button" onclick="spendBankedHarborDay()"
-            class="w-full mb-2.5 px-3 py-2.5 rounded-2xl border border-amber-500/35 bg-amber-500/10 text-left active:opacity-90">
+        ? `<button type="button" onclick="spendBankedHarborDay()" class="harbor-day-action is-ready mb-2">
             <div class="flex items-center gap-2.5">
-              <span class="text-lg leading-none">🏦</span>
+              <span class="text-base leading-none">🏦</span>
               <div class="flex-1 min-w-0">
-                <div class="text-[11px] font-semibold text-harbor-text">${banked} banked Harbor Day${banked === 1 ? '' : 's'}</div>
-                <div class="text-[9px] text-harbor-muted leading-snug">Spend a credit when life gets loud</div>
+                <div class="text-[11px] font-semibold text-harbor-text">${banked} banked</div>
+                <div class="text-[9px] text-harbor-muted leading-snug">Spend when life gets loud</div>
               </div>
-              <div class="text-[10px] font-semibold text-amber-300">Use</div>
+              <span class="text-[10px] font-semibold text-harbor-primary-light">Use</span>
             </div>
           </button>`
         : '';
 
-      const activeGuides = getActiveRewardGuides();
+      const activeGuides = getActiveRewardGuides().filter(g =>
+        !String(g.label || '').toLowerCase().includes('badge') &&
+        !String(g.label || '').toLowerCase().includes('boost') &&
+        !String(g.label || '').toLowerCase().includes('theme')
+      );
       const activeGuidesHtml = activeGuides.length
-        ? `<div class="mb-3 rounded-2xl bg-harbor-raised/80 border border-harbor-border/80 p-3">
-            <div class="text-[10px] uppercase tracking-wider text-harbor-primary-light font-semibold mb-2">Active · how to use</div>
-            <div class="space-y-2">
-              ${activeGuides.map(g => `
-                <div class="flex gap-2 items-start">
-                  <span class="text-sm leading-none mt-0.5">${g.emoji}</span>
-                  <div class="min-w-0">
-                    <div class="text-[10px] font-semibold text-harbor-text">${g.label}</div>
-                    <div class="text-[9px] text-harbor-muted leading-snug">${g.text}</div>
-                  </div>
-                </div>`).join('')}
-            </div>
+        ? `<div class="mb-2.5 space-y-1.5">
+            ${activeGuides.map(g => `
+              <div class="flex gap-2 items-start px-0.5">
+                <span class="text-sm leading-none mt-0.5">${g.emoji}</span>
+                <div class="min-w-0">
+                  <div class="text-[10px] font-semibold text-harbor-text">${g.label}</div>
+                  <div class="text-[9px] text-harbor-muted leading-snug">${g.text}</div>
+                </div>
+              </div>`).join('')}
           </div>`
         : '';
 
-      const goalHeadline = goal
-        ? `<div class="text-[12px] font-semibold text-harbor-text mb-0.5">${goal.emoji} Working toward ${goal.label}</div>
-           <div class="text-[10px] text-harbor-muted mb-2 leading-snug">Real due tasks fill this meter — not random one-offs you invent today.</div>`
-        : `<div class="text-[12px] font-semibold text-harbor-text mb-0.5">What are you earning?</div>
-           <div class="text-[10px] text-harbor-muted mb-2 leading-snug">Name a treat now so the grind feels real. Claim later as a Moment, Window, Full day, or Bank.</div>`;
-
       panel.innerHTML = `
-        <div class="bg-harbor-surface border border-harbor-border rounded-3xl p-4 mt-3">
-          <div class="flex items-center justify-between mb-2">
-            <div class="section-header font-semibold text-harbor-text text-sm">Harbor Day</div>
-            <div class="text-xs text-harbor-primary-light font-semibold tabular-nums">${bank.points} pts</div>
+        <div class="harbor-day-card">
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <div>
+              <div class="harbor-day-kicker">Harbor Day</div>
+              <div class="text-[15px] font-semibold text-harbor-text tracking-tight mt-0.5">
+                ${goal ? `${goal.emoji} ${goal.label}` : 'Name your rest'}
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="harbor-day-pts">${bank.points}<span class="text-harbor-muted font-medium">/${cost}</span></div>
+              <div class="text-[9px] text-harbor-muted mt-0.5">${pct}%</div>
+            </div>
           </div>
-          ${goalHeadline}
-          <div class="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5 px-0.5 mb-3" id="harbor-goal-row" style="-webkit-overflow-scrolling:touch;">
+
+          <div class="text-[10px] text-harbor-muted leading-snug mb-2">
+            ${goal
+              ? 'Due tasks only fill the meter — show up for the real stuff.'
+              : 'Pick a treat people actually rest with. Then earn it.'}
+          </div>
+
+          <div class="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5 px-0.5 mb-1" style="-webkit-overflow-scrolling:touch;">
             ${goalChips}
           </div>
+
           <div class="cheat-fund-jar">
             <div class="cheat-fund-jar-icon" aria-hidden="true">${goal?.emoji || '⚓'}</div>
             <div class="cheat-fund-track">
               <div class="cheat-fund-fill" style="width:${pct}%"></div>
-              ${milestoneMarkers}
             </div>
           </div>
-          <div class="flex justify-between text-[10px] text-harbor-muted mb-1">
-            <span>${goal ? `${goal.emoji} ${goal.label}` : 'Harbor Day'} at ${cost} pts</span>
-            <span>${bank.points} / ${cost}</span>
-          </div>
-          <div class="text-[10px] text-harbor-primary-light mb-2 leading-snug">${getCheatDayEstimate()}</div>
+          <div class="text-[10px] text-harbor-primary-light mb-3 leading-snug">${getCheatDayEstimate()}</div>
+
           ${activeGuidesHtml}
           ${bankedHtml}
           ${passHtml}
-          <button type="button" onclick="redeemCheatDay()"
-            class="w-full py-2.5 rounded-2xl text-xs font-semibold ${canRedeem ? 'bg-harbor-primary text-white active:opacity-90' : 'bg-harbor-raised text-harbor-muted border border-harbor-border'}">
+
+          <button type="button" onclick="redeemCheatDay()" class="harbor-day-cta" ${canRedeem || cooldown > 0 ? '' : 'disabled'}>
             ${cooldown > 0
-              ? `Resting · ${cooldown}d left`
+              ? `Recharging · ${cooldown}d left`
               : canRedeem
-                ? `⚓ Claim Harbor Day${goal ? ` · ${goal.emoji} ${goal.label}` : ''} (${cost} pts)`
-                : `${Math.max(0, cost - bank.points)} pts to Harbor Day`}
+                ? `Claim${goal ? ` · ${goal.emoji} ${goal.label}` : ''}`
+                : `${Math.max(0, cost - bank.points)} pts to go`}
           </button>
-          <div class="text-[10px] text-harbor-muted text-center mt-2 leading-snug">
-            ${bank.cheatDownsUsed
-              ? `${bank.cheatDownsUsed} kindness${bank.cheatDownsUsed === 1 ? '' : 'es'} claimed · ${bank.totalEarned || 0} lifetime pts${banked ? ` · ${banked} banked` : ''}`
-              : 'Complete due tasks only · difficulty × minutes + streak bonus'}
+          <div class="text-[9px] text-harbor-muted text-center mt-2.5 leading-snug">
+            Moment · Window · Full day · Bank · due tasks only
           </div>
         </div>
       `;
