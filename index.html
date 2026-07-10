@@ -599,6 +599,63 @@
       letter-spacing: -0.015em;
       line-height: 1.3;
     }
+    #task-list .habit-title-text {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      cursor: pointer;
+    }
+    #task-list .habit-title-text.is-expanded {
+      display: block;
+      -webkit-line-clamp: unset;
+      overflow: visible;
+    }
+    #task-list .habit-card.is-smart-focus,
+    #task-list .swipe-row-content.habit-card.is-smart-focus {
+      border-color: rgba(47, 155, 140, 0.55) !important;
+      box-shadow: 0 0 0 2px rgba(47, 155, 140, 0.22), var(--harbor-shadow-sm) !important;
+      transition: box-shadow 0.35s ease, border-color 0.35s ease;
+    }
+    .harbor-empty-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      justify-content: center;
+      margin-top: 0.85rem;
+    }
+    .harbor-empty-actions .chip-add-btn,
+    .harbor-empty-actions .chip-tool-btn {
+      min-height: 2.15rem;
+    }
+    .calendar-nudge-card {
+      margin: 0.5rem 1.25rem 0.25rem;
+      padding: 0.75rem 0.85rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(47, 155, 140, 0.22);
+      background: linear-gradient(155deg, rgba(47, 155, 140, 0.08), rgb(var(--harbor-surface)));
+      box-shadow: var(--harbor-shadow-sm);
+    }
+    .calendar-nudge-card .nudge-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: rgb(var(--harbor-text));
+      letter-spacing: -0.015em;
+    }
+    .calendar-nudge-card .nudge-body {
+      font-size: 0.72rem;
+      color: rgb(var(--harbor-muted));
+      line-height: 1.4;
+      margin-top: 0.25rem;
+    }
+    .calendar-nudge-card .nudge-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.65rem;
+    }
 
     #tab-content-today {
       padding-top: 0.65rem;
@@ -4015,13 +4072,13 @@
       width: 2.35rem;
       height: 2.35rem;
       border-radius: 0.8rem;
-      background: linear-gradient(145deg, rgba(60, 181, 166, 0.35), rgba(47, 155, 140, 0.55));
-      border: 1px solid rgba(107, 191, 176, 0.35);
+      background: linear-gradient(145deg, rgba(60, 181, 166, 0.28), rgba(47, 155, 140, 0.42));
+      border: 1px solid rgba(47, 155, 140, 0.28);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      box-shadow: 0 0 16px rgba(47, 155, 140, 0.2);
+      box-shadow: 0 0 12px rgba(47, 155, 140, 0.14);
     }
 
     .summary-dash-mark img {
@@ -6668,14 +6725,13 @@
               </button>
             </div>
           </div>
-          <div class="flex gap-1.5 mb-2" id="schedule-view-toggle" role="tablist" aria-label="Schedule Range">
+          <div class="flex gap-1.5 mb-2" id="schedule-view-toggle" role="tablist" aria-label="Schedule range">
             <button type="button" role="tab" data-schedule-view="today" onclick="setScheduleView('today')"
               class="cal-format-chip is-active">Today</button>
             <button type="button" role="tab" data-schedule-view="week" onclick="setScheduleView('week')"
               class="cal-format-chip">This Week</button>
-            <button type="button" role="tab" data-schedule-view="month" onclick="setScheduleView('month')"
-              class="cal-format-chip">This Month</button>
           </div>
+          <div class="text-[10px] text-harbor-muted mb-2 px-0.5 leading-snug">Full month is in <strong class="text-harbor-primary-light font-semibold">Overview</strong> (glowing button).</div>
           <div id="schedule-section-title" class="hidden" aria-hidden="true"></div>
           <div id="schedule-availability" class="hidden" aria-hidden="true"></div>
           <div id="schedule-sync-badge" class="schedule-sync-quiet text-[10px] text-harbor-muted/80 mb-1.5"></div>
@@ -6721,6 +6777,9 @@
               </button>
             </div>
           </div>
+          <div class="text-[10px] text-harbor-muted leading-snug mb-2 px-0.5">
+            Rent, utilities, loans — due dates you <strong class="text-harbor-text">pay</strong>. Streaming and memberships belong under <strong class="text-harbor-primary-light">Subscriptions</strong>.
+          </div>
           <div id="bills-monthly-total" class="hidden text-[10px] text-harbor-muted mb-2"></div>
           <div id="bills-list" class="space-y-2"></div>
         </div>
@@ -6736,6 +6795,9 @@
                 <i class="fa-solid fa-plus"></i>Add
               </button>
             </div>
+          </div>
+          <div class="text-[10px] text-harbor-muted leading-snug mb-2 px-0.5">
+            Netflix, gym, software — things that <strong class="text-harbor-text">renew</strong>. One-off bills and rent go under <strong class="text-harbor-primary-light">Bills</strong>.
           </div>
           <div id="subs-monthly-total" class="hidden mb-2"></div>
           <div id="subscriptions-list" class="space-y-2.5 mb-3"></div>
@@ -6860,7 +6922,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v161';
+    const HARBOR_BUILD = 'v163';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -6916,6 +6978,8 @@
         workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
         eventTimeFormat: '12h',
         scheduleView: 'today',
+        lifePanel: 'schedule',
+        calendarNudgeDismissed: false,
         showWelcomeBanner: false,
         welcomeBannerDismissed: false,
         onboarded: false,
@@ -7705,8 +7769,17 @@
       if (!state.settings.workSchedule) {
         state.settings.workSchedule = { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] };
       }
-      if (!state.settings.scheduleView) {
+      if (!state.settings.scheduleView || state.settings.scheduleView === 'month') {
+        // Month view removed from Schedule — full month lives in Overview
         state.settings.scheduleView = 'today';
+      }
+      if (state.settings.lifePanel && LIFE_PANEL_ORDER.includes(state.settings.lifePanel)) {
+        currentLifePanel = state.settings.lifePanel;
+      } else if (!state.settings.lifePanel) {
+        state.settings.lifePanel = currentLifePanel || 'schedule';
+      }
+      if (state.settings.calendarNudgeDismissed === undefined) {
+        state.settings.calendarNudgeDismissed = false;
       }
       // Theme: harbor = mint day (default), dark = coastal night.
       // Legacy: mono→dark, light→harbor. Only harbor + dark remain.
@@ -11465,7 +11538,15 @@
       const sorted = [...state.bills].sort((a, b) => getBillUrgency(a) - getBillUrgency(b));
 
       if (sorted.length === 0) {
-        container.innerHTML = harborEmptyHtml('💳', 'No Bills Yet', 'Tap <strong>Add</strong> to track due dates and amounts at your own pace.');
+        container.innerHTML = harborEmptyHtml(
+          '💳',
+          'No bills yet',
+          'Track rent, utilities, and other payments you owe — not streaming or gym memberships.',
+          `<div class="harbor-empty-actions">
+            <button type="button" class="chip-add-btn" onclick="addBillFromPrompt()"><i class="fa-solid fa-plus"></i>Add bill</button>
+            <button type="button" class="chip-tool-btn" onclick="switchLifePanel('subscriptions')">Go to Subscriptions</button>
+          </div>`
+        );
         return;
       }
 
@@ -12492,12 +12573,12 @@
 
     function getScheduleView() {
       const v = state.settings.scheduleView;
-      if (v === 'week' || v === 'month') return v;
+      if (v === 'week') return 'week';
       return 'today';
     }
 
     function setScheduleView(view) {
-      state.settings.scheduleView = view === 'week' || view === 'month' ? view : 'today';
+      state.settings.scheduleView = view === 'week' ? 'week' : 'today';
       saveState();
       renderSchedule();
     }
@@ -12511,12 +12592,22 @@
       });
       const title = document.getElementById('schedule-section-title');
       if (title) {
-        title.textContent = view === 'week'
-          ? "This Week's Schedule"
-          : view === 'month'
-            ? "Later This Month"
-            : "Today's Schedule";
+        title.textContent = view === 'week' ? "This Week's Schedule" : "Today's Schedule";
       }
+    }
+
+    function scheduleEmptyActionsHtml() {
+      return `<div class="harbor-empty-actions">
+        <button type="button" class="chip-add-btn" onclick="showAddCalendarEventModal()">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i>Add event
+        </button>
+        <button type="button" class="chip-tool-btn" onclick="showCalendarFeedModal()">
+          Calendar URL
+        </button>
+        <button type="button" class="chip-tool-btn" onclick="triggerCalendarICSImport()">
+          Import file
+        </button>
+      </div>`;
     }
 
     /** Remaining days in the current week from today → week end (drops Mon–yesterday). */
@@ -13527,9 +13618,6 @@
         if (view === 'week') {
           const weekEvents = filterEventsForWeek(allEvents);
           freeEl.textContent = `${weekEvents.length} upcoming event${weekEvents.length === 1 ? '' : 's'}`;
-        } else if (view === 'month') {
-          const monthEvents = filterEventsForMonth(allEvents);
-          freeEl.textContent = `${monthEvents.length} event${monthEvents.length === 1 ? '' : 's'}`;
         } else {
           freeEl.textContent = formatScheduleLoadLabel(avail);
         }
@@ -13539,11 +13627,6 @@
           detailEl.textContent = weekRemaining.empty
             ? 'Week complete'
             : `${formatEventDateLabel(weekRemaining.start)} – ${formatEventDateLabel(weekRemaining.end)}`;
-        } else if (view === 'month') {
-          const bounds = getBeyondWeekMonthBounds(today);
-          detailEl.textContent = bounds.empty
-            ? 'After this week · nothing left this month'
-            : `After this week · ${formatEventDateLabel(bounds.start)} – ${formatEventDateLabel(bounds.end)}`;
         } else {
           detailEl.textContent = avail.summary;
         }
@@ -13576,10 +13659,11 @@
         if (!weekEvents.length) {
           container.innerHTML = harborEmptyHtml(
             '📅',
-            'Open Week',
+            weekRemaining.empty ? 'Week complete' : 'Nothing this week',
             weekRemaining.empty
-              ? 'This week is complete — nothing left on the calendar.'
-              : 'No upcoming events this week. Tap <strong>Add</strong> or Import File to plan ahead.'
+              ? 'No more events left this week. Add something ahead or check Overview for the full month.'
+              : 'Plan the rest of your week — add an event or connect a calendar.',
+            scheduleEmptyActionsHtml()
           );
           return;
         }
@@ -13588,29 +13672,15 @@
             container.appendChild(renderScheduleSectionHeader(formatEventDateLabel(date)));
             events.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
           });
-      } else if (view === 'month') {
-        const bounds = getBeyondWeekMonthBounds(today);
-        const monthEvents = filterEventsForMonth(allEvents);
-        if (bounds.empty || !monthEvents.length) {
-          container.innerHTML = harborEmptyHtml(
-            '📅',
-            'Later This Month',
-            bounds.empty
-              ? 'Nothing after this week for the rest of the month — check This Week for what’s next.'
-              : 'No events after this week. Tap <strong>Add</strong> or Import File to plan further out.'
-          );
-          return;
-        }
-        groupEventsByDate(monthEvents)
-          .filter(({ date }) => date >= bounds.start && date <= bounds.end)
-          .forEach(({ date, events }) => {
-            container.appendChild(renderScheduleSectionHeader(formatEventDateLabel(date)));
-            events.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
-          });
       } else {
         const todayEvents = allEvents.filter(e => eventOccursOnDate(e, today));
         if (!todayEvents.length) {
-          container.innerHTML = harborEmptyHtml('📅', 'Open Schedule', cache?.note || 'No events on the calendar today. Tap <strong>Add</strong> or Import File to get started.');
+          container.innerHTML = harborEmptyHtml(
+            '📅',
+            'Open schedule',
+            cache?.note || 'No events today. Add one, or connect a calendar so free time is real.',
+            scheduleEmptyActionsHtml()
+          );
           return;
         }
         todayEvents.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
@@ -14543,12 +14613,16 @@
         });
 
       if (subs.length === 0) {
-        container.innerHTML = `
-          <div class="feed-section-label text-harbor-muted mb-2 mt-1">Your subscriptions</div>
-          <div class="text-center py-7 text-sm text-harbor-muted bg-harbor-surface border border-harbor-border rounded-3xl leading-relaxed">
-            <div class="font-medium text-harbor-text mb-1">Nothing tracked yet</div>
-            <div class="text-xs px-4"><strong class="text-harbor-primary-light">Add</strong>, <strong class="text-harbor-primary-light">Import CSV</strong>, or browse popular services below.</div>
-          </div>`;
+        container.innerHTML = harborEmptyHtml(
+          '🔁',
+          'Nothing tracked yet',
+          'Add Netflix, gym, or other renewals here — keep rent and utilities under Bills.',
+          `<div class="harbor-empty-actions">
+            <button type="button" class="chip-add-btn" onclick="showAddSubscriptionModal()"><i class="fa-solid fa-plus"></i>Add</button>
+            <button type="button" class="chip-tool-btn" onclick="showSubscriptionImportModal()">Import CSV</button>
+            <button type="button" class="chip-tool-btn" onclick="toggleSubsBrowse()">Browse services</button>
+          </div>`
+        );
         return;
       }
 
@@ -14591,6 +14665,10 @@
       }
 
       currentLifePanel = panel;
+      if (state?.settings && options.persist !== false) {
+        state.settings.lifePanel = panel;
+        saveState();
+      }
       if (typeof closeLifeManageMenus === 'function') closeLifeManageMenus();
       LIFE_PANEL_ORDER.forEach(name => {
         const el = document.getElementById(`life-panel-${name}`);
@@ -14630,9 +14708,26 @@
       return (state.groceryMaster || []).filter(g => !g.checked).slice(0, limit || 5);
     }
 
+    function getSubscriptionsRenewingSoon(withinDays = 3) {
+      const today = todayStr();
+      const ref = new Date(today + 'T12:00:00');
+      return (state.subscriptions || [])
+        .filter(s => s && s.active !== false)
+        .map(s => {
+          if (typeof getSubscriptionRenewalDate !== 'function') return null;
+          const d = getSubscriptionRenewalDate(s, ref);
+          if (!d) return null;
+          const days = Math.round((d - ref) / 86400000);
+          if (days < 0 || days > withinDays) return null;
+          return { sub: s, days, renewalDate: d };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.days - b.days);
+    }
+
     function buildTodayFeed() {
       // Today tab stays focused on what is actionable *today*.
-      // Weekly+ chores that are not due yet live in Summary (This week).
+      // Weekly+ chores that are not due yet live in Overview (This week).
       const today = todayStr();
       const active = [];
 
@@ -14651,10 +14746,19 @@
       });
 
       const syncPending = state.habits.filter(h => canShowActivitySync(h));
+      const renewingSubs = getSubscriptionsRenewingSoon(3);
 
       const sections = [];
       if (syncPending.length) {
         sections.push({ type: 'sync-pending', label: 'Done today — sync activity', items: syncPending, variant: 'completed' });
+      }
+      if (renewingSubs.length) {
+        sections.push({
+          type: 'subscriptions',
+          label: 'Renewing soon',
+          items: renewingSubs,
+          variant: 'life'
+        });
       }
       sections.push({ type: 'habits', label: '', items: active, variant: 'active' });
       return sections;
@@ -15012,13 +15116,17 @@
         ? (timesNeed === 2 ? 'Twice a day' : `${timesNeed} times a day`)
         : (isRecurring ? formatIntervalLabel(habit.interval_days) : '');
 
+      const safeTitle = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(habit.title) : habit.title;
       const contentHtml = `
         <div onclick="completeHabit('${habit.id}', event)" class="task-complete-hit touch-target w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-harbor-border active:border-harbor-primary flex items-center justify-center text-xl">
           <i class="fa-regular fa-circle text-harbor-muted"></i>
         </div>
-        <div class="flex-1 min-w-0" onclick="completeHabit('${habit.id}', event)">
-          <div class="font-medium leading-tight${showMuted ? ' text-harbor-muted' : ''}">${habit.title} ${weatherIcon ? `<span class="ml-1 text-base" title="Current weather: ${state.settings.mockWeather || 'unknown'}">${weatherIcon}</span>` : ''}</div>
-          <div class="flex items-center gap-x-2 mt-0.5 flex-wrap">
+        <div class="flex-1 min-w-0">
+          <div class="font-medium leading-tight habit-title-text${showMuted ? ' text-harbor-muted' : ''}"
+            data-habit-title="1"
+            onclick="event.stopPropagation(); toggleHabitTitleExpand(this)"
+            title="Tap title to expand">${safeTitle}${weatherIcon ? ` <span class="ml-1 text-base" title="Current weather: ${state.settings.mockWeather || 'unknown'}">${weatherIcon}</span>` : ''}</div>
+          <div class="flex items-center gap-x-2 mt-0.5 flex-wrap" onclick="completeHabit('${habit.id}', event)">
             ${habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))
               ? `<span class="text-sky-300 text-xs px-1.5 rounded bg-sky-900/40 font-semibold">Pro booking</span>`
               : ''}
@@ -15051,6 +15159,11 @@
       const content = row.querySelector('.swipe-row-content');
       content?.addEventListener('contextmenu', (e) => { e.preventDefault(); showHabitDetail(habit.id); });
       container.appendChild(row);
+    }
+
+    function toggleHabitTitleExpand(el) {
+      if (!el) return;
+      el.classList.toggle('is-expanded');
     }
 
     function renderCompletedSyncCard(habit, container) {
@@ -15126,6 +15239,25 @@
           ${item.qty ? `<div class="text-xs text-harbor-muted">${item.qty}</div>` : ''}
         </div>
         <button onclick="event.stopImmediatePropagation(); switchTab('life'); switchLifePanel('grocery')" class="text-[10px] text-harbor-muted">Life →</button>
+      `;
+      container.appendChild(card);
+    }
+
+    function renderSubscriptionFeedCard(item, container) {
+      const sub = item.sub || item;
+      const days = item.days;
+      const when = days === 0 ? 'Renews today' : days === 1 ? 'Renews tomorrow' : `Renews in ${days} days`;
+      const card = document.createElement('div');
+      card.className = 'habit-row bg-harbor-surface border border-harbor-border rounded-2xl px-4 py-2.5 flex items-center gap-x-3 cursor-pointer';
+      card.dataset.feedType = 'subscription';
+      card.onclick = () => { switchTab('life'); switchLifePanel('subscriptions'); };
+      card.innerHTML = `
+        <div class="w-9 h-9 flex-shrink-0 rounded-2xl border border-harbor-border bg-harbor-raised flex items-center justify-center text-base">🔁</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-sm truncate">${escapeBriefHtml(sub.name || 'Subscription')}</div>
+          <div class="text-[11px] text-harbor-muted mt-0.5">${when}${sub.amount != null ? ` · ${formatSubscriptionAmount(sub.amount)}` : ''}</div>
+        </div>
+        <span class="text-[10px] font-semibold text-harbor-primary-light">Life →</span>
       `;
       container.appendChild(card);
     }
@@ -15220,12 +15352,15 @@
       }
 
       if (!hasAny) {
-        container.innerHTML = harborSoftBanner + `
-          <div onclick="showQuickTaskModal({ mode: 'habit' })" class="harbor-empty empty-state cursor-pointer active:scale-[0.99] transition-transform">
-            <i class="fa-solid fa-plus-circle text-3xl text-harbor-primary mb-2"></i>
-            <div class="font-medium">No tasks yet</div>
-            <div class="text-xs text-harbor-muted mt-1">Tap here to add a task, or browse the Library tab.</div>
-          </div>`;
+        container.innerHTML = harborSoftBanner + harborEmptyHtml(
+          '📋',
+          'No tasks yet',
+          'Add something for today, or grab a ready-made task from the Library.',
+          `<div class="harbor-empty-actions">
+            <button type="button" class="chip-add-btn" onclick="showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add task</button>
+            <button type="button" class="chip-tool-btn" onclick="switchTab('library')">Browse Library</button>
+          </div>`
+        );
         return;
       }
 
@@ -15253,6 +15388,8 @@
               muted: section.variant === 'upcoming',
               upcomingLabel: section.variant === 'upcoming' ? formatUpcomingLabel(item, daysUntil) : ''
             });
+          } else if (section.type === 'subscriptions') {
+            renderSubscriptionFeedCard(item, container);
           } else if (section.type === 'bills') {
             renderBillFeedCard(item, container);
           } else if (section.type === 'grocery') {
@@ -16917,26 +17054,27 @@
       const allowBrief = !hideDuringEarlyTutorial && (state.settings.tutorialCompleted || onBriefTutorialStep || onboarded);
       el.classList.toggle('hidden', !showOnMainTabs || !allowBrief);
 
+      // Badge = due today only (matches the "must do" load, not week chores)
       const brief = buildSummary('day');
-      const weekBrief = buildSummary('week');
-      const taskN = brief.tasks.length;
-      const billN = brief.bills.length;
-      const weekChoreN = weekBrief.tasks.filter(t => isNonDailyRecurring(t.habit)).length;
-      const badgeCount = taskN + billN + weekChoreN;
+      const dueTodayN = brief.tasks.length;
+      const billN = (brief.bills || []).length;
+      const badgeCount = dueTodayN + billN;
 
       if (badge) {
         if (badgeCount > 0) {
           badge.textContent = badgeCount > 9 ? '9+' : String(badgeCount);
           badge.classList.remove('hidden');
+          badge.setAttribute('title', `${dueTodayN} task${dueTodayN === 1 ? '' : 's'}${billN ? ` · ${billN} bill${billN === 1 ? '' : 's'}` : ''} due today`);
         } else {
           badge.textContent = '';
           badge.classList.add('hidden');
+          badge.removeAttribute('title');
         }
       }
 
       el.setAttribute('aria-label', badgeCount
-        ? `Open Overview · ${badgeCount} item${badgeCount === 1 ? '' : 's'} to review`
-        : 'Open Overview — day, week, and month at a glance');
+        ? `Open Overview · ${badgeCount} due today`
+        : 'Open Overview — day, week, and month');
     }
 
     // ==================== SMART BANNER / CONTEXT ====================
@@ -17883,7 +18021,7 @@
             score: 97,
             type: 'habit',
             habit: calm,
-            cta: 'Start',
+            cta: 'Show',
             reason: `It's ${when} — try <strong>${escapeBriefHtml(calm.title)}</strong>. Outdoor and noisy stuff can wait.`
           });
         } else {
@@ -17916,7 +18054,7 @@
             score: 93,
             type: 'habit',
             habit: indoor,
-            cta: 'Start',
+            cta: 'Show',
             reason: `Rain on the radar — swap outdoor plans for <strong>${escapeBriefHtml(indoor.title)}</strong>.`
           });
         }
@@ -17967,7 +18105,7 @@
               score: 96,
               type: 'event',
               habit: quick,
-              cta: 'Start',
+              cta: 'Show',
               reason: `~${until} min before <strong>${escapeBriefHtml(ctx.nextEvent.title || 'your next event')}</strong> — enough for <strong>${escapeBriefHtml(quick.title)}</strong>.`
             });
           } else {
@@ -17992,7 +18130,7 @@
             score: 96,
             type: 'habit',
             habit: best,
-            cta: 'Start',
+            cta: 'Show',
             reason: `Low energy — skip <strong>${escapeBriefHtml(hardestDue.title)}</strong> for now; try <strong>${escapeBriefHtml(best.title)}</strong>.`
           });
         } else if (ctx.energy === 1) {
@@ -18000,7 +18138,7 @@
             score: 92,
             type: 'habit',
             habit: best,
-            cta: 'Start',
+            cta: 'Show',
             reason: `Low energy day — <strong>${escapeBriefHtml(best.title)}</strong> is a gentle fit.`
           });
         } else if (ctx.energy === 3 && ((best.difficulty || 2) >= 2 || bestTags.long || bestTags.hard)) {
@@ -18008,7 +18146,7 @@
             score: 91,
             type: 'habit',
             habit: best,
-            cta: 'Start',
+            cta: 'Show',
             reason: `High energy — good time for <strong>${escapeBriefHtml(best.title)}</strong>.`
           });
         } else {
@@ -18016,7 +18154,7 @@
             score: 86,
             type: 'habit',
             habit: best,
-            cta: 'Start',
+            cta: 'Show',
             reason: `Next up: <strong>${escapeBriefHtml(best.title)}</strong>.`
           });
         }
@@ -18033,7 +18171,7 @@
             score: 95,
             type: 'habit',
             habit: fit,
-            cta: 'Start',
+            cta: 'Show',
             reason: `~${ctx.bestGap.minutes} min open${until} — room for <strong>${escapeBriefHtml(fit.title)}</strong>.`
           });
         }
@@ -18075,7 +18213,7 @@
             score: 84,
             type: 'habit',
             habit: outdoor,
-            cta: 'Start',
+            cta: 'Show',
             reason: `Clear skies — around ${bestWindow.time} suits <strong>${escapeBriefHtml(outdoor.title)}</strong>.`
           });
         } else if (outdoor) {
@@ -18083,7 +18221,7 @@
             score: 79,
             type: 'habit',
             habit: outdoor,
-            cta: 'Start',
+            cta: 'Show',
             reason: `Weather looks fair — good for <strong>${escapeBriefHtml(outdoor.title)}</strong>.`
           });
         }
@@ -18097,7 +18235,7 @@
             score: 74,
             type: 'habit',
             habit: match,
-            cta: 'Start',
+            cta: 'Show',
             reason: `About ${ctx.freeTime} min free on the calendar — <strong>${escapeBriefHtml(match.title)}</strong> should fit.`
           });
         }
@@ -19095,6 +19233,61 @@
       showToast(skipped
         ? 'Tour skipped — open it anytime from Menu'
         : 'You’re set — reopen the tour anytime from Menu');
+      // Soft calendar prompt once after first tour
+      setTimeout(() => maybeShowCalendarNudge(), 700);
+    }
+
+    function hasAnyCalendarData() {
+      const feeds = state.settings?.calendarFeeds || [];
+      if (feeds.length) return true;
+      const imported = state.settings?.importedCalendarEvents || [];
+      if (imported.length) return true;
+      const events = typeof getAllCalendarEvents === 'function' ? getAllCalendarEvents() : [];
+      return (events || []).length > 0;
+    }
+
+    function dismissCalendarNudge() {
+      if (state?.settings) {
+        state.settings.calendarNudgeDismissed = true;
+        saveState();
+      }
+      document.getElementById('calendar-nudge')?.remove();
+    }
+
+    function maybeShowCalendarNudge() {
+      if (!state?.settings) return;
+      if (state.settings.calendarNudgeDismissed) return;
+      if (hasAnyCalendarData()) return;
+      if (document.getElementById('calendar-nudge')) return;
+
+      const host = document.getElementById('tab-content-today') || document.getElementById('task-list')?.parentElement;
+      if (!host) return;
+
+      const card = document.createElement('div');
+      card.id = 'calendar-nudge';
+      card.className = 'calendar-nudge-card';
+      card.innerHTML = `
+        <div class="nudge-title">Connect a calendar?</div>
+        <div class="nudge-body">Harbor can estimate free time and smart tips better with your schedule. Optional — Import File keeps everything on this device.</div>
+        <div class="nudge-actions">
+          <button type="button" class="chip-add-btn" onclick="dismissCalendarNudge(); switchTab('life'); switchLifePanel('schedule'); showCalendarFeedModal();">
+            Calendar URL
+          </button>
+          <button type="button" class="chip-tool-btn" onclick="dismissCalendarNudge(); triggerCalendarICSImport();">
+            Import file
+          </button>
+          <button type="button" class="chip-tool-btn" onclick="dismissCalendarNudge();">
+            Not now
+          </button>
+        </div>
+      `;
+      // Place near the top of Today content
+      const energy = document.getElementById('energy-bar-section');
+      if (energy?.parentNode) {
+        energy.parentNode.insertBefore(card, energy.nextSibling);
+      } else {
+        host.insertBefore(card, host.firstChild);
+      }
     }
 
     function updateSmartBanner() {
@@ -19278,26 +19471,37 @@
         switchLifePanel('schedule');
       } else if (type === 'weather') {
         showOutdoorWeatherPane();
-      } else if (habitId && (type === 'habit' || type === 'progress' || type === 'streak' || type === 'event' || !type)) {
+      } else if (habitId) {
+        // Focus the task on Today — never auto-complete from a suggestion
         const habit = state.habits.find(h => h.id === habitId);
         if (habit) {
-          completeHabit(habitId);
+          focusHabitOnToday(habitId);
         } else {
           updateSmartBanner();
           showToast('That task is no longer on your list');
           return;
         }
-      } else if (habitId) {
-        // Fallback: scroll Today and toast the task rather than force-complete
-        const habit = state.habits.find(h => h.id === habitId);
-        if (habit) {
-          switchTab('today');
-          showToast(habit.title);
-        }
       } else {
         showQuickTaskModal({ mode: 'habit' });
       }
       banner.classList.add('hidden');
+    }
+
+    function focusHabitOnToday(habitId) {
+      switchTab('today');
+      renderTasks();
+      const row = document.querySelector(`#task-list .swipe-row[data-habit-id="${habitId}"]`);
+      const card = row?.querySelector('.swipe-row-content') || row;
+      if (card) {
+        document.querySelectorAll('#task-list .is-smart-focus').forEach(el => el.classList.remove('is-smart-focus'));
+        card.classList.add('is-smart-focus');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => card.classList.remove('is-smart-focus'), 2600);
+        const habit = state.habits.find(h => h.id === habitId);
+        showToast(habit ? `Next up: ${habit.title}` : 'Task found', 'info');
+      } else {
+        showToast('Open Today to see that task', 'info');
+      }
     }
 
     function runSmartTipAction(action) {
