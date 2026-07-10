@@ -2951,10 +2951,22 @@
       transform: scale(0.97);
       opacity: 0.92;
     }
+    .chip-tool-btn.is-active,
+    .chip-tool-btn[aria-expanded="true"] {
+      border-color: rgba(47, 155, 140, 0.4);
+      background: rgba(47, 155, 140, 0.1);
+      color: rgb(var(--harbor-text));
+    }
     html[data-theme="dark"] .chip-tool-btn {
       border-color: rgba(72, 178, 162, 0.22);
       background: rgb(var(--harbor-raised));
       color: rgb(var(--harbor-primary-light));
+    }
+    html[data-theme="dark"] .chip-tool-btn.is-active,
+    html[data-theme="dark"] .chip-tool-btn[aria-expanded="true"] {
+      border-color: rgba(72, 178, 162, 0.4);
+      background: rgba(72, 178, 162, 0.12);
+      color: rgb(var(--harbor-text));
     }
     .schedule-free-pill {
       display: inline-flex;
@@ -2996,26 +3008,117 @@
       display: none;
     }
     /* Compact work-hours control in the schedule toolbar */
-    .work-hours-chip {
-      gap: 0.35rem;
-      max-width: 7.5rem;
+    .work-hours-chip.is-set,
+    #work-schedule-chip.is-set {
+      /* set state used on manage row label */
     }
-    .work-hours-chip i {
-      font-size: 0.72rem;
-      opacity: 0.9;
+    .life-manage-wrap {
+      position: relative;
+      flex-shrink: 0;
     }
-    .work-hours-chip #work-schedule-chip-label,
-    .work-hours-chip span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 5.2rem;
+    .life-manage-menu {
+      position: absolute;
+      top: calc(100% + 0.35rem);
+      right: 0;
+      z-index: 40;
+      min-width: 11.5rem;
+      padding: 0.35rem;
+      border-radius: 0.95rem;
+      border: 1px solid rgba(47, 155, 140, 0.16);
+      background: rgb(var(--harbor-surface));
+      box-shadow: var(--harbor-shadow-md);
     }
-    .work-hours-chip.is-set {
-      border-color: rgba(47, 155, 140, 0.35);
-      background: rgba(47, 155, 140, 0.1);
+    .life-manage-menu.hidden { display: none; }
+    .life-manage-menu button {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      width: 100%;
+      text-align: left;
+      padding: 0.55rem 0.65rem;
+      border-radius: 0.7rem;
+      border: none;
+      background: transparent;
+      color: rgb(var(--harbor-text));
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .life-manage-menu button:hover,
+    .life-manage-menu button:active {
+      background: rgb(var(--harbor-raised));
+    }
+    .life-manage-menu button i {
+      width: 0.95rem;
+      text-align: center;
       color: rgb(var(--harbor-primary-light));
+      font-size: 0.75rem;
+    }
+    .life-manage-title { display: block; line-height: 1.2; }
+    .life-manage-sub {
+      display: block;
+      font-size: 0.62rem;
+      font-weight: 500;
+      color: rgb(var(--harbor-muted));
+      margin-top: 0.1rem;
+    }
+
+    .energy-compact-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.48rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(47, 155, 140, 0.16);
+      background: rgba(255, 255, 255, 0.55);
+      box-shadow: var(--harbor-shadow-sm);
+      color: rgb(var(--harbor-text));
+      font-family: var(--harbor-font);
+      cursor: pointer;
+    }
+    html[data-theme="dark"] .energy-compact-btn {
+      background: rgba(24, 42, 38, 0.75);
+      border-color: rgba(72, 178, 162, 0.2);
+    }
+    .energy-compact-kicker {
+      font-size: 0.62rem;
       font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+    }
+    .energy-compact-value {
+      flex: 1;
+      text-align: left;
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+    }
+    .energy-compact-chevron {
+      font-size: 0.58rem;
+      color: rgb(var(--harbor-muted));
+      transition: transform 0.2s ease;
+    }
+    .energy-compact-btn[aria-expanded="true"] .energy-compact-chevron {
+      transform: rotate(180deg);
+    }
+    .energy-choices {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.4rem;
+    }
+    .energy-choices.hidden { display: none; }
+
+    .smart-banner-quiet {
+      padding: 0.45rem 0.7rem !important;
+      margin-top: 0.35rem;
+      margin-bottom: 0.25rem;
+      border-radius: 0.85rem !important;
+    }
+    .smart-banner-quiet .suggestion-card,
+    #smart-banner.smart-banner-quiet {
+      border-left-width: 2px !important;
     }
     /* Minutes chips in Add Task */
     .qt-minutes-row {
@@ -5957,41 +6060,42 @@
         </div>
       </div>
 
-      <!-- Energy Bar -->
+      <!-- Energy — compact by default -->
       <div id="energy-bar-section" class="px-5" aria-label="Energy level">
-        <div class="flex">
+        <button type="button" id="energy-compact-btn" class="energy-compact-btn" onclick="toggleEnergyExpanded()"
+          aria-expanded="false">
+          <span class="energy-compact-kicker">Energy</span>
+          <span id="energy-compact-label" class="energy-compact-value">Medium</span>
+          <i class="fa-solid fa-chevron-down energy-compact-chevron" aria-hidden="true"></i>
+        </button>
+        <div id="energy-choices" class="energy-choices hidden" role="group" aria-label="Pick energy">
           <button type="button" onclick="setEnergy(1)" id="energy-1" data-energy="1"
-            class="energy-btn is-idle flex-1 py-2.5 flex items-center justify-center gap-x-2" aria-pressed="false">
+            class="energy-btn is-idle flex-1 py-2 flex items-center justify-center gap-x-2" aria-pressed="false">
             <span class="energy-label-text">Low</span>
           </button>
           <button type="button" onclick="setEnergy(2)" id="energy-2" data-energy="2"
-            class="energy-btn is-idle flex-1 py-2.5 flex items-center justify-center gap-x-2" aria-pressed="false">
+            class="energy-btn is-idle flex-1 py-2 flex items-center justify-center gap-x-2" aria-pressed="false">
             <span class="energy-label-text">Medium</span>
           </button>
           <button type="button" onclick="setEnergy(3)" id="energy-3" data-energy="3"
-            class="energy-btn is-idle flex-1 py-2.5 flex items-center justify-center gap-x-2" aria-pressed="false">
+            class="energy-btn is-idle flex-1 py-2 flex items-center justify-center gap-x-2" aria-pressed="false">
             <span class="energy-label-text">High</span>
           </button>
         </div>
       </div>
 
-      <!-- Smart Suggestion Banner -->
+      <!-- Smart Suggestion — quiet one-liner -->
       <div id="smart-banner" onclick="handleSmartSuggestion()"
-        class="mx-5 px-3.5 py-3 suggestion-card cursor-pointer active:opacity-90 hidden relative">
-        <div class="flex gap-x-2.5">
-          <div class="mt-0.5">
-            <i class="fa-solid fa-lightbulb text-harbor-primary-light text-base opacity-90"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div id="smart-banner-label" class="text-[10px] uppercase tracking-wider font-semibold mb-0.5">Smart Suggestion</div>
-            <div id="smart-text" class="text-[13px] leading-snug text-harbor-text font-medium"></div>
-            <div id="smart-bill-footnote" class="hidden"></div>
-            <div class="flex items-center gap-x-2 mt-2 flex-wrap">
-              <div id="smart-cta" class="text-[11px] px-2.5 py-0.5 bg-harbor-primary/20 text-harbor-primary-light inline-block">Tap to start</div>
-              <div onclick="event.stopImmediatePropagation(); dismissSuggestion()" class="text-[11px] text-harbor-muted hover:text-harbor-text">Dismiss</div>
-            </div>
-          </div>
+        class="mx-5 smart-banner-quiet suggestion-card cursor-pointer active:opacity-90 hidden relative">
+        <div class="flex items-center gap-x-2 min-w-0">
+          <i class="fa-solid fa-lightbulb text-harbor-primary-light text-xs opacity-80 flex-shrink-0" aria-hidden="true"></i>
+          <div id="smart-text" class="text-[12px] leading-snug text-harbor-text font-medium truncate flex-1 min-w-0"></div>
+          <div id="smart-cta" class="text-[10px] font-semibold text-harbor-primary-light flex-shrink-0">Open</div>
+          <button type="button" onclick="event.stopImmediatePropagation(); dismissSuggestion()"
+            class="text-harbor-muted hover:text-harbor-text text-xs px-1 flex-shrink-0" aria-label="Dismiss">×</button>
         </div>
+        <div id="smart-banner-label" class="hidden" aria-hidden="true">Smart Suggestion</div>
+        <div id="smart-bill-footnote" class="hidden"></div>
       </div>
 
       <!-- Tab Navigation -->
@@ -6041,21 +6145,27 @@
         <div id="life-panel-schedule" class="life-panel">
           <div class="panel-head">
             <div class="min-w-0 flex-1">
-              <!-- Event / free-time counter only — Life tab already says Schedule -->
               <div id="schedule-free-time" class="schedule-free-pill schedule-free-pill--hero" aria-live="polite"></div>
             </div>
             <div class="panel-toolbar panel-toolbar-cluster">
-              <button type="button" id="work-schedule-chip" onclick="showWorkScheduleModal()"
-                class="chip-tool-btn work-hours-chip" aria-label="Set work hours">
-                <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                <span id="work-schedule-chip-label">Hours</span>
-              </button>
-              <button type="button" onclick="showScheduleImportModal()" class="chip-tool-btn" id="schedule-import-btn" aria-label="Import calendar file">
-                Import File
-              </button>
-              <button type="button" onclick="showCalendarFeedModal()" class="chip-tool-btn" id="schedule-url-btn" aria-label="Add calendar URL">
-                Calendar URL
-              </button>
+              <div class="life-manage-wrap">
+                <button type="button" class="chip-tool-btn" id="schedule-manage-btn"
+                  onclick="toggleLifeManageMenu('schedule')" aria-haspopup="menu" aria-expanded="false">Manage</button>
+                <div id="schedule-manage-menu" class="life-manage-menu hidden" role="menu">
+                  <button type="button" role="menuitem" id="work-schedule-chip" onclick="closeLifeManageMenus(); showWorkScheduleModal()">
+                    <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                    <span><span class="life-manage-title">Work hours</span><span id="work-schedule-chip-label" class="life-manage-sub">Flexible</span></span>
+                  </button>
+                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showScheduleImportModal()">
+                    <i class="fa-solid fa-file-import" aria-hidden="true"></i>
+                    <span>Import file</span>
+                  </button>
+                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showCalendarFeedModal()">
+                    <i class="fa-solid fa-link" aria-hidden="true"></i>
+                    <span>Calendar URL</span>
+                  </button>
+                </div>
+              </div>
               <button type="button" onclick="showAddCalendarEventModal()" class="chip-add-btn" id="schedule-add-btn" aria-label="Add event">
                 <i class="fa-solid fa-plus"></i>Add
               </button>
@@ -6079,19 +6189,29 @@
         <div id="life-panel-grocery" class="life-panel hidden">
           <div class="panel-head panel-head--toolbar-only">
             <div class="panel-toolbar panel-toolbar-cluster">
-              <button type="button" onclick="tryShowAddMealPresetModal()" class="chip-tool-btn" aria-label="Add recipe">+ Recipe</button>
-              <button type="button" onclick="showManageMealPresetsModal()" class="chip-tool-btn" aria-label="Manage recipes">Manage</button>
-              <button type="button" onclick="clearCheckedGrocery()" class="chip-tool-btn" aria-label="Clear checked items">Clear</button>
+              <button type="button" id="grocery-dinners-btn" class="chip-tool-btn" onclick="toggleGroceryDinners()"
+                aria-expanded="false">Dinner lists</button>
+              <div class="life-manage-wrap">
+                <button type="button" class="chip-tool-btn" onclick="toggleLifeManageMenu('grocery')" aria-haspopup="menu" aria-expanded="false">Manage</button>
+                <div id="grocery-manage-menu" class="life-manage-menu hidden" role="menu">
+                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); tryShowAddMealPresetModal()">
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add recipe</span>
+                  </button>
+                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showManageMealPresetsModal()">
+                    <i class="fa-solid fa-utensils" aria-hidden="true"></i><span>Edit recipes</span>
+                  </button>
+                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); clearCheckedGrocery()">
+                    <i class="fa-solid fa-check-double" aria-hidden="true"></i><span>Clear checked</span>
+                  </button>
+                </div>
+              </div>
               <button type="button" onclick="showAddGroceryItemModal()" class="chip-add-btn" id="grocery-add-btn" aria-label="Add Grocery Item">
                 <i class="fa-solid fa-plus"></i>Add
-              </button>
-              <button type="button" onclick="startVoiceAdd()" class="chip-voice-btn" id="grocery-voice-btn" aria-label="Add Grocery Item by Voice">
-                <i class="fa-solid fa-microphone"></i>
               </button>
             </div>
           </div>
           <div id="grocery-view-label" class="hidden" aria-hidden="true"></div>
-          <div id="meal-grocery-filters" class="library-filters-scroll mb-2 -mx-1 px-1"></div>
+          <div id="meal-grocery-filters" class="library-filters-scroll mb-2 -mx-1 px-1 hidden"></div>
           <div id="grocery-list" class="space-y-2 mb-2"></div>
         </div>
 
@@ -6108,7 +6228,7 @@
           <div id="bills-list" class="space-y-2"></div>
         </div>
 
-        <!-- Subscriptions Panel -->
+        <!-- Subscriptions Panel — yours first, brands on demand -->
         <div id="life-panel-subscriptions" class="life-panel hidden">
           <div class="panel-head panel-head--toolbar-only">
             <div class="panel-toolbar panel-toolbar-cluster">
@@ -6121,14 +6241,18 @@
             </div>
           </div>
           <div id="subs-monthly-total" class="hidden mb-2"></div>
-          <div class="relative mb-2.5">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-harbor-muted text-xs"></i>
-            <input id="subscription-search" type="search" placeholder="Search services or your subscriptions…"
-              oninput="subscriptionSearchQuery = this.value.trim().toLowerCase(); renderSubscriptions();"
-              class="w-full bg-harbor-raised border border-harbor-border rounded-2xl pl-8 pr-3 py-2 text-xs outline-none text-harbor-text placeholder:text-harbor-muted">
+          <div id="subscriptions-list" class="space-y-2.5 mb-3"></div>
+          <button type="button" id="subs-browse-btn" class="chip-tool-btn w-full mb-2" onclick="toggleSubsBrowse()"
+            aria-expanded="false">Browse popular services</button>
+          <div id="subs-browse-panel" class="hidden">
+            <div class="relative mb-2.5">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-harbor-muted text-xs"></i>
+              <input id="subscription-search" type="search" placeholder="Search Netflix, gym, Spotify…"
+                oninput="subscriptionSearchQuery = this.value.trim().toLowerCase(); renderSubscriptionPresets();"
+                class="w-full bg-harbor-raised border border-harbor-border rounded-2xl pl-8 pr-3 py-2 text-xs outline-none text-harbor-text placeholder:text-harbor-muted">
+            </div>
+            <div id="subscription-preset-chips" class="mb-1"></div>
           </div>
-          <div id="subscription-preset-chips" class="mb-3"></div>
-          <div id="subscriptions-list" class="space-y-2.5"></div>
         </div>
       </div>
 
@@ -6239,7 +6363,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v151';
+    const HARBOR_BUILD = 'v152';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -6412,15 +6536,21 @@
       { id: 'lavender', label: 'Lavender', accent: '#a78bfa' }
     ];
 
+    // Primary filters always shown; others behind “More”
+    const LIBRARY_FILTERS_PRIMARY = ['all', 'daily', 'weekly', 'personal'];
     const LIBRARY_FILTERS = [
-      { id: 'all', label: 'All', icon: 'fa-star', color: 'emerald' },
-      { id: 'daily', label: 'Daily', icon: 'fa-sun', color: 'amber' },
-      { id: 'weekly', label: 'Weekly', icon: 'fa-calendar-week', color: 'sky' },
+      { id: 'all', label: 'All', icon: 'fa-star', color: 'emerald', primary: true },
+      { id: 'daily', label: 'Daily', icon: 'fa-sun', color: 'amber', primary: true },
+      { id: 'weekly', label: 'Weekly', icon: 'fa-calendar-week', color: 'sky', primary: true },
+      { id: 'personal', label: 'Personal', icon: 'fa-user', color: 'pink', primary: true },
       { id: 'maintenance', label: 'Maintenance', icon: 'fa-screwdriver-wrench', color: 'orange' },
       { id: 'health', label: 'Health', icon: 'fa-heart-pulse', color: 'rose' },
-      { id: 'mind', label: 'Mind & Social', icon: 'fa-face-smile', color: 'violet' },
-      { id: 'personal', label: 'Personal', icon: 'fa-user', color: 'pink' }
+      { id: 'mind', label: 'Mind & Social', icon: 'fa-face-smile', color: 'violet' }
     ];
+    let libraryFiltersExpanded = false;
+    let groceryDinnersOpen = false;
+    let subsBrowseOpen = false;
+    let energyExpanded = false;
 
     // Clean, high-contrast monoline marks (readable at tile size; brand color from CSS)
     const SUBSCRIPTION_BRAND_ICONS = {
@@ -10408,6 +10538,103 @@
         </svg>`;
     }
 
+    function energyLabel(level) {
+      return ({ 1: 'Low', 2: 'Medium', 3: 'High' })[level] || 'Medium';
+    }
+
+    function syncEnergyCompactUI() {
+      const label = document.getElementById('energy-compact-label');
+      if (label) label.textContent = energyLabel(currentEnergy);
+      const compact = document.getElementById('energy-compact-btn');
+      if (compact) compact.setAttribute('aria-expanded', energyExpanded ? 'true' : 'false');
+      const choices = document.getElementById('energy-choices');
+      if (choices) choices.classList.toggle('hidden', !energyExpanded);
+    }
+
+    function toggleEnergyExpanded() {
+      energyExpanded = !energyExpanded;
+      syncEnergyCompactUI();
+    }
+
+    function closeLifeManageMenus() {
+      ['schedule', 'grocery'].forEach(name => {
+        const menu = document.getElementById(`${name}-manage-menu`);
+        const btn = document.querySelector(`[onclick*="toggleLifeManageMenu('${name}')"]`)
+          || document.getElementById(`${name}-manage-btn`);
+        if (menu) menu.classList.add('hidden');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      });
+      // Also reset any manage wrap buttons that use the shared handler
+      document.querySelectorAll('.life-manage-wrap > .chip-tool-btn[aria-haspopup="menu"]').forEach(b => {
+        b.setAttribute('aria-expanded', 'false');
+      });
+      document.querySelectorAll('.life-manage-menu').forEach(m => m.classList.add('hidden'));
+    }
+
+    function toggleLifeManageMenu(name) {
+      const menu = document.getElementById(`${name}-manage-menu`);
+      if (!menu) return;
+      const wasOpen = !menu.classList.contains('hidden');
+      closeLifeManageMenus();
+      if (!wasOpen) {
+        menu.classList.remove('hidden');
+        const wrap = menu.closest('.life-manage-wrap');
+        const btn = wrap?.querySelector('.chip-tool-btn') || document.getElementById(`${name}-manage-btn`);
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    function toggleGroceryDinners() {
+      groceryDinnersOpen = !groceryDinnersOpen;
+      // Keep open if a dinner list is active so the chip stays visible
+      if (state.groceryView?.mode === 'meal') groceryDinnersOpen = true;
+      const btn = document.getElementById('grocery-dinners-btn');
+      if (btn) {
+        btn.setAttribute('aria-expanded', groceryDinnersOpen ? 'true' : 'false');
+        btn.classList.toggle('is-active', groceryDinnersOpen);
+      }
+      const filters = document.getElementById('meal-grocery-filters');
+      if (filters) filters.classList.toggle('hidden', !groceryDinnersOpen);
+      if (groceryDinnersOpen) renderMealGroceryFilters();
+    }
+
+    function syncGroceryDinnersUI() {
+      const mealActive = state.groceryView?.mode === 'meal';
+      if (mealActive) groceryDinnersOpen = true;
+      const btn = document.getElementById('grocery-dinners-btn');
+      if (btn) {
+        btn.setAttribute('aria-expanded', groceryDinnersOpen ? 'true' : 'false');
+        btn.classList.toggle('is-active', groceryDinnersOpen || mealActive);
+        if (mealActive) {
+          const preset = getMealPresetById(state.groceryView.mealId);
+          btn.textContent = preset ? `Dinner · ${preset.label}` : 'Dinner lists';
+        } else {
+          btn.textContent = groceryDinnersOpen ? 'Hide dinners' : 'Dinner lists';
+        }
+      }
+      const filters = document.getElementById('meal-grocery-filters');
+      if (filters) filters.classList.toggle('hidden', !groceryDinnersOpen && !mealActive);
+    }
+
+    function toggleSubsBrowse() {
+      subsBrowseOpen = !subsBrowseOpen;
+      const btn = document.getElementById('subs-browse-btn');
+      const panel = document.getElementById('subs-browse-panel');
+      if (btn) {
+        btn.setAttribute('aria-expanded', subsBrowseOpen ? 'true' : 'false');
+        btn.textContent = subsBrowseOpen ? 'Hide popular services' : 'Browse popular services';
+      }
+      if (panel) panel.classList.toggle('hidden', !subsBrowseOpen);
+      if (subsBrowseOpen) {
+        renderSubscriptionPresets();
+        setTimeout(() => document.getElementById('subscription-search')?.focus(), 40);
+      } else {
+        subscriptionSearchQuery = '';
+        const input = document.getElementById('subscription-search');
+        if (input) input.value = '';
+      }
+    }
+
     function setEnergy(level) {
       const prev = currentEnergy;
       currentEnergy = level;
@@ -10419,21 +10646,22 @@
         const el = document.getElementById(`energy-${l}`);
         if (!el) return;
         const selected = l === level;
-        el.className = `energy-btn flex-1 py-3 flex items-center justify-center gap-x-2 ${selected ? 'is-selected' : 'is-idle'}`;
+        el.className = `energy-btn flex-1 py-2 flex items-center justify-center gap-x-2 ${selected ? 'is-selected' : 'is-idle'}`;
         el.dataset.energy = String(l);
         el.setAttribute('aria-pressed', selected ? 'true' : 'false');
         el.innerHTML = `${energyMeterSvg(l, selected)}<span class="energy-label-text">${energyLabels[l]}</span>`;
         if (selected) {
-          // Restart fill animation on re-select
           const fill = el.querySelector('.energy-meter-fill');
           if (fill) {
             fill.style.animation = 'none';
-            // force reflow
             void fill.offsetWidth;
             fill.style.animation = '';
           }
         }
       });
+      // Collapse after pick for a calmer chrome
+      energyExpanded = false;
+      syncEnergyCompactUI();
 
       // Always re-sort Today's list for the selected energy.
       renderTasks();
@@ -11148,6 +11376,14 @@
         state.groceryTripItems = [];
       }
 
+      syncGroceryDinnersUI();
+      if (!groceryDinnersOpen && !activeMeal) {
+        container.innerHTML = '';
+        container.classList.add('hidden');
+        return;
+      }
+
+      container.classList.remove('hidden');
       container.innerHTML = `
         <div class="library-filters">
           <button type="button" onclick="selectMealGroceryList(null)"
@@ -11280,10 +11516,10 @@
       if (items.length === 0) {
         container.innerHTML = harborEmptyHtml(
           '🛒',
-          isMeal ? 'Pick a Themed Dinner' : 'No List Yet',
+          isMeal ? 'Empty dinner list' : 'No list yet',
           isMeal
-            ? 'Choose a day chip above (Taco Tuesday, Pizza Friday…) for that dinner’s shopping list.'
-            : 'Tap a themed dinner above for a ready-made list, or use <strong>Add</strong> / the mic for staples.'
+            ? 'This dinner has no items — use <strong>Add</strong>, or switch back to your shopping list.'
+            : 'Use <strong>Add</strong> for staples, or open <strong>Dinner lists</strong> for a ready-made meal shop.'
         );
         return;
       }
@@ -13754,7 +13990,16 @@
       const totalEl = document.getElementById('subs-monthly-total');
       if (!container) return;
 
-      renderSubscriptionPresets();
+      // Brands stay secondary — only paint when Browse is open
+      if (subsBrowseOpen) renderSubscriptionPresets();
+      const browseBtn = document.getElementById('subs-browse-btn');
+      const browsePanel = document.getElementById('subs-browse-panel');
+      if (browseBtn) {
+        browseBtn.setAttribute('aria-expanded', subsBrowseOpen ? 'true' : 'false');
+        browseBtn.textContent = subsBrowseOpen ? 'Hide popular services' : 'Browse popular services';
+      }
+      if (browsePanel) browsePanel.classList.toggle('hidden', !subsBrowseOpen);
+
       container.innerHTML = '';
 
       const subs = state.subscriptions || [];
@@ -13780,8 +14025,8 @@
         }
       }
 
+      // Tracked list is always yours-first — search only filters the browse panel
       const filteredSubs = subs
-        .filter(s => trackedSubscriptionMatchesSearch(s, subscriptionSearchQuery))
         .slice()
         .sort((a, b) => {
           const ta = a.addedAt || '';
@@ -13795,13 +14040,8 @@
           <div class="feed-section-label text-harbor-muted mb-2 mt-1">Your subscriptions</div>
           <div class="text-center py-7 text-sm text-harbor-muted bg-harbor-surface border border-harbor-border rounded-3xl leading-relaxed">
             <div class="font-medium text-harbor-text mb-1">Nothing tracked yet</div>
-            <div class="text-xs px-4">Tap a service icon above, <span class="text-harbor-primary-light">Import CSV</span>, or add manually.</div>
+            <div class="text-xs px-4"><strong class="text-harbor-primary-light">Add</strong>, <strong class="text-harbor-primary-light">Import CSV</strong>, or browse popular services below.</div>
           </div>`;
-        return;
-      }
-
-      if (!filteredSubs.length) {
-        container.innerHTML = harborEmptyHtml('🔍', 'No Matches', `Nothing matches “${subscriptionSearchQuery}”. Try another search, or add a service anytime.`);
         return;
       }
 
@@ -13844,6 +14084,7 @@
       }
 
       currentLifePanel = panel;
+      if (typeof closeLifeManageMenus === 'function') closeLifeManageMenus();
       LIFE_PANEL_ORDER.forEach(name => {
         const el = document.getElementById(`life-panel-${name}`);
         const isActive = name === panel;
@@ -18708,8 +18949,14 @@
       if (!container) return;
       container.innerHTML = '';
       const counts = getLibraryFilterCounts();
+      const activeIsExtra = !LIBRARY_FILTERS_PRIMARY.includes(currentLibraryFilter);
+      if (activeIsExtra) libraryFiltersExpanded = true;
+      const filtersToShow = libraryFiltersExpanded
+        ? LIBRARY_FILTERS
+        : LIBRARY_FILTERS.filter(f => f.primary || LIBRARY_FILTERS_PRIMARY.includes(f.id));
+      const hiddenCount = LIBRARY_FILTERS.length - filtersToShow.length;
 
-      LIBRARY_FILTERS.forEach(f => {
+      filtersToShow.forEach(f => {
         const isActive = currentLibraryFilter === f.id;
         const styles = LIBRARY_FILTER_STYLES[f.id] || LIBRARY_FILTER_STYLES.all;
         const chip = document.createElement('button');
@@ -18723,6 +18970,34 @@
         chip.onclick = () => switchLibraryFilter(f.id);
         container.appendChild(chip);
       });
+
+      if (!libraryFiltersExpanded && hiddenCount > 0) {
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'library-filter-chip flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold border-harbor-border bg-harbor-raised text-harbor-muted';
+        more.innerHTML = `<i class="fa-solid fa-ellipsis text-[10px]"></i><span>More</span>`;
+        more.setAttribute('aria-expanded', 'false');
+        more.onclick = () => {
+          libraryFiltersExpanded = true;
+          renderLibraryFilters();
+        };
+        container.appendChild(more);
+      } else if (libraryFiltersExpanded && !activeIsExtra) {
+        const less = document.createElement('button');
+        less.type = 'button';
+        less.className = 'library-filter-chip flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold border-harbor-border bg-harbor-raised text-harbor-muted';
+        less.innerHTML = `<span>Less</span>`;
+        less.setAttribute('aria-expanded', 'true');
+        less.onclick = () => {
+          libraryFiltersExpanded = false;
+          if (!LIBRARY_FILTERS_PRIMARY.includes(currentLibraryFilter)) {
+            switchLibraryFilter('all');
+            return;
+          }
+          renderLibraryFilters();
+        };
+        container.appendChild(less);
+      }
       initHorizontalScrollRows();
     }
 
@@ -19592,6 +19867,13 @@
       }
 
       const goal = getHarborGoalTreat();
+      const primaryMode = HARBOR_CLAIM_MODES.find(m => m.id === 'full') || HARBOR_CLAIM_MODES[0];
+      const moreModes = HARBOR_CLAIM_MODES.filter(m => {
+        if (m.id === 'full') return false;
+        if (fromBank && m.id === 'bank') return false;
+        return true;
+      });
+
       const modal = document.createElement('div');
       modal.id = 'cheat-day-redeem-modal';
       modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[62]';
@@ -19604,24 +19886,9 @@
             <div class="font-semibold text-lg text-harbor-text">${fromBank ? 'Spend a banked Harbor Day' : 'You earned a Harbor Day'}</div>
             <div class="text-xs text-harbor-muted mt-1 leading-relaxed">
               ${fromBank
-                ? 'Use a saved credit — pick how rest fits today.'
-                : 'This is a kindness you earned. Pick how it fits your life, then choose the treat.'}
+                ? 'Use a saved credit — full day is the default, or pick another fit.'
+                : 'Pick a treat, then claim. Full day is the default; other shapes of rest are one tap away.'}
             </div>
-          </div>
-
-          <div class="text-[10px] uppercase tracking-wider text-harbor-primary-light font-semibold mb-1.5">How do you want it?</div>
-          <div class="space-y-1.5 mb-4" id="harbor-mode-grid">
-            ${HARBOR_CLAIM_MODES.filter(m => fromBank ? m.id !== 'bank' : true).map(m => `
-              <button type="button" data-mode-id="${m.id}" class="harbor-mode-btn w-full text-left px-3 py-2.5 rounded-2xl border border-harbor-border bg-harbor-raised active:opacity-90">
-                <div class="flex items-start gap-2">
-                  <span class="text-lg leading-none mt-0.5">${m.emoji}</span>
-                  <div class="min-w-0">
-                    <div class="text-[12px] font-semibold text-harbor-text">${m.label}</div>
-                    <div class="text-[10px] text-harbor-muted leading-snug">${m.desc}</div>
-                  </div>
-                </div>
-              </button>
-            `).join('')}
           </div>
 
           <div class="text-[10px] uppercase tracking-wider text-harbor-primary-light font-semibold mb-1.5">Your treat</div>
@@ -19630,6 +19897,35 @@
               <button type="button" data-treat-id="${t.id}" class="cheat-treat-btn px-3 py-2.5 rounded-2xl border border-harbor-border bg-harbor-raised text-left active:opacity-90 ${goal && goal.id === t.id ? 'is-selected' : ''}">
                 <div class="text-xl mb-0.5">${t.emoji}</div>
                 <div class="text-[11px] font-semibold text-harbor-text leading-snug">${t.label}</div>
+              </button>
+            `).join('')}
+          </div>
+
+          <button type="button" data-mode-id="${primaryMode.id}" id="harbor-mode-primary"
+            class="harbor-mode-btn is-selected w-full text-left px-3.5 py-3 rounded-2xl border border-harbor-primary/40 bg-harbor-primary/10 mb-2">
+            <div class="flex items-start gap-2.5">
+              <span class="text-xl leading-none mt-0.5">${primaryMode.emoji}</span>
+              <div class="min-w-0 flex-1">
+                <div class="text-[13px] font-semibold text-harbor-text">${primaryMode.label}</div>
+                <div class="text-[10px] text-harbor-muted leading-snug">${primaryMode.desc}</div>
+              </div>
+              <span class="text-[9px] font-bold uppercase tracking-wide text-harbor-primary-light mt-1">Default</span>
+            </div>
+          </button>
+
+          <button type="button" id="harbor-mode-more-btn" class="w-full text-left text-[11px] font-semibold text-harbor-primary-light px-1 py-1.5 mb-1" aria-expanded="false">
+            More options · Moment, Window${fromBank ? '' : ', Bank'}
+          </button>
+          <div id="harbor-mode-more" class="hidden space-y-1.5 mb-3">
+            ${moreModes.map(m => `
+              <button type="button" data-mode-id="${m.id}" class="harbor-mode-btn w-full text-left px-3 py-2.5 rounded-2xl border border-harbor-border bg-harbor-raised active:opacity-90">
+                <div class="flex items-start gap-2">
+                  <span class="text-lg leading-none mt-0.5">${m.emoji}</span>
+                  <div class="min-w-0">
+                    <div class="text-[12px] font-semibold text-harbor-text">${m.label}</div>
+                    <div class="text-[10px] text-harbor-muted leading-snug">${m.desc}</div>
+                  </div>
+                </div>
               </button>
             `).join('')}
           </div>
@@ -19646,9 +19942,11 @@
       let selectedTreat = goal && getHarborTreatById(goal.id)
         ? getHarborTreatById(goal.id)
         : (goal ? { id: goal.id, emoji: goal.emoji, label: goal.label } : null);
-      let selectedMode = fromBank ? 'moment' : 'full';
+      let selectedMode = 'full';
 
       const confirmBtn = modal.querySelector('#cheat-redeem-confirm');
+      const moreBtn = modal.querySelector('#harbor-mode-more-btn');
+      const morePanel = modal.querySelector('#harbor-mode-more');
       const syncConfirm = () => {
         confirmBtn.disabled = !(selectedTreat && selectedMode);
         if (!selectedTreat || !selectedMode) return;
@@ -19662,14 +19960,24 @@
         }
       };
 
+      const selectMode = (id) => {
+        selectedMode = id;
+        modal.querySelectorAll('.harbor-mode-btn').forEach(b => {
+          b.classList.toggle('is-selected', b.dataset.modeId === id);
+        });
+        syncConfirm();
+      };
+
+      moreBtn.onclick = () => {
+        const open = morePanel.classList.toggle('hidden') === false;
+        moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        moreBtn.textContent = open
+          ? 'Hide extra options'
+          : `More options · Moment, Window${fromBank ? '' : ', Bank'}`;
+      };
+
       modal.querySelectorAll('.harbor-mode-btn').forEach(btn => {
-        if (btn.dataset.modeId === selectedMode) btn.classList.add('is-selected');
-        btn.onclick = () => {
-          modal.querySelectorAll('.harbor-mode-btn').forEach(b => b.classList.remove('is-selected'));
-          btn.classList.add('is-selected');
-          selectedMode = btn.dataset.modeId;
-          syncConfirm();
-        };
+        btn.onclick = () => selectMode(btn.dataset.modeId);
       });
 
       modal.querySelectorAll('.cheat-treat-btn').forEach(btn => {
@@ -19783,8 +20091,8 @@
 
           <div class="text-[10px] text-harbor-muted leading-snug mb-2">
             ${goal
-              ? 'Due tasks only fill the meter — show up for the real stuff.'
-              : 'Pick a treat people actually rest with. Then earn it.'}
+              ? 'Due tasks fill the meter. Claim a full day when ready — or choose another shape of rest.'
+              : 'Pick a treat. Earn it with real due work. Claim when the meter fills.'}
           </div>
 
           <div class="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5 px-0.5 mb-1" style="-webkit-overflow-scrolling:touch;">
@@ -19807,11 +20115,11 @@
             ${cooldown > 0
               ? `Recharging · ${cooldown}d left`
               : canRedeem
-                ? `Claim${goal ? ` · ${goal.emoji} ${goal.label}` : ''}`
+                ? `Claim Full Day${goal ? ` · ${goal.emoji}` : ''}`
                 : `${Math.max(0, cost - bank.points)} pts to go`}
           </button>
           <div class="text-[9px] text-harbor-muted text-center mt-2.5 leading-snug">
-            Moment · Window · Full day · Bank · due tasks only
+            Full day by default · Moment, Window, or Bank in claim
           </div>
         </div>
       `;
@@ -20765,8 +21073,16 @@
       closeAppMenu();
     });
 
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.life-manage-wrap')) return;
+      if (typeof closeLifeManageMenus === 'function') closeLifeManageMenus();
+    });
+
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeAppMenu();
+      if (e.key === 'Escape') {
+        closeAppMenu();
+        if (typeof closeLifeManageMenus === 'function') closeLifeManageMenus();
+      }
     });
 
     window.addEventListener('resize', () => {
@@ -20821,30 +21137,16 @@
           <div class="font-semibold text-lg mb-3 flex items-center justify-between gap-3">
             <div class="min-w-0">
               <div>Settings</div>
-              <div class="text-[10px] font-medium text-harbor-muted mt-0.5 tracking-wide">You → Look → Features → Calendar → Tools</div>
+              <div class="text-[10px] font-medium text-harbor-muted mt-0.5 tracking-wide">Look · Features · Calendar · Tools</div>
             </div>
             <button type="button" onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
 
           <div class="settings-sheet-body">
-            <!-- 1. You -->
-            <section class="settings-section" aria-labelledby="settings-sec-you">
-              <div class="settings-section-head">
-                <h3 id="settings-sec-you" class="settings-section-title">1 · You</h3>
-              </div>
-              <div class="settings-card">
-                <div class="settings-card-block">
-                  <p class="settings-help-text">
-                    Profile, Household, and Share Profile live in the <strong class="text-harbor-text">app menu</strong> (☰). This screen is for look, features, and calendar tools.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <!-- 2. Look & feel -->
+            <!-- 1. Look & feel -->
             <section class="settings-section" aria-labelledby="settings-sec-look">
               <div class="settings-section-head">
-                <h3 id="settings-sec-look" class="settings-section-title">2 · Look &amp; Feel</h3>
+                <h3 id="settings-sec-look" class="settings-section-title">1 · Look &amp; Feel</h3>
               </div>
               <div class="settings-card">
                 <div class="settings-card-block">
@@ -20866,10 +21168,10 @@
               </div>
             </section>
 
-            <!-- 3. Features -->
+            <!-- 2. Features -->
             <section class="settings-section" aria-labelledby="settings-sec-features">
               <div class="settings-section-head">
-                <h3 id="settings-sec-features" class="settings-section-title">3 · Features</h3>
+                <h3 id="settings-sec-features" class="settings-section-title">2 · Features</h3>
               </div>
               <div class="settings-card">
                 <div class="settings-row">
@@ -20895,10 +21197,10 @@
               </div>
             </section>
 
-            <!-- 4. Calendar -->
+            <!-- 3. Calendar -->
             <section class="settings-section" aria-labelledby="settings-sec-cal">
               <div class="settings-section-head">
-                <h3 id="settings-sec-cal" class="settings-section-title">4 · Calendar</h3>
+                <h3 id="settings-sec-cal" class="settings-section-title">3 · Calendar</h3>
                 <span class="settings-section-note">ICS feeds</span>
               </div>
               <div class="settings-card">
@@ -20944,10 +21246,10 @@
               </div>
             </section>
 
-            <!-- 5. Tools -->
+            <!-- 4. Tools -->
             <section class="settings-section" aria-labelledby="settings-sec-tools">
               <div class="settings-section-head">
-                <h3 id="settings-sec-tools" class="settings-section-title">5 · Tools</h3>
+                <h3 id="settings-sec-tools" class="settings-section-title">4 · Tools</h3>
               </div>
               <div class="settings-card">
                 <div class="settings-card-block">
@@ -20969,10 +21271,10 @@
               </div>
             </section>
 
-            <!-- 6. Support -->
+            <!-- 5. Support -->
             <section class="settings-section" aria-labelledby="settings-sec-support">
               <div class="settings-section-head">
-                <h3 id="settings-sec-support" class="settings-section-title">6 · Support</h3>
+                <h3 id="settings-sec-support" class="settings-section-title">5 · Support</h3>
               </div>
               <div class="settings-card">
                 <div class="settings-row">
@@ -20996,10 +21298,10 @@
               </div>
             </section>
 
-            <!-- 7. Danger zone -->
+            <!-- 6. Danger zone -->
             <section class="settings-section" aria-labelledby="settings-sec-reset">
               <div class="settings-section-head">
-                <h3 id="settings-sec-reset" class="settings-section-title">7 · Reset</h3>
+                <h3 id="settings-sec-reset" class="settings-section-title">6 · Reset</h3>
               </div>
               <div class="settings-card">
                 <div class="settings-card-block">
