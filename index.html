@@ -3827,6 +3827,63 @@
     }
     .energy-choices.hidden { display: none; }
 
+    /* Add-to-Home-Screen caution (mobile browser only; hides in standalone PWA) */
+    .install-home-banner {
+      margin: 0.35rem 1.25rem 0.15rem;
+      padding: 0.65rem 0.75rem 0.6rem;
+      border-radius: 0.95rem;
+      border: 1px solid rgba(212, 168, 48, 0.38);
+      background: linear-gradient(160deg, rgba(212, 168, 48, 0.14) 0%, rgb(var(--harbor-raised)) 70%);
+      box-shadow: var(--harbor-shadow-sm);
+    }
+    html[data-theme="dark"] .install-home-banner {
+      border-color: rgba(212, 168, 48, 0.28);
+      background: linear-gradient(160deg, rgba(212, 168, 48, 0.1) 0%, rgb(var(--harbor-raised)) 72%);
+    }
+    .install-home-banner-icon {
+      width: 1.55rem;
+      height: 1.55rem;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: rgba(212, 168, 48, 0.18);
+      color: #b8860b;
+      font-size: 0.78rem;
+    }
+    html[data-theme="dark"] .install-home-banner-icon {
+      color: #e2c15a;
+    }
+    .install-home-banner-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: rgb(var(--harbor-text));
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+    }
+    .install-home-banner-how {
+      font-size: 0.65rem;
+      color: rgb(var(--harbor-muted));
+      line-height: 1.4;
+      margin-top: 0.2rem;
+    }
+    .install-home-banner-dismiss {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: rgb(var(--harbor-muted));
+      font-size: 0.95rem;
+      line-height: 1;
+      padding: 0.15rem 0.25rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .install-home-banner-dismiss:active {
+      color: rgb(var(--harbor-text));
+    }
+
     .smart-banner-quiet {
       padding: 0.45rem 0.7rem !important;
       margin-top: 0.35rem;
@@ -8072,6 +8129,21 @@
         </div>
       </div>
 
+      <!-- Add to Home Screen — mobile browser only; hidden when launched as installed app -->
+      <div id="install-home-banner" class="install-home-banner hidden" role="status" aria-live="polite">
+        <div class="flex items-start gap-x-2.5 min-w-0">
+          <div class="install-home-banner-icon" aria-hidden="true">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="install-home-banner-title">Add Harbor to your Home Screen</div>
+            <div id="install-home-how" class="install-home-banner-how"></div>
+          </div>
+          <button type="button" class="install-home-banner-dismiss" onclick="dismissInstallHomeBanner()"
+            aria-label="Dismiss">×</button>
+        </div>
+      </div>
+
       <!-- Smart Suggestion — quiet one-liner -->
       <div id="smart-banner" onclick="handleSmartSuggestion()"
         class="mx-5 smart-banner-quiet suggestion-card cursor-pointer active:opacity-90 hidden relative">
@@ -8384,7 +8456,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 200;
+    const HARBOR_BUILD_NUMBER = 201;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -8528,6 +8600,7 @@
         scheduleView: 'today',
         lifePanel: 'schedule',
         calendarNudgeDismissed: false,
+        installHomeBannerDismissed: false,
         showWelcomeBanner: false,
         welcomeBannerDismissed: false,
         onboarded: false,
@@ -9221,6 +9294,7 @@
           scheduleView: 'today',
           lifePanel: 'schedule',
           calendarNudgeDismissed: false,
+          installHomeBannerDismissed: false,
           theme: 'harbor',
           themeSchemeV2: true,
           showWelcomeBanner: false,
@@ -9332,6 +9406,9 @@
       }
       if (state.settings.calendarNudgeDismissed === undefined) {
         state.settings.calendarNudgeDismissed = false;
+      }
+      if (state.settings.installHomeBannerDismissed === undefined) {
+        state.settings.installHomeBannerDismissed = false;
       }
       if (state.settings.studentPricing === undefined) {
         state.settings.studentPricing = false;
@@ -29225,7 +29302,87 @@
       renderOnboardingWelcome();
     }
 
+    /** True when Harbor is opened from the Home Screen icon (installed PWA). */
+    function isRunningAsInstalledPwa() {
+      try {
+        if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+        if (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches) return true;
+        if (window.matchMedia && window.matchMedia('(display-mode: minimal-ui)').matches) return true;
+        // iOS Safari home-screen launch
+        if (window.navigator && window.navigator.standalone === true) return true;
+        // Android Trusted Web Activity
+        if (document.referrer && document.referrer.indexOf('android-app://') === 0) return true;
+      } catch (_) { /* ignore */ }
+      return false;
+    }
+
+    function isMobileWebClient() {
+      try {
+        const ua = navigator.userAgent || '';
+        if (/Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua)) return true;
+        const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+        const narrow = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+        return !!(coarse && narrow);
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function getInstallHomeHowText() {
+      const ua = navigator.userAgent || '';
+      if (/iPhone|iPad|iPod/i.test(ua)) {
+        return 'Tap the Share button, then Add to Home Screen. Next time open Harbor from that icon — this note will disappear.';
+      }
+      if (/Android/i.test(ua)) {
+        return 'Open your browser menu and choose Add to Home screen (or Install app). Launch from the icon and this note goes away.';
+      }
+      return 'Add this page to your Home Screen, then open Harbor from the icon — this note will go away.';
+    }
+
+    function shouldShowInstallHomeBanner() {
+      if (typeof isUserOnboarded === 'function' && !isUserOnboarded()) return false;
+      if (isRunningAsInstalledPwa()) return false;
+      if (!isMobileWebClient()) return false;
+      if (state?.settings?.installHomeBannerDismissed) return false;
+      if (state?.settings?.tutorialActive) return false;
+      return true;
+    }
+
+    function updateInstallHomeBanner() {
+      const el = document.getElementById('install-home-banner');
+      if (!el) return;
+
+      // If they relaunched from the Home Screen icon, permanently clear the caution
+      if (isRunningAsInstalledPwa()) {
+        if (state?.settings && !state.settings.installHomeBannerDismissed) {
+          state.settings.installHomeBannerDismissed = true;
+          try { saveState(); } catch (_) { /* ignore */ }
+        }
+        el.classList.add('hidden');
+        return;
+      }
+
+      const show = shouldShowInstallHomeBanner();
+      el.classList.toggle('hidden', !show);
+      if (show) {
+        const how = document.getElementById('install-home-how');
+        if (how) how.textContent = getInstallHomeHowText();
+      }
+    }
+
+    function dismissInstallHomeBanner() {
+      if (!state.settings) state.settings = {};
+      state.settings.installHomeBannerDismissed = true;
+      try { saveState(); } catch (_) { /* ignore */ }
+      const el = document.getElementById('install-home-banner');
+      if (el) el.classList.add('hidden');
+      if (typeof showToast === 'function') {
+        showToast('Tip hidden — add to Home Screen anytime from your browser menu');
+      }
+    }
+
     function bootApp() {
+
         loadState();
         applyAppTheme(state.settings?.theme || 'harbor');
         repairOnboardedEmptyTodayList();
@@ -29274,6 +29431,7 @@
         renderLibraryFilters();
         renderStreaks();
         updateSmartBanner();
+        updateInstallHomeBanner();
         updateSummaryLauncher();
         renderHeaderWeather();
         initHorizontalScrollRows();
@@ -29284,6 +29442,20 @@
 
         setTimeout(fetchRealWeather, 600);
         syncAppVersionFoot();
+        // Re-check after orientation changes / returning from Share sheet on iOS
+        window.addEventListener('visibilitychange', () => {
+          if (!document.hidden) {
+            try { updateInstallHomeBanner(); } catch (_) { /* ignore */ }
+          }
+        });
+        try {
+          if (window.matchMedia) {
+            const mm = window.matchMedia('(display-mode: standalone)');
+            const onMode = () => { try { updateInstallHomeBanner(); } catch (_) { /* ignore */ } };
+            if (mm.addEventListener) mm.addEventListener('change', onMode);
+            else if (mm.addListener) mm.addListener(onMode);
+          }
+        } catch (_) { /* ignore */ }
 
         // Retry any feedback that never reached email (silent background flush)
         setTimeout(() => {
