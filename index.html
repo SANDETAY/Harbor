@@ -18366,11 +18366,12 @@
     function canEarnHarborPoints(habit) {
       if (!habit) return false;
       if (typeof isDueToday === 'function' && !isDueToday(habit)) return false;
-      if (habit.is_preset) return true;
-      if (habit.trackStreak) return true;
-      const added = habit.added_at || (typeof getHabitAddedDate === 'function' ? getHabitAddedDate(habit) : '') || '';
-      if (typeof isOneOffTask === 'function' && isOneOffTask(habit) && added === todayStr()) return false;
-      if (added === todayStr() && !habit.interval_days) return false;
+      if (habit.is_preset || habit.trackStreak) return true;
+      // Only when we know it was created today (don't invent added_at = today)
+      if (habit.added_at && habit.added_at === todayStr()) {
+        if (typeof isOneOffTask === 'function' && isOneOffTask(habit)) return false;
+        if (!habit.interval_days) return false;
+      }
       return true;
     }
 
