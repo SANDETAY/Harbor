@@ -2857,7 +2857,8 @@
       padding: 1rem 1.1rem calc(1rem + var(--safe-bottom));
     }
 
-    .app-menu-sheet-title {
+    .app-menu-sheet-title,
+    .app-menu-dropdown-title {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -2870,12 +2871,25 @@
       text-transform: none;
     }
 
+    .app-menu-dropdown-title {
+      font-size: 0.95rem;
+      margin: 0.15rem 0.25rem 0.55rem;
+      padding: 0 0.15rem;
+    }
+
     .app-menu-sheet-title-sub {
+      display: block;
       font-size: 0.62rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: rgb(var(--harbor-muted));
+      margin-top: 0.12rem;
+    }
+
+    .app-menu-sheet-title .modal-close-chip,
+    .app-menu-dropdown-title .modal-close-chip {
+      flex-shrink: 0;
     }
 
     .app-menu-section-label {
@@ -6363,7 +6377,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v152';
+    const HARBOR_BUILD = 'v153';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -20629,12 +20643,15 @@
     }
 
     function getAppMenuContentHtml({ sheet = false } = {}) {
-      const title = sheet
-        ? `<div class="app-menu-sheet-title">
+      const titleClass = sheet ? 'app-menu-sheet-title' : 'app-menu-dropdown-title';
+      const title = `
+        <div class="${titleClass}">
+          <div class="min-w-0">
             <span>Menu</span>
             <span class="app-menu-sheet-title-sub">Harbor</span>
-          </div>`
-        : '';
+          </div>
+          <button type="button" class="modal-close-chip" onclick="closeAppMenu()" aria-label="Close menu">Close</button>
+        </div>`;
       return `
         ${title}
         <div class="app-menu-section-label">You</div>
@@ -20668,6 +20685,8 @@
     function renderAppMenuContent(container) {
       if (!container) return;
       container.innerHTML = getAppMenuContentHtml({ sheet: false });
+      // Sticky header feel: keep close chip easy to hit at top of long menu
+      container.scrollTop = 0;
     }
 
     function runAppMenuAction(action) {
