@@ -1,4 +1,4 @@
-const CACHE_NAME = 'harbor-preview-v131';
+const CACHE_NAME = 'harbor-preview-v132';
 const PRECACHE = [
   './harbor-favicon-32.png',
   './harbor-apple-touch.png',

@@ -5786,7 +5786,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v131';
+    const HARBOR_BUILD = 'v132';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -5891,12 +5891,11 @@
     const CHEAT_DAY_COST_MIN = 500;
     const CHEAT_DAY_COST_MAX = 800;
 
+    // Option A: only real-life flexibility before Harbor Day — no cosmetic shop
     const CHEAT_FUND_SMALL_REWARDS = [
-      { id: 'badge', cost: 50, emoji: '🏅', label: 'Soft Badge', desc: 'Gentle flair on your streaks' },
-      { id: 'boost', cost: 100, emoji: '✨', label: 'Calm Boost', desc: 'Brighter projections for a while' },
-      { id: 'skip', cost: 150, emoji: '🌊', label: 'Pass Once', desc: 'On Today, tap Pass on an easy task' },
-      { id: 'theme', cost: 200, emoji: '🎨', label: 'Soft Theme', desc: 'A light accent for 3 days' }
+      { id: 'skip', cost: 150, emoji: '🌊', label: 'Pass Once', desc: 'On Today, tap Pass on an easy task — no streak stress' }
     ];
+    const HARBOR_PASS_COST = 150;
 
     const STREAK_MILESTONE_BONUSES = { 7: 25, 30: 75, 100: 200 };
 
@@ -18412,34 +18411,30 @@
       return guides;
     }
 
-    function getRewardRedeemToast(reward, theme) {
-      switch (reward.id) {
-        case 'badge': return '🏅 Soft badge on — check Streaks for a little flair.';
-        case 'boost': return '✨ Calm boost on for 3 days — open Projected Wins on Streaks.';
-        case 'skip': return '🌊 Pass ready — on Today, tap Pass on an easy task.';
-        case 'theme': return `🎨 ${theme?.label || 'Soft'} theme on for 3 days — a gentle accent across the app.`;
-        default: return `${reward.emoji} ${reward.label} claimed.`;
-      }
+    function getRewardRedeemToast(reward) {
+      if (reward?.id === 'skip') return '🌊 Pass ready — on Today, tap Pass on an easy task.';
+      return `${reward?.emoji || '⚓'} ${reward?.label || 'Reward'} claimed.`;
     }
 
     function redeemSmallReward(rewardId) {
+      // Only Pass Once is offered; ignore legacy ids if somehow called
       const reward = CHEAT_FUND_SMALL_REWARDS.find(r => r.id === rewardId);
-      if (!reward) return;
+      if (!reward || reward.id !== 'skip') {
+        showToast('That reward is no longer part of Harbor Day', 'info');
+        return;
+      }
       const bank = ensureRewardBank();
       if (bank.points < reward.cost) {
-        showToast(`Need ${reward.cost - bank.points} more pts`);
+        showToast(`${reward.cost - bank.points} more pts until Pass Once`);
         return;
       }
       bank.points -= reward.cost;
-      if (reward.id === 'badge') bank.badges = (bank.badges || 0) + 1;
-      if (reward.id === 'boost') bank.motivationBoostUntil = dateStrLocal(new Date(Date.now() + 3 * 86400000));
-      if (reward.id === 'skip') bank.skipToken = (bank.skipToken || 0) + 1;
-      let themeApplied = null;
-      if (reward.id === 'theme') themeApplied = applyFunTheme();
+      bank.skipToken = (bank.skipToken || 0) + 1;
       saveState();
       renderRewardBank();
       renderStreaks();
-      showToast(getRewardRedeemToast(reward, themeApplied));
+      renderTasks();
+      showToast(getRewardRedeemToast(reward));
     }
 
     function useSkipToken(habitId, event) {
@@ -18546,7 +18541,6 @@
       const bank = ensureRewardBank();
       const cost = getCheatDayCost();
       const cooldown = getCheatDayCooldownDays();
-      const nextSmall = getNextSmallReward();
 
       if (cooldown > 0) {
         const lastTreat = bank.lastTreatLabel ? ` Last treat: ${bank.lastTreatEmoji || ''} ${bank.lastTreatLabel}.` : '';
@@ -18555,10 +18549,11 @@
       const remaining = Math.max(0, cost - bank.points);
       if (remaining === 0) return '⚓ Meter full — claim your Harbor Day whenever you’re ready.';
       const pace = getCheatDayPaceEstimate();
-      const nextLine = nextSmall
-        ? `Next soft reward: ${nextSmall.emoji} ${nextSmall.label} (${nextSmall.cost} pts)`
-        : 'Soft rewards unlocked — saving calmly for Harbor Day';
-      return `${nextLine} · ${remaining} pts to Harbor Day (~${pace.days} day${pace.days === 1 ? '' : 's'} at your pace)`;
+      const passCost = HARBOR_PASS_COST || 150;
+      const passLine = bank.points < passCost
+        ? `Pass Once unlocks at ${passCost} pts`
+        : 'Pass Once available anytime · or keep saving for Harbor Day';
+      return `${passLine} · ${remaining} pts to Harbor Day (~${pace.days} day${pace.days === 1 ? '' : 's'} at your pace)`;
     }
 
     function showCheatDayRedeemModal() {
@@ -18642,21 +18637,29 @@
       const cooldown = getCheatDayCooldownDays();
       const pct = Math.min(100, Math.round((bank.points / cost) * 100));
       const canRedeem = canRedeemCheatDay();
-      const milestoneMarkers = CHEAT_FUND_SMALL_REWARDS.map(r => {
-        const mPct = Math.min(99, Math.round((r.cost / cost) * 100));
-        return `<span class="cheat-fund-milestone ${bank.points >= r.cost ? 'is-passed' : ''}" style="left:${mPct}%" title="${r.label}"></span>`;
-      }).join('');
+      const passReward = CHEAT_FUND_SMALL_REWARDS.find(r => r.id === 'skip') || { id: 'skip', cost: 150, emoji: '🌊', label: 'Pass Once' };
+      const passReady = bank.points >= passReward.cost;
+      const passPct = Math.min(99, Math.round((passReward.cost / cost) * 100));
+      const milestoneMarkers = `<span class="cheat-fund-milestone ${passReady ? 'is-passed' : ''}" style="left:${passPct}%" title="Pass Once"></span>`;
 
-      const smallRewardsHtml = CHEAT_FUND_SMALL_REWARDS.map(r => {
-        const ready = bank.points >= r.cost;
-        return `
-          <button type="button" onclick="redeemSmallReward('${r.id}')"
-            class="cheat-fund-reward-chip ${ready ? 'is-ready' : ''}" title="${r.desc}">
-            <div class="text-base leading-none mb-0.5">${r.emoji}</div>
-            <div class="text-[9px] font-semibold text-harbor-text">${r.label}</div>
-            <div class="text-[8px] text-harbor-muted">${r.cost} pts</div>
-          </button>`;
-      }).join('');
+      const passHtml = `
+        <button type="button" onclick="redeemSmallReward('skip')"
+          class="w-full mb-3 px-3 py-2.5 rounded-2xl border text-left transition-colors ${passReady
+            ? 'border-harbor-primary/45 bg-harbor-primary/12 active:opacity-90'
+            : 'border-harbor-border bg-harbor-raised/60 opacity-80'}"
+          title="${passReward.desc || 'Pass an easy task once'}"
+          ${passReady ? '' : 'disabled'}>
+          <div class="flex items-center gap-2.5">
+            <span class="text-lg leading-none" aria-hidden="true">${passReward.emoji}</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-[11px] font-semibold text-harbor-text">Pass Once</div>
+              <div class="text-[9px] text-harbor-muted leading-snug">Skip one easy task without guilt · ${passReward.cost} pts</div>
+            </div>
+            <div class="text-[10px] font-semibold tabular-nums ${passReady ? 'text-harbor-primary-light' : 'text-harbor-muted'}">
+              ${passReady ? 'Claim' : `${Math.max(0, passReward.cost - bank.points)} pts`}
+            </div>
+          </div>
+        </button>`;
 
       const activeGuides = getActiveRewardGuides();
       const activeGuidesHtml = activeGuides.length
@@ -18681,7 +18684,7 @@
             <div class="section-header font-semibold text-harbor-text text-sm">Harbor Day</div>
             <div class="text-xs text-harbor-primary-light font-semibold tabular-nums">${bank.points} pts</div>
           </div>
-          <div class="text-[10px] text-harbor-muted mb-2 leading-snug">Earn calm rest from showing up — not a cheat, a kindness you bank.</div>
+          <div class="text-[10px] text-harbor-muted mb-2 leading-snug">Fill the meter by showing up. Unlock a Pass along the way — or keep going for a full Harbor Day of rest.</div>
           <div class="cheat-fund-jar">
             <div class="cheat-fund-jar-icon" aria-hidden="true">⚓</div>
             <div class="cheat-fund-track">
@@ -18695,7 +18698,7 @@
           </div>
           <div class="text-[10px] text-harbor-primary-light mb-2 leading-snug">${getCheatDayEstimate()}</div>
           ${activeGuidesHtml}
-          <div class="cheat-fund-rewards-row mb-3">${smallRewardsHtml}</div>
+          ${passHtml}
           <button type="button" onclick="redeemCheatDay()"
             class="w-full py-2.5 rounded-2xl text-xs font-semibold ${canRedeem ? 'bg-harbor-primary text-white active:opacity-90' : 'bg-harbor-raised text-harbor-muted border border-harbor-border'}">
             ${cooldown > 0
