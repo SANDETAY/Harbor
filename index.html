@@ -37,16 +37,16 @@
       } catch (e) { /* ignore */ }
     })();
   </script>
-  <meta name="description" content="Harbor — your life management app. Energy-based tasks, bills, grocery, streaks, and smart suggestions. Design preview for testers.">
+  <meta name="description" content="Harbor — a gentle daily life organizer. Energy-based tasks, bills, grocery, streaks, and Smart Suggestions in one calm place.">
   <meta name="robots" content="noindex, nofollow">
-  <meta property="og:title" content="Harbor — Life Management">
-  <meta property="og:description" content="Harbor — energy-based tasks, bills, grocery, streaks, and smart suggestions in one app.">
+  <meta property="og:title" content="Harbor — Create Your Harbor">
+  <meta property="og:description" content="Harbor — energy-based tasks, bills, grocery, streaks, and Smart Suggestions in one calm app.">
   <meta property="og:site_name" content="Harbor">
   <meta property="og:image" content="https://sandetay.github.io/Harbor/harbor-icon-512.png">
   <meta property="og:image:alt" content="Harbor app logo">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Harbor — Life Management">
+  <meta name="twitter:title" content="Harbor — Create Your Harbor">
   <meta name="twitter:image" content="https://sandetay.github.io/Harbor/harbor-icon-512.png">
   <link rel="icon" type="image/png" sizes="32x32" href="harbor-favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="harbor-apple-touch.png">
@@ -140,12 +140,15 @@
     html[data-theme="dark"] .today-add-btn {
       background: linear-gradient(180deg, #FFFFFF 0%, #E8E8E8 100%);
       color: #070707;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      box-shadow:
+        0 2px 14px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
 
     html[data-theme="dark"] .chip-add-btn:active,
     html[data-theme="dark"] .today-add-btn:active {
-      opacity: 0.9;
+      opacity: 0.92;
     }
 
     html[data-theme="dark"] .chip-voice-btn,
@@ -153,6 +156,7 @@
       background: rgb(28 28 28);
       border-color: rgb(55 55 55);
       color: rgb(245 245 245);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 2px 8px rgba(0, 0, 0, 0.35);
     }
 
     html[data-theme="dark"] .life-nav-tab.life-panel-active,
@@ -248,7 +252,10 @@
     html[data-theme="light"] .today-add-btn {
       background: linear-gradient(180deg, #3AADA0 0%, #2F9B8C 100%);
       color: #FFFFFF;
-      box-shadow: 0 2px 12px rgba(47, 155, 140, 0.32), 0 0 0 1px rgba(47, 155, 140, 0.12);
+      box-shadow:
+        0 2px 14px rgba(47, 155, 140, 0.36),
+        0 0 0 1px rgba(47, 155, 140, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35);
     }
 
     html[data-theme="light"] .chip-voice-btn,
@@ -256,6 +263,7 @@
       background: rgb(255 255 255);
       border-color: rgb(206 222 218);
       color: rgb(18 36 34);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 2px 8px rgba(18, 48, 44, 0.08);
     }
 
     html[data-theme="light"] .life-nav-tab.life-panel-active,
@@ -1938,6 +1946,7 @@
       .splash-screen-harbor.is-revealing { opacity: 0; transform: none; }
       .app-content-wrap.splash-app-reveal { opacity: 1; transform: none; }
       .splash-wave-layer { opacity: 0.35; }
+      .splash-video { display: none !important; }
       body.is-splash-active .app-content-wrap { opacity: 1; }
       body.is-splash-active .site-header { opacity: 1; pointer-events: auto; }
     }
@@ -3056,38 +3065,64 @@
       flex: 1;
     }
 
+    /* Soft pill bubble — shared system control for every +Add */
     .chip-add-btn,
     .today-add-btn {
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.28rem;
       flex-shrink: 0;
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 0.45rem 0.8rem;
-      border-radius: 0.75rem;
-      background: rgb(var(--harbor-primary));
-      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      padding: 0.48rem 0.95rem;
+      min-height: 2.15rem;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #3AADA0 0%, #2F9B8C 100%);
+      color: #FFFFFF;
       border: none;
-      line-height: 1.1;
+      line-height: 1;
       white-space: nowrap;
+      box-shadow:
+        0 2px 12px rgba(47, 155, 140, 0.34),
+        0 0 0 1px rgba(47, 155, 140, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      transition: transform 0.12s ease, opacity 0.12s ease, box-shadow 0.15s ease;
+      cursor: pointer;
+    }
+
+    .chip-add-btn i,
+    .today-add-btn i {
+      font-size: 0.62rem;
+      opacity: 0.95;
     }
 
     .chip-add-btn:active,
     .today-add-btn:active {
-      opacity: 0.9;
+      opacity: 0.92;
+      transform: scale(0.97);
     }
 
     .chip-voice-btn,
     .today-voice-btn {
+      appearance: none;
+      -webkit-appearance: none;
       flex-shrink: 0;
       width: 2.15rem;
       height: 2.15rem;
-      border-radius: 0.75rem;
-      display: flex;
+      border-radius: 999px;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       background: rgb(var(--harbor-surface));
       border: 1px solid rgb(var(--harbor-border));
       color: rgb(var(--harbor-primary-light));
-      transition: background 0.15s ease, border-color 0.15s ease;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 2px 8px rgba(4, 22, 20, 0.18);
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+      cursor: pointer;
     }
 
     .chip-voice-btn:active,
@@ -4449,6 +4484,36 @@
       z-index: 100;
     }
 
+    /* Grok Imagine splash video — first ~2s, full bleed */
+    .splash-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      z-index: 1;
+      background: #0a3a38;
+      pointer-events: none;
+    }
+
+    .splash-video.is-ready {
+      opacity: 1;
+    }
+
+    /* When video is driving the splash, hide the CSS brand/wave fallback */
+    .splash-screen-harbor.has-video-splash .splash-sky,
+    .splash-screen-harbor.has-video-splash .splash-waves,
+    .splash-screen-harbor.has-video-splash #splash-inner {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-screen-harbor.has-video-splash .splash-video {
+      opacity: 1;
+    }
+
     .splash-screen-harbor.is-hidden {
       display: none !important;
       pointer-events: none;
@@ -5325,8 +5390,19 @@
         </div>
       </header>
 
-      <!-- Splash / Launch screen — harbor at dawn -->
+      <!-- Splash / Launch screen — Grok Imagine video (first 2s) + CSS fallback -->
       <div id="splash-screen" class="absolute inset-0 z-[100] splash-screen-harbor" aria-hidden="true">
+        <video id="splash-video"
+          class="splash-video"
+          muted
+          playsinline
+          webkit-playsinline
+          preload="auto"
+          aria-hidden="true"
+          disablepictureinpicture
+          disableremoteplayback>
+          <source src="harbor-splash.mp4" type="video/mp4">
+        </video>
         <div class="splash-sky" aria-hidden="true"></div>
         <div class="splash-waves" aria-hidden="true">
           <div class="splash-wave-layer w1">
@@ -5438,15 +5514,15 @@
       <!-- TODAY TAB -->
       <div id="tab-content-today" class="tab-content px-5 pt-3 bg-harbor-bg">
         <div class="today-toolbar panel-toolbar">
-          <button type="button" onclick="showQuickTaskModal({ mode: 'habit' })" class="chip-add-btn today-add-btn" id="today-add-btn">
-            <i class="fa-solid fa-plus mr-1"></i>Add
+          <button type="button" onclick="showQuickTaskModal({ mode: 'habit' })" class="chip-add-btn today-add-btn" id="today-add-btn" aria-label="Add task">
+            <i class="fa-solid fa-plus"></i>Add
           </button>
-          <button type="button" onclick="startVoiceAdd()" class="chip-voice-btn today-voice-btn" id="today-voice-btn" aria-label="Add task by voice">
+          <button type="button" onclick="startVoiceAdd()" class="chip-voice-btn today-voice-btn" id="today-voice-btn" aria-label="Add Task by Voice">
             <i class="fa-solid fa-microphone"></i>
           </button>
         </div>
 
-        <div id="task-swipe-hint" class="swipe-row-hint">Swipe a task left for Edit or Delete</div>
+        <div id="task-swipe-hint" class="swipe-row-hint">Swipe a task left to Edit or Delete</div>
         <!-- Task List -->
         <div id="task-list" class="space-y-2"></div>
       </div>
@@ -5466,38 +5542,42 @@
 
         <!-- Schedule Panel -->
         <div id="life-panel-schedule" class="life-panel">
-          <div class="flex items-center justify-between mb-1">
-            <div id="schedule-section-title" class="section-header font-semibold text-harbor-text">Today's Schedule</div>
-            <div id="schedule-free-time" class="text-xs text-harbor-primary-light font-medium"></div>
+          <div class="panel-head">
+            <div class="min-w-0 flex-1">
+              <div id="schedule-section-title" class="section-header font-semibold text-harbor-text">Today's Schedule</div>
+              <div id="schedule-free-time" class="text-xs text-harbor-primary-light font-medium mt-0.5"></div>
+            </div>
+            <div class="panel-toolbar">
+              <button type="button" onclick="showAddCalendarEventModal()" class="chip-add-btn" id="schedule-add-btn" aria-label="Add event">
+                <i class="fa-solid fa-plus"></i>Add
+              </button>
+            </div>
           </div>
-          <div class="flex gap-1.5 mb-2" id="schedule-view-toggle" role="tablist" aria-label="Schedule range">
+          <div class="flex gap-1.5 mb-2" id="schedule-view-toggle" role="tablist" aria-label="Schedule Range">
             <button type="button" role="tab" data-schedule-view="today" onclick="setScheduleView('today')"
               class="cal-format-chip is-active">Today</button>
             <button type="button" role="tab" data-schedule-view="week" onclick="setScheduleView('week')"
-              class="cal-format-chip">This week</button>
+              class="cal-format-chip">This Week</button>
             <button type="button" role="tab" data-schedule-view="month" onclick="setScheduleView('month')"
-              class="cal-format-chip">This month</button>
+              class="cal-format-chip">This Month</button>
           </div>
-          <button type="button" id="work-schedule-chip" onclick="showWorkScheduleModal()" class="work-hours-card" aria-label="Set your work hours">
+          <button type="button" id="work-schedule-chip" onclick="showWorkScheduleModal()" class="work-hours-card" aria-label="Set Your Work Hours">
             <div class="work-hours-icon" aria-hidden="true"><i class="fa-regular fa-clock"></i></div>
             <div class="flex-1 min-w-0">
-              <div class="text-[12px] font-semibold text-harbor-text leading-tight">Set your work hours</div>
-              <div id="work-schedule-chip-label" class="text-[11px] text-harbor-primary-light font-medium mt-0.5 truncate">Flexible · not set</div>
-              <div class="text-[10px] text-harbor-muted leading-snug mt-0.5">So free-time estimates &amp; smart suggestions match your day</div>
+              <div class="text-[12px] font-semibold text-harbor-text leading-tight">Set Your Work Hours</div>
+              <div id="work-schedule-chip-label" class="text-[11px] text-harbor-primary-light font-medium mt-0.5 truncate">Flexible · not set yet</div>
+              <div class="text-[10px] text-harbor-muted leading-snug mt-0.5">Helps free-time estimates and Smart Suggestions fit your day</div>
             </div>
             <span class="work-hours-cta">Edit</span>
           </button>
+          <div class="panel-tools" aria-label="Schedule Tools">
+            <button type="button" onclick="showScheduleImportModal()" class="chip-tool-link">Import File</button>
+            <span class="chip-tool-sep" aria-hidden="true">·</span>
+            <button type="button" onclick="showCalendarFeedModal()" class="chip-tool-link">Calendar URL</button>
+          </div>
           <div id="schedule-availability" class="text-[10px] text-harbor-muted mb-1.5"></div>
           <div id="schedule-sync-badge" class="text-[10px] text-harbor-muted mb-2"></div>
-          <div id="schedule-list" class="space-y-2 mb-4"></div>
-          <div class="flex gap-2">
-            <button type="button" onclick="showScheduleImportModal()"
-              class="flex-1 py-2.5 text-xs bg-harbor-surface hover:bg-harbor-border border border-harbor-border rounded-2xl text-harbor-text">Import file</button>
-            <button type="button" onclick="showCalendarFeedModal()"
-              class="flex-1 py-2.5 text-xs bg-harbor-raised hover:bg-harbor-border border border-harbor-border rounded-2xl text-harbor-primary-light font-medium">Calendar URL</button>
-            <button type="button" onclick="showAddCalendarEventModal()"
-              class="flex-1 py-2.5 text-xs bg-harbor-primary/90 hover:bg-harbor-primary border border-harbor-primary/50 rounded-2xl text-white font-medium">+ Event</button>
-          </div>
+          <div id="schedule-list" class="space-y-2 mb-2"></div>
         </div>
 
         <!-- Grocery Panel -->
@@ -5505,20 +5585,20 @@
           <div class="panel-head">
             <div class="section-header font-semibold text-harbor-text">Dinner &amp; Grocery</div>
             <div class="panel-toolbar">
-              <button type="button" onclick="showAddGroceryItemModal()" class="chip-add-btn" id="grocery-add-btn" aria-label="Add grocery item">
-                <i class="fa-solid fa-plus mr-1"></i>Add
+              <button type="button" onclick="showAddGroceryItemModal()" class="chip-add-btn" id="grocery-add-btn" aria-label="Add Grocery Item">
+                <i class="fa-solid fa-plus"></i>Add
               </button>
-              <button type="button" onclick="startVoiceAdd()" class="chip-voice-btn" id="grocery-voice-btn" aria-label="Add grocery item by voice">
+              <button type="button" onclick="startVoiceAdd()" class="chip-voice-btn" id="grocery-voice-btn" aria-label="Add Grocery Item by Voice">
                 <i class="fa-solid fa-microphone"></i>
               </button>
             </div>
           </div>
-          <div class="panel-tools" aria-label="Grocery tools">
+          <div class="panel-tools" aria-label="Grocery Tools">
             <button type="button" onclick="tryShowAddMealPresetModal()" class="chip-tool-link">+ Recipe</button>
             <span class="chip-tool-sep" aria-hidden="true">·</span>
             <button type="button" onclick="showManageMealPresetsModal()" class="chip-tool-link">Manage</button>
             <span class="chip-tool-sep" aria-hidden="true">·</span>
-            <button type="button" onclick="clearCheckedGrocery()" class="chip-tool-link">Clear done</button>
+            <button type="button" onclick="clearCheckedGrocery()" class="chip-tool-link">Clear Done</button>
           </div>
           <div id="grocery-view-label" class="text-[10px] text-harbor-muted mb-2">Themed dinners · Sun–Sat</div>
           <div id="meal-grocery-filters" class="library-filters-scroll mb-2 -mx-1 px-1"></div>
@@ -5530,8 +5610,8 @@
           <div class="panel-head">
             <div class="section-header font-semibold text-harbor-text">Bills</div>
             <div class="panel-toolbar">
-              <button type="button" onclick="addBillFromPrompt()" class="chip-add-btn" id="bills-add-btn" aria-label="Add bill">
-                <i class="fa-solid fa-plus mr-1"></i>Add
+              <button type="button" onclick="addBillFromPrompt()" class="chip-add-btn" id="bills-add-btn" aria-label="Add Bill">
+                <i class="fa-solid fa-plus"></i>Add
               </button>
             </div>
           </div>
@@ -5544,18 +5624,18 @@
           <div class="panel-head">
             <div class="section-header font-semibold text-harbor-text">Subscriptions</div>
             <div class="panel-toolbar">
-              <button type="button" onclick="showAddSubscriptionModal()" class="chip-add-btn" id="subs-add-btn" aria-label="Add subscription">
-                <i class="fa-solid fa-plus mr-1"></i>Add
+              <button type="button" onclick="showAddSubscriptionModal()" class="chip-add-btn" id="subs-add-btn" aria-label="Add Subscription">
+                <i class="fa-solid fa-plus"></i>Add
               </button>
             </div>
           </div>
-          <div class="panel-tools" aria-label="Subscription tools">
+          <div class="panel-tools" aria-label="Subscription Tools">
             <button type="button" onclick="showSubscriptionImportModal()" class="chip-tool-link">Import CSV</button>
           </div>
           <div id="subs-monthly-total" class="hidden mb-2"></div>
           <div class="relative mb-2.5">
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-harbor-muted text-xs"></i>
-            <input id="subscription-search" type="search" placeholder="Search services or your subs..."
+            <input id="subscription-search" type="search" placeholder="Search services or your subscriptions…"
               oninput="subscriptionSearchQuery = this.value.trim().toLowerCase(); renderSubscriptions();"
               class="w-full bg-harbor-raised border border-harbor-border rounded-2xl pl-8 pr-3 py-2 text-xs outline-none text-harbor-text placeholder:text-harbor-muted">
           </div>
@@ -5572,7 +5652,7 @@
             <div class="flex items-center justify-between gap-2 relative z-[1]">
               <div>
                 <div class="streak-off-kicker">Streak-Offs</div>
-                <div class="streak-off-title">Challenge a friend</div>
+                <div class="streak-off-title">Challenge a Friend</div>
                 <div class="streak-off-meta">Loading crew board…</div>
               </div>
             </div>
@@ -5580,7 +5660,7 @@
         </div>
 
         <div class="streaks-title-header">
-          <div class="section-header font-semibold text-harbor-text mb-1">Your streaks</div>
+          <div class="section-header font-semibold text-harbor-text mb-1">Your Streaks</div>
           <div class="text-[10px] text-harbor-muted mb-2">Daily habits only — chores and one-time tasks don’t build streaks</div>
         </div>
         <div id="streak-badge-legend"></div>
@@ -5595,13 +5675,13 @@
           <div class="section-header font-semibold text-harbor-text mb-2">Projected Wins</div>
           <div id="projection-panel" 
             class="bg-harbor-surface border border-harbor-border rounded-3xl p-4 text-sm">
-            <div id="projection-hint" class="text-harbor-muted text-xs">Tap a streak with a measurable goal (steps, miles, savings) to see projections.</div>
+            <div id="projection-hint" class="text-harbor-muted text-xs">Tap a streak with a measurable goal — steps, miles, savings — to see a gentle forecast.</div>
             <div id="projection-content" class="hidden"></div>
           </div>
         </div>
 
         <div class="mt-4 text-[10px] text-center text-harbor-muted">
-          Metrics based on popular trackers (Streaks, Strides, Apple Health)
+          Inspired by popular trackers (Streaks, Strides, Apple Health)
         </div>
       </div>
 
@@ -5611,8 +5691,8 @@
           <div class="panel-head">
             <div class="section-header font-semibold text-harbor-text">Task Library</div>
             <div class="panel-toolbar">
-              <button type="button" onclick="addCustomToLibrary()" class="chip-add-btn" id="library-add-btn" aria-label="Add personal library task">
-                <i class="fa-solid fa-plus mr-1"></i>Add
+              <button type="button" onclick="addCustomToLibrary()" class="chip-add-btn" id="library-add-btn" aria-label="Add Personal Library Task">
+                <i class="fa-solid fa-plus"></i>Add
               </button>
             </div>
           </div>
@@ -5622,7 +5702,7 @@
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-harbor-muted text-xs"></i>
             <input id="library-search" type="text" oninput="onLibrarySearch()"
               class="input-polish w-full bg-harbor-raised/90 border border-harbor-border focus:border-harbor-primary rounded-2xl py-2.5 pl-8 pr-3 text-xs placeholder:text-harbor-muted outline-none"
-              placeholder="Quick search...">
+              placeholder="Quick search…">
           </div>
           <div id="library-filters" class="library-filters mb-2" role="tablist" aria-label="Library categories"></div>
         </div>
@@ -5664,8 +5744,8 @@
   <div id="welcome-spotlight-overlay" class="welcome-spotlight-overlay" aria-hidden="true">
     <div id="welcome-spotlight-highlight" class="hidden"></div>
     <div id="welcome-spotlight-card" class="welcome-spotlight-card hidden" role="dialog" aria-modal="true">
-      <div class="text-xs text-harbor-muted leading-relaxed mb-2.5">Your starter tasks are ready in <strong class="text-harbor-text">Today</strong>. Tap <strong class="text-harbor-primary-light">Learn More</strong> below for a quick guided tour.</div>
-      <button type="button" onclick="skipWelcomeSpotlight()" class="w-full py-2 rounded-xl bg-harbor-raised border border-harbor-border text-[11px] font-medium text-harbor-muted">Skip for now</button>
+      <div class="text-xs text-harbor-muted leading-relaxed mb-2.5">Your starter tasks are ready in <strong class="text-harbor-text">Today</strong>. Tap <strong class="text-harbor-primary-light">Learn More</strong> below for a short, friendly tour whenever you’re ready.</div>
+      <button type="button" onclick="skipWelcomeSpotlight()" class="w-full py-2 rounded-xl bg-harbor-raised border border-harbor-border text-[11px] font-medium text-harbor-muted">Skip for Now</button>
     </div>
   </div>
 
@@ -5675,7 +5755,7 @@
     <div id="tutorial-card" class="tutorial-card tutorial-card-bottom hidden" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
       <div class="flex items-center justify-between gap-3 mb-1.5">
         <div id="tutorial-step-label" class="text-[10px] uppercase tracking-wider text-harbor-accent font-semibold"></div>
-        <button type="button" onclick="skipAppTutorial()" class="text-[10px] text-harbor-muted hover:text-harbor-text">Skip tour</button>
+        <button type="button" onclick="skipAppTutorial()" class="text-[10px] text-harbor-muted hover:text-harbor-text">Skip Tour</button>
       </div>
       <div id="tutorial-title" class="text-sm font-semibold text-harbor-text mb-1"></div>
       <div id="tutorial-body" class="text-xs text-harbor-muted leading-relaxed mb-3"></div>
@@ -5705,7 +5785,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v120';
+    const HARBOR_BUILD = 'v122';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -6338,7 +6418,7 @@
 
     function confirmFactoryResetFromSettings(btn) {
       const confirmed = confirm(
-        'Factory reset will permanently erase all tasks, habits, bills, grocery lists, subscriptions, streaks, Cheat Day Fund progress, and settings.\n\n' +
+        'Factory Reset will permanently erase all tasks, habits, bills, grocery lists, subscriptions, streaks, Cheat Day Fund progress, and settings.\n\n' +
         'The app will restart from the beginning, including onboarding — as if you just downloaded it.\n\n' +
         'This cannot be undone. Continue?'
       );
@@ -9298,7 +9378,7 @@
           } else if (selectedKind === 'habit') {
             kindHint.textContent = 'Repeats on your schedule and builds a streak when you complete it. Example: swim 2× / week.';
           } else {
-            kindHint.textContent = 'Repeating chores show on Today when due. Plan ahead in Summary · This week. No streak pressure.';
+            kindHint.textContent = 'Repeating chores show on Today when due. Plan ahead in Summary · This Week. No streak pressure.';
           }
         }
         const showRecurrence = selectedKind === 'habit' || selectedKind === 'chore';
@@ -9911,7 +9991,7 @@
       const sorted = [...state.bills].sort((a, b) => getBillUrgency(a) - getBillUrgency(b));
 
       if (sorted.length === 0) {
-        container.innerHTML = harborEmptyHtml('💳', 'No bills yet', 'Tap + Add to track due dates and amounts.');
+        container.innerHTML = harborEmptyHtml('💳', 'No Bills Yet', 'Tap <strong>Add</strong> to track due dates and amounts at your own pace.');
         return;
       }
 
@@ -10387,10 +10467,10 @@
       if (items.length === 0) {
         container.innerHTML = harborEmptyHtml(
           '🛒',
-          isMeal ? 'Pick a themed dinner' : 'No master list yet',
+          isMeal ? 'Pick a Themed Dinner' : 'No List Yet',
           isMeal
-            ? 'Select a day chip above (Taco Tuesday, Pizza Friday…) for that dinner’s shopping list.'
-            : 'Tap a themed dinner above for a ready-made list, or use Add / the mic for staples.'
+            ? 'Choose a day chip above (Taco Tuesday, Pizza Friday…) for that dinner’s shopping list.'
+            : 'Tap a themed dinner above for a ready-made list, or use <strong>Add</strong> / the mic for staples.'
         );
         return;
       }
@@ -11931,10 +12011,10 @@
         if (!weekEvents.length) {
           container.innerHTML = harborEmptyHtml(
             '📅',
-            'Open week',
+            'Open Week',
             weekRemaining.empty
-              ? 'This week is done — nothing left on the calendar.'
-              : 'No upcoming events this week. Tap + Add event or Import CSV.'
+              ? 'This week is complete — nothing left on the calendar.'
+              : 'No upcoming events this week. Tap <strong>Add</strong> or Import File to plan ahead.'
           );
           return;
         }
@@ -11949,10 +12029,10 @@
         if (bounds.empty || !monthEvents.length) {
           container.innerHTML = harborEmptyHtml(
             '📅',
-            'Later this month',
+            'Later This Month',
             bounds.empty
-              ? 'Nothing after this week for the rest of the month — check This week for upcoming events.'
-              : 'No events after this week. Tap + Event or Import CSV to plan further out.'
+              ? 'Nothing after this week for the rest of the month — check This Week for what’s next.'
+              : 'No events after this week. Tap <strong>Add</strong> or Import File to plan further out.'
           );
           return;
         }
@@ -11965,7 +12045,7 @@
       } else {
         const todayEvents = allEvents.filter(e => eventOccursOnDate(e, today));
         if (!todayEvents.length) {
-          container.innerHTML = harborEmptyHtml('📅', 'Open schedule', cache?.note || 'No events on calendar today. Tap + Add event or Import CSV.');
+          container.innerHTML = harborEmptyHtml('📅', 'Open Schedule', cache?.note || 'No events on the calendar today. Tap <strong>Add</strong> or Import File to get started.');
           return;
         }
         todayEvents.forEach(ev => container.appendChild(renderScheduleEventRow(ev)));
@@ -12897,7 +12977,7 @@
       }
 
       if (!filteredSubs.length) {
-        container.innerHTML = harborEmptyHtml('🔍', 'No matches', `Nothing matches "${subscriptionSearchQuery}". Try another search or add a service.`);
+        container.innerHTML = harborEmptyHtml('🔍', 'No Matches', `Nothing matches “${subscriptionSearchQuery}”. Try another search, or add a service anytime.`);
         return;
       }
 
@@ -16195,16 +16275,16 @@
     const APP_TUTORIAL_STEPS = [
       {
         id: 'today-intro',
-        title: 'Today tab',
-        body: 'Your <strong>daily</strong> tasks show up here each morning. Weekly, monthly, and longer chores stay out of the way — they live in the <strong>Summary</strong> instead.',
+        title: 'Today Tab',
+        body: 'Your <strong>daily</strong> tasks gather here each morning. Weekly, monthly, and longer chores stay out of the way — you’ll find them in <strong>Summary</strong> instead.',
         target: () => document.getElementById('tab-today'),
         cardPlacement: 'below',
         prepare: () => switchTab('today')
       },
       {
         id: 'complete-task',
-        title: 'Complete a task',
-        body: '<strong>Tap</strong> the circle to log a win.',
+        title: 'Complete a Task',
+        body: '<strong>Tap</strong> the circle to log a quiet win.',
         target: () => getTutorialTaskCard(),
         waitFor: 'habit-complete',
         interactive: true,
@@ -16212,9 +16292,9 @@
       },
       {
         id: 'edit-delete-task',
-        title: 'Edit or delete',
+        title: 'Edit or Delete',
         body: () => isSwipeMobile()
-          ? '<strong>Swipe a task left</strong> to edit or delete the task.'
+          ? '<strong>Swipe a task left</strong> to edit or delete it.'
           : 'Use <strong>Edit</strong> or <strong>×</strong> on a task card to change or remove it.',
         target: () => getTutorialTaskCard(),
         cardPlacement: 'below',
@@ -16222,16 +16302,16 @@
       },
       {
         id: 'life-intro',
-        title: 'Life tab',
-        body: 'Right next to Today — schedule, groceries, bills, and subscriptions in one place.',
+        title: 'Life Tab',
+        body: 'Right beside Today — Schedule, groceries, bills, and subscriptions, all in one calm place.',
         target: () => document.getElementById('tab-life'),
         cardPlacement: 'below',
         prepare: () => switchTab('life')
       },
       {
         id: 'streaks-intro',
-        title: 'Streaks tab',
-        body: 'Daily habits build streaks here.',
+        title: 'Streaks Tab',
+        body: 'Daily habits build gentle streaks here — no pressure, just progress you can see.',
         target: () => document.getElementById('tab-streaks'),
         cardPlacement: 'below',
         prepare: () => switchTab('streaks')
@@ -16253,7 +16333,7 @@
       {
         id: 'projections-read',
         title: 'Projected Wins',
-        body: 'This panel forecasts where your habit is headed — daily pace, 30-day projection, and equivalents. Take your time reading it, then tap <strong>Next</strong> when you\'re ready.',
+        body: 'This panel gently forecasts where your habit is headed — daily pace, a 30-day outlook, and fun equivalents. Take your time, then tap <strong>Next</strong> when you’re ready.',
         target: () => document.getElementById('projection-panel'),
         cardPlacement: 'above',
         prepare: () => {
@@ -16264,16 +16344,16 @@
       },
       {
         id: 'library-intro',
-        title: 'Library tab',
-        body: 'Browse preset chores and habits. Tap any card to add it to your Harbor, or create your own under Personal.',
+        title: 'Library Tab',
+        body: 'Browse ready-made chores and habits. Tap any card to add it to Harbor, or create your own under Personal.',
         target: () => document.getElementById('tab-library'),
         cardPlacement: 'below',
         prepare: () => switchTab('library')
       },
       {
         id: 'energy-smart',
-        title: 'Energy & Smart Suggestions',
-        body: 'Set your energy level — Harbor re-sorts Today\'s list. <strong>Smart Suggestions</strong> uses energy, calendar, and weather to nudge what to do next.',
+        title: 'Energy &amp; Smart Suggestions',
+        body: 'Set your energy level and Harbor softly re-sorts Today. <strong>Smart Suggestions</strong> use energy, calendar, and weather to nudge what fits right now.',
         target: () => document.getElementById('energy-bar-section'),
         cardPlacement: 'below',
         highlightUnion: () => {
@@ -16294,7 +16374,7 @@
       {
         id: 'summary',
         title: 'Summary',
-        body: 'Tap the glowing <strong>Summary</strong> button at the <strong>bottom right</strong> for your day, week, and month at a glance. Weekly, monthly, and longer tasks show up here — along with schedule, bills, and grocery — so Today stays focused on what matters now.<br><br><span class="text-harbor-primary-light">Browse the report as long as you like</span>, then tap <strong>Next</strong> when you’re ready.',
+        body: 'Tap the glowing <strong>Summary</strong> button at the <strong>bottom right</strong> for your day, week, and month at a glance. Longer tasks, Schedule, bills, and grocery live here so Today stays light.<br><br><span class="text-harbor-primary-light">Browse as long as you like</span>, then tap <strong>Next</strong> when you’re ready.',
         target: () => document.getElementById('summary-launcher'),
         waitFor: 'summary-open',
         // Unlock Next after open — do NOT auto-advance so users can explore Summary first
@@ -16311,7 +16391,7 @@
       },
       {
         id: 'install-home',
-        title: 'Add Harbor to your phone',
+        title: 'Add Harbor to Your Phone',
         body: () => getInstallTutorialBody(),
         target: null,
         noHighlight: true,
@@ -16324,7 +16404,7 @@
       },
       {
         id: 'prototype-note',
-        title: 'You’re in the Harbor prototype',
+        title: 'You’re in the Harbor Prototype',
         body: () => getPrototypeTutorialBody(),
         target: null,
         noHighlight: true,
@@ -16379,15 +16459,15 @@
           </div>`;
       }
       return `
-        <p class="tutorial-install-lead">Harbor feels fastest as a home-screen app — full screen, one tap from your phone, and it behaves more like something you own than a tab you keep losing.</p>
+        <p class="tutorial-install-lead">Harbor feels best from your Home Screen — full screen, one gentle tap away, more like something you own than a tab you keep losing.</p>
         ${stepsHtml}
         <p class="tutorial-install-note">You can open this again anytime under <strong>Menu → Add to Home Screen</strong>.</p>
         <button type="button" class="tutorial-install-cta" onclick="event.stopPropagation(); openInstallGuideFromTutorial()">
-          ${canNativePwaInstall() ? 'Add Harbor to home screen' : 'Show me how'}
+          ${canNativePwaInstall() ? 'Add Harbor to Home Screen' : 'Show Me How'}
         </button>
         <p class="tutorial-install-note" style="margin-bottom:0">
           ${canNativePwaInstall()
-            ? 'One tap opens your browser’s official add-to-home-screen dialog — a local shortcut, not an app-store download.'
+            ? 'One tap opens your browser’s official Add to Home Screen dialog — a local shortcut, not an app-store download.'
             : platform === 'ios'
               ? 'Apple requires the Safari Share steps above (sites can’t add icons silently).'
               : 'If a one-tap button isn’t ready yet, the guide will walk you through it.'}
@@ -16412,7 +16492,7 @@
             <li>Feedback from the menu helps us prioritize what to polish next.</li>
           </ol>
         </div>
-        <p class="tutorial-install-note" style="margin-bottom:0">Thanks for testing the waters with us. Tap <strong>Finish tour</strong> when you’re ready to use Harbor for real.</p>`;
+        <p class="tutorial-install-note" style="margin-bottom:0">Thanks for testing the waters with us. Tap <strong>Finish Tour</strong> when you’re ready to use Harbor for real.</p>`;
     }
 
     function openInstallGuideFromTutorial() {
@@ -16880,8 +16960,8 @@
       const text = banner.querySelector('#smart-text');
       const cta = banner.querySelector('#smart-cta');
       if (label) label.textContent = 'Smart Suggestion';
-      if (text) text.innerHTML = 'Change your energy level and watch Today\'s list re-sort. I\'ll nudge the best task for how you feel.';
-      if (cta) cta.textContent = 'Try changing energy';
+      if (text) text.innerHTML = 'Set your energy and watch Today gently re-sort. Harbor will nudge a task that fits how you feel.';
+      if (cta) cta.textContent = 'Try Changing Energy';
       resetSmartBannerDatasets(banner);
       banner.dataset.suggestionType = 'tutorial-demo';
       const footnote = document.getElementById('smart-bill-footnote');
@@ -17012,7 +17092,7 @@
             nextBtn.classList.toggle('pointer-events-none', waiting);
             nextBtn.textContent = waiting
               ? 'Waiting for you…'
-              : (stepIndex === APP_TUTORIAL_STEPS.length - 1 ? 'Finish tour' : 'Next');
+              : (stepIndex === APP_TUTORIAL_STEPS.length - 1 ? 'Finish Tour' : 'Next');
           }
           if (card) card.classList.remove('hidden');
           if (overlay) {
@@ -18704,7 +18784,7 @@
 
       if (active.length === 0) {
         currentProjectionHabit = null;
-        container.innerHTML = harborEmptyHtml('🔥', 'No streaks yet', 'Add a daily Habit from Today — chores and one-time tasks do not build streaks.');
+        container.innerHTML = harborEmptyHtml('🔥', 'No Streaks Yet', 'Add a daily Habit from Today — chores and one-time tasks don’t build streaks.');
         return;
       }
 
@@ -20066,20 +20146,20 @@
         ${title}
         <div class="app-menu-section-label">You</div>
         <div class="app-menu-group">
-          ${appMenuItemHtml('profile', 'fa-regular fa-user', 'Profile', 'Name, metrics, home base')}
-          ${appMenuItemHtml('household', 'fa-solid fa-people-group', 'Household', 'Spouse, kids &amp; event colors')}
+          ${appMenuItemHtml('profile', 'fa-regular fa-user', 'Profile', 'Name, metrics, and home base')}
+          ${appMenuItemHtml('household', 'fa-solid fa-people-group', 'Household', 'Spouse, kids, and event colors')}
         </div>
 
         <div class="app-menu-section-label">Preferences</div>
         <div class="app-menu-group">
-          ${appMenuItemHtml('settings', 'fa-solid fa-sliders', 'Settings', 'Theme, features, calendar', { primary: true })}
+          ${appMenuItemHtml('settings', 'fa-solid fa-sliders', 'Settings', 'Theme, features, and calendar', { primary: true })}
         </div>
 
-        <div class="app-menu-section-label">Share &amp; privacy</div>
+        <div class="app-menu-section-label">Share &amp; Privacy</div>
         <div class="app-menu-group">
-          ${appMenuItemHtml('export-profile', 'fa-solid fa-file-export', 'Export profile', 'Backup file for a spouse or new device')}
-          ${appMenuItemHtml('import-profile', 'fa-solid fa-file-import', 'Import profile', 'Load a Harbor backup file')}
-          ${appMenuItemHtml('privacy', 'fa-solid fa-shield-halved', 'Privacy', 'How data is stored on this device')}
+          ${appMenuItemHtml('export-profile', 'fa-solid fa-file-export', 'Export Profile', 'Backup for a spouse or a new device')}
+          ${appMenuItemHtml('import-profile', 'fa-solid fa-file-import', 'Import Profile', 'Load a Harbor backup file')}
+          ${appMenuItemHtml('privacy', 'fa-solid fa-shield-halved', 'Privacy', 'How your data stays on this device')}
         </div>
 
         <div class="app-menu-section-label">Crew</div>
@@ -20089,10 +20169,10 @@
 
         <div class="app-menu-section-label">Help</div>
         <div class="app-menu-group">
-          ${appMenuItemHtml('tutorial', 'fa-solid fa-graduation-cap', 'App tour', 'Guided walkthrough of the basics')}
-          ${appMenuItemHtml('overview', 'fa-solid fa-book-open', 'Feature overview', 'What each tab is for')}
-          ${appMenuItemHtml('install', 'fa-solid fa-mobile-screen-button', 'Add to Home Screen', 'Install Harbor like an app')}
-          ${appMenuItemHtml('feedback', 'fa-regular fa-comment-dots', 'Send feedback', 'Report a bug or share an idea')}
+          ${appMenuItemHtml('tutorial', 'fa-solid fa-graduation-cap', 'App Tour', 'A gentle walkthrough of the basics')}
+          ${appMenuItemHtml('overview', 'fa-solid fa-book-open', 'Feature Overview', 'What each tab is for')}
+          ${appMenuItemHtml('install', 'fa-solid fa-mobile-screen-button', 'Add to Home Screen', 'Keep Harbor one tap away')}
+          ${appMenuItemHtml('feedback', 'fa-regular fa-comment-dots', 'Send Feedback', 'Share a bug or a kind idea')}
         </div>
       `;
     }
@@ -20135,45 +20215,45 @@
         <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1 flex items-center justify-between gap-2">
-            <span>Harbor at a glance</span>
+            <span>Feature Overview</span>
             <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
-          <div class="text-[11px] text-harbor-muted mb-4 leading-snug">A simple map of the app — no jargon.</div>
+          <div class="text-[11px] text-harbor-muted mb-4 leading-snug">A simple map of Harbor — calm, clear, and jargon-free.</div>
 
           <div class="space-y-3">
             <div class="privacy-block">
               <h4><i class="fa-solid fa-sun text-amber-300 mr-1.5"></i>Today</h4>
-              <p>Your daily to-do list. Tap the circle to complete a task. Set your energy (Low / Medium / High) so harder jobs sort lower when you’re tired. Smart Suggestions may suggest a next step.</p>
+              <p>Your gentle daily list. Tap the circle to complete a task. Set energy to Low, Medium, or High so harder jobs float lower when you’re tired. Smart Suggestions may offer a kind next step.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-calendar-days text-sky-400 mr-1.5"></i>Life → Schedule</h4>
-              <p>Your calendar for the day, week, or month. Add events, import a Google secret ICS link, or a .ics file. Color-code events for family (Household in Settings).</p>
+              <p>Your calendar for the day, week, or month. Add events, import a Google secret ICS link, or a .ics file. Color-code family events in Household (Settings).</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-cart-shopping text-emerald-400 mr-1.5"></i>Life → Grocery, Bills, Subscriptions</h4>
-              <p><strong class="text-harbor-text">Grocery:</strong> shopping list. <strong class="text-harbor-text">Bills:</strong> due dates and paid status. <strong class="text-harbor-text">Subscriptions:</strong> Netflix, gym, etc. so you see what you pay for.</p>
+              <p><strong class="text-harbor-text">Grocery:</strong> your shopping list. <strong class="text-harbor-text">Bills:</strong> due dates and paid status. <strong class="text-harbor-text">Subscriptions:</strong> Netflix, gym, and more — so you always know what you’re paying for.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-fire text-orange-400 mr-1.5"></i>Streaks</h4>
-              <p>Daily habits you want to keep going. See your streak count, optional Cheat Day Fund rewards, and Projected Wins (forecasts for measurable goals). Challenge friends with Streak-Offs.</p>
+              <p>Daily habits you want to keep. See your streak, optional Cheat Day Fund rewards, and Projected Wins for measurable goals. Challenge friends with Streak-Offs when you’re ready.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-book text-violet-300 mr-1.5"></i>Library</h4>
               <p>Ready-made tasks and chores. Tap a card to add it to Today, or create your own under Personal.</p>
             </div>
             <div class="privacy-block">
-              <h4><i class="fa-solid fa-circle-dot text-harbor-primary-light mr-1.5"></i>Summary button</h4>
-              <p>The glowing button at the <strong class="text-harbor-text">bottom right</strong>. Opens a quick day / week / month digest — tasks, events, bills, and grocery — so you don’t have to dig through every tab.</p>
+              <h4><i class="fa-solid fa-circle-dot text-harbor-primary-light mr-1.5"></i>Summary Button</h4>
+              <p>The glowing button at the <strong class="text-harbor-text">bottom right</strong>. Opens a soft day, week, or month digest — tasks, events, bills, and grocery — without digging through every tab.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-bars text-harbor-muted mr-1.5"></i>Menu (☰)</h4>
-              <p>Profile, Settings, import/export, privacy, app tour, and this overview. Also how to put Harbor on your phone home screen.</p>
+              <p>Profile, Settings, import/export, Privacy, App Tour, and this overview. Also how to keep Harbor on your Home Screen.</p>
             </div>
           </div>
 
           <div class="flex gap-2 mt-5">
-            <button type="button" onclick="this.closest('.fixed').remove(); startAppTutorial(); showToast('Starting app tour')"
-              class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">Start guided tour</button>
+            <button type="button" onclick="this.closest('.fixed').remove(); startAppTutorial(); showToast('Starting App Tour')"
+              class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">Start Guided Tour</button>
             <button type="button" onclick="this.closest('.fixed').remove()"
               class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold text-sm">Done</button>
           </div>
@@ -20569,7 +20649,7 @@
           <div class="font-semibold text-lg mb-3 flex items-center justify-between gap-3">
             <div class="min-w-0">
               <div>Settings</div>
-              <div class="text-[10px] font-medium text-harbor-muted mt-0.5 tracking-wide">You → look → features → calendar → tools</div>
+              <div class="text-[10px] font-medium text-harbor-muted mt-0.5 tracking-wide">You → Look → Features → Calendar → Tools</div>
             </div>
             <button type="button" onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
@@ -20584,7 +20664,7 @@
                 <div class="settings-row">
                   <div class="settings-row-copy">
                     <div class="settings-row-title">Profile</div>
-                    <div class="settings-row-desc">Name, body metrics, home base</div>
+                    <div class="settings-row-desc">Name, body metrics, and home base</div>
                   </div>
                   <button type="button" class="settings-row-action" onclick="this.closest('.fixed').remove(); showUserProfile()">
                     Open <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
@@ -20593,14 +20673,14 @@
                 <div class="settings-row">
                   <div class="settings-row-copy">
                     <div class="settings-row-title">Household</div>
-                    <div class="settings-row-desc">Spouse, kids &amp; color-coded events</div>
+                    <div class="settings-row-desc">Spouse, kids, and color-coded events</div>
                   </div>
                   <button type="button" class="settings-row-action" onclick="this.closest('.fixed').remove(); showHouseholdProfilesModal()">
                     Manage <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
                   </button>
                 </div>
                 <div class="settings-card-block">
-                  <div class="settings-row-title">Share profile</div>
+                  <div class="settings-row-title">Share Profile</div>
                   <div class="settings-row-desc">Export a backup so a spouse can import it and match schedules.</div>
                   <div class="settings-inline-actions">
                     <button type="button" class="settings-btn-secondary" onclick="exportHarborProfile()">
@@ -20617,12 +20697,12 @@
             <!-- 2. Look & feel -->
             <section class="settings-section" aria-labelledby="settings-sec-look">
               <div class="settings-section-head">
-                <h3 id="settings-sec-look" class="settings-section-title">2 · Look &amp; feel</h3>
+                <h3 id="settings-sec-look" class="settings-section-title">2 · Look &amp; Feel</h3>
               </div>
               <div class="settings-card">
                 <div class="settings-card-block">
                   <div class="settings-row-title">Appearance</div>
-                  <div class="settings-row-desc mb-2">Light sits next to Dark. Turn both off for Harbor teal.</div>
+                  <div class="settings-row-desc mb-2">Light sits next to Dark. Turn both off for classic Harbor teal.</div>
                   <div class="theme-appearance-row" id="theme-appearance-row">
                     <div class="theme-appearance-card ${darkModeOn ? 'is-active' : ''}" data-theme-card="dark">
                       <div class="min-w-0">
@@ -20662,7 +20742,7 @@
                 <div class="settings-row">
                   <div class="settings-row-copy">
                     <div class="settings-row-title">Smart Suggestions</div>
-                    <div class="settings-row-desc">Contextual tips on the Today tab</div>
+                    <div class="settings-row-desc">Gentle tips on the Today tab</div>
                   </div>
                   <button type="button" id="smart-suggestions-toggle" role="switch" aria-checked="${smartSuggestionsOn ? 'true' : 'false'}"
                     aria-label="Smart Suggestions" class="smart-suggestions-toggle harbor-switch">
@@ -20672,7 +20752,7 @@
                 <div class="settings-row">
                   <div class="settings-row-copy">
                     <div class="settings-row-title">Cheat Day Fund</div>
-                    <div class="settings-row-desc">Earn points from streaks — optional</div>
+                    <div class="settings-row-desc">Optional points earned from streaks</div>
                   </div>
                   <button type="button" id="cheat-fund-toggle" role="switch" aria-checked="${cheatFundOn ? 'true' : 'false'}"
                     aria-label="Cheat Day Fund" class="smart-suggestions-toggle harbor-switch">
@@ -20691,7 +20771,7 @@
               <div class="settings-card">
                 <div class="settings-card-block">
                   <p class="settings-help-text mb-2">
-                    Paste a <strong>secret iCal URL</strong> (ends with <strong>basic.ics</strong>). Harbor tries the calendar host first; if the browser blocks it (common with Google), it uses the network helper so events can load. <strong>Import file</strong> never needs a helper.
+                    Paste a <strong>secret iCal URL</strong> (ends with <strong>basic.ics</strong>). Harbor tries the calendar host first; if the browser blocks it (common with Google), the network helper keeps events loading. <strong>Import File</strong> never needs a helper.
                   </p>
                   <div id="settings-calendar-feeds" class="space-y-2 mb-2"></div>
                   <div class="flex gap-2 mb-2">
@@ -20704,22 +20784,22 @@
                   </div>
                   <div class="settings-inline-actions">
                     <button type="button" id="settings-ics-refresh" class="settings-btn-secondary">
-                      <i class="fa-solid fa-rotate mr-1 text-harbor-primary-light" aria-hidden="true"></i>Refresh feeds
+                      <i class="fa-solid fa-rotate mr-1 text-harbor-primary-light" aria-hidden="true"></i>Refresh Feeds
                     </button>
                     <button type="button" class="settings-btn-secondary" onclick="triggerCalendarICSImport()">
-                      <i class="fa-solid fa-file-import mr-1 text-harbor-primary-light" aria-hidden="true"></i>Import file
+                      <i class="fa-solid fa-file-import mr-1 text-harbor-primary-light" aria-hidden="true"></i>Import File
                     </button>
                   </div>
                 </div>
                 <div class="settings-row is-top">
                   <div class="settings-row-copy">
-                    <div class="settings-row-title">Allow network helper</div>
+                    <div class="settings-row-title">Allow Network Helper</div>
                     <div class="settings-row-desc">
-                      <strong class="text-harbor-text">On by default</strong> so Google/Outlook secret ICS links work. When needed, a <strong class="text-harbor-text">third-party</strong> CORS helper may see your feed URL. Turn off and use Import file for max privacy.
+                      <strong class="text-harbor-text">On by default</strong> so Google and Outlook secret ICS links work. When needed, a <strong class="text-harbor-text">third-party</strong> helper may see your feed URL. Turn off and use Import File for maximum privacy.
                     </div>
                   </div>
                   <button type="button" id="calendar-cors-helper-toggle" role="switch" aria-checked="${corsHelperOn ? 'true' : 'false'}"
-                    aria-label="Allow network helper" class="smart-suggestions-toggle harbor-switch mt-0.5">
+                    aria-label="Allow Network Helper" class="smart-suggestions-toggle harbor-switch mt-0.5">
                     <span></span>
                   </button>
                 </div>
@@ -20738,20 +20818,20 @@
               </div>
               <div class="settings-card">
                 <div class="settings-card-block">
-                  <div class="settings-row-title mb-1">Preview tools</div>
+                  <div class="settings-row-title mb-1">Preview Tools</div>
                   <div class="settings-inline-actions is-stack">
                     <button type="button" class="settings-btn-secondary" onclick="simulateContextChange(); this.closest('.fixed').remove()">
-                      Simulate different day (weather + schedule)
+                      Simulate a Different Day (Weather + Schedule)
                     </button>
                     <button type="button" class="settings-btn-secondary" onclick="fetchRealWeather(); this.closest('.fixed').remove()">
-                      Use real location + weather
+                      Use Real Location + Weather
                     </button>
                   </div>
                 </div>
                 <div class="settings-card-block">
-                  <div class="settings-row-title">Voice commands</div>
-                  <div class="settings-row-desc">Chrome / Edge only</div>
-                  <div class="settings-voice-examples">"add milk to grocery" · "mark rent paid" · "complete walk" · "set energy low"</div>
+                  <div class="settings-row-title">Voice Commands</div>
+                  <div class="settings-row-desc">Chrome and Edge only</div>
+                  <div class="settings-voice-examples">“add milk to grocery” · “mark rent paid” · “complete walk” · “set energy low”</div>
                 </div>
               </div>
             </section>
@@ -20765,7 +20845,7 @@
                 <div class="settings-row">
                   <div class="settings-row-copy">
                     <div class="settings-row-title">Privacy</div>
-                    <div class="settings-row-desc">How your data is stored &amp; used</div>
+                    <div class="settings-row-desc">How your data is stored and used</div>
                   </div>
                   <button type="button" class="settings-row-action" onclick="this.closest('.fixed').remove(); showPrivacyStatement()">
                     Read <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
@@ -20773,8 +20853,8 @@
                 </div>
                 <div class="settings-row">
                   <div class="settings-row-copy">
-                    <div class="settings-row-title">Send feedback</div>
-                    <div class="settings-row-desc">Report bugs or ideas</div>
+                    <div class="settings-row-title">Send Feedback</div>
+                    <div class="settings-row-desc">Share a bug or a kind idea</div>
                   </div>
                   <button type="button" class="settings-row-action" onclick="this.closest('.fixed').remove(); showFeedbackModal()">
                     Open <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
@@ -20791,16 +20871,16 @@
               <div class="settings-card">
                 <div class="settings-card-block">
                   <button type="button" class="settings-danger-btn" onclick="confirmFactoryResetFromSettings(this)">
-                    Factory reset
+                    Factory Reset
                   </button>
                   <p class="settings-help-text mt-2">
-                    Clears all tasks, Life data, streaks, and settings — restarts like a fresh install.
+                    Clears all tasks, Life data, streaks, and settings — then starts fresh, like a new install.
                   </p>
                 </div>
               </div>
             </section>
 
-            <div class="settings-build-meta">Harbor ${HARBOR_BUILD} · prototype build</div>
+            <div class="settings-build-meta">Harbor ${HARBOR_BUILD} · Prototype Build</div>
           </div>
 
           <div class="settings-sheet-footer flex gap-x-3">
@@ -22403,11 +22483,24 @@
       );
     }
 
+    function stopSplashVideo() {
+      const video = document.getElementById('splash-video');
+      if (!video) return;
+      try {
+        video.pause();
+        // Leave the source in place so a soft reload can replay; just freeze at cut
+        if (Number.isFinite(video.currentTime) && video.currentTime > 0) {
+          /* keep last frame for the exit fade */
+        }
+      } catch (_) { /* ignore */ }
+    }
+
     function hideSplash() {
       const splash = document.getElementById('splash-screen');
       if (!splash) return;
+      stopSplashVideo();
       splash.classList.add('is-hidden');
-      splash.classList.remove('is-revealing', 'is-active');
+      splash.classList.remove('is-revealing', 'is-active', 'has-video-splash');
       splash.style.display = 'none';
       splash.style.opacity = '';
       splash.style.clipPath = '';
@@ -22518,14 +22611,18 @@
       const splash = document.getElementById('splash-screen');
       const brandEl = document.getElementById('splash-brand');
       const sloganEl = document.getElementById('splash-slogan');
+      const video = document.getElementById('splash-video');
       const appWrap = document.querySelector('.app-content-wrap');
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      // Brand settle → slogan → soft exit. Shell stays fully opaque (no fade-in flash).
+      // Video splash: play first 2s of Imagine clip, then soft exit into the app.
+      // CSS brand/waves remain as fallback if video can't play.
+      const VIDEO_CUT_S = 2;
       const BRAND_MS = 120;
       const SLOGAN_MS = 700;
-      const EXIT_AT = 2200;
+      const CSS_EXIT_AT = 2200;
       const REVEAL_MS = 560;
+      const VIDEO_HARD_TIMEOUT_MS = 3200;
 
       document.body.classList.add('is-splash-active');
       document.documentElement.classList.add('is-splash-active');
@@ -22536,7 +22633,7 @@
       } catch (_) { /* ignore */ }
 
       if (splash) {
-        splash.classList.remove('is-hidden', 'is-revealing');
+        splash.classList.remove('is-hidden', 'is-revealing', 'has-video-splash');
         splash.style.display = 'block';
         splash.style.opacity = '1';
         splash.style.clipPath = '';
@@ -22551,6 +22648,7 @@
       if (appWrap) appWrap.style.opacity = '0';
 
       let booted = false;
+      let revealed = false;
       const finishBoot = () => {
         if (booted) return;
         booted = true;
@@ -22558,6 +22656,11 @@
       };
 
       const startReveal = () => {
+        if (revealed) return;
+        revealed = true;
+        try {
+          if (video && !video.paused) video.pause();
+        } catch (_) { /* ignore */ }
         splash?.classList.add('is-revealing');
         splash?.setAttribute('aria-hidden', 'true');
         if (appWrap) {
@@ -22569,7 +22672,12 @@
         try {
           const theme = document.documentElement.getAttribute('data-theme') || 'harbor';
           const metaTheme = document.querySelector('meta[name="theme-color"]');
-          if (metaTheme) metaTheme.setAttribute('content', theme === 'dark' ? '#070707' : '#0A1F1E');
+          if (metaTheme) {
+            metaTheme.setAttribute(
+              'content',
+              theme === 'dark' ? '#070707' : theme === 'light' ? '#F3F7F6' : '#0A1F1E'
+            );
+          }
         } catch (_) { /* ignore */ }
         finishBoot();
       };
@@ -22580,6 +22688,16 @@
         hideSplash();
       };
 
+      const runCssFallbackSplash = () => {
+        splash?.classList.remove('has-video-splash');
+        requestAnimationFrame(() => {
+          setTimeout(() => brandEl?.classList.add('is-in'), BRAND_MS);
+          setTimeout(() => sloganEl?.classList.add('is-in'), SLOGAN_MS);
+        });
+        setTimeout(startReveal, CSS_EXIT_AT);
+        setTimeout(cleanupSplash, CSS_EXIT_AT + REVEAL_MS);
+      };
+
       if (reducedMotion) {
         brandEl?.classList.add('is-in');
         sloganEl?.classList.add('is-in');
@@ -22588,13 +22706,92 @@
         return;
       }
 
-      requestAnimationFrame(() => {
-        setTimeout(() => brandEl?.classList.add('is-in'), BRAND_MS);
-        setTimeout(() => sloganEl?.classList.add('is-in'), SLOGAN_MS);
-      });
+      // Prefer the Imagine video for the first 2 seconds
+      if (video) {
+        let videoMode = false;
+        let cutTimer = null;
+        const clearVideoWatchers = () => {
+          video.removeEventListener('timeupdate', onTimeUpdate);
+          video.removeEventListener('ended', onEnded);
+          video.removeEventListener('error', onError);
+          if (cutTimer) {
+            clearTimeout(cutTimer);
+            cutTimer = null;
+          }
+        };
 
-      setTimeout(startReveal, EXIT_AT);
-      setTimeout(cleanupSplash, EXIT_AT + REVEAL_MS);
+        const finishVideoSplash = () => {
+          if (revealed) return;
+          clearVideoWatchers();
+          try {
+            if (video.currentTime < VIDEO_CUT_S && Number.isFinite(video.duration) && video.duration > VIDEO_CUT_S) {
+              video.currentTime = VIDEO_CUT_S;
+            }
+            video.pause();
+          } catch (_) { /* ignore */ }
+          startReveal();
+          setTimeout(cleanupSplash, REVEAL_MS);
+        };
+
+        const onTimeUpdate = () => {
+          if (video.currentTime >= VIDEO_CUT_S - 0.04) finishVideoSplash();
+        };
+        const onEnded = () => finishVideoSplash();
+        const onError = () => {
+          clearVideoWatchers();
+          if (!videoMode) runCssFallbackSplash();
+          else finishVideoSplash();
+        };
+
+        // Ensure source is present after a previous hideSplash() load()
+        const src = video.dataset.splashSrc || 'harbor-splash.mp4';
+        if (!video.getAttribute('src') && !video.querySelector('source[src]')) {
+          const source = document.createElement('source');
+          source.src = src;
+          source.type = 'video/mp4';
+          video.appendChild(source);
+        } else {
+          const existing = video.querySelector('source');
+          if (existing && !existing.getAttribute('src')) existing.setAttribute('src', src);
+        }
+
+        video.muted = true;
+        video.defaultMuted = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        video.currentTime = 0;
+
+        video.addEventListener('timeupdate', onTimeUpdate);
+        video.addEventListener('ended', onEnded);
+        video.addEventListener('error', onError);
+
+        const playPromise = video.play();
+        const armVideoMode = () => {
+          videoMode = true;
+          splash?.classList.add('has-video-splash');
+          video.classList.add('is-ready');
+          // Hard stop slightly after 2s in case timeupdate is sparse on some devices
+          cutTimer = setTimeout(finishVideoSplash, VIDEO_CUT_S * 1000 + 120);
+          // Absolute safety so splash never hangs
+          setTimeout(() => {
+            if (!revealed) finishVideoSplash();
+          }, VIDEO_HARD_TIMEOUT_MS);
+        };
+
+        if (playPromise && typeof playPromise.then === 'function') {
+          playPromise.then(armVideoMode).catch(() => {
+            clearVideoWatchers();
+            runCssFallbackSplash();
+          });
+        } else {
+          // Older browsers: assume play started if no promise
+          armVideoMode();
+        }
+        return;
+      }
+
+      runCssFallbackSplash();
     }
 
     function formatHeaderDate(d = new Date()) {
