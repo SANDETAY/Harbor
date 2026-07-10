@@ -8199,7 +8199,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 195;
+    const HARBOR_BUILD_NUMBER = 196;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -15145,7 +15145,9 @@
             const title = typeof e === 'string' ? e : e.title;
             return conflictPattern.test(title || '');
           }));
-          const phrase = formatTaskForSuggestion(task.title);
+          const phrase = (typeof formatTaskTitleForSuggestion === 'function'
+            ? formatTaskTitleForSuggestion(task.title)
+            : formatTaskForSuggestion(task.title));
           let reason = `${day.dayLabel} looks open for ${phrase}`;
           if (busyDay) {
             const ev = busyDay.events.find(e => conflictPattern.test(typeof e === 'string' ? e : e.title));
@@ -15164,16 +15166,24 @@
     function findTaskForGap(gap, tasks) {
       if (!gap || !tasks.length) return null;
       const budget = gap.minutes || 0;
-      const sorted = [...tasks].sort((a, b) => {
+      // Gap-fill prefers light work — heavy maintenance stays a Summary choice
+      const eligible = tasks.filter(h => {
+        if ((h.est_minutes || 10) > budget + 5) return false;
+        if (typeof isHeavySmartTask === 'function' && isHeavySmartTask(h)) return false;
+        if (typeof isLightGapFillTask === 'function' && !isLightGapFillTask(h)) return false;
+        return true;
+      });
+      if (!eligible.length) return null;
+      const sorted = [...eligible].sort((a, b) => {
+        const da = a.difficulty || 2;
+        const db = b.difficulty || 2;
+        if (da !== db) return da - db;
         const pa = getHabitContextPenalty(a, 'day');
         const pb = getHabitContextPenalty(b, 'day');
         if (pa !== pb) return pa - pb;
-        return getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy);
+        return (b.est_minutes || 10) - (a.est_minutes || 10);
       });
-      // Prefer tasks that fit the window; slightly favor ones that use most of the gap
-      const fitting = sorted.filter(h => (h.est_minutes || 10) <= budget);
-      if (!fitting.length) return sorted.find(h => (h.est_minutes || 10) <= budget + 10) || null;
-      return fitting.sort((a, b) => (b.est_minutes || 10) - (a.est_minutes || 10))[0];
+      return sorted[0] || null;
     }
 
     function getUpcomingEvents(limit) {
@@ -21383,17 +21393,25 @@
       return !!classifyTask(habit).outdoor;
     }
 
+    /**
+     * Banner-only fluent phrasing for task titles (presets + freeform).
+     * Heuristic: known phrases → gerund conversion → soft rewording.
+     * Not full AI — works well for English chore/habit titles.
+     */
     function formatTaskForSuggestion(title) {
       const raw = String(title || '').trim().replace(/\s+/g, ' ');
       if (!raw) return 'this task';
-      const lower = raw.toLowerCase();
+      let lower = raw.toLowerCase();
+
       const phraseMap = [
+        [/flush.*water\s*heater|water\s*heater.*flush/i, 'flushing the water heater tank'],
         [/mow.*lawn|lawn.*mow|^mow\s/i, 'mowing the lawn'],
         [/fertiliz/i, 'fertilizing the lawn'],
         [/aerat.*lawn|lawn.*aerat/i, 'aerating the lawn'],
         [/take out.*trash|trash.*recycl/i, 'taking out the trash'],
         [/call.*(mom|family|dad|parent)/i, 'calling family'],
-        [/\bwalk\b|fresh air|get outside/i, 'a walk outside'],
+        [/drink.*water|hydrate|enough water/i, 'drinking some water'],
+        [/\bwalk\b|fresh air|get outside/i, 'a short walk outside'],
         [/meal prep/i, 'meal prepping'],
         [/wash.*car|car.*wash/i, 'washing the car'],
         [/clean.*gutter|gutter/i, 'cleaning the gutters'],
@@ -21401,16 +21419,25 @@
         [/water.*plant|houseplant/i, 'watering houseplants'],
         [/make.*bed/i, 'making the bed'],
         [/bedsheet|bed sheet/i, 'changing the bedsheets'],
+        [/floss/i, 'flossing'],
+        [/vitamin|supplement/i, 'taking vitamins'],
+        [/dryer lint|lint trap/i, 'clearing the dryer lint trap'],
         [/meditat/i, 'a short meditation'],
         [/stretch|mobility/i, 'stretching'],
         [/journal|reflect/i, 'journaling'],
         [/\bread\b/i, 'reading'],
         [/pay.*(bill|rent)|bill.*pay/i, 'paying that bill'],
-        [/grocery|shop/i, 'grocery shopping']
+        [/grocery|shop/i, 'grocery shopping'],
+        [/robot vacuum/i, 'emptying the robot vacuum'],
+        [/dishwasher filter/i, 'cleaning the dishwasher filter'],
+        [/garbage disposal/i, 'cleaning the garbage disposal'],
+        [/pressure\s*wash|power\s*wash/i, 'pressure washing'],
+        [/deep clean/i, 'a deep clean']
       ];
       for (const [re, phrase] of phraseMap) {
-        if (re.test(lower)) return phrase;
+        if (re.test(lower)) return clipSuggestionPhrase(phrase);
       }
+
       const gerunds = {
         mow: 'mowing', call: 'calling', wash: 'washing', clean: 'cleaning',
         change: 'changing', take: 'taking', make: 'making', water: 'watering',
@@ -21420,25 +21447,120 @@
         book: 'booking', schedule: 'scheduling', send: 'sending', fix: 'fixing',
         organize: 'organizing', pack: 'packing', prep: 'prepping', cook: 'cooking',
         pay: 'paying', check: 'checking', update: 'updating', sort: 'sorting',
-        fold: 'folding', empty: 'emptying', refill: 'refilling',
+        fold: 'folding', empty: 'emptying', refill: 'refilling', flush: 'flushing',
         stretch: 'stretching', practice: 'practicing', study: 'studying', learn: 'learning',
-        draft: 'drafting', file: 'filing', cancel: 'canceling', renew: 'renewing'
+        draft: 'drafting', file: 'filing', cancel: 'canceling', renew: 'renewing',
+        drink: 'drinking', replace: 'replacing', inspect: 'inspecting', test: 'testing',
+        clear: 'clearing', wipe: 'wiping', dust: 'dusting', mop: 'mopping',
+        sweep: 'sweeping', load: 'loading', unload: 'unloading', do: 'doing',
+        get: 'getting', put: 'putting', set: 'setting', start: 'starting',
+        complete: 'completing', feed: 'feeding', paint: 'painting', install: 'installing',
+        remove: 'removing', hang: 'hanging', pick: 'picking', drop: 'dropping',
+        order: 'ordering', buy: 'buying', return: 'returning', mail: 'mailing',
+        ship: 'shipping', charge: 'charging', sync: 'syncing', delete: 'deleting',
+        archive: 'archiving', reply: 'replying'
       };
-      // Strip leading "to " / "the "
-      const cleaned = lower.replace(/^(to|the|my|our)\s+/i, '');
+
+      // Soften stiff wording before gerund conversion
+      lower = lower
+        .replace(/\benough\b/g, 'some')
+        .replace(/\ball of the\b/g, 'the')
+        .replace(/\bgo (and|&) /g, '')
+        .replace(/\bplease\b/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const cleaned = lower.replace(/^(to|the|my|our|a|an)\s+/i, '');
       const words = cleaned.split(/\s+/).filter(Boolean);
       if (!words.length) return 'this task';
+
       if (gerunds[words[0]]) {
-        const rest = words.slice(1).join(' ');
-        const phrase = rest ? `${gerunds[words[0]]} ${rest}` : gerunds[words[0]];
-        return phrase.length > 48 ? phrase.slice(0, 45).trim() + '…' : phrase;
+        let rest = words.slice(1);
+        // "flush water heater tank" → "flushing the water heater tank"
+        if (rest.length && !/^(the|a|an|my|our|some|this|that|your)\b/i.test(rest[0])) {
+          const needsThe = !/^(some|any|more|less)\b/i.test(rest[0]);
+          if (needsThe && !/ing$/.test(rest[0])) rest = ['the', ...rest];
+        }
+        const phrase = rest.length ? `${gerunds[words[0]]} ${rest.join(' ')}` : gerunds[words[0]];
+        return clipSuggestionPhrase(phrase);
       }
-      // Noun-ish titles: "laundry" → "laundry"; long custom titles stay quoted-ish short
-      if (words.length <= 4) return cleaned.length > 48 ? cleaned.slice(0, 45).trim() + '…' : cleaned;
-      return cleaned.length > 42 ? cleaned.slice(0, 39).trim() + '…' : cleaned;
+
+      return clipSuggestionPhrase(cleaned);
+    }
+
+    function clipSuggestionPhrase(phrase) {
+      const p = String(phrase || '').replace(/\s+/g, ' ').trim();
+      if (p.length > 48) return p.slice(0, 45).trim() + '…';
+      return p || 'this task';
+    }
+
+    /** Title-case for embedding in banner copy (keeps a/the/for small). */
+    function formatTaskTitleForSuggestion(title) {
+      const phrase = formatTaskForSuggestion(title);
+      const small = new Set(['a', 'an', 'the', 'for', 'to', 'of', 'and', 'or', 'in', 'on', 'at', 'with', 'from', 'by']);
+      return phrase.split(/\s+/).map((w, i) => {
+        if (!w) return w;
+        const bare = w.replace(/[….]+$/g, '');
+        const trail = w.slice(bare.length);
+        if (i > 0 && small.has(bare.toLowerCase())) return bare.toLowerCase() + trail;
+        return bare.charAt(0).toUpperCase() + bare.slice(1).toLowerCase() + trail;
+      }).join(' ');
+    }
+
+    /** True for heavy / maintenance work Smart Suggestions should not auto-push. */
+    function isHeavySmartTask(habit) {
+      if (!habit) return false;
+      if (typeof isParkedForSummary === 'function' && isParkedForSummary(habit) && !isPulledToToday(habit)) {
+        return true;
+      }
+      const tags = classifyTask(habit);
+      const mins = habit.est_minutes || 0;
+      const diff = habit.difficulty || 2;
+      const interval = habit.interval_days || 0;
+      if (tags.hard && (tags.long || mins >= 25 || interval >= 7)) return true;
+      if (diff >= 3 && mins >= 25) return true;
+      if (interval >= 90 && diff >= 2 && mins >= 20) return true;
+      return false;
+    }
+
+    /** Light enough to fill a calendar gap or soft "next up". */
+    function isLightGapFillTask(habit) {
+      if (!habit) return false;
+      if (isHeavySmartTask(habit)) return false;
+      const diff = habit.difficulty || 2;
+      const mins = habit.est_minutes || 10;
+      if (diff >= 3) return false;
+      if (mins >= 40) return false;
+      return true;
+    }
+
+    /** Easy chore due soon but not today — OK to gently pull into a free gap. */
+    function isEasyPullForward(habit) {
+      if (!habit || isCompletedToday(habit.id)) return false;
+      if (isDueToday(habit)) return false;
+      if (isHeavySmartTask(habit)) return false;
+      if ((habit.difficulty || 2) > 1) return false;
+      if ((habit.est_minutes || 10) > 20) return false;
+      const days = typeof getDaysUntilHabitDue === 'function' ? getDaysUntilHabitDue(habit) : 99;
+      return days >= 0 && days <= 3;
+    }
+
+    function isSmartSuggestable(habit, opts = {}) {
+      if (!habit || isCompletedToday(habit.id)) return false;
+      if (!isHabitSensibleNow(habit)) return false;
+      const overdue = typeof isHabitOverdue === 'function' && isHabitOverdue(habit);
+      if (overdue) return true;
+      if (typeof isParkedForSummary === 'function' && isParkedForSummary(habit) && !isPulledToToday(habit)) {
+        return false;
+      }
+      if (opts.lightOnly && !isLightGapFillTask(habit)) return false;
+      if (opts.allowEasyPull && isEasyPullForward(habit)) return true;
+      if (typeof belongsOnTodayTab === 'function') return belongsOnTodayTab(habit);
+      return isDueToday(habit);
     }
 
     function capitalizeSuggestion(text) {
+
       if (!text) return '';
       return text.charAt(0).toUpperCase() + text.slice(1);
     }
@@ -21679,29 +21801,53 @@
       }
 
       const due = state.habits.filter(h => isDueToday(h));
-      const energyPoolRaw = getEnergyMatchedTasks(ctx.energy);
-      // Time-aware pools: don't recommend a walk at 2am
+      const todayPool = rankHabitsForNow(
+        due.filter(h => isSmartSuggestable(h))
+      );
+      const lightToday = rankHabitsForNow(todayPool.filter(isLightGapFillTask));
+      const energyPoolRaw = getEnergyMatchedTasks(ctx.energy).filter(h => isSmartSuggestable(h, { lightOnly: ctx.energy === 1 }));
+      // Soft assistant pools: light Today first; easy pull-forward only for free gaps
       const energyPool = rankHabitsForNow(energyPoolRaw.filter(isHabitSensibleNow));
-      const dueSensible = rankHabitsForNow(due.filter(isHabitSensibleNow));
+      const easyPulls = rankHabitsForNow(
+        state.habits.filter(h => isSmartSuggestable(h, { allowEasyPull: true, lightOnly: true }) && isEasyPullForward(h))
+      );
+      const gapPool = (lightToday.length ? lightToday : energyPool.filter(isLightGapFillTask))
+        .concat(easyPulls)
+        .filter((h, i, arr) => arr.findIndex(x => x.id === h.id) === i);
       const candidates = [];
-      const gapPool = energyPool.length ? energyPool : dueSensible;
       const quietNow = isQuietHours();
       const rainRisk = getAfternoonRainRisk();
       const nowMins = getNowMinutes();
+      const phrase = (h) => escapeBriefHtml(formatTaskTitleForSuggestion(h?.title || ''));
+
+      // --- Overdue tasks: strongest emphasis (even if heavier) ---
+      const overdueHabits = rankHabitsForNow(
+        state.habits.filter(h => typeof isHabitOverdue === 'function' && isHabitOverdue(h) && isHabitSensibleNow(h))
+      );
+      overdueHabits.slice(0, 2).forEach((h, i) => {
+        candidates.push({
+          score: 100 - i,
+          type: 'habit',
+          habit: h,
+          cta: 'Show',
+          reason: `Overdue — <strong>${phrase(h)}</strong> still needs you. Worth a look when you can.`
+        });
+      });
 
       // --- Quiet hours: calm / indoor only ---
       if (quietNow) {
         const when = quietHoursWord();
-        const calm = pickBestTaskForTags(dueSensible, tags => tags.calm || tags.focus || tags.admin || tags.financial || tags.health)
-          || pickBestTaskForTags(dueSensible, tags => !tags.outdoor && !tags.noisy && !tags.physical)
-          || dueSensible[0] || energyPool[0];
-        if (calm) {
+        const calmPool = todayPool.length ? todayPool : lightToday;
+        const calm = pickBestTaskForTags(calmPool, tags => tags.calm || tags.focus || tags.admin || tags.financial || tags.health)
+          || pickBestTaskForTags(calmPool, tags => !tags.outdoor && !tags.noisy && !tags.physical)
+          || lightToday[0] || todayPool[0];
+        if (calm && isLightGapFillTask(calm)) {
           candidates.push({
             score: 97,
             type: 'habit',
             habit: calm,
             cta: 'Show',
-            reason: `It's ${when} — try <strong>${escapeBriefHtml(calm.title)}</strong>. Outdoor and noisy stuff can wait.`
+            reason: `It's ${when} — maybe try <strong>${phrase(calm)}</strong>. Outdoor and noisy stuff can wait.`
           });
         } else {
           candidates.push({
@@ -21714,50 +21860,49 @@
         }
       }
 
-      // --- Rain risk on outdoor tasks ---
+      // --- Rain risk on outdoor tasks (Today only — not parked maintenance) ---
       if (!quietNow && rainRisk?.risky) {
-        const outdoorDue = due.filter(h => classifyTask(h).outdoor);
+        const outdoorDue = todayPool.filter(h => classifyTask(h).outdoor);
         outdoorDue.forEach(task => {
           candidates.push({
             score: 99,
             type: 'weather',
             habit: task,
             cta: 'Forecast',
-            reason: `<strong>${escapeBriefHtml(task.title)}</strong> may not love the weather — ~${rainRisk.maxPrecip}% rain ${rainRisk.windowLabel}.`
+            reason: `<strong>${phrase(task)}</strong> may not love the weather — ~${rainRisk.maxPrecip}% rain ${rainRisk.windowLabel}.`
           });
         });
-        // Offer a good indoor alternative
-        const indoor = pickBestTaskForTags(dueSensible, tags => !tags.outdoor && !tags.errand);
+        const indoor = pickBestTaskForTags(lightToday.length ? lightToday : todayPool, tags => !tags.outdoor && !tags.errand);
         if (indoor) {
           candidates.push({
             score: 93,
             type: 'habit',
             habit: indoor,
             cta: 'Show',
-            reason: `Rain on the radar — swap outdoor plans for <strong>${escapeBriefHtml(indoor.title)}</strong>.`
+            reason: `Rain on the radar — swap outdoor plans for <strong>${phrase(indoor)}</strong>.`
           });
         }
       }
 
       // --- Partial multi-complete progress (vitamins 1/2, etc.) ---
-      due.forEach(h => {
+      todayPool.forEach(h => {
         const need = getTimesPerDay(h);
         const done = countCompletionsOnDate(h.id, todayStr());
-        if (need > 1 && done > 0 && done < need && isHabitSensibleNow(h)) {
+        if (need > 1 && done > 0 && done < need) {
           candidates.push({
             score: 98,
             type: 'progress',
             habit: h,
             cta: 'Continue',
-            reason: `<strong>${escapeBriefHtml(h.title)}</strong> is ${done}/${need} today — one more keeps the streak clean.`
+            reason: `<strong>${phrase(h)}</strong> is ${done}/${need} today — one more keeps the streak clean.`
           });
         }
       });
 
-      // --- Streak at risk (active fire, still due) ---
+      // --- Streak at risk (active fire, still due on Today) ---
       if (!quietNow) {
-        const streakRisk = dueSensible
-          .filter(h => shouldTrackStreak(h) && computeCurrentStreak(h.id) >= 2)
+        const streakRisk = todayPool
+          .filter(h => shouldTrackStreak(h) && computeCurrentStreak(h.id) >= 2 && isLightGapFillTask(h))
           .sort((a, b) => computeCurrentStreak(b.id) - computeCurrentStreak(a.id))[0];
         if (streakRisk) {
           const streak = computeCurrentStreak(streakRisk.id);
@@ -21766,26 +21911,27 @@
             type: 'streak',
             habit: streakRisk,
             cta: 'Protect',
-            reason: `<strong>${escapeBriefHtml(streakRisk.title)}</strong> has a ${streak}-day streak — a quick check-in keeps the fire.`
+            reason: `<strong>${phrase(streakRisk)}</strong> has a ${streak}-day streak — a quick check-in keeps the fire.`
           });
         }
       }
 
-      // --- Upcoming calendar event: quick win before it ---
+      // --- Upcoming calendar event: light quick win before it ---
       if (!quietNow && ctx.nextEvent) {
         const [eh, em] = String(ctx.nextEvent.time || '0:0').split(':').map(Number);
         const eventMins = (eh || 0) * 60 + (em || 0);
         const until = eventMins - nowMins;
         if (until >= 10 && until <= 75) {
-          const quick = pickBestTaskForTags(gapPool, (tags, h) => (h.est_minutes || 10) <= Math.max(8, until - 5) && !tags.long)
-            || gapPool.find(h => (h.est_minutes || 10) <= until - 5);
+          const quickPool = gapPool.filter(h => (h.est_minutes || 10) <= Math.max(8, until - 5));
+          const quick = pickBestTaskForTags(quickPool, (tags, h) => !tags.long)
+            || quickPool[0];
           if (quick) {
             candidates.push({
               score: 96,
               type: 'event',
               habit: quick,
               cta: 'Show',
-              reason: `~${until} min before <strong>${escapeBriefHtml(ctx.nextEvent.title || 'your next event')}</strong> — enough for <strong>${escapeBriefHtml(quick.title)}</strong>.`
+              reason: `~${until} min before <strong>${escapeBriefHtml(ctx.nextEvent.title || 'your next event')}</strong> — enough for <strong>${phrase(quick)}</strong>.`
             });
           } else {
             candidates.push({
@@ -21798,60 +21944,86 @@
         }
       }
 
-      // --- Energy-matched next task (works for freeform titles via classify + ranking) ---
-      if (energyPool.length > 0 && !quietNow) {
-        const best = energyPool[0];
-        const hardestDue = [...dueSensible].sort((a, b) => (b.difficulty || 2) - (a.difficulty || 2))[0];
-        const bestTags = classifyTask(best);
+      // --- Energy-aware soft next step (never auto-push heavy Summary work) ---
+      if (!quietNow) {
+        const softBest = (lightToday[0] || energyPool.filter(isLightGapFillTask)[0] || null);
+        const hardOnToday = todayPool.filter(h => isHeavySmartTask(h) || (h.difficulty || 2) >= 3);
+        const hardRef = hardOnToday.sort((a, b) => (b.difficulty || 2) - (a.difficulty || 2))[0];
 
-        if (ctx.energy === 1 && hardestDue && (hardestDue.difficulty || 2) >= 3 && (best.difficulty || 2) <= 1 && best.id !== hardestDue.id) {
-          candidates.push({
-            score: 96,
-            type: 'habit',
-            habit: best,
-            cta: 'Show',
-            reason: `Low energy — skip <strong>${escapeBriefHtml(hardestDue.title)}</strong> for now; try <strong>${escapeBriefHtml(best.title)}</strong>.`
-          });
-        } else if (ctx.energy === 1) {
-          candidates.push({
-            score: 92,
-            type: 'habit',
-            habit: best,
-            cta: 'Show',
-            reason: `Low energy day — <strong>${escapeBriefHtml(best.title)}</strong> is a gentle fit.`
-          });
-        } else if (ctx.energy === 3 && ((best.difficulty || 2) >= 2 || bestTags.long || bestTags.hard)) {
+        if (ctx.energy === 1 && softBest) {
+          if (hardRef && hardRef.id !== softBest.id) {
+            candidates.push({
+              score: 96,
+              type: 'habit',
+              habit: softBest,
+              cta: 'Show',
+              reason: `Low energy — skip <strong>${phrase(hardRef)}</strong> for now; maybe try <strong>${phrase(softBest)}</strong>.`
+            });
+          } else {
+            candidates.push({
+              score: 92,
+              type: 'habit',
+              habit: softBest,
+              cta: 'Show',
+              reason: `Low energy — maybe try <strong>${phrase(softBest)}</strong>. Keep it light.`
+            });
+          }
+        } else if (ctx.energy === 3 && softBest) {
+          // High energy still prefers Today light/medium; heavy stays a Summary choice
+          const medium = todayPool.find(h => !isHeavySmartTask(h) && ((h.difficulty || 2) >= 2 || (h.est_minutes || 0) >= 20))
+            || softBest;
           candidates.push({
             score: 91,
             type: 'habit',
-            habit: best,
+            habit: medium,
             cta: 'Show',
-            reason: `High energy — good time for <strong>${escapeBriefHtml(best.title)}</strong>.`
+            reason: `High energy — good window for <strong>${phrase(medium)}</strong>. Bigger jobs wait in Summary until you choose them.`
           });
-        } else {
+        } else if (softBest) {
           candidates.push({
             score: 86,
             type: 'habit',
-            habit: best,
+            habit: softBest,
             cta: 'Show',
-            reason: `Next up: <strong>${escapeBriefHtml(best.title)}</strong>.`
+            reason: `A solid next step: <strong>${phrase(softBest)}</strong>.`
+          });
+        } else if (hardOnToday.length === 0) {
+          candidates.push({
+            score: 68,
+            type: 'tip',
+            tipId: 'summary-heavy',
+            cta: 'Got it',
+            action: 'none',
+            reason: `Today looks light. When you're ready for bigger work, pull it from <strong>Summary</strong> — that's your call.`
           });
         }
       }
 
-      // --- Calendar gap that fits a task ---
-      if (!quietNow && ctx.bestGap && ctx.bestGap.minutes >= 20 && gapPool.length > 0) {
+      // --- Calendar gap: fill with light work (or easy pull-forward) ---
+      if (!quietNow && ctx.bestGap && ctx.bestGap.minutes >= 20) {
         const fit = findTaskForGap(ctx.bestGap, gapPool.filter(isHabitSensibleNow));
         if (fit) {
           const until = ctx.bestGap.beforeEvent
             ? ` before ${String(ctx.bestGap.beforeEvent).toLowerCase()}`
             : (ctx.bestGap.until ? ` until ${ctx.bestGap.until}` : '');
+          const pulled = isEasyPullForward(fit);
           candidates.push({
             score: 95,
             type: 'habit',
             habit: fit,
             cta: 'Show',
-            reason: `${formatFreeTimeHours(ctx.bestGap.minutes)} open${until} — room for <strong>${escapeBriefHtml(fit.title)}</strong>.`
+            reason: pulled
+              ? `${formatFreeTimeHours(ctx.bestGap.minutes)} open${until} — easy win: <strong>${phrase(fit)}</strong> (due soon, light enough to handle now).`
+              : `${formatFreeTimeHours(ctx.bestGap.minutes)} open${until} — room for <strong>${phrase(fit)}</strong>.`
+          });
+        } else if (ctx.bestGap.minutes >= 45) {
+          candidates.push({
+            score: 73,
+            type: 'tip',
+            tipId: 'gap-summary',
+            cta: 'Got it',
+            action: 'none',
+            reason: `${formatFreeTimeHours(ctx.bestGap.minutes)} open on the calendar. Keep Today easy, or deliberately pull something bigger from <strong>Summary</strong>.`
           });
         }
       }
@@ -21878,13 +22050,13 @@
         });
       }
 
-      // --- Fair weather outdoor window ---
+      // --- Fair weather outdoor window (light outdoor only) ---
       const weatherLow = (ctx.weather || '').toLowerCase();
       if (!quietNow && isDaylightHours() && (weatherLow.includes('sun') || weatherLow.includes('clear')) && !(rainRisk?.risky)) {
-        const outdoorPool = ctx.energy === 1 ? energyPool : dueSensible;
+        const outdoorPool = (ctx.energy === 1 ? lightToday : todayPool).filter(isLightGapFillTask);
         const outdoor = outdoorPool.find(h => {
           const tags = classifyTask(h);
-          return tags.outdoor && (ctx.energy !== 1 || !tags.hard);
+          return tags.outdoor && !tags.hard;
         });
         const bestWindow = getBestOutdoorTime();
         if (outdoor && bestWindow) {
@@ -21893,7 +22065,7 @@
             type: 'habit',
             habit: outdoor,
             cta: 'Show',
-            reason: `Clear skies — around ${bestWindow.time} suits <strong>${escapeBriefHtml(outdoor.title)}</strong>.`
+            reason: `Clear skies — around ${bestWindow.time} suits <strong>${phrase(outdoor)}</strong>.`
           });
         } else if (outdoor) {
           candidates.push({
@@ -21901,21 +22073,21 @@
             type: 'habit',
             habit: outdoor,
             cta: 'Show',
-            reason: `Weather looks fair — good for <strong>${escapeBriefHtml(outdoor.title)}</strong>.`
+            reason: `Weather looks fair — good for <strong>${phrase(outdoor)}</strong>.`
           });
         }
       }
 
-      // --- General free calendar block ---
+      // --- General free calendar block (light only) ---
       if (!quietNow && ctx.freeTime >= 40 && gapPool.length > 0) {
-        const match = rankHabitsForNow(gapPool)[0];
+        const match = rankHabitsForNow(gapPool.filter(isLightGapFillTask))[0];
         if (match) {
           candidates.push({
             score: 74,
             type: 'habit',
             habit: match,
             cta: 'Show',
-            reason: `${formatFreeTimeHours(ctx.freeTime)} free on the calendar — <strong>${escapeBriefHtml(match.title)}</strong> should fit.`
+            reason: `${formatFreeTimeHours(ctx.freeTime)} free on the calendar — <strong>${phrase(match)}</strong> should fit.`
           });
         }
       }
@@ -21944,11 +22116,11 @@
         }
       } catch (_) { /* optional path */ }
 
-      // --- Bills (nudge, not takeover) ---
+      // --- Bills (overdue louder than due-today) ---
       const overdueBill = (ctx.activeBills || []).find(b => getBillStatus(b) === 'overdue');
       if (overdueBill) {
         candidates.push({
-          score: 82,
+          score: 97,
           type: 'bill',
           bill: overdueBill,
           cta: 'Mark paid',
@@ -21968,6 +22140,7 @@
 
       return pickBestContextualSuggestion(candidates);
     }
+
 
     function getTutorialTaskCard() {
       return document.querySelector('#task-list .swipe-row[data-feed-type="habit"] .swipe-row-content')
