@@ -7574,7 +7574,7 @@
       <div id="tab-content-streaks" class="tab-content px-5 pb-6 bg-transparent hidden">
         <div class="streaks-tab-head mb-3">
           <div class="section-header font-semibold text-harbor-text">Streaks</div>
-          <div class="text-[11px] text-harbor-muted leading-snug mt-0.5">See your fire, check the numbers, earn rest.</div>
+          <div class="text-[11px] text-harbor-muted leading-snug mt-0.5">Pride and progress — not a second to-do list. Earn rest when you’re ready.</div>
         </div>
 
         <!-- 1. Your fires (grouped watchlist when many) -->
@@ -7690,7 +7690,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v175';
+    const HARBOR_BUILD = 'v176';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -23170,9 +23170,10 @@
       return { at: next, left: next - streak };
     }
 
-    // Streaks tab fleet UI — collapse the wall of cards when many fires
+    // Streaks tab is NOT a task list — no “urgent due” ranking.
+    // We approximate *satisfaction* (pride, meaning, progress) with proxies.
     const STREAK_FLEET_FEW_MAX = 6;       // at or below: simple full list
-    const STREAK_FLEET_BRIGHT_MAX = 5;    // “Bright fires” cap when grouping
+    const STREAK_FLEET_GLOW_MAX = 5;      // highest-satisfaction “glowing” set
     let streaksMoreFiresOpen = false;
 
     function toggleStreaksMoreFires() {
@@ -23185,161 +23186,179 @@
         .filter(h => shouldTrackStreak(h))
         .map(h => {
           const streak = computeCurrentStreak(h.id);
+          const longest = typeof getLongestStreak === 'function' ? getLongestStreak(h.id) : streak;
           const status = getStreakCardStatus(h);
           const due = status.id === 'due';
           const done = status.id === 'done';
           const metricType = typeof getHabitMetricType === 'function' ? getHabitMetricType(h) : null;
           const quantitative = !!metricType;
-          return { habit: h, streak, status, due, done, metricType, quantitative };
+          const entry = { habit: h, streak, longest, status, due, done, metricType, quantitative };
+          entry.satisfaction = getStreakSatisfactionScore(entry);
+          return entry;
         });
     }
 
     /**
-     * How “watch-worthy” is this fire for Bright fires?
-     * Measurable habits (walk/steps/miles → weight & body goals, pages, savings)
-     * outrank pure chore-length streaks so Walking doesn’t hide under “quiet.”
+     * Satisfaction proxy for the Streaks tab (pride page, not Today).
+     * True satisfaction is subjective — we approximate with signals people
+     * usually feel good about: meaning, progress, continuity, “I did it.”
+     * We deliberately do NOT rank by urgency / due pressure.
      */
-    function getStreakWatchScore(entry) {
+    function getStreakSatisfactionScore(entry) {
       const habit = entry.habit;
-      let score = 0;
+      const streak = Number(entry.streak) || 0;
+      const longest = Number(entry.longest) || streak;
+      let s = 0;
 
-      // Live streak still matters — but is not the only voice
-      score += Math.min(Number(entry.streak) || 0, 45) * 2;
+      // ── Continuity pride (steady fire feels good; long runs glow) ──
+      s += Math.min(streak, 60) * 2.4;
+      if (streak >= 3) s += 6;
+      if (streak >= 7) s += 10;
+      if (streak >= 14) s += 8;
+      if (streak >= 30) s += 10;
 
-      if (entry.done) score += 12;
-      else if (entry.status?.id === 'active') score += 10;
-      else if (entry.status?.id === 'quiet') score += 2;
+      // Matching or near a personal best — “I’m on my best run”
+      if (longest > 0 && streak >= longest) s += 18;
+      else if (longest > 0 && streak >= longest - 1 && streak > 0) s += 8;
 
-      // Metric type — what people open Outlook for
-      const type = entry.metricType
-        || (typeof getHabitMetricType === 'function' ? getHabitMetricType(habit) : null);
-      if (type === 'steps' || type === 'miles') {
-        // Movement / weight-adjacent goals: strong watch priority
-        score += 48;
-      } else if (type === 'savings') {
-        score += 32;
-      } else if (type === 'pages') {
-        score += 28;
-      } else if (type === 'custom' || entry.quantitative) {
-        score += 26;
+      // Approaching a milestone (anticipation satisfaction)
+      const nextMs = [7, 14, 21, 30, 50, 100].find(m => streak < m);
+      if (nextMs != null) {
+        const left = nextMs - streak;
+        if (left <= 2 && streak > 0) s += 14;
+        else if (left <= 4 && streak > 0) s += 7;
       }
 
-      // Explicit target = intentional goal (e.g. 8k steps, 2 mi walk)
-      if (habit?.target_value != null && Number(habit.target_value) > 0) score += 14;
+      // ── Completion pride (celebratory, not urgent) ──
+      if (entry.done) s += 22;
+      // Mild: still alive mid-run (not a to-do nudge)
+      else if (entry.status?.id === 'active') s += 6;
 
-      // Logged something today → this is an active tracking habit
+      // Week texture — more filled dots this week = richer pride
       try {
-        if (typeof getTodaysMetricLog === 'function' && getTodaysMetricLog(habit)) score += 16;
+        if (typeof getStreakWeekDots === 'function') {
+          const dots = getStreakWeekDots(habit.id) || [];
+          const filled = dots.filter(d => d.done || d.pass).length;
+          s += filled * 2.5;
+        }
       } catch (_) { /* ignore */ }
 
-      // Slight boost if Outlook is open on this one (already handled by pin, but helps sort)
-      if (currentProjectionHabit && habit?.id === currentProjectionHabit) score += 100;
+      // ── Meaning / narrative (what Outlook is for) ──
+      // Body & progress metrics feel more “satisfying to watch” than pure chores
+      const type = entry.metricType
+        || (typeof getHabitMetricType === 'function' ? getHabitMetricType(habit) : null);
+      if (type === 'steps' || type === 'miles') s += 42;
+      else if (type === 'savings') s += 30;
+      else if (type === 'pages') s += 28;
+      else if (type === 'custom' || entry.quantitative) s += 24;
 
-      return score;
+      if (habit?.target_value != null && Number(habit.target_value) > 0) s += 12;
+
+      // Progress logged today — concrete “I moved the needle”
+      try {
+        if (typeof getTodaysMetricLog === 'function' && getTodaysMetricLog(habit)) s += 20;
+      } catch (_) { /* ignore */ }
+
+      // Currently open in Outlook — keep it warm in the glow set
+      if (currentProjectionHabit && habit?.id === currentProjectionHabit) s += 80;
+
+      return s;
     }
 
-    function sortStreakFleetRows(list, mode = 'default') {
+    function sortBySatisfaction(list) {
       return [...list].sort((a, b) => {
-        if (mode === 'bright') {
-          const sb = getStreakWatchScore(b) - getStreakWatchScore(a);
-          if (sb !== 0) return sb;
-          if (b.streak !== a.streak) return b.streak - a.streak;
-          return String(a.habit.title || '').localeCompare(String(b.habit.title || ''));
-        }
-        // Needs you / simple: due first, then watch score, then streak
-        if (a.due !== b.due) return a.due ? -1 : 1;
-        if (mode === 'default' && list.length > STREAK_FLEET_FEW_MAX) {
-          const sb = getStreakWatchScore(b) - getStreakWatchScore(a);
-          if (sb !== 0) return sb;
-        }
-        if (b.streak !== a.streak) return b.streak - a.streak;
+        const sa = a.satisfaction != null ? a.satisfaction : getStreakSatisfactionScore(a);
+        const sb = b.satisfaction != null ? b.satisfaction : getStreakSatisfactionScore(b);
+        if (sb !== sa) return sb - sa;
+        if ((b.streak || 0) !== (a.streak || 0)) return (b.streak || 0) - (a.streak || 0);
         return String(a.habit.title || '').localeCompare(String(b.habit.title || ''));
       });
     }
 
     /**
-     * Partition fires into watch zones so 15+ habits don’t flood the tab.
-     * needsYou → bright → more (more collapsed by default).
-     * Bright uses watch score + reserved slots for measurable goals
-     * (walk/steps/miles for body goals, pages, savings, etc.).
+     * Glow (most satisfying to look at) → steady → quieter embers.
+     * No urgency zone — Streaks is a pride surface.
      */
     function partitionStreakFleet(rows) {
       const total = rows.length;
+      const ranked = sortBySatisfaction(rows);
+
       if (total <= STREAK_FLEET_FEW_MAX) {
         return {
           mode: 'simple',
-          needsYou: [],
-          bright: sortStreakFleetRows(rows, 'default'),
+          glowing: ranked,
+          steady: [],
           more: [],
           total
         };
       }
 
-      const needsYou = sortStreakFleetRows(rows.filter(r => r.due), 'default');
-      const needsIds = new Set(needsYou.map(r => r.habit.id));
-      const rest = sortStreakFleetRows(rows.filter(r => !needsIds.has(r.habit.id)), 'bright');
-      const brightMax = STREAK_FLEET_BRIGHT_MAX;
-
-      // Prefer measurable habits first (score already ranks steps/miles highest),
-      // and reserve up to 3 bright slots for them so Walk isn’t buried by chores.
-      const metrics = rest.filter(r => r.quantitative);
-      const chores = rest.filter(r => !r.quantitative);
-      const metricReserve = Math.min(3, metrics.length, brightMax);
-
-      const bright = [];
+      const glowMax = STREAK_FLEET_GLOW_MAX;
+      // Seed glow with top satisfaction, but guarantee some measurable “story” habits
+      // so Walk/weight-adjacent goals aren’t lost to long but empty chore streaks.
+      const metrics = ranked.filter(r => r.quantitative);
+      const metricReserve = Math.min(3, metrics.length, glowMax);
+      const glowing = [];
       const used = new Set();
       const take = (entry) => {
-        if (!entry || used.has(entry.habit.id) || bright.length >= brightMax) return;
-        bright.push(entry);
+        if (!entry || used.has(entry.habit.id) || glowing.length >= glowMax) return;
+        glowing.push(entry);
         used.add(entry.habit.id);
       };
 
       metrics.slice(0, metricReserve).forEach(take);
-      // Remaining bright seats: highest watch score overall (already sorted in rest)
-      rest.forEach(take);
+      ranked.forEach(take);
 
-      // Outlook selection always stays on the watchlist
       if (currentProjectionHabit && !used.has(currentProjectionHabit)) {
-        const sel = rest.find(r => r.habit.id === currentProjectionHabit);
+        const sel = ranked.find(r => r.habit.id === currentProjectionHabit);
         if (sel) {
-          if (bright.length >= brightMax) {
-            const dropped = bright.pop();
+          if (glowing.length >= glowMax) {
+            const dropped = glowing.pop();
             if (dropped) used.delete(dropped.habit.id);
           }
-          bright.unshift(sel);
+          glowing.unshift(sel);
           used.add(sel.habit.id);
         }
       }
 
-      const brightSorted = sortStreakFleetRows(bright, 'bright');
-      const more = rest.filter(r => !used.has(r.habit.id));
-      return { mode: 'grouped', needsYou, bright: brightSorted, more, total };
+      const glowSorted = sortBySatisfaction(glowing);
+      const remainder = ranked.filter(r => !used.has(r.habit.id));
+      // Steady = next tier (visible, full cards if few); more = dense/collapsed
+      const steadyTake = Math.min(4, remainder.length);
+      const steady = remainder.slice(0, steadyTake);
+      const more = remainder.slice(steadyTake);
+
+      return { mode: 'grouped', glowing: glowSorted, steady, more, total };
     }
 
     function buildStreakFleetHealthHtml(rows) {
       if (!rows.length) return '';
       const total = rows.length;
       const lit = rows.filter(r => r.done).length;
-      const need = rows.filter(r => r.due).length;
+      const withStory = rows.filter(r => r.quantitative).length;
       const longest = rows.reduce((m, r) => Math.max(m, r.streak || 0), 0);
+      const best = sortBySatisfaction(rows)[0];
+      const bestTitle = best?.habit?.title
+        ? (typeof escapeBriefHtml === 'function' ? escapeBriefHtml(best.habit.title) : best.habit.title)
+        : '';
 
       let soft;
-      if (need > 0) {
-        soft = need === 1
-          ? 'One fire still needs a spark today — it’s at the top.'
-          : `${need} fires still need a spark today — they’re listed first.`;
-      } else if (lit === total) {
-        soft = 'Every fire is lit today. Enjoy that.';
+      if (lit === total && total > 0) {
+        soft = 'Every fire is lit — a full-harbor kind of day.';
+      } else if (best && best.streak >= 7) {
+        soft = bestTitle
+          ? `Warmest glow: ${bestTitle} (${best.streak}d). Satisfaction over urgency.`
+          : 'Sorted by what tends to feel good to watch — not by what’s “due.”';
       } else {
-        soft = 'Nothing urgent — your longer runs are below.';
+        soft = 'Streaks is for pride and progress — not a second to-do list.';
       }
 
       return `
         <div class="streak-fleet-health" role="status" aria-live="polite">
           <div class="streak-fleet-health-main">
-            <strong>${lit}</strong> of <strong>${total}</strong> lit today
-            ${need > 0 ? ` · <strong>${need}</strong> need a spark` : ''}
+            <strong>${lit}</strong> of <strong>${total}</strong> celebrated today
             ${longest > 0 ? ` · longest <strong>${longest}</strong>d` : ''}
+            ${withStory > 0 ? ` · <strong>${withStory}</strong> with numbers` : ''}
           </div>
           <div class="streak-fleet-health-soft">${soft}</div>
         </div>
@@ -23481,28 +23500,28 @@
       if (fleet.mode === 'simple') {
         appendStreakFleetSection(container, {
           id: 'streak-fleet-all',
-          label: 'Your watch',
-          count: fleet.bright.length,
-          rows: fleet.bright,
+          label: 'Your fires',
+          count: fleet.glowing.length,
+          rows: fleet.glowing,
           dense: false
         });
         bindSwipeRows(container);
         return;
       }
 
-      // Grouped watchlist
+      // Satisfaction tiers — not a to-do board
       appendStreakFleetSection(container, {
-        id: 'streak-fleet-needs',
-        label: 'Needs you',
-        count: fleet.needsYou.length,
-        rows: fleet.needsYou,
+        id: 'streak-fleet-glowing',
+        label: 'Glowing',
+        count: fleet.glowing.length,
+        rows: fleet.glowing,
         dense: false
       });
       appendStreakFleetSection(container, {
-        id: 'streak-fleet-bright',
-        label: 'Bright fires',
-        count: fleet.bright.length,
-        rows: fleet.bright,
+        id: 'streak-fleet-steady',
+        label: 'Steady',
+        count: fleet.steady.length,
+        rows: fleet.steady,
         dense: false
       });
 
@@ -23517,8 +23536,8 @@
         toggle.setAttribute('aria-expanded', streaksMoreFiresOpen ? 'true' : 'false');
         toggle.onclick = () => toggleStreaksMoreFires();
         toggle.innerHTML = streaksMoreFiresOpen
-          ? `Hide quieter fires <span class="muted">· ${fleet.more.length}</span>`
-          : `More fires <span class="muted">· ${fleet.more.length} quieter · show</span>`;
+          ? `Hide quieter embers <span class="muted">· ${fleet.more.length}</span>`
+          : `Quieter embers <span class="muted">· ${fleet.more.length} · show</span>`;
         moreWrap.appendChild(toggle);
 
         if (streaksMoreFiresOpen) {
