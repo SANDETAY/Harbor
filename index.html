@@ -6620,39 +6620,11 @@
         padding: 1.5rem 1.5rem 3rem;
       }
 
+      /* Streaks desktop: keep simple vertical stack (fires → outlook → Harbor Day) */
       #tab-content-streaks:not(.hidden) {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-areas:
-          "streakoff"
-          "title"
-          "legend"
-          "body"
-          "projection"
-          "footer";
-        gap: 1.5rem;
-        align-items: start;
-      }
-
-      #tab-content-streaks:not(.hidden) > .streaks-title-header {
-        grid-area: title;
-      }
-
-      #tab-content-streaks:not(.hidden) > .streaks-body {
-        grid-area: body;
-        grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
-        gap: 1.5rem;
-      }
-
-      #tab-content-streaks:not(.hidden) > .mt-6 {
-        grid-area: projection;
-        margin-top: 0 !important;
-      }
-
-      #tab-content-streaks:not(.hidden) > .mt-4 {
-        grid-area: footer;
-        margin-top: 0 !important;
-        grid-column: 1 / -1;
+        max-width: 40rem;
+        margin-left: auto;
+        margin-right: auto;
       }
 
       #tab-content-life:not(.hidden) .life-panel:not(.hidden) {
@@ -6994,32 +6966,35 @@
         </div>
       </div>
 
-      <!-- STREAKS TAB -->
+      <!-- STREAKS TAB: fires → outlook → Harbor Day (reward last) -->
       <div id="tab-content-streaks" class="tab-content px-5 pb-6 bg-transparent hidden">
         <div class="streaks-tab-head mb-3">
           <div class="section-header font-semibold text-harbor-text">Streaks</div>
-          <div class="text-[11px] text-harbor-muted leading-snug mt-0.5">See your fire, track what you measure, earn rest.</div>
+          <div class="text-[11px] text-harbor-muted leading-snug mt-0.5">See your fire, check the numbers, earn rest.</div>
         </div>
 
-        <!-- Harbor Day reward hero -->
-        <div id="reward-bank-panel" class="mb-4"></div>
-
-        <!-- Your fires -->
+        <!-- 1. Your fires -->
         <div class="flex items-baseline justify-between gap-2 mb-2">
           <div class="section-header font-semibold text-harbor-text text-[0.95rem]">Your fires</div>
           <div id="streaks-count-label" class="text-[10px] text-harbor-muted tabular-nums"></div>
         </div>
         <div id="streaks-list" class="space-y-2.5"></div>
 
-        <!-- Habit Outlook — opens when a streak is selected -->
+        <!-- 2. Habit Outlook -->
         <div class="mt-5" id="habit-outlook-section">
           <div class="section-header font-semibold text-harbor-text mb-1">Habit Outlook</div>
-          <div class="text-[10px] text-harbor-muted mb-2">Tap a streak above to see pace, pride stats, and log metrics.</div>
+          <div class="text-[10px] text-harbor-muted mb-2">Tap a fire above for pace, pride stats, and logging.</div>
           <div id="projection-panel"
             class="bg-harbor-surface border border-harbor-border rounded-3xl p-4 text-sm shadow-[var(--harbor-shadow-sm)]">
             <div id="projection-hint" class="text-harbor-muted text-xs leading-relaxed">Pick a habit to see where you’re headed — and celebrate the progress.</div>
             <div id="projection-content" class="hidden"></div>
           </div>
+        </div>
+
+        <!-- 3. Harbor Day — earned rest at the bottom -->
+        <div class="mt-5">
+          <div class="section-header font-semibold text-harbor-text text-[0.95rem] mb-2">Earn rest</div>
+          <div id="reward-bank-panel"></div>
         </div>
       </div>
 
@@ -7111,7 +7086,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v165';
+    const HARBOR_BUILD = 'v166';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -7225,19 +7200,20 @@
 
     const STREAK_MILESTONE_BONUSES = { 7: 25, 30: 75, 100: 200 };
 
-    // Top downtime / recovery activities people actually chase (leisure + self-care research)
+    // Default rewards — full set always available; picker shows a short primary row first
     const CHEAT_DAY_TREATS = [
-      { id: 'sleep', emoji: '😴', label: 'Extra sleep' },
-      { id: 'walk', emoji: '🚶', label: 'Easy outdoor walk' },
+      { id: 'sleep', emoji: '😴', label: 'Extra sleep', primary: true },
+      { id: 'walk', emoji: '🚶', label: 'Easy outdoor walk', primary: true },
+      { id: 'meal', emoji: '🍜', label: 'Comfort meal', primary: true },
+      { id: 'nothing', emoji: '🛋️', label: 'Do absolutely nothing', primary: true },
       { id: 'screen', emoji: '📺', label: 'Show or movie' },
       { id: 'read', emoji: '📖', label: 'Read for fun' },
       { id: 'coffee', emoji: '☕', label: 'Coffee or tea out' },
-      { id: 'meal', emoji: '🍜', label: 'Comfort meal' },
       { id: 'bath', emoji: '🛁', label: 'Long shower or bath' },
       { id: 'people', emoji: '💬', label: 'Time with someone' },
-      { id: 'unplug', emoji: '📵', label: 'Unplug hour' },
-      { id: 'nothing', emoji: '🛋️', label: 'Do absolutely nothing' }
+      { id: 'unplug', emoji: '📵', label: 'Unplug hour' }
     ];
+    const HARBOR_TREAT_PRIMARY_IDS = CHEAT_DAY_TREATS.filter(t => t.primary).map(t => t.id);
 
     // How you spend a Harbor Day — rest is flexible, not one-size-fits-all
     const HARBOR_CLAIM_MODES = [
@@ -20873,6 +20849,40 @@
       return [...CHEAT_DAY_TREATS, ...getCustomHarborTreats()];
     }
 
+    /**
+     * Short default row: primary presets + customs + current goal (if not already shown).
+     * expanded=true → full default list + customs.
+     */
+    function getHarborTreatsForPicker(expanded = false) {
+      const customs = getCustomHarborTreats();
+      const goal = getHarborGoalTreat();
+      const primary = CHEAT_DAY_TREATS.filter(t => HARBOR_TREAT_PRIMARY_IDS.includes(t.id));
+      const rest = CHEAT_DAY_TREATS.filter(t => !HARBOR_TREAT_PRIMARY_IDS.includes(t.id));
+      let list = expanded
+        ? [...customs, ...CHEAT_DAY_TREATS]
+        : [...customs, ...primary];
+
+      // Always surface the selected goal even if it's in the "more" set
+      if (goal && !list.some(t => t.id === goal.id)) {
+        const g = getHarborTreatById(goal.id);
+        if (g) list = [g, ...list];
+      }
+
+      // Dedupe by id (customs first wins)
+      const seen = new Set();
+      list = list.filter(t => {
+        if (!t?.id || seen.has(t.id)) return false;
+        seen.add(t.id);
+        return true;
+      });
+
+      return {
+        list,
+        hasMore: rest.length > 0,
+        moreCount: rest.length
+      };
+    }
+
     function getHarborTreatById(id) {
       if (!id) return null;
       const all = getAllHarborTreats();
@@ -20916,6 +20926,7 @@
     // Session UI state for compact Harbor Day
     let harborTreatPickerOpen = false;
     let harborDayExtrasOpen = false;
+    let harborTreatsExpanded = false;
 
     function getHarborModeById(id) {
       return HARBOR_CLAIM_MODES.find(m => m.id === id) || HARBOR_CLAIM_MODES[0];
@@ -21405,7 +21416,18 @@
 
           <div class="text-[10px] uppercase tracking-wider text-harbor-primary-light font-semibold mb-1.5">Your treat</div>
           <div class="grid grid-cols-2 gap-2 mb-2" id="cheat-treat-grid">
-            ${getAllHarborTreats().map(t => `
+            ${getHarborTreatsForPicker(false).list.map(t => `
+              <button type="button" data-treat-id="${escapeBriefHtml(t.id)}" class="cheat-treat-btn px-3 py-2.5 rounded-2xl border border-harbor-border bg-harbor-raised text-left active:opacity-90 ${goal && goal.id === t.id ? 'is-selected' : ''}">
+                <div class="text-xl mb-0.5">${t.emoji}</div>
+                <div class="text-[11px] font-semibold text-harbor-text leading-snug">${escapeBriefHtml(t.label)}</div>
+              </button>
+            `).join('')}
+          </div>
+          <button type="button" id="cheat-treats-more" class="w-full mb-2 py-2 rounded-2xl text-[11px] font-semibold text-harbor-primary-light bg-harbor-raised border border-harbor-border">
+            More rewards
+          </button>
+          <div id="cheat-treat-grid-more" class="grid grid-cols-2 gap-2 mb-2 hidden">
+            ${getHarborTreatsForPicker(true).list.filter(t => !getHarborTreatsForPicker(false).list.some(p => p.id === t.id)).map(t => `
               <button type="button" data-treat-id="${escapeBriefHtml(t.id)}" class="cheat-treat-btn px-3 py-2.5 rounded-2xl border border-harbor-border bg-harbor-raised text-left active:opacity-90 ${goal && goal.id === t.id ? 'is-selected' : ''}">
                 <div class="text-xl mb-0.5">${t.emoji}</div>
                 <div class="text-[11px] font-semibold text-harbor-text leading-snug">${escapeBriefHtml(t.label)}</div>
@@ -21503,11 +21525,21 @@
         btn.onclick = () => selectMode(btn.dataset.modeId);
       });
 
-      modal.querySelectorAll('.cheat-treat-btn').forEach(btn => {
-        if (selectedTreat && btn.dataset.treatId === selectedTreat.id) btn.classList.add('is-selected');
-        btn.onclick = () => {
-          selectTreat(getHarborTreatById(btn.dataset.treatId));
-        };
+      const wireTreatButtons = () => {
+        modal.querySelectorAll('.cheat-treat-btn').forEach(btn => {
+          btn.classList.toggle('is-selected', !!(selectedTreat && btn.dataset.treatId === selectedTreat.id));
+          btn.onclick = () => selectTreat(getHarborTreatById(btn.dataset.treatId));
+        });
+      };
+      wireTreatButtons();
+
+      modal.querySelector('#cheat-treats-more')?.addEventListener('click', () => {
+        const more = modal.querySelector('#cheat-treat-grid-more');
+        const btn = modal.querySelector('#cheat-treats-more');
+        if (!more || !btn) return;
+        const open = more.classList.toggle('hidden') === false;
+        btn.textContent = open ? 'Fewer rewards' : 'More rewards';
+        wireTreatButtons();
       });
 
       modal.querySelector('#cheat-custom-treat')?.addEventListener('click', () => {
@@ -21560,12 +21592,15 @@
       // Open picker if no goal yet so first visit is clear
       if (!goal) harborTreatPickerOpen = true;
 
-      const treats = getAllHarborTreats();
-      const goalChips = treats.map(t => {
+      const picker = getHarborTreatsForPicker(harborTreatsExpanded);
+      const goalChips = picker.list.map(t => {
         const selected = goal && goal.id === t.id;
         return `<button type="button" class="harbor-goal-chip ${selected ? 'is-selected' : ''}" data-goal-id="${escapeBriefHtml(t.id)}">${t.emoji} ${escapeBriefHtml(t.label)}</button>`;
       }).join('') + `
-        <button type="button" class="harbor-goal-chip is-custom-add" data-custom-treat="1">＋ My reward</button>`;
+        <button type="button" class="harbor-goal-chip is-custom-add" data-custom-treat="1">＋ My reward</button>` +
+        (picker.hasMore
+          ? `<button type="button" class="harbor-goal-chip is-custom-add" data-treats-more="1" aria-expanded="${harborTreatsExpanded ? 'true' : 'false'}">${harborTreatsExpanded ? 'Less' : `More · ${picker.moreCount}`}</button>`
+          : '');
 
       const passHtml = `
         <div class="harbor-day-action mb-2 ${passes ? 'is-ready' : ''}">
@@ -21674,6 +21709,11 @@
       panel.querySelector('[data-custom-treat]')?.addEventListener('click', () => {
         promptCustomHarborTreat();
       });
+      panel.querySelector('[data-treats-more]')?.addEventListener('click', () => {
+        harborTreatsExpanded = !harborTreatsExpanded;
+        harborTreatPickerOpen = true;
+        renderRewardBank();
+      });
       panel.querySelectorAll('[data-goal-id]').forEach(btn => {
         btn.onclick = () => {
           const treat = getHarborTreatById(btn.dataset.goalId);
@@ -21683,6 +21723,7 @@
           else {
             setHarborGoalTreat(treat);
             harborTreatPickerOpen = false;
+            harborTreatsExpanded = false;
           }
           renderRewardBank();
         };
