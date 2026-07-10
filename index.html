@@ -1221,10 +1221,14 @@
       flex-shrink: 0;
       position: relative;
       z-index: 50; /* keep header menu above weather banner / chrome */
-      border-bottom: 1px solid rgb(var(--harbor-border));
-      background: linear-gradient(180deg, rgba(18, 46, 44, 0.94) 0%, rgba(10, 31, 30, 0.9) 100%);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgb(var(--harbor-border) / 0.85);
+      background: linear-gradient(
+        180deg,
+        rgb(var(--harbor-surface) / 0.92) 0%,
+        rgb(var(--harbor-bg) / 0.88) 100%
+      );
+      backdrop-filter: blur(16px) saturate(1.15);
+      -webkit-backdrop-filter: blur(16px) saturate(1.15);
     }
 
     .site-header-inner {
@@ -1253,10 +1257,10 @@
     }
 
     .site-brand-name {
-      font-family: 'Space Grotesk', 'Inter', sans-serif;
-      font-size: 1.35rem;
+      font-family: var(--harbor-font-display);
+      font-size: 1.3rem;
       font-weight: 600;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.025em;
     }
 
     .site-brand-tag {
@@ -1399,8 +1403,8 @@
       max-width: none;
       box-sizing: border-box;
       background: rgb(var(--harbor-surface));
-      border: 1px solid rgb(var(--harbor-border));
-      border-radius: 1rem;
+      border: 1px solid rgb(var(--harbor-border) / 0.9);
+      border-radius: var(--harbor-radius-lg);
       padding: 0.75rem 0.85rem 0.7rem;
       box-shadow: var(--harbor-shadow-sm);
     }
@@ -1432,12 +1436,18 @@
 
     .energy-btn {
       --energy-accent: rgb(var(--harbor-primary));
-      min-height: 3.45rem;
-      font-size: 0.88rem;
+      min-height: 3.35rem;
+      font-family: var(--harbor-font);
+      font-size: 0.86rem;
       font-weight: 700;
-      letter-spacing: -0.01em;
-      border-radius: 1.05rem;
+      letter-spacing: -0.015em;
+      border-radius: var(--harbor-radius-md);
       position: relative;
+      transition:
+        transform var(--harbor-duration-fast) var(--harbor-ease-out),
+        box-shadow var(--harbor-duration) ease,
+        border-color var(--harbor-duration) ease,
+        background var(--harbor-duration) ease;
       overflow: hidden;
       transition:
         background-color 0.22s ease,
