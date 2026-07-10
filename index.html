@@ -724,6 +724,152 @@
       margin-top: 0.65rem;
     }
 
+    /* Connect Calendar wizard */
+    .cal-connect-provider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      text-align: left;
+      padding: 0.85rem 0.95rem;
+      border-radius: 1rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised) / 0.85);
+      color: rgb(var(--harbor-text));
+      transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+    }
+    .cal-connect-provider:active {
+      transform: scale(0.985);
+    }
+    .cal-connect-provider:hover,
+    .cal-connect-provider:focus-visible {
+      border-color: rgba(47, 155, 140, 0.45);
+      outline: none;
+    }
+    .cal-connect-provider-icon {
+      width: 2.4rem;
+      height: 2.4rem;
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.05rem;
+    }
+    .cal-connect-provider-icon.is-google {
+      background: rgba(66, 133, 244, 0.12);
+      color: #4285f4;
+    }
+    .cal-connect-provider-icon.is-apple {
+      background: rgba(0, 0, 0, 0.06);
+      color: rgb(var(--harbor-text));
+    }
+    html[data-theme="dark"] .cal-connect-provider-icon.is-apple {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f5f5f7;
+    }
+    .cal-connect-provider-icon.is-file {
+      background: rgba(47, 155, 140, 0.12);
+      color: rgb(var(--harbor-primary));
+    }
+    .cal-connect-provider-icon.is-other {
+      background: rgba(100, 116, 139, 0.12);
+      color: rgb(var(--harbor-muted));
+    }
+    .cal-connect-provider-title {
+      font-size: 0.9rem;
+      font-weight: 650;
+      letter-spacing: -0.015em;
+    }
+    .cal-connect-provider-desc {
+      font-size: 0.7rem;
+      color: rgb(var(--harbor-muted));
+      line-height: 1.35;
+      margin-top: 0.1rem;
+    }
+    .cal-connect-provider-chev {
+      margin-left: auto;
+      color: rgb(var(--harbor-muted));
+      font-size: 0.7rem;
+      opacity: 0.75;
+    }
+    .cal-connect-step {
+      display: flex;
+      gap: 0.65rem;
+      align-items: flex-start;
+      margin-bottom: 0.55rem;
+    }
+    .cal-connect-step-num {
+      width: 1.35rem;
+      height: 1.35rem;
+      border-radius: 999px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      background: rgba(47, 155, 140, 0.14);
+      color: rgb(var(--harbor-primary));
+      margin-top: 0.05rem;
+    }
+    .cal-connect-step-text {
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: rgb(var(--harbor-text));
+    }
+    .cal-connect-step-text strong {
+      font-weight: 650;
+    }
+    .cal-connect-path-card {
+      border: 1px solid rgb(var(--harbor-border));
+      border-radius: 1rem;
+      padding: 0.85rem 0.9rem;
+      background: rgb(var(--harbor-raised) / 0.65);
+      margin-bottom: 0.65rem;
+    }
+    .cal-connect-path-card.is-recommended {
+      border-color: rgba(47, 155, 140, 0.35);
+      background: linear-gradient(155deg, rgba(47, 155, 140, 0.08), rgb(var(--harbor-raised) / 0.5));
+    }
+    .cal-connect-path-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-primary));
+      margin-bottom: 0.2rem;
+    }
+    .cal-connect-path-title {
+      font-size: 0.88rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-text));
+      margin-bottom: 0.55rem;
+    }
+    .cal-connect-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: rgb(var(--harbor-muted));
+      margin-bottom: 0.65rem;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+    }
+    .cal-connect-back:hover {
+      color: rgb(var(--harbor-text));
+    }
+    .cal-connect-helper-prompt {
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      background: rgba(245, 158, 11, 0.08);
+      border-radius: 1rem;
+      padding: 0.85rem 0.9rem;
+      margin-top: 0.5rem;
+    }
+
     #tab-content-today {
       padding-top: 0.65rem;
     }
@@ -3245,6 +3391,22 @@
       color: rgb(var(--harbor-muted));
       padding: 0.35rem 0 0.1rem;
     }
+    button.settings-build-meta-btn {
+      display: block;
+      width: 100%;
+      appearance: none;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font: inherit;
+      color: rgb(var(--harbor-muted));
+      text-align: center;
+      padding: 0.45rem 0.25rem 0.15rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button.settings-build-meta-btn:active {
+      color: rgb(var(--harbor-primary-light));
+    }
 
     /* Subtle product version on Today — tappable → release notes */
     .app-version-foot {
@@ -3882,6 +4044,37 @@
       font-weight: 700;
       color: rgb(var(--harbor-primary-light));
       margin-top: 0.35rem;
+    }
+    .install-home-banner-link {
+      appearance: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.45rem;
+      padding: 0.28rem 0.55rem 0.28rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid rgba(47, 155, 140, 0.35);
+      background: rgba(47, 155, 140, 0.1);
+      color: rgb(var(--harbor-primary));
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html[data-theme="dark"] .install-home-banner-link {
+      color: rgb(var(--harbor-primary-light));
+      border-color: rgba(47, 155, 140, 0.4);
+      background: rgba(47, 155, 140, 0.14);
+    }
+    .install-home-banner-link:active {
+      opacity: 0.88;
+      transform: scale(0.98);
+    }
+    .install-home-banner-link i {
+      font-size: 0.58rem;
+      opacity: 0.9;
     }
     .install-home-banner-dismiss {
       appearance: none;
@@ -8170,7 +8363,11 @@
           <div class="flex-1 min-w-0">
             <div class="install-home-banner-title">Add Harbor to your Home Screen</div>
             <div id="install-home-how" class="install-home-banner-how"></div>
-            <div class="install-home-banner-cta">Tap for steps · works on iPhone, Pixel, Samsung &amp; more</div>
+            <div class="install-home-banner-cta">Works on iPhone, Pixel, Samsung &amp; more</div>
+            <button type="button" class="install-home-banner-link" id="install-home-tutorial-link"
+              onclick="event.stopImmediatePropagation(); openInstallHomeTutorialFromBanner()">
+              See tutorial <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </button>
           </div>
           <button type="button" class="install-home-banner-dismiss" onclick="dismissInstallHomeBanner()"
             aria-label="Dismiss">×</button>
@@ -8260,7 +8457,7 @@
                   </button>
                   <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showCalendarFeedModal()">
                     <i class="fa-solid fa-link" aria-hidden="true"></i>
-                    <span>Calendar URL</span>
+                    <span>Connect calendar</span>
                   </button>
                 </div>
               </div>
@@ -8489,7 +8686,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 203;
+    const HARBOR_BUILD_NUMBER = 206;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -8516,6 +8713,11 @@
         date: '2026-07-10',
         title: 'Life tools, Summary & subscriptions',
         highlights: [
+          'Connect Calendar wizard for Google and Apple — plain steps, not buried secret-URL jargon',
+          'When Google blocks a live link, Harbor offers one-tap network helper (or Import a file)',
+          'Mobile caution banner: See tutorial link opens full Add to Home Screen steps; also in Settings',
+          'Menu cleaned up: less redundancy, Settings first, What’s New / patch notes kept front and center',
+          'Settings streamlined for faster scanning — fewer sections, shorter copy',
           'Browser tab title: Harbor · One App For the Whole Day',
           'Biweekly chore tags say “Every 2 weeks” (not fortnight)',
           'Seasonal chores (heating tune-up, leaf raking, spring lawn care, etc.) only show when that season is near',
@@ -11138,7 +11340,7 @@
             <div class="privacy-block">
               <h4><i class="fa-solid fa-cloud text-harbor-primary-light mr-1.5"></i>What may leave your device</h4>
               <p><strong class="text-harbor-text">Weather:</strong> if you enable real location/weather, approximate location is sent to Open-Meteo (or similar) to fetch a forecast. City name in your profile is optional and only used on-device unless you use weather features that need it.</p>
-              <p><strong class="text-harbor-text">Calendar feeds:</strong> if you add an iCal (ICS) URL, Harbor fetches it <strong>directly</strong> from the calendar host (Google, Outlook, etc.). A <strong>third-party network helper</strong> is <strong>off by default</strong>. If you turn <strong>Allow network helper</strong> on in Settings, a helper may see the full feed URL (including secret tokens) only for that fetch. Prefer <strong>Import file</strong> (.ics) for maximum privacy — it never uses a helper. Feed URLs and events stay on this device afterward. You can remove a feed anytime.</p>
+              <p><strong class="text-harbor-text">Calendar:</strong> Connect Google or Apple with plain-language steps, or import a private <strong>.ics</strong> file. Live feed links are fetched from the calendar host when possible. A <strong>network helper</strong> is off by default and only used if you allow it (Harbor will ask when Google blocks a direct download). Prefer file import for maximum privacy. Feed links and events stay on this device; remove a feed anytime.</p>
               <p><strong class="text-harbor-text">Feedback:</strong> if you send feedback, the message and optional contact details go to the feedback provider you submit to (configured by the app). Do not include secrets you don’t want shared.</p>
             </div>
             <div class="privacy-block">
@@ -11151,7 +11353,7 @@
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-trash-can text-harbor-primary-light mr-1.5"></i>Your control</h4>
-              <p>Factory reset clears Harbor data from this browser. Clearing site data in browser settings does the same. Export a backup from <strong class="text-harbor-text">Menu → Share Profile</strong> anytime before resetting.</p>
+              <p>Factory reset clears Harbor data from this browser. Clearing site data in browser settings does the same. Export a backup from <strong class="text-harbor-text">Menu → Export backup</strong> anytime before resetting.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-scale-balanced text-harbor-primary-light mr-1.5"></i>Full policy</h4>
@@ -11195,7 +11397,7 @@
           </div>
           <div class="privacy-block mb-3">
             <h4>Support</h4>
-            <p>Use <strong class="text-harbor-text">Menu → Send Feedback</strong> for bugs and ideas. Do not include secret calendar links or passwords.</p>
+            <p>Use <strong class="text-harbor-text">Menu → Send feedback</strong> for bugs and ideas. Do not include secret calendar links or passwords.</p>
           </div>
           <div class="flex flex-col gap-2 mt-4">
             <button type="button" onclick="this.closest('.fixed').remove(); showReleaseNotes()"
@@ -15798,10 +16000,10 @@
           <i class="fa-solid fa-plus" aria-hidden="true"></i>Add event
         </button>
         <button type="button" class="chip-tool-btn" onclick="showCalendarFeedModal()">
-          Calendar URL
+          <i class="fa-solid fa-link" aria-hidden="true"></i>Connect calendar
         </button>
         <button type="button" class="chip-tool-btn" onclick="triggerCalendarICSImport()">
-          Import file
+          <i class="fa-solid fa-file-import" aria-hidden="true"></i>Import file
         </button>
       </div>`;
     }
@@ -22233,7 +22435,7 @@
       { id: 'life-bills', reason: 'The <strong>Life</strong> tab tracks bills with due dates and overdue states — Harbor can nudge you when something needs attention.', cta: 'View bills', action: 'life-bills' },
       { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> — your shopping list first, with optional dinner lists and <strong>Add</strong> / mic for staples.', cta: 'Open grocery', action: 'life-grocery' },
       { id: 'life-schedule', reason: '<strong>Life → Schedule</strong> holds appointments and events — block time so suggestions can find gaps between meetings.', cta: 'View schedule', action: 'life-schedule' },
-      { id: 'calendar-sync', reason: 'Add a calendar <strong>ICS URL</strong> in Settings (or Life → Schedule → Calendar URL). Harbor refreshes events when you open the app — file import works as a backup.', cta: 'Calendar settings', action: 'settings' },
+      { id: 'calendar-sync', reason: 'Connect Google or Apple from <strong>Life → Schedule → Connect calendar</strong> — short steps, or import a private file. Harbor refreshes live links when you open the app.', cta: 'Connect calendar', action: 'connect-calendar' },
       { id: 'work-schedule', reason: 'On <strong>Life → Schedule</strong>, open <strong>Manage → Work hours</strong> so free-time estimates match your real day.', cta: 'Open schedule', action: 'life-schedule' },
       { id: 'weather-strip', reason: 'The hourly weather strip at the top forecasts the next 24 hours — tap it for the full pane through tomorrow when planning yard work or a walk.', cta: 'See forecast', action: 'weather' },
       { id: 'outdoor-rain', reason: 'Outdoor tasks get rain warnings when afternoon showers are likely — reschedule before you get caught in the weather.', cta: 'Check weather', action: 'weather' },
@@ -23836,13 +24038,10 @@
       card.className = 'calendar-nudge-card';
       card.innerHTML = `
         <div class="nudge-title">Connect a calendar?</div>
-        <div class="nudge-body">Harbor can estimate free time and smart tips better with your schedule. Optional — Import File keeps everything on this device.</div>
+        <div class="nudge-body">Harbor works better with your real schedule. We’ll walk you through Google or Apple — or just import a file.</div>
         <div class="nudge-actions">
           <button type="button" class="chip-add-btn" onclick="dismissCalendarNudge(); switchTab('life'); switchLifePanel('schedule'); showCalendarFeedModal();">
-            Calendar URL
-          </button>
-          <button type="button" class="chip-tool-btn" onclick="dismissCalendarNudge(); triggerCalendarICSImport();">
-            Import file
+            Connect calendar
           </button>
           <button type="button" class="chip-tool-btn" onclick="dismissCalendarNudge();">
             Not now
@@ -24096,6 +24295,11 @@
         case 'life-schedule':
           switchTab('life');
           switchLifePanel('schedule');
+          break;
+        case 'connect-calendar':
+          switchTab('life');
+          switchLifePanel('schedule');
+          setTimeout(() => showCalendarFeedModal(), 120);
           break;
         case 'life-subs':
           switchTab('life');
@@ -27086,6 +27290,9 @@
 
     function getAppMenuContentHtml({ sheet = false } = {}) {
       const titleClass = sheet ? 'app-menu-sheet-title' : 'app-menu-dropdown-title';
+      const installHint = (typeof detectInstallDeviceProfile === 'function')
+        ? detectInstallDeviceProfile().menuHint
+        : 'Keep Harbor one tap away';
       const title = `
         <div class="${titleClass}">
           <div class="min-w-0">
@@ -27096,37 +27303,35 @@
         </div>`;
       return `
         ${title}
+        <div class="app-menu-group">
+          ${appMenuItemHtml('settings', 'fa-solid fa-sliders', 'Settings', 'Theme, calendar, and home screen', { primary: true })}
+        </div>
+
         <div class="app-menu-section-label">You</div>
         <div class="app-menu-group">
-          ${appMenuItemHtml('profile', 'fa-regular fa-user', 'Profile', 'Name, metrics, and home base')}
-          ${appMenuItemHtml('household', 'fa-solid fa-people-group', 'Household', 'Spouse, kids, and event colors')}
-          ${appMenuItemHtml('export-profile', 'fa-solid fa-file-export', 'Share Profile', 'Export a backup for a spouse or new device')}
-          ${appMenuItemHtml('import-profile', 'fa-solid fa-file-import', 'Import Profile', 'Load a Harbor backup file')}
-        </div>
-
-        <div class="app-menu-section-label">Preferences</div>
-        <div class="app-menu-group">
-          ${appMenuItemHtml('settings', 'fa-solid fa-sliders', 'Settings', 'Theme, features, and calendar', { primary: true })}
-        </div>
-
-        <div class="app-menu-section-label">Privacy &amp; legal</div>
-        <div class="app-menu-group">
-          ${appMenuItemHtml('privacy', 'fa-solid fa-shield-halved', 'Privacy', 'How your data stays on this device')}
-          ${appMenuItemHtml('privacy-full', 'fa-solid fa-file-lines', 'Full privacy policy', 'Store listing & legal detail')}
-          ${appMenuItemHtml('about', 'fa-solid fa-circle-info', 'About Harbor', `${getHarborVersionFull()} · support`)}
+          ${appMenuItemHtml('profile', 'fa-regular fa-user', 'Profile', 'Name and home base')}
+          ${appMenuItemHtml('household', 'fa-solid fa-people-group', 'Household', 'Family tags and event colors')}
+          ${appMenuItemHtml('export-profile', 'fa-solid fa-file-export', 'Export backup', 'Save a Harbor file to share or move')}
+          ${appMenuItemHtml('import-profile', 'fa-solid fa-file-import', 'Import backup', 'Restore from a Harbor file')}
         </div>
 
         <div class="app-menu-section-label">Help</div>
         <div class="app-menu-group">
-          ${appMenuItemHtml('whats-new', 'fa-solid fa-gift', "What's New", 'Release notes and recent changes')}
-          ${appMenuItemHtml('tutorial', 'fa-solid fa-graduation-cap', 'Quick tour', 'A short walkthrough of the basics')}
-          ${appMenuItemHtml('overview', 'fa-solid fa-book-open', 'Feature Overview', 'What each tab is for')}
-          ${appMenuItemHtml('install', 'fa-solid fa-mobile-screen-button', 'Add to Home Screen', (typeof detectInstallDeviceProfile === 'function' ? detectInstallDeviceProfile().menuHint : 'Keep Harbor one tap away'))}
-          ${appMenuItemHtml('feedback', 'fa-regular fa-comment-dots', 'Send Feedback', 'Share a bug or a kind idea')}
+          ${appMenuItemHtml('whats-new', 'fa-solid fa-gift', "What's New", 'Patch notes — what changed and what to check')}
+          ${appMenuItemHtml('tutorial', 'fa-solid fa-graduation-cap', 'Quick tour', 'A short walkthrough')}
+          ${appMenuItemHtml('overview', 'fa-solid fa-book-open', 'Feature guide', 'What each tab is for')}
+          ${appMenuItemHtml('install', 'fa-solid fa-mobile-screen-button', 'Add to Home Screen', installHint)}
+          ${appMenuItemHtml('feedback', 'fa-regular fa-comment-dots', 'Send feedback', 'Bugs, ideas, or kind notes')}
         </div>
+
+        <div class="app-menu-section-label">Privacy</div>
+        <div class="app-menu-group">
+          ${appMenuItemHtml('privacy', 'fa-solid fa-shield-halved', 'Privacy', 'Data stays on this device · full policy inside')}
+        </div>
+
         <div class="app-menu-version-foot">
-          <button type="button" onclick="runAppMenuAction('whats-new')" aria-label="Open release notes">
-            ${getHarborVersionMeta()}
+          <button type="button" onclick="runAppMenuAction('whats-new')" aria-label="Open patch notes">
+            ${getHarborVersionMeta()} · patch notes
           </button>
         </div>
       `;
@@ -27152,7 +27357,10 @@
       else if (action === 'whats-new') showReleaseNotes();
       else if (action === 'household') showHouseholdProfilesModal();
       else if (action === 'overview') showFeatureOverview();
-      else if (action === 'install') promptPwaInstall();
+      else if (action === 'install') {
+        if (typeof promptPwaInstall === 'function') promptPwaInstall({ forceGuide: true });
+        else if (typeof showAddToHomeScreenGuide === 'function') showAddToHomeScreenGuide();
+      }
       else if (action === 'tutorial') {
         startAppTutorial();
         showToast('Starting quick tour');
@@ -27168,39 +27376,39 @@
         <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1 flex items-center justify-between gap-2">
-            <span>Feature Overview</span>
+            <span>Feature guide</span>
             <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
-          <div class="text-[11px] text-harbor-muted mb-4 leading-snug">A simple map of Harbor — calm, clear, and jargon-free.</div>
+          <div class="text-[11px] text-harbor-muted mb-4 leading-snug">A simple map of Harbor — calm and clear.</div>
 
           <div class="space-y-3">
             <div class="privacy-block">
               <h4><i class="fa-solid fa-sun text-amber-300 mr-1.5"></i>Today</h4>
-              <p>Your gentle daily list. Tap the circle to complete a task. Set energy to Low, Medium, or High so harder jobs float lower when you’re tired. Smart Suggestions may offer a kind next step.</p>
+              <p>Your daily list. Complete tasks with a tap. Set energy to Low, Medium, or High so heavier work softens when you’re tired.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-calendar-days text-sky-400 mr-1.5"></i>Life → Schedule</h4>
-              <p>Your calendar for the day, week, or month. Add events, import a Google secret ICS link, or a .ics file. Color-code family events in Household (Settings).</p>
+              <p>Day and week view for events. Connect Google or Apple with guided steps, or import a private .ics file. Family colors live under Household.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-cart-shopping text-emerald-400 mr-1.5"></i>Life → Grocery, Bills, Subscriptions</h4>
-              <p><strong class="text-harbor-text">Groceries:</strong> your shopping list and dinner shortcuts. <strong class="text-harbor-text">Bills:</strong> due dates and paid status. <strong class="text-harbor-text">Subscriptions:</strong> Netflix, gym, and more — so you always know what you’re paying for.</p>
+              <p><strong class="text-harbor-text">Grocery:</strong> shopping list and meal shortcuts. <strong class="text-harbor-text">Bills:</strong> due dates and paid status. <strong class="text-harbor-text">Subscriptions:</strong> what renews and when.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-fire text-orange-400 mr-1.5"></i>Streaks</h4>
-              <p>Daily habits you want to keep. See your streak fires, <strong class="text-harbor-text">Projected Wins</strong> (Outlook), and <strong class="text-harbor-text">Harbor Day</strong> — earn a treat (Moment, Window, Full day, or Bank) when you hit your goal.</p>
+              <p>Habits that stick. Streak fires, projections, and <strong class="text-harbor-text">Harbor Day</strong> — claim a Moment, Window, Full day, or Bank a treat.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-book text-violet-300 mr-1.5"></i>Library</h4>
-              <p>Ready-made tasks and chores. Tap a card to add it to Today, or create your own under Personal.</p>
+              <p>Ready-made tasks and chores. Tap a card to add it to Today, or create your own.</p>
             </div>
             <div class="privacy-block">
-              <h4><i class="fa-solid fa-circle-dot text-harbor-primary-light mr-1.5"></i>Summary Button</h4>
-              <p>The glowing button at the <strong class="text-harbor-text">bottom right</strong>. Opens a soft day, week, or month digest — tasks, events, bills, and grocery — without digging through every tab.</p>
+              <h4><i class="fa-solid fa-circle-dot text-harbor-primary-light mr-1.5"></i>Summary</h4>
+              <p>The glowing button at the bottom right — a soft day, week, or month digest without hopping every tab.</p>
             </div>
             <div class="privacy-block">
-              <h4><i class="fa-solid fa-bars text-harbor-muted mr-1.5"></i>Menu (☰)</h4>
-              <p>Profile, Settings, import/export, Privacy, Quick tour, and this overview. Also how to keep Harbor on your Home Screen.</p>
+              <h4><i class="fa-solid fa-bars text-harbor-muted mr-1.5"></i>Menu</h4>
+              <p>Settings, backups, Privacy, patch notes, tour, and Add to Home Screen.</p>
             </div>
           </div>
 
@@ -27466,47 +27674,32 @@
           <div class="font-semibold text-lg mb-3 flex items-center justify-between gap-3">
             <div class="min-w-0">
               <div>Settings</div>
-              <div class="text-[10px] font-medium text-harbor-muted mt-0.5 tracking-wide">Look · Features · Calendar · Tools</div>
+              <div class="text-[10px] font-medium text-harbor-muted mt-0.5 tracking-wide">Quick controls · everything else is optional</div>
             </div>
             <button type="button" onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
 
           <div class="settings-sheet-body">
-            <!-- 1. Look & feel -->
-            <section class="settings-section" aria-labelledby="settings-sec-look">
+            <!-- Appearance + features (top switches) -->
+            <section class="settings-section" aria-labelledby="settings-sec-main">
               <div class="settings-section-head">
-                <h3 id="settings-sec-look" class="settings-section-title">1 · Look &amp; Feel</h3>
-              </div>
-              <div class="settings-card">
-                <div class="settings-card-block">
-                  <div class="settings-row">
-                    <div class="settings-row-copy">
-                      <div class="settings-row-title">Dark mode</div>
-                      <div class="settings-row-desc">Coastal night — deep lagoon teal with soft seafoam accents</div>
-                    </div>
-                    <button type="button" id="dark-mode-toggle" role="switch" aria-checked="${darkModeOn ? 'true' : 'false'}"
-                      aria-label="Dark mode" class="smart-suggestions-toggle harbor-switch">
-                      <span></span>
-                    </button>
-                  </div>
-                  <div class="theme-teal-hint mt-2">
-                    <span class="theme-teal-dot" aria-hidden="true"></span>
-                    <span>Off keeps <strong class="text-harbor-text">Harbor mint</strong> day mode — soft seafoam wash and mint cards.</span>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <!-- 2. Features -->
-            <section class="settings-section" aria-labelledby="settings-sec-features">
-              <div class="settings-section-head">
-                <h3 id="settings-sec-features" class="settings-section-title">2 · Features</h3>
+                <h3 id="settings-sec-main" class="settings-section-title">Preferences</h3>
               </div>
               <div class="settings-card">
                 <div class="settings-row">
                   <div class="settings-row-copy">
+                    <div class="settings-row-title">Dark mode</div>
+                    <div class="settings-row-desc">Coastal night. Off = Harbor mint day.</div>
+                  </div>
+                  <button type="button" id="dark-mode-toggle" role="switch" aria-checked="${darkModeOn ? 'true' : 'false'}"
+                    aria-label="Dark mode" class="smart-suggestions-toggle harbor-switch">
+                    <span></span>
+                  </button>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-row-copy">
                     <div class="settings-row-title">Smart Suggestions</div>
-                    <div class="settings-row-desc">Gentle tips on the Today tab</div>
+                    <div class="settings-row-desc">Gentle tips on Today</div>
                   </div>
                   <button type="button" id="smart-suggestions-toggle" role="switch" aria-checked="${smartSuggestionsOn ? 'true' : 'false'}"
                     aria-label="Smart Suggestions" class="smart-suggestions-toggle harbor-switch">
@@ -27516,141 +27709,108 @@
                 <div class="settings-row">
                   <div class="settings-row-copy">
                     <div class="settings-row-title">Harbor Day</div>
-                    <div class="settings-row-desc">Earn a treat — Moment, Window, Full day, or Bank for later</div>
+                    <div class="settings-row-desc">Earn treats for real progress</div>
                   </div>
                   <button type="button" id="cheat-fund-toggle" role="switch" aria-checked="${cheatFundOn ? 'true' : 'false'}"
                     aria-label="Harbor Day" class="smart-suggestions-toggle harbor-switch">
                     <span></span>
                   </button>
                 </div>
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Add to Home Screen</div>
+                    <div class="settings-row-desc">iPhone, Pixel, Samsung, and more</div>
+                  </div>
+                  <button type="button" class="settings-row-action" onclick="this.closest('.fixed')?.remove(); openInstallHomeTutorialFromBanner()">
+                    How to <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
+                  </button>
+                </div>
               </div>
             </section>
 
-            <!-- 3. Calendar -->
+            <!-- Calendar -->
             <section class="settings-section" aria-labelledby="settings-sec-cal">
               <div class="settings-section-head">
-                <h3 id="settings-sec-cal" class="settings-section-title">3 · Calendar</h3>
-                <span class="settings-section-note">ICS feeds</span>
+                <h3 id="settings-sec-cal" class="settings-section-title">Calendar</h3>
               </div>
               <div class="settings-card">
                 <div class="settings-card-block">
-                  <p class="settings-help-text mb-2">
-                    <strong>Recommended:</strong> <strong>Import File</strong> (.ics) — stays private on this device.
-                    Optional: paste a <strong>secret iCal URL</strong> (ends with <strong>basic.ics</strong>). Harbor fetches the host <strong>directly</strong> only — network helper is <strong>off</strong> unless you enable it below (Google often blocks direct browser access).
-                  </p>
-                  <div id="settings-calendar-feeds" class="space-y-2 mb-2"></div>
-                  <div class="flex gap-2 mb-2">
-                    <input id="settings-ics-url" type="url" placeholder="https://…/basic.ics"
-                      class="flex-1 min-w-0 bg-harbor-surface border border-harbor-border rounded-2xl px-3 py-2.5 text-xs text-harbor-text outline-none focus:border-harbor-primary"
-                      autocomplete="off" spellcheck="false">
-                    <button type="button" id="settings-ics-add" class="settings-btn-primary flex-shrink-0 px-3 rounded-2xl text-xs">
-                      Add
-                    </button>
-                  </div>
-                  <div class="settings-inline-actions">
-                    <button type="button" id="settings-ics-refresh" class="settings-btn-secondary">
-                      <i class="fa-solid fa-rotate mr-1 text-harbor-primary-light" aria-hidden="true"></i>Refresh Feeds
+                  <div class="settings-inline-actions mb-0">
+                    <button type="button" class="settings-btn-primary" onclick="this.closest('.fixed')?.remove(); showCalendarFeedModal()">
+                      <i class="fa-solid fa-link mr-1" aria-hidden="true"></i>Connect
                     </button>
                     <button type="button" class="settings-btn-secondary" onclick="triggerCalendarICSImport()">
-                      <i class="fa-solid fa-file-import mr-1 text-harbor-primary-light" aria-hidden="true"></i>Import File
+                      <i class="fa-solid fa-file-import mr-1 text-harbor-primary-light" aria-hidden="true"></i>Import file
+                    </button>
+                    <button type="button" id="settings-ics-refresh" class="settings-btn-secondary">
+                      <i class="fa-solid fa-rotate mr-1 text-harbor-primary-light" aria-hidden="true"></i>Refresh
                     </button>
                   </div>
+                  <p class="settings-help-text mt-2 mb-0">
+                    Guided Google &amp; Apple steps, or a private .ics file.
+                  </p>
+                  <div id="settings-calendar-feeds" class="space-y-2 mt-2"></div>
                 </div>
                 <div class="settings-row is-top">
                   <div class="settings-row-copy">
-                    <div class="settings-row-title">Allow Network Helper</div>
-                    <div class="settings-row-desc">
-                      <strong class="text-harbor-text">Off by default</strong> (v1 privacy lock). When on, a <strong class="text-harbor-text">third-party</strong> helper may see your feed URL so blocked ICS links can load. Prefer <strong>Import File</strong> if you want zero middleman.
-                    </div>
+                    <div class="settings-row-title">Network helper</div>
+                    <div class="settings-row-desc">Only if a live link is blocked (often Google). Off by default — Harbor will ask when needed.</div>
                   </div>
                   <button type="button" id="calendar-cors-helper-toggle" role="switch" aria-checked="${corsHelperOn ? 'true' : 'false'}"
-                    aria-label="Allow Network Helper" class="smart-suggestions-toggle harbor-switch mt-0.5">
+                    aria-label="Network helper" class="smart-suggestions-toggle harbor-switch mt-0.5">
                     <span></span>
                   </button>
-                </div>
-                <div class="settings-card-block">
-                  <p class="settings-help-text">
-                    Google: Settings → your calendar → <strong>Integrate calendar</strong> → <strong>Secret address in iCal format</strong> (…/<strong>basic.ics</strong>, not <span class="text-harbor-text">?cid=</span>). URLs are masked in the list; stored only on this device.
-                  </p>
                 </div>
               </div>
             </section>
 
-            <!-- 4. Tools -->
+            <!-- Tools -->
             <section class="settings-section" aria-labelledby="settings-sec-tools">
               <div class="settings-section-head">
-                <h3 id="settings-sec-tools" class="settings-section-title">4 · Tools</h3>
+                <h3 id="settings-sec-tools" class="settings-section-title">Tools</h3>
               </div>
               <div class="settings-card">
                 <div class="settings-card-block">
-                  <div class="settings-row-title mb-1">Preview Tools</div>
-                  <div class="settings-inline-actions is-stack">
+                  <div class="settings-inline-actions is-stack" style="margin-top:0">
                     <button type="button" class="settings-btn-secondary" onclick="simulateContextChange(); this.closest('.fixed').remove()">
-                      Simulate a Different Day (Weather + Schedule)
+                      Simulate a different day
                     </button>
                     <button type="button" class="settings-btn-secondary" onclick="fetchRealWeather(); this.closest('.fixed').remove()">
-                      Use Real Location + Weather
+                      Use real location &amp; weather
                     </button>
                   </div>
-                </div>
-                <div class="settings-card-block">
-                  <div class="settings-row-title">Voice Commands</div>
+                  <div class="settings-row-title mt-3 mb-0.5">Voice</div>
                   <div class="settings-row-desc">Chrome and Edge only</div>
                   <div class="settings-voice-examples">“add milk to grocery” · “mark rent paid” · “complete walk” · “set energy low”</div>
                 </div>
               </div>
             </section>
 
-            <!-- 5. Support -->
-            <section class="settings-section" aria-labelledby="settings-sec-support">
-              <div class="settings-section-head">
-                <h3 id="settings-sec-support" class="settings-section-title">5 · Support</h3>
-              </div>
-              <div class="settings-card">
-                <div class="settings-row">
-                  <div class="settings-row-copy">
-                    <div class="settings-row-title">Privacy</div>
-                    <div class="settings-row-desc">How your data is stored and used</div>
-                  </div>
-                  <button type="button" class="settings-row-action" onclick="this.closest('.fixed').remove(); showPrivacyStatement()">
-                    Read <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
-                  </button>
-                </div>
-                <div class="settings-row">
-                  <div class="settings-row-copy">
-                    <div class="settings-row-title">Send Feedback</div>
-                    <div class="settings-row-desc">Share a bug or a kind idea</div>
-                  </div>
-                  <button type="button" class="settings-row-action" onclick="this.closest('.fixed').remove(); showFeedbackModal()">
-                    Open <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <!-- 6. Danger zone -->
+            <!-- Reset only — Privacy / Feedback live in Menu -->
             <section class="settings-section" aria-labelledby="settings-sec-reset">
               <div class="settings-section-head">
-                <h3 id="settings-sec-reset" class="settings-section-title">6 · Reset</h3>
+                <h3 id="settings-sec-reset" class="settings-section-title">Reset</h3>
               </div>
               <div class="settings-card">
                 <div class="settings-card-block">
                   <button type="button" class="settings-danger-btn" onclick="confirmFactoryResetFromSettings(this)">
-                    Factory Reset
+                    Factory reset
                   </button>
-                  <p class="settings-help-text mt-2">
-                    Clears all tasks, Life data, streaks, and settings — then starts fresh, like a new install.
+                  <p class="settings-help-text mt-2 mb-0">
+                    Clears tasks, Life data, streaks, and settings on this device.
                   </p>
                 </div>
               </div>
             </section>
 
-            <div class="settings-build-meta">${getHarborVersionMeta()} · Coastal OS</div>
+            <button type="button" class="settings-build-meta settings-build-meta-btn" onclick="this.closest('.fixed')?.remove(); showReleaseNotes()" aria-label="Open patch notes">
+              ${getHarborVersionMeta()} · patch notes
+            </button>
           </div>
 
           <div class="settings-sheet-footer flex gap-x-3">
-            <button type="button" onclick="saveSettingsFromModal(this)" class="flex-1 bg-harbor-primary text-white active:bg-harbor-primary-light py-3 rounded-2xl font-semibold">Save</button>
-            <button type="button" onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="flex-1 bg-harbor-raised border border-harbor-border active:bg-harbor-border py-3 rounded-2xl font-medium text-harbor-text">Close</button>
+            <button type="button" onclick="saveSettingsFromModal(this)" class="flex-1 bg-harbor-primary text-white active:bg-harbor-primary-light py-3 rounded-2xl font-semibold">Done</button>
+            <button type="button" onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="flex-1 bg-harbor-raised border border-harbor-border active:bg-harbor-border py-3 rounded-2xl font-medium text-harbor-text">Cancel</button>
           </div>
         </div>
       `;
@@ -27682,18 +27842,6 @@
         );
       });
       renderCalendarFeedsList(modal.querySelector('#settings-calendar-feeds'));
-      modal.querySelector('#settings-ics-add')?.addEventListener('click', async () => {
-        const input = modal.querySelector('#settings-ics-url');
-        const url = (input?.value || '').trim();
-        if (!url) {
-          showToast('Paste an iCal URL first', 'warn');
-          return;
-        }
-        const ok = await addCalendarFeedFromUrl(url);
-        if (ok && input) input.value = '';
-        renderCalendarFeedsList(modal.querySelector('#settings-calendar-feeds'));
-        updateCalendarStatusUI();
-      });
       modal.querySelector('#settings-ics-refresh')?.addEventListener('click', async () => {
         await refreshAllCalendarFeeds({ silent: false });
         renderCalendarFeedsList(modal.querySelector('#settings-calendar-feeds'));
@@ -28560,7 +28708,7 @@
             || /\/calendar\/embed/i.test(u.pathname)
             || (!looksLikeIcalFeed && /calendar\.google\.com/i.test(host));
           if (looksLikePage && !looksLikeIcalFeed) {
-            return 'That’s a Google Calendar page link, not an iCal feed. Open Settings → your calendar → Integrate calendar → copy “Secret address in iCal format” (URL ends with basic.ics).';
+            return 'That’s the regular Google Calendar page — Harbor needs the private feed link instead. Tap Google Calendar in Connect Calendar for short steps (or Import a file).';
           }
         }
 
@@ -28569,7 +28717,7 @@
         }
         // Soft hint for other hosts without .ics
         if (!/\.ics(\?|#|$)/i.test(href)) {
-          return 'This doesn’t look like an iCal feed URL. It should usually end with .ics (Google: Settings → Integrate calendar → Secret address).';
+          return 'This doesn’t look like a calendar feed link (usually ends with .ics). Try Connect Calendar for Google or Apple steps, or Import a file.';
         }
       } catch {
         return 'Enter a valid http(s) or webcal calendar URL';
@@ -28737,8 +28885,78 @@
       return count;
     }
 
+    function isLikelyGoogleCalendarUrl(url) {
+      try {
+        return /google\.com|googleusercontent\.com/i.test(new URL(url).hostname);
+      } catch {
+        return /google/i.test(String(url || ''));
+      }
+    }
+
+    /**
+     * When the browser blocks a direct ICS fetch (common with Google), offer a
+     * one-tap helper instead of sending people hunting through Settings.
+     */
+    function offerCalendarNetworkHelper(feed, options = {}) {
+      return new Promise((resolve) => {
+        const existing = document.getElementById('cal-helper-offer-modal');
+        if (existing) existing.remove();
+
+        const label = feed?.label || 'your calendar';
+        const isGoogle = isLikelyGoogleCalendarUrl(feed?.url);
+        const modal = document.createElement('div');
+        modal.id = 'cal-helper-offer-modal';
+        modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[70]';
+        modal.innerHTML = `
+          <div class="absolute inset-0" data-cal-helper-cancel></div>
+          <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm">
+            <div class="modal-grab-pill" aria-hidden="true"></div>
+            <div class="font-semibold text-lg mb-1">${isGoogle ? 'Google blocked the direct link' : 'Calendar link needs a helper'}</div>
+            <p class="text-xs text-harbor-muted leading-relaxed mb-3">
+              ${isGoogle
+                ? 'Browsers often block Google Calendar downloads. Harbor can use a <strong class="text-harbor-text">temporary network helper</strong> so your events load — or you can import a file instead (fully private).'
+                : 'This calendar host blocked a direct download. A temporary network helper can fetch it, or you can import a file instead.'}
+            </p>
+            <div class="cal-connect-helper-prompt mb-3">
+              <p class="text-[11px] text-harbor-text leading-relaxed">
+                The helper may briefly see your calendar link (including any secret token) only while loading.
+                Events stay on this device. Turn the helper off anytime in Settings.
+              </p>
+            </div>
+            <button type="button" data-cal-helper-enable class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm mb-2">
+              Use helper &amp; sync ${escapeBriefHtml(label)}
+            </button>
+            <button type="button" data-cal-helper-import class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-medium text-harbor-text mb-2">
+              Import a file instead
+            </button>
+            <button type="button" data-cal-helper-cancel class="w-full py-2.5 text-xs text-harbor-muted font-medium">Not now</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+
+        const finish = (result) => {
+          modal.remove();
+          resolve(result);
+        };
+        modal.querySelectorAll('[data-cal-helper-cancel]').forEach(el => {
+          el.addEventListener('click', () => finish({ action: 'cancel' }));
+        });
+        modal.querySelector('[data-cal-helper-import]')?.addEventListener('click', () => {
+          finish({ action: 'import' });
+          triggerCalendarICSImport();
+        });
+        modal.querySelector('[data-cal-helper-enable]')?.addEventListener('click', async () => {
+          state.settings.calendarAllowCorsHelper = true;
+          saveState();
+          showToast('Network helper on — syncing…');
+          finish({ action: 'enable' });
+        });
+      });
+    }
+
     async function syncCalendarFeed(feed, options = {}) {
       const silent = options.silent === true;
+      const allowHelperOffer = options.allowHelperOffer !== false && !silent;
       try {
         const text = await fetchIcsText(feed.url);
         if (!/BEGIN:VCALENDAR/i.test(text)) {
@@ -28764,18 +28982,31 @@
         console.error('Calendar feed sync failed', err?.code || err?.message || err);
         const msg = err?.message || 'Sync failed';
         const helperOff = !isCalendarCorsHelperAllowed();
-        if (err?.code === 'DIRECT_FETCH_BLOCKED' || /DIRECT_FETCH_BLOCKED/i.test(msg)) {
+        const blockedDirect = err?.code === 'DIRECT_FETCH_BLOCKED' || /DIRECT_FETCH_BLOCKED/i.test(msg);
+
+        // Friendly one-tap path instead of "go dig in Settings"
+        if (blockedDirect && helperOff && allowHelperOffer) {
+          feed.lastError = 'Browser blocked direct download — use helper or import a file.';
+          saveState();
+          const choice = await offerCalendarNetworkHelper(feed, options);
+          if (choice?.action === 'enable') {
+            return syncCalendarFeed(feed, { ...options, allowHelperOffer: false });
+          }
+          return { ok: false, error: feed.lastError, offeredHelper: true };
+        }
+
+        if (blockedDirect) {
           feed.lastError = helperOff
-            ? 'Browser blocked direct calendar download. Turn on Allow network helper in Settings, or Import a .ics file.'
+            ? 'Browser blocked direct download. Tap Connect Calendar → Use helper, or Import a file.'
             : 'Browser blocked direct calendar download.';
         } else if (err?.code === 'FEED_FETCH_FAILED' || /not an iCalendar|FEED_FETCH/i.test(msg)) {
           feed.lastError = helperOff
-            ? 'Could not load this ICS feed. Enable network helper or Import a .ics file.'
-            : 'Could not load this ICS feed (host or network helper). Try again or Import a .ics file.';
+            ? 'Could not load this calendar link. Try Import a file, or turn on network helper when prompted.'
+            : 'Could not load this calendar link. Try again or Import a file.';
         } else if (/failed to fetch|networkerror|load failed|TypeError/i.test(msg)) {
           feed.lastError = helperOff
-            ? 'Could not reach feed. Enable Allow network helper in Settings, or Import a .ics file.'
-            : 'Could not reach feed (network). Check the URL or try file import.';
+            ? 'Could not reach the calendar. Check the link, Import a file, or use the network helper when offered.'
+            : 'Could not reach the calendar (network). Check the link or Import a file.';
         } else {
           feed.lastError = msg;
         }
@@ -28783,7 +29014,7 @@
         if (!silent) {
           const guide = getIcsUrlGuidance(feed.url);
           showToast(
-            guide || feed.lastError || `Couldn’t sync ${feed.label}. Try file import.`,
+            guide || feed.lastError || `Couldn’t sync ${feed.label}. Try Import a file.`,
             'warn'
           );
         }
@@ -28807,9 +29038,15 @@
         if (isGooglePage) {
           showToast(
             getIcsUrlGuidance(rawUrl)
-              || 'Use Google’s Secret address in iCal format (…/basic.ics), not the browser calendar link.',
+              || 'That’s the Google Calendar page, not the private feed link. Open Connect Calendar → Google for short steps.',
             'warn'
           );
+          // Nudge into the guided Google flow when they paste the wrong link type
+          setTimeout(() => {
+            if (!document.getElementById('connect-calendar-modal')) {
+              showCalendarFeedModal({ view: 'google' });
+            }
+          }, 400);
           return false;
         }
       } catch { /* continue */ }
@@ -28931,49 +29168,330 @@
       });
     }
 
-    function showCalendarFeedModal() {
+    function calConnectStepsHtml(steps) {
+      return steps.map((text, i) => `
+        <div class="cal-connect-step">
+          <span class="cal-connect-step-num">${i + 1}</span>
+          <div class="cal-connect-step-text">${text}</div>
+        </div>
+      `).join('');
+    }
+
+    function showCalendarFeedModal(options = {}) {
+      const startView = options.view || 'home';
+      document.getElementById('connect-calendar-modal')?.remove();
+
       const modal = document.createElement('div');
+      modal.id = 'connect-calendar-modal';
       modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[60]';
       modal.innerHTML = `
-        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[85vh] overflow-y-auto">
+        <div class="absolute inset-0" data-cal-connect-close></div>
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
           <div class="modal-grab-pill" aria-hidden="true"></div>
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <div class="font-semibold text-lg">Calendar URL</div>
-              <div class="text-[11px] text-harbor-muted mt-0.5">Secret ICS · direct fetch · helper off unless enabled</div>
+          <div class="flex items-center justify-between mb-1">
+            <div class="min-w-0">
+              <div class="font-semibold text-lg" id="cal-connect-title">Connect Calendar</div>
+              <div class="text-[11px] text-harbor-muted mt-0.5" id="cal-connect-subtitle">Google, Apple, or a simple file — no jargon hunt.</div>
             </div>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
+            <button type="button" data-cal-connect-close class="modal-close-chip" aria-label="Close">Close</button>
           </div>
-          <div id="schedule-calendar-feeds" class="space-y-2 mb-3"></div>
-          <label class="block text-[10px] text-harbor-muted mb-1">iCal / webcal URL</label>
-          <input id="schedule-ics-url" type="url" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
-            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 text-xs mb-2 outline-none focus:border-harbor-primary text-harbor-text"
-            autocomplete="off" spellcheck="false">
-          <div class="flex gap-2 mb-2">
-            <button type="button" id="schedule-ics-add" class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">Add & sync</button>
-            <button type="button" id="schedule-ics-refresh" class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-medium">Refresh all</button>
-          </div>
-          <p class="text-[10px] text-harbor-muted mb-2 leading-relaxed">Feed URLs stay on this device and are masked in the list. Harbor fetches the calendar host <strong class="text-harbor-text">directly</strong> only. Google often blocks that in browsers — use <strong class="text-harbor-text">Import file</strong>, or turn on <strong class="text-harbor-text">Allow network helper</strong> in Settings (third party may see the URL).</p>
-          <button type="button" onclick="this.closest('.fixed').remove(); showScheduleImportModal()"
-            class="w-full py-2.5 rounded-2xl text-xs text-harbor-primary-light font-medium">Or import an .ics file instead</button>
+          <div id="cal-connect-body" class="mt-3"></div>
         </div>
       `;
       document.body.appendChild(modal);
-      const list = modal.querySelector('#schedule-calendar-feeds');
-      renderCalendarFeedsList(list);
-      modal.querySelector('#schedule-ics-add').onclick = async () => {
-        const input = modal.querySelector('#schedule-ics-url');
-        const ok = await addCalendarFeedFromUrl(input?.value || '');
-        if (ok && input) input.value = '';
-        renderCalendarFeedsList(list);
-        updateCalendarStatusUI();
+
+      const body = modal.querySelector('#cal-connect-body');
+      const titleEl = modal.querySelector('#cal-connect-title');
+      const subEl = modal.querySelector('#cal-connect-subtitle');
+
+      modal.querySelectorAll('[data-cal-connect-close]').forEach(el => {
+        el.addEventListener('click', () => modal.remove());
+      });
+
+      const wireUrlAdd = (inputSel, listSel, labelHint) => {
+        const input = modal.querySelector(inputSel);
+        const list = modal.querySelector(listSel);
+        const addBtn = modal.querySelector('[data-cal-url-add]');
+        const refreshBtn = modal.querySelector('[data-cal-url-refresh]');
+        if (list) renderCalendarFeedsList(list);
+        if (addBtn) {
+          addBtn.onclick = async () => {
+            const raw = input?.value || '';
+            if (!String(raw).trim()) {
+              showToast('Paste your calendar link first', 'warn');
+              return;
+            }
+            addBtn.disabled = true;
+            addBtn.textContent = 'Syncing…';
+            try {
+              const ok = await addCalendarFeedFromUrl(raw, { label: labelHint });
+              if (ok && input) input.value = '';
+              if (list) renderCalendarFeedsList(list);
+              updateCalendarStatusUI();
+              // If connected successfully, soft celebrate on home
+              if (ok && getCalendarFeeds().length) {
+                /* stay on this view so they see the feed list */
+              }
+            } finally {
+              addBtn.disabled = false;
+              addBtn.textContent = 'Add & sync';
+            }
+          };
+        }
+        if (refreshBtn) {
+          refreshBtn.onclick = async () => {
+            await refreshAllCalendarFeeds({ silent: false });
+            if (list) renderCalendarFeedsList(list);
+            updateCalendarStatusUI();
+          };
+        }
       };
-      modal.querySelector('#schedule-ics-refresh').onclick = async () => {
-        await refreshAllCalendarFeeds({ silent: false });
-        renderCalendarFeedsList(list);
-        updateCalendarStatusUI();
+
+      const renderHome = () => {
+        titleEl.textContent = 'Connect Calendar';
+        subEl.textContent = 'Pick what you use — Harbor walks you through it.';
+        const feeds = getCalendarFeeds();
+        const imported = state.settings.importedCalendarEvents?.length || 0;
+        body.innerHTML = `
+          ${feeds.length || imported ? `
+            <div class="mb-3">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1.5">Already connected</div>
+              <div id="schedule-calendar-feeds" class="space-y-2"></div>
+              ${feeds.length ? `
+                <button type="button" data-cal-url-refresh class="mt-2 w-full py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-medium text-harbor-text">
+                  <i class="fa-solid fa-rotate mr-1 text-harbor-primary-light" aria-hidden="true"></i>Refresh calendars
+                </button>
+              ` : ''}
+            </div>
+          ` : ''}
+          <div class="space-y-2">
+            <button type="button" class="cal-connect-provider" data-cal-view="google">
+              <span class="cal-connect-provider-icon is-google" aria-hidden="true"><i class="fa-brands fa-google"></i></span>
+              <span class="min-w-0">
+                <span class="cal-connect-provider-title block">Google Calendar</span>
+                <span class="cal-connect-provider-desc block">Most common — short steps, then paste or import</span>
+              </span>
+              <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="cal-connect-provider" data-cal-view="apple">
+              <span class="cal-connect-provider-icon is-apple" aria-hidden="true"><i class="fa-brands fa-apple"></i></span>
+              <span class="min-w-0">
+                <span class="cal-connect-provider-title block">Apple Calendar</span>
+                <span class="cal-connect-provider-desc block">iPhone, iPad, or Mac — file is easiest</span>
+              </span>
+              <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="cal-connect-provider" data-cal-view="file">
+              <span class="cal-connect-provider-icon is-file" aria-hidden="true"><i class="fa-solid fa-file-import"></i></span>
+              <span class="min-w-0">
+                <span class="cal-connect-provider-title block">Import a file</span>
+                <span class="cal-connect-provider-desc block">Private &amp; simple — works with any calendar app</span>
+              </span>
+              <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="cal-connect-provider" data-cal-view="other">
+              <span class="cal-connect-provider-icon is-other" aria-hidden="true"><i class="fa-solid fa-link"></i></span>
+              <span class="min-w-0">
+                <span class="cal-connect-provider-title block">I already have a link</span>
+                <span class="cal-connect-provider-desc block">Outlook, work calendar, or any .ics / webcal URL</span>
+              </span>
+              <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
+            </button>
+          </div>
+          <p class="text-[10px] text-harbor-muted mt-3 leading-relaxed">
+            Your calendar data stays on this device. Harbor never stores passwords — only a feed link you choose, or a one-time file.
+          </p>
+        `;
+        if (feeds.length || imported) {
+          renderCalendarFeedsList(modal.querySelector('#schedule-calendar-feeds'));
+          const refreshBtn = modal.querySelector('[data-cal-url-refresh]');
+          if (refreshBtn) {
+            refreshBtn.onclick = async () => {
+              await refreshAllCalendarFeeds({ silent: false });
+              renderCalendarFeedsList(modal.querySelector('#schedule-calendar-feeds'));
+              updateCalendarStatusUI();
+            };
+          }
+        }
+        body.querySelectorAll('[data-cal-view]').forEach(btn => {
+          btn.addEventListener('click', () => renderView(btn.dataset.calView));
+        });
       };
+
+      const renderGoogle = () => {
+        titleEl.textContent = 'Google Calendar';
+        subEl.textContent = 'Two easy paths — pick one.';
+        body.innerHTML = `
+          <button type="button" class="cal-connect-back" data-cal-back><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All calendars</button>
+
+          <div class="cal-connect-path-card is-recommended">
+            <div class="cal-connect-path-label">Recommended · Private</div>
+            <div class="cal-connect-path-title">Import a calendar file</div>
+            ${calConnectStepsHtml([
+              'On a <strong>computer</strong>, open <strong>Google Calendar</strong> in your browser.',
+              'Click the <strong>gear</strong> → <strong>Settings</strong>.',
+              'Left side: <strong>Import &amp; export</strong> → <strong>Export</strong>.',
+              'Unzip the download, then tap below and choose a <strong>.ics</strong> file.'
+            ])}
+            <button type="button" data-cal-import-file class="w-full mt-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">
+              Choose .ics file
+            </button>
+          </div>
+
+          <div class="cal-connect-path-card">
+            <div class="cal-connect-path-label">Keeps updating</div>
+            <div class="cal-connect-path-title">Paste your private calendar link</div>
+            ${calConnectStepsHtml([
+              'On a <strong>computer</strong>, open Google Calendar → <strong>gear</strong> → <strong>Settings</strong>.',
+              'On the left, click the <strong>name of your calendar</strong> (not “Settings for my calendars”).',
+              'Scroll to <strong>Integrate calendar</strong>.',
+              'Copy <strong>Secret address in iCal format</strong> — it should end with <strong>basic.ics</strong>.'
+            ])}
+            <a href="https://calendar.google.com/calendar/u/0/r/settings" target="_blank" rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-harbor-primary-light mb-2">
+              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i> Open Google Calendar settings
+            </a>
+            <label class="block text-[10px] text-harbor-muted mb-1">Paste the secret link here</label>
+            <input id="schedule-ics-url" type="url" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
+              class="w-full bg-harbor-surface border border-harbor-border rounded-2xl px-3 py-2.5 text-xs mb-2 outline-none focus:border-harbor-primary text-harbor-text"
+              autocomplete="off" spellcheck="false">
+            <button type="button" data-cal-url-add class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-semibold text-harbor-text">
+              Add &amp; sync
+            </button>
+            <p class="text-[10px] text-harbor-muted mt-2 leading-relaxed">
+              Don’t paste the normal calendar.google.com page link — that won’t work. If Google blocks the download, Harbor will offer a one-tap helper.
+            </p>
+            <div id="schedule-calendar-feeds" class="space-y-2 mt-3"></div>
+          </div>
+        `;
+        body.querySelector('[data-cal-back]')?.addEventListener('click', renderHome);
+        body.querySelector('[data-cal-import-file]')?.addEventListener('click', () => {
+          modal.remove();
+          triggerCalendarICSImport();
+        });
+        wireUrlAdd('#schedule-ics-url', '#schedule-calendar-feeds', 'Google Calendar');
+      };
+
+      const renderApple = () => {
+        titleEl.textContent = 'Apple Calendar';
+        subEl.textContent = 'File import is the simple, private path.';
+        body.innerHTML = `
+          <button type="button" class="cal-connect-back" data-cal-back><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All calendars</button>
+
+          <div class="cal-connect-path-card is-recommended">
+            <div class="cal-connect-path-label">Recommended · Private</div>
+            <div class="cal-connect-path-title">Import a calendar file</div>
+            ${calConnectStepsHtml([
+              '<strong>On Mac:</strong> open the Calendar app → <strong>File</strong> → <strong>Export</strong> → <strong>Export…</strong> → save the <strong>.ics</strong> file.',
+              '<strong>On iPhone:</strong> easiest if you already have a <strong>.ics</strong> in Files (from Mac, email, or AirDrop).',
+              'Come back here and choose that file.'
+            ])}
+            <button type="button" data-cal-import-file class="w-full mt-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">
+              Choose .ics file
+            </button>
+          </div>
+
+          <div class="cal-connect-path-card">
+            <div class="cal-connect-path-label">Optional · Auto-update</div>
+            <div class="cal-connect-path-title">Public calendar link (iCloud)</div>
+            ${calConnectStepsHtml([
+              'Open the <strong>Calendar</strong> app → tap <strong>Calendars</strong> at the bottom.',
+              'Tap the <strong>ⓘ</strong> next to the calendar you want.',
+              'Turn on <strong>Public Calendar</strong>, then <strong>Share Link</strong> → Copy.',
+              'Paste the link below.'
+            ])}
+            <p class="text-[10px] text-amber-700/90 dark:text-amber-300/90 leading-relaxed mb-2">
+              Public means <strong>anyone with the link</strong> can see that calendar. Prefer Import a file for private schedules.
+            </p>
+            <label class="block text-[10px] text-harbor-muted mb-1">Paste the webcal / https link</label>
+            <input id="schedule-ics-url" type="url" placeholder="webcal://… or https://…"
+              class="w-full bg-harbor-surface border border-harbor-border rounded-2xl px-3 py-2.5 text-xs mb-2 outline-none focus:border-harbor-primary text-harbor-text"
+              autocomplete="off" spellcheck="false">
+            <button type="button" data-cal-url-add class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-semibold text-harbor-text">
+              Add &amp; sync
+            </button>
+            <div id="schedule-calendar-feeds" class="space-y-2 mt-3"></div>
+          </div>
+        `;
+        body.querySelector('[data-cal-back]')?.addEventListener('click', renderHome);
+        body.querySelector('[data-cal-import-file]')?.addEventListener('click', () => {
+          modal.remove();
+          triggerCalendarICSImport();
+        });
+        wireUrlAdd('#schedule-ics-url', '#schedule-calendar-feeds', 'Apple Calendar');
+      };
+
+      const renderFile = () => {
+        titleEl.textContent = 'Import a file';
+        subEl.textContent = 'Private, one-time import from any calendar app.';
+        body.innerHTML = `
+          <button type="button" class="cal-connect-back" data-cal-back><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All calendars</button>
+          <div class="cal-connect-path-card is-recommended">
+            <div class="cal-connect-path-title mb-2">Choose an iCalendar file</div>
+            <p class="text-xs text-harbor-muted leading-relaxed mb-3">
+              Look for a file ending in <strong class="text-harbor-text">.ics</strong> (sometimes inside a zip from Google).
+              Events load onto this device only — no account login required.
+            </p>
+            <button type="button" data-cal-import-file class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm mb-2">
+              Choose .ics file
+            </button>
+            <button type="button" data-cal-import-advanced class="w-full py-2.5 rounded-2xl text-xs font-medium text-harbor-primary-light">
+              Paste file contents or CSV instead
+            </button>
+          </div>
+          <p class="text-[10px] text-harbor-muted leading-relaxed">
+            Tip: after a big schedule change in Google or Apple, export again and re-import to refresh Harbor.
+          </p>
+        `;
+        body.querySelector('[data-cal-back]')?.addEventListener('click', renderHome);
+        body.querySelector('[data-cal-import-file]')?.addEventListener('click', () => {
+          modal.remove();
+          triggerCalendarICSImport();
+        });
+        body.querySelector('[data-cal-import-advanced]')?.addEventListener('click', () => {
+          modal.remove();
+          showScheduleImportModal();
+        });
+      };
+
+      const renderOther = () => {
+        titleEl.textContent = 'Paste a calendar link';
+        subEl.textContent = 'Outlook, work calendars, or any .ics / webcal URL.';
+        body.innerHTML = `
+          <button type="button" class="cal-connect-back" data-cal-back><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All calendars</button>
+          <div id="schedule-calendar-feeds" class="space-y-2 mb-3"></div>
+          <label class="block text-[10px] text-harbor-muted mb-1">Calendar feed URL</label>
+          <input id="schedule-ics-url" type="url" placeholder="https://…/calendar.ics or webcal://…"
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 text-xs mb-2 outline-none focus:border-harbor-primary text-harbor-text"
+            autocomplete="off" spellcheck="false">
+          <div class="flex gap-2 mb-2">
+            <button type="button" data-cal-url-add class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">Add &amp; sync</button>
+            <button type="button" data-cal-url-refresh class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-medium">Refresh</button>
+          </div>
+          <p class="text-[10px] text-harbor-muted leading-relaxed mb-2">
+            Links stay on this device and are masked in the list. If the host blocks browsers, Harbor will offer a one-tap network helper — or use Import a file.
+          </p>
+          <button type="button" data-cal-import-file class="w-full py-2.5 rounded-2xl text-xs text-harbor-primary-light font-medium">
+            Prefer a file? Import .ics instead
+          </button>
+        `;
+        body.querySelector('[data-cal-back]')?.addEventListener('click', renderHome);
+        body.querySelector('[data-cal-import-file]')?.addEventListener('click', () => {
+          modal.remove();
+          triggerCalendarICSImport();
+        });
+        wireUrlAdd('#schedule-ics-url', '#schedule-calendar-feeds');
+      };
+
+      const renderView = (view) => {
+        if (view === 'google') return renderGoogle();
+        if (view === 'apple') return renderApple();
+        if (view === 'file') return renderFile();
+        if (view === 'other') return renderOther();
+        return renderHome();
+      };
+
+      renderView(startView);
     }
 
     function triggerCalendarICSImport() {
@@ -29352,6 +29870,16 @@
       return true;
     }
 
+    /** Open the full Add to Home Screen tutorial (steps + one-tap when available). */
+    function openInstallHomeTutorialFromBanner() {
+      if (typeof promptPwaInstall === 'function') {
+        // forceGuide so they always get the step-by-step tutorial, not only the system sheet
+        promptPwaInstall({ forceGuide: true });
+      } else if (typeof showAddToHomeScreenGuide === 'function') {
+        showAddToHomeScreenGuide();
+      }
+    }
+
     function updateInstallHomeBanner() {
       const el = document.getElementById('install-home-banner');
       if (!el) return;
@@ -29371,15 +29899,15 @@
       if (show) {
         const how = document.getElementById('install-home-how');
         if (how) how.textContent = getInstallHomeHowText();
-        // Whole banner opens the simple guide (except dismiss)
+        // Whole banner opens the tutorial (except dismiss / dedicated link)
         if (el.dataset.igWired !== '1') {
           el.dataset.igWired = '1';
           el.style.cursor = 'pointer';
           el.addEventListener('click', (e) => {
             if (e.target.closest('.install-home-banner-dismiss')) return;
+            if (e.target.closest('#install-home-tutorial-link, .install-home-banner-link')) return;
             e.preventDefault();
-            if (typeof promptPwaInstall === 'function') promptPwaInstall();
-            else if (typeof showAddToHomeScreenGuide === 'function') showAddToHomeScreenGuide();
+            openInstallHomeTutorialFromBanner();
           });
         }
       }
@@ -29392,7 +29920,7 @@
       const el = document.getElementById('install-home-banner');
       if (el) el.classList.add('hidden');
       if (typeof showToast === 'function') {
-        showToast('Tip hidden — find steps anytime in Menu → Add to Home Screen');
+        showToast('Tip hidden — find the tutorial anytime in Settings or Menu → Add to Home Screen');
       }
     }
 
