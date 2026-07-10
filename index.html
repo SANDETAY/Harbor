@@ -5538,6 +5538,48 @@
       opacity: 0.95;
     }
 
+    /* Mobile-readable text: prefer wrap over hard ellipsis where meaning matters */
+    #smart-text {
+      white-space: normal !important;
+      overflow: visible;
+      text-overflow: unset;
+      display: block;
+      line-height: 1.35;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .library-task-title {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      hyphens: auto;
+    }
+    #task-list .habit-card .font-medium,
+    #task-list .swipe-row-content .font-medium {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .sub-tracked-card .font-medium,
+    .sub-tracked-card .text-\[11px\] {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+      word-break: break-word;
+    }
+    .life-nav-tab {
+      white-space: normal;
+      line-height: 1.15;
+      text-overflow: unset;
+      overflow: visible;
+      padding-left: 0.15rem;
+      padding-right: 0.15rem;
+    }
+    .schedule-free-pill,
+    .schedule-free-pill--hero {
+      white-space: normal;
+      max-width: 100%;
+      line-height: 1.25;
+    }
+
     html[data-theme="dark"] .header-date-line {
       color: rgba(244, 245, 245, 0.92);
       font-weight: 600;
@@ -5622,10 +5664,75 @@
 
       .header-date-line {
         font-size: 0.82rem;
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
       }
 
       .header-task-line {
         font-size: 0.68rem;
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.25;
+      }
+
+      /* Habit rows: don't let side actions crush titles on narrow phones */
+      #task-list .habit-card,
+      #task-list .swipe-row-content.habit-card {
+        flex-wrap: wrap;
+        row-gap: 0.35rem;
+      }
+      #task-list .habit-card > .text-right,
+      #task-list .swipe-row-content.habit-card > .text-right {
+        flex: 1 1 100%;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.35rem;
+        text-align: right;
+      }
+      #task-list .habit-card > .flex-1.min-w-0,
+      #task-list .swipe-row-content.habit-card > .flex-1.min-w-0 {
+        flex: 1 1 calc(100% - 3.5rem);
+        min-width: 0;
+      }
+
+      .panel-toolbar-cluster {
+        max-width: 100%;
+      }
+
+      .chip-tool-btn,
+      .chip-add-btn {
+        max-width: 100%;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.2;
+      }
+
+      .library-task-inner {
+        gap: 0.55rem;
+      }
+      .library-task-icon {
+        width: 2.2rem;
+        height: 2.2rem;
+        font-size: 1.05rem;
+      }
+      .library-task-actions {
+        max-width: 42%;
+      }
+      .library-task-actions .lib-add-btn,
+      .library-task-actions .lib-pro-btn,
+      .library-task-actions .lib-goto-pro-btn {
+        white-space: normal;
+        text-align: center;
+        line-height: 1.2;
       }
 
       button.summary-orb,
@@ -5708,14 +5815,21 @@
       }
 
       #smart-banner {
-        padding: 0.42rem 0.65rem !important;
+        padding: 0.5rem 0.7rem !important;
         margin-top: 0.3rem !important;
         margin-bottom: 0.22rem !important;
-        border-radius: 0.75rem !important;
+        border-radius: 0.85rem !important;
+      }
+
+      #smart-banner > .flex {
+        align-items: flex-start !important;
+        gap: 0.45rem !important;
+        flex-wrap: nowrap;
       }
 
       #smart-banner .fa-lightbulb {
-        font-size: 1rem !important;
+        font-size: 0.85rem !important;
+        margin-top: 0.15rem;
       }
 
       #smart-banner-label {
@@ -5724,12 +5838,16 @@
       }
 
       #smart-text {
-        font-size: 0.88rem !important;
-        line-height: 1.35 !important;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
+        font-size: 0.8rem !important;
+        line-height: 1.4 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 4;
         -webkit-box-orient: vertical;
-        overflow: hidden;
+        overflow: hidden !important;
+        white-space: normal !important;
+        text-overflow: ellipsis;
+        flex: 1 1 auto;
+        min-width: 0;
       }
 
       #smart-banner .mt-2,
@@ -5739,6 +5857,23 @@
 
       #smart-cta {
         font-size: 0.68rem !important;
+        margin-top: 0.1rem;
+        white-space: nowrap;
+        align-self: flex-start;
+      }
+
+      #smart-banner button[aria-label="Dismiss"] {
+        margin-top: 0.05rem;
+        align-self: flex-start;
+      }
+
+      #header-weather-summary {
+        white-space: normal !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden !important;
+        text-overflow: ellipsis;
       }
 
       #smart-banner .text-\[11px\].text-harbor-primary-light\/70,
@@ -6276,7 +6411,7 @@
         class="mx-5 smart-banner-quiet suggestion-card cursor-pointer active:opacity-90 hidden relative">
         <div class="flex items-center gap-x-2 min-w-0">
           <i class="fa-solid fa-lightbulb text-harbor-primary-light text-xs opacity-80 flex-shrink-0" aria-hidden="true"></i>
-          <div id="smart-text" class="text-[12px] leading-snug text-harbor-text font-medium truncate flex-1 min-w-0"></div>
+          <div id="smart-text" class="text-[12px] leading-snug text-harbor-text font-medium flex-1 min-w-0"></div>
           <div id="smart-cta" class="text-[10px] font-semibold text-harbor-primary-light flex-shrink-0">Open</div>
           <button type="button" onclick="event.stopImmediatePropagation(); dismissSuggestion()"
             class="text-harbor-muted hover:text-harbor-text text-xs px-1 flex-shrink-0" aria-label="Dismiss">×</button>
@@ -6550,7 +6685,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v154';
+    const HARBOR_BUILD = 'v155';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -12042,9 +12177,10 @@
       const weekAhead = cache.weekAhead || [];
       if (weekAhead.length === 0) return null;
 
-      const candidates = getFlexibleTasks().filter(h =>
-        (h.est_minutes || 0) >= 20 || /mow|lawn|yard|fertiliz|outdoor|pool/i.test(h.title)
-      );
+      const candidates = getFlexibleTasks().filter(h => {
+        const tags = classifyTask(h);
+        return (h.est_minutes || 0) >= 20 || tags.outdoor || tags.long || tags.hard;
+      });
       const task = candidates.sort((a, b) => (b.est_minutes || 0) - (a.est_minutes || 0))[0];
       if (!task) return null;
 
@@ -12080,8 +12216,17 @@
 
     function findTaskForGap(gap, tasks) {
       if (!gap || !tasks.length) return null;
-      const sorted = [...tasks].sort((a, b) => getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy));
-      return sorted.find(h => (h.est_minutes || 10) <= gap.minutes) || sorted[0];
+      const budget = gap.minutes || 0;
+      const sorted = [...tasks].sort((a, b) => {
+        const pa = getHabitContextPenalty(a, 'day');
+        const pb = getHabitContextPenalty(b, 'day');
+        if (pa !== pb) return pa - pb;
+        return getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy);
+      });
+      // Prefer tasks that fit the window; slightly favor ones that use most of the gap
+      const fitting = sorted.filter(h => (h.est_minutes || 10) <= budget);
+      if (!fitting.length) return sorted.find(h => (h.est_minutes || 10) <= budget + 10) || null;
+      return fitting.sort((a, b) => (b.est_minutes || 10) - (a.est_minutes || 10))[0];
     }
 
     function getUpcomingEvents(limit) {
@@ -14657,7 +14802,7 @@
       const today = todayStr();
       const streak = computeCurrentStreak(habit.id);
       const isRecurring = isNonDailyRecurring(habit);
-      const isOutdoor = /outdoor|park|pool|mow|lawn|fertiliz|yard|walk|fresh air/i.test(habit.title);
+      const isOutdoor = isOutdoorTask(habit);
       const weatherIcon = isOutdoor ? getWeatherIcon(state.settings.mockWeather) : '';
       const syncedStats = (state.healthSyncs && state.healthSyncs[habit.id] && state.healthSyncs[habit.id][today]) ? state.healthSyncs[habit.id][today] : null;
       const difficultyLabel = getDifficultyLabel(habit.difficulty);
@@ -15613,31 +15758,39 @@
     function getHabitContextPenalty(habit, mode) {
       if (!habit) return 0;
       let penalty = 0;
-      const title = habit.title || '';
-      const outdoor = typeof isOutdoorTask === 'function' ? isOutdoorTask(habit) : false;
-      const physical = outdoor || /\b(walk|run|jog|gym|workout|exercise|swim|bike|hike)\b/i.test(title);
-      const noisy = /mow|vacuum|drill|leaf blower|pressure wash|hammer|power wash|weed.?whack/i.test(title);
-      const quietIndoor = /\b(read|stretch|meditat|journal|plan|bill|email|organize|budget|pay|review|stretch|mobility)\b/i.test(title);
+      const tags = classifyTask(habit);
       const mins = getNowMinutes();
       const rainRisk = typeof getAfternoonRainRisk === 'function' ? getAfternoonRainRisk() : null;
 
       if (mode === 'day') {
         if (isQuietHours(mins)) {
-          if (outdoor || physical) penalty += 90;
-          if (noisy) penalty += 50;
-          if (quietIndoor) penalty -= 25; // prefer calm indoor tasks at night
+          if (tags.outdoor || tags.physical) penalty += 90;
+          if (tags.noisy) penalty += 50;
+          if (tags.errand) penalty += 40;
+          if (tags.calm || tags.focus || tags.admin || tags.financial) penalty -= 25;
         } else if (isLateEvening(mins)) {
-          if (outdoor || noisy) penalty += 35;
-          if (physical && !outdoor) penalty += 15;
-        } else if (!isDaylightHours(mins) && outdoor) {
-          // Early evening dusk — outdoor still ok but slightly demoted
+          if (tags.outdoor || tags.noisy) penalty += 35;
+          if (tags.physical && !tags.outdoor) penalty += 15;
+          if (tags.long && tags.hard) penalty += 12;
+          if (tags.calm || tags.social) penalty -= 10;
+        } else if (!isDaylightHours(mins) && tags.outdoor) {
           penalty += 10;
+        }
+        // Morning focus for hard/long work when energy is high
+        if (mins >= 6 * 60 && mins < 11 * 60 && currentEnergy >= 2 && (tags.hard || tags.long)) {
+          penalty -= 8;
         }
       }
 
-      if (outdoor && rainRisk?.risky) {
+      if (tags.outdoor && rainRisk?.risky) {
         penalty += mode === 'day' ? 55 : 20;
       }
+
+      // Energy mismatch (works for custom freeform tasks too)
+      const diff = habit.difficulty || 2;
+      if (currentEnergy === 1 && diff >= 3) penalty += 30;
+      if (currentEnergy === 1 && tags.long) penalty += 12;
+      if (currentEnergy === 3 && diff <= 1 && !tags.calm) penalty += 4;
 
       return penalty;
     }
@@ -17103,30 +17256,126 @@
       });
     }
 
+    /**
+     * Classify any user task (preset or freeform) for smart suggestions.
+     * Uses title, category, library section, metrics, duration, and difficulty.
+     */
+    function classifyTask(habit) {
+      if (!habit) {
+        return {
+          outdoor: false, physical: false, noisy: false, calm: false, social: false,
+          financial: false, focus: false, errand: false, health: false, home: false,
+          meal: false, vehicle: false, admin: false, short: true, long: false, hard: false
+        };
+      }
+      const title = String(habit.title || '');
+      const t = title.toLowerCase();
+      const cat = String(habit.category || '').toLowerCase();
+      const section = String(habit.librarySection || '').toLowerCase();
+      const unit = String(habit.unit || '').toLowerCase();
+      const note = String(habit.note || '').toLowerCase();
+      const blob = `${t} ${cat} ${section} ${note}`;
+      const mins = Math.max(0, Number(habit.est_minutes) || 0);
+      const diff = habit.difficulty || 2;
+
+      // Outdoor: walks (word-boundary), yard, park, weather-exposed work
+      let outdoor = false;
+      if (/\bwalkways?\b|\bsidewalks?\b/i.test(title) && !/mow|lawn|edge|yard|garden/i.test(title)) {
+        outdoor = false;
+      } else if (titleLooksLikeStepWalk(title)) {
+        outdoor = true;
+      } else if (cat === 'yard' || /yard|lawn|outdoor/.test(section)) {
+        outdoor = true;
+      } else if (/\b(outdoor|outside|fresh air|park|trail|hike|garden|lawn|mow|yard|pool|patio|deck|gutter|driveway|sidewalk edge|pressure wash|snow|rake|hedge|mulch|weed|aerat|overseed|pre-?emergent|post-?emergent|fertiliz|sprinkler|leaf)\b/i.test(blob)) {
+        outdoor = true;
+      } else if (/\bwash\b.*\b(car|truck|vehicle)\b|\b(car|truck|vehicle)\b.*\bwash\b/i.test(t)) {
+        outdoor = true;
+      }
+
+      const physical = outdoor
+        || typeof isPhysicalActivity === 'function' && isPhysicalActivity(habit)
+        || unit === 'steps' || unit === 'miles' || unit === 'mi' || unit === 'km'
+        || /\b(workout|exercise|gym|run|jog|swim|bike|cycle|yoga|lift|weights?|cardio|stretch|mobility|push-?ups?|plank)\b/i.test(blob)
+        || cat === 'health' && mins >= 15;
+
+      const noisy = /\b(mow|vacuum|drill|leaf.?blower|pressure.?wash|hammer|power.?wash|weed.?whack|sander|chainsaw|blender|lawn.?mower)\b/i.test(blob);
+
+      const calm = /\b(read|reading|meditat|journal|stretch|breath|pray|reflect|gratitude|mobility|yoga|tea|coffee|rest|nap|unwind|wind.?down|mindful)\b/i.test(blob)
+        || cat === 'mind' || /mind|growth/.test(section)
+        || unit === 'pages' || unit === 'page';
+
+      const social = /\b(call|text|message|visit|friend|family|mom|dad|parent|spouse|partner|date night|check.?in|thank.?you|catch up|hang out)\b/i.test(blob)
+        || cat === 'social' || /social|people/.test(section);
+
+      const financial = /\b(bill|pay|budget|bank|invoice|tax|subscription|renew|money|save|saving|invest|expense|rent|mortgage|insurance)\b/i.test(blob)
+        || unit === 'dollars' || unit === 'usd' || cat === 'personal' && /\b(bill|pay|budget)\b/i.test(t);
+
+      const focus = /\b(study|learn|write|draft|code|plan|review|deep work|focus|homework|practice|lesson|course|email|inbox|report|project)\b/i.test(blob)
+        || mins >= 25 && diff >= 2 && !outdoor && !noisy;
+
+      const errand = /\b(errand|pickup|pick up|drop.?off|post office|pharmacy|grocery|store|shop|return|dry.?clean|package|mail)\b/i.test(blob);
+
+      const health = cat === 'health' || /health|wellness/.test(section)
+        || /\b(vitamin|supplement|floss|dentist|doctor|physical|meds?|medication|skin check|eye exam|therapy|hydrate|water|sleep)\b/i.test(blob);
+
+      const home = cat === 'home' || /home|interior|maintenance|chore/.test(section)
+        || /\b(clean|laundry|dishes|dust|mop|organize|declutter|bed|sheet|bathroom|kitchen|fridge|oven|filter|trash|recycle|chore)\b/i.test(blob);
+
+      const meal = /\b(meal|cook|recipe|prep|dinner|lunch|breakfast|grocery|food|bake)\b/i.test(blob);
+
+      const vehicle = cat === 'car' || /car|auto|vehicle/.test(section)
+        || /\b(car|truck|tire|oil change|brake|wiper|vehicle|battery|cabin air)\b/i.test(blob);
+
+      const admin = financial || /\b(schedule|book|appoint|renew|cancel|form|paperwork|renewal|rsvp|confirm)\b/i.test(blob);
+
+      return {
+        outdoor: !!outdoor,
+        physical: !!physical,
+        noisy: !!noisy,
+        calm: !!calm,
+        social: !!social,
+        financial: !!financial,
+        focus: !!focus,
+        errand: !!errand,
+        health: !!health,
+        home: !!home,
+        meal: !!meal,
+        vehicle: !!vehicle,
+        admin: !!admin,
+        short: mins > 0 ? mins <= 15 : diff <= 1,
+        long: mins >= 40 || diff >= 3,
+        hard: diff >= 3
+      };
+    }
+
     function isOutdoorTask(habit) {
-      const title = habit?.title || '';
-      // Real outdoor activities — not "walkways" edge/path work alone without yard context
-      if (/\bwalkways?\b/i.test(title) && !/mow|lawn|edge|yard|garden/i.test(title)) return false;
-      if (titleLooksLikeStepWalk(title) && !/dog|pet|puppy/i.test(title)) return true;
-      return /outdoor|park|pool|mow|lawn|fertiliz|yard|fresh air|garden|wash car|pressure wash|aerat|overseed|pre-emergent|edge lawn/i.test(title);
+      return !!classifyTask(habit).outdoor;
     }
 
     function formatTaskForSuggestion(title) {
-      const lower = (title || '').trim().toLowerCase();
+      const raw = String(title || '').trim().replace(/\s+/g, ' ');
+      if (!raw) return 'this task';
+      const lower = raw.toLowerCase();
       const phraseMap = [
         [/mow.*lawn|lawn.*mow|^mow\s/i, 'mowing the lawn'],
         [/fertiliz/i, 'fertilizing the lawn'],
         [/aerat.*lawn|lawn.*aerat/i, 'aerating the lawn'],
         [/take out.*trash|trash.*recycl/i, 'taking out the trash'],
         [/call.*(mom|family|dad|parent)/i, 'calling family'],
-        [/walk|fresh air|get outside/i, 'getting outside for a walk'],
+        [/\bwalk\b|fresh air|get outside/i, 'a walk outside'],
         [/meal prep/i, 'meal prepping'],
-        [/wash.*car/i, 'washing the car'],
+        [/wash.*car|car.*wash/i, 'washing the car'],
         [/clean.*gutter|gutter/i, 'cleaning the gutters'],
         [/hvac|air filter/i, 'changing the HVAC filter'],
         [/water.*plant|houseplant/i, 'watering houseplants'],
         [/make.*bed/i, 'making the bed'],
-        [/bedsheet|bed sheet/i, 'changing the bedsheets']
+        [/bedsheet|bed sheet/i, 'changing the bedsheets'],
+        [/meditat/i, 'a short meditation'],
+        [/stretch|mobility/i, 'stretching'],
+        [/journal|reflect/i, 'journaling'],
+        [/\bread\b/i, 'reading'],
+        [/pay.*(bill|rent)|bill.*pay/i, 'paying that bill'],
+        [/grocery|shop/i, 'grocery shopping']
       ];
       for (const [re, phrase] of phraseMap) {
         if (re.test(lower)) return phrase;
@@ -17135,19 +17384,50 @@
         mow: 'mowing', call: 'calling', wash: 'washing', clean: 'cleaning',
         change: 'changing', take: 'taking', make: 'making', water: 'watering',
         rake: 'raking', trim: 'trimming', vacuum: 'vacuuming', scrub: 'scrubbing',
-        fertilize: 'fertilizing', fertiliz: 'fertilizing', walk: 'walking', run: 'running'
+        fertilize: 'fertilizing', fertiliz: 'fertilizing', walk: 'walking', run: 'running',
+        finish: 'finishing', write: 'writing', review: 'reviewing', plan: 'planning',
+        book: 'booking', schedule: 'scheduling', send: 'sending', fix: 'fixing',
+        organize: 'organizing', pack: 'packing', prep: 'prepping', cook: 'cooking',
+        pay: 'paying', check: 'checking', update: 'updating', sort: 'sorting',
+        fold: 'folding', empty: 'emptying', refill: 'refilling',
+        stretch: 'stretching', practice: 'practicing', study: 'studying', learn: 'learning',
+        draft: 'drafting', file: 'filing', cancel: 'canceling', renew: 'renewing'
       };
-      const words = lower.split(/\s+/);
+      // Strip leading "to " / "the "
+      const cleaned = lower.replace(/^(to|the|my|our)\s+/i, '');
+      const words = cleaned.split(/\s+/).filter(Boolean);
+      if (!words.length) return 'this task';
       if (gerunds[words[0]]) {
         const rest = words.slice(1).join(' ');
-        return rest ? `${gerunds[words[0]]} ${rest}` : gerunds[words[0]];
+        const phrase = rest ? `${gerunds[words[0]]} ${rest}` : gerunds[words[0]];
+        return phrase.length > 48 ? phrase.slice(0, 45).trim() + '…' : phrase;
       }
-      return lower;
+      // Noun-ish titles: "laundry" → "laundry"; long custom titles stay quoted-ish short
+      if (words.length <= 4) return cleaned.length > 48 ? cleaned.slice(0, 45).trim() + '…' : cleaned;
+      return cleaned.length > 42 ? cleaned.slice(0, 39).trim() + '…' : cleaned;
     }
 
     function capitalizeSuggestion(text) {
       if (!text) return '';
       return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    function suggestionKey(s) {
+      if (!s) return '';
+      if (s.habit?.id) return `habit:${s.habit.id}:${s.type || ''}`;
+      if (s.bill?.id) return `bill:${s.bill.id}`;
+      if (s.tipId) return `tip:${s.tipId}`;
+      return `${s.type || ''}:${(s.reason || '').slice(0, 40)}`;
+    }
+
+    // Session-only: rotate away from recently dismissed / acted suggestions
+    let smartSuggestionHistory = [];
+    function rememberSmartSuggestion(key) {
+      if (!key) return;
+      smartSuggestionHistory = [key, ...smartSuggestionHistory.filter(k => k !== key)].slice(0, 12);
+    }
+    function wasRecentSmartSuggestion(key) {
+      return key && smartSuggestionHistory.includes(key);
     }
 
     function getAfternoonRainRisk() {
@@ -17198,10 +17478,10 @@
       { id: 'quick-add', reason: 'Tap <strong>Add</strong> on Today (or the mic) to spin up a task — set type, difficulty, and schedule before you save.', cta: 'Add a task', action: 'quick-add' },
       { id: 'schedule-interval', reason: 'When adding a task, <strong>Adjust schedule</strong> supports daily, weekly, biweekly, monthly, and custom intervals — chores can repeat on your cadence.', cta: 'Add scheduled task', action: 'quick-add' },
       { id: 'life-bills', reason: 'The <strong>Life</strong> tab tracks bills with due dates and overdue states — Harbor can nudge you when something needs attention.', cta: 'View bills', action: 'life-bills' },
-      { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> with themed dinners and a master list — tap <strong>Add</strong> or the mic to stock items, then check them off while shopping.', cta: 'Open grocery', action: 'life-grocery' },
+      { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> — your shopping list first, with optional dinner lists and <strong>Add</strong> / mic for staples.', cta: 'Open grocery', action: 'life-grocery' },
       { id: 'life-schedule', reason: '<strong>Life → Schedule</strong> holds appointments and events — block time so suggestions can find gaps between meetings.', cta: 'View schedule', action: 'life-schedule' },
       { id: 'calendar-sync', reason: 'Add a calendar <strong>ICS URL</strong> in Settings (or Life → Schedule → Calendar URL). Harbor refreshes events when you open the app — file import works as a backup.', cta: 'Calendar settings', action: 'settings' },
-      { id: 'work-schedule', reason: 'On <strong>Life → Schedule</strong>, tap the small <strong>Hours</strong> chip (clock) so free-time estimates match your real day.', cta: 'Open schedule', action: 'life-schedule' },
+      { id: 'work-schedule', reason: 'On <strong>Life → Schedule</strong>, open <strong>Manage → Work hours</strong> so free-time estimates match your real day.', cta: 'Open schedule', action: 'life-schedule' },
       { id: 'weather-strip', reason: 'The hourly weather strip at the top forecasts the next 24 hours — tap it for the full pane through tomorrow when planning yard work or a walk.', cta: 'See forecast', action: 'weather' },
       { id: 'outdoor-rain', reason: 'Outdoor tasks get rain warnings when afternoon showers are likely — reschedule before you get caught in the weather.', cta: 'Check weather', action: 'weather' },
       { id: 'streaks-log', reason: '<strong>Streaks</strong> logs completions over time — tap a habit to see history and how consistent you have been.', cta: 'View streaks', action: 'streaks' },
@@ -17225,9 +17505,30 @@
 
     function isRelevantContextualSuggestion(suggestion) {
       if (!suggestion) return false;
-      if (suggestion.type === 'bill' || suggestion.type === 'weather' || suggestion.type === 'reschedule') return true;
+      if (['bill', 'weather', 'reschedule', 'grocery', 'schedule', 'streak', 'event', 'progress'].includes(suggestion.type)) {
+        return suggestion.score >= 55;
+      }
       if (suggestion.type === 'habit' && suggestion.score >= SMART_SUGGESTION_RELEVANCE_MIN) return true;
       return false;
+    }
+
+    function recencyPenalty(key) {
+      const idx = smartSuggestionHistory.indexOf(key);
+      if (idx < 0) return 0;
+      return 32 + idx * 10;
+    }
+
+    function scoreWithRecency(suggestion) {
+      if (!suggestion) return -1;
+      let s = suggestion.score || 0;
+      s -= recencyPenalty(suggestionKey(suggestion));
+      // Prefer unfinished multi-log tasks
+      if (suggestion.habit) {
+        const need = getTimesPerDay(suggestion.habit);
+        const done = countCompletionsOnDate(suggestion.habit.id, todayStr());
+        if (need > 1 && done > 0 && done < need) s += 12;
+      }
+      return s;
     }
 
     function buildAppTipSuggestion() {
@@ -17264,10 +17565,18 @@
     function pickBestContextualSuggestion(candidates) {
       if (!candidates.length) return buildAppTipSuggestion();
 
-      candidates.sort((a, b) => b.score - a.score);
+      candidates.sort((a, b) => scoreWithRecency(b) - scoreWithRecency(a));
       const best = candidates.find(isRelevantContextualSuggestion);
       if (!best) return buildAppTipSuggestion();
       return best;
+    }
+
+    function pickBestTaskForTags(pool, predicate) {
+      if (!pool?.length) return null;
+      const ranked = rankHabitsForNow(pool.filter(h => {
+        try { return predicate(classifyTask(h), h); } catch (_) { return false; }
+      }));
+      return ranked[0] || null;
     }
 
     function getManualBillFootnote(activeBills) {
@@ -17347,20 +17656,21 @@
       const gapPool = energyPool.length ? energyPool : dueSensible;
       const quietNow = isQuietHours();
       const rainRisk = getAfternoonRainRisk();
+      const nowMins = getNowMinutes();
 
-      // Quiet hours: explicit indoor nudge so we never fall through to outdoor tips
+      // --- Quiet hours: calm / indoor only ---
       if (quietNow) {
         const when = quietHoursWord();
-        const calm = dueSensible.find(h =>
-          /\b(read|stretch|meditat|journal|plan|bill|email|organize|budget|pay|review|mobility)\b/i.test(h.title || '')
-        ) || dueSensible[0] || energyPool[0];
+        const calm = pickBestTaskForTags(dueSensible, tags => tags.calm || tags.focus || tags.admin || tags.financial || tags.health)
+          || pickBestTaskForTags(dueSensible, tags => !tags.outdoor && !tags.noisy && !tags.physical)
+          || dueSensible[0] || energyPool[0];
         if (calm) {
           candidates.push({
             score: 97,
             type: 'habit',
             habit: calm,
-            cta: 'Tap to start',
-            reason: `It's ${when} — ${formatTaskForSuggestion(calm.title)} is a better fit right now.`
+            cta: 'Start',
+            reason: `It's ${when} — try <strong>${escapeBriefHtml(calm.title)}</strong>. Outdoor and noisy stuff can wait.`
           });
         } else {
           candidates.push({
@@ -17373,123 +17683,199 @@
         }
       }
 
-      // Rain warning for outdoor chores due today (skip at night — already covered)
+      // --- Rain risk on outdoor tasks ---
       if (!quietNow && rainRisk?.risky) {
-        const outdoorDue = due.filter(h => isOutdoorTask(h));
+        const outdoorDue = due.filter(h => classifyTask(h).outdoor);
         outdoorDue.forEach(task => {
-          const phrase = formatTaskForSuggestion(task.title);
           candidates.push({
             score: 99,
             type: 'weather',
             habit: task,
-            cta: 'See forecast',
-            reason: `${capitalizeSuggestion(phrase)} may be a poor choice today — there's about a ${rainRisk.maxPrecip}% chance of rain from ${rainRisk.windowLabel}.`
+            cta: 'Forecast',
+            reason: `<strong>${escapeBriefHtml(task.title)}</strong> may not love the weather — ~${rainRisk.maxPrecip}% rain ${rainRisk.windowLabel}.`
           });
         });
+        // Offer a good indoor alternative
+        const indoor = pickBestTaskForTags(dueSensible, tags => !tags.outdoor && !tags.errand);
+        if (indoor) {
+          candidates.push({
+            score: 93,
+            type: 'habit',
+            habit: indoor,
+            cta: 'Start',
+            reason: `Rain on the radar — swap outdoor plans for <strong>${escapeBriefHtml(indoor.title)}</strong>.`
+          });
+        }
       }
 
-      // Energy-first suggestions with natural phrasing (time-filtered pool)
+      // --- Partial multi-complete progress (vitamins 1/2, etc.) ---
+      due.forEach(h => {
+        const need = getTimesPerDay(h);
+        const done = countCompletionsOnDate(h.id, todayStr());
+        if (need > 1 && done > 0 && done < need && isHabitSensibleNow(h)) {
+          candidates.push({
+            score: 98,
+            type: 'progress',
+            habit: h,
+            cta: 'Continue',
+            reason: `<strong>${escapeBriefHtml(h.title)}</strong> is ${done}/${need} today — one more keeps the streak clean.`
+          });
+        }
+      });
+
+      // --- Streak at risk (active fire, still due) ---
+      if (!quietNow) {
+        const streakRisk = dueSensible
+          .filter(h => shouldTrackStreak(h) && computeCurrentStreak(h.id) >= 2)
+          .sort((a, b) => computeCurrentStreak(b.id) - computeCurrentStreak(a.id))[0];
+        if (streakRisk) {
+          const streak = computeCurrentStreak(streakRisk.id);
+          candidates.push({
+            score: 94,
+            type: 'streak',
+            habit: streakRisk,
+            cta: 'Protect',
+            reason: `<strong>${escapeBriefHtml(streakRisk.title)}</strong> has a ${streak}-day streak — a quick check-in keeps the fire.`
+          });
+        }
+      }
+
+      // --- Upcoming calendar event: quick win before it ---
+      if (!quietNow && ctx.nextEvent) {
+        const [eh, em] = String(ctx.nextEvent.time || '0:0').split(':').map(Number);
+        const eventMins = (eh || 0) * 60 + (em || 0);
+        const until = eventMins - nowMins;
+        if (until >= 10 && until <= 75) {
+          const quick = pickBestTaskForTags(gapPool, (tags, h) => (h.est_minutes || 10) <= Math.max(8, until - 5) && !tags.long)
+            || gapPool.find(h => (h.est_minutes || 10) <= until - 5);
+          if (quick) {
+            candidates.push({
+              score: 96,
+              type: 'event',
+              habit: quick,
+              cta: 'Start',
+              reason: `~${until} min before <strong>${escapeBriefHtml(ctx.nextEvent.title || 'your next event')}</strong> — enough for <strong>${escapeBriefHtml(quick.title)}</strong>.`
+            });
+          } else {
+            candidates.push({
+              score: 72,
+              type: 'schedule',
+              cta: 'Schedule',
+              reason: `<strong>${escapeBriefHtml(ctx.nextEvent.title || 'An event')}</strong> starts in ~${until} min — protect that window.`
+            });
+          }
+        }
+      }
+
+      // --- Energy-matched next task (works for freeform titles via classify + ranking) ---
       if (energyPool.length > 0 && !quietNow) {
         const best = energyPool[0];
         const hardestDue = [...dueSensible].sort((a, b) => (b.difficulty || 2) - (a.difficulty || 2))[0];
-        const bestPhrase = formatTaskForSuggestion(best.title);
-        const hardPhrase = hardestDue ? formatTaskForSuggestion(hardestDue.title) : '';
+        const bestTags = classifyTask(best);
 
         if (ctx.energy === 1 && hardestDue && (hardestDue.difficulty || 2) >= 3 && (best.difficulty || 2) <= 1 && best.id !== hardestDue.id) {
           candidates.push({
             score: 96,
             type: 'habit',
             habit: best,
-            cta: 'Tap to start',
-            reason: `You're running low on energy — I'd skip ${hardPhrase} for now and go with ${bestPhrase} instead.`
+            cta: 'Start',
+            reason: `Low energy — skip <strong>${escapeBriefHtml(hardestDue.title)}</strong> for now; try <strong>${escapeBriefHtml(best.title)}</strong>.`
           });
         } else if (ctx.energy === 1) {
           candidates.push({
             score: 92,
             type: 'habit',
             habit: best,
-            cta: 'Tap to start',
-            reason: `Low energy day — ${bestPhrase} is a good match for how you're feeling.`
+            cta: 'Start',
+            reason: `Low energy day — <strong>${escapeBriefHtml(best.title)}</strong> is a gentle fit.`
           });
-        } else if (ctx.energy === 3 && (best.difficulty || 2) >= 2) {
+        } else if (ctx.energy === 3 && ((best.difficulty || 2) >= 2 || bestTags.long || bestTags.hard)) {
           candidates.push({
             score: 91,
             type: 'habit',
             habit: best,
-            cta: 'Tap to start',
-            reason: `You've got high energy — it's a great time to tackle ${bestPhrase}.`
+            cta: 'Start',
+            reason: `High energy — good time for <strong>${escapeBriefHtml(best.title)}</strong>.`
           });
         } else {
-          // Medium energy or no special case — still surface a sensible next task
           candidates.push({
             score: 86,
             type: 'habit',
             habit: best,
-            cta: 'Tap to start',
-            reason: `Good moment for ${bestPhrase}.`
+            cta: 'Start',
+            reason: `Next up: <strong>${escapeBriefHtml(best.title)}</strong>.`
           });
         }
       }
 
-      // Calendar gap + energy-matched task (not during quiet hours outdoor-leaning)
-      if (!quietNow && ctx.bestGap && ctx.bestGap.minutes >= 25 && gapPool.length > 0) {
-        const fit = findTaskForGap(ctx.bestGap, gapPool);
-        if (fit && isHabitSensibleNow(fit)) {
-          const phrase = formatTaskForSuggestion(fit.title);
+      // --- Calendar gap that fits a task ---
+      if (!quietNow && ctx.bestGap && ctx.bestGap.minutes >= 20 && gapPool.length > 0) {
+        const fit = findTaskForGap(ctx.bestGap, gapPool.filter(isHabitSensibleNow));
+        if (fit) {
           const until = ctx.bestGap.beforeEvent
-            ? ` before ${ctx.bestGap.beforeEvent.toLowerCase()}`
-            : ` until ${ctx.bestGap.until}`;
+            ? ` before ${String(ctx.bestGap.beforeEvent).toLowerCase()}`
+            : (ctx.bestGap.until ? ` until ${ctx.bestGap.until}` : '');
           candidates.push({
             score: 95,
             type: 'habit',
             habit: fit,
-            cta: 'Tap to start',
-            reason: `You have about ${ctx.bestGap.minutes} minutes open${until} — enough time for ${phrase}.`
+            cta: 'Start',
+            reason: `~${ctx.bestGap.minutes} min open${until} — room for <strong>${escapeBriefHtml(fit.title)}</strong>.`
           });
         }
       }
 
-      // Reschedule to a clearer day
+      // --- Grocery when list is growing + free time ---
+      if (!quietNow && (ctx.groceryCount || 0) >= 5 && (ctx.bestGap?.minutes >= 25 || ctx.freeTime >= 30)) {
+        candidates.push({
+          score: 76,
+          type: 'grocery',
+          cta: 'Groceries',
+          reason: `${ctx.groceryCount} grocery items waiting — a free block is a good time to shop or tidy the list.`
+        });
+      }
+
+      // --- Reschedule long outdoor/hard tasks to a clearer day ---
       const reschedule = getRescheduleOpportunity();
       if (reschedule && !quietNow) {
         candidates.push({
           score: 88,
           type: 'reschedule',
           habit: reschedule.habit,
-          cta: 'View task',
+          cta: 'View',
           reason: reschedule.reason
         });
       }
 
-      // Clear weather — good outdoor window (daylight / non-quiet only)
+      // --- Fair weather outdoor window ---
       const weatherLow = (ctx.weather || '').toLowerCase();
       if (!quietNow && isDaylightHours() && (weatherLow.includes('sun') || weatherLow.includes('clear')) && !(rainRisk?.risky)) {
         const outdoorPool = ctx.energy === 1 ? energyPool : dueSensible;
-        const outdoor = outdoorPool.find(h =>
-          isOutdoorTask(h) && (ctx.energy !== 1 || (h.difficulty || 2) <= 2)
-        );
-        const best = getBestOutdoorTime();
-        const phrase = outdoor ? formatTaskForSuggestion(outdoor.title) : '';
-        if (outdoor && best) {
+        const outdoor = outdoorPool.find(h => {
+          const tags = classifyTask(h);
+          return tags.outdoor && (ctx.energy !== 1 || !tags.hard);
+        });
+        const bestWindow = getBestOutdoorTime();
+        if (outdoor && bestWindow) {
           candidates.push({
             score: 84,
             type: 'habit',
             habit: outdoor,
-            cta: 'Tap to start',
-            reason: `Skies look clear — around ${best.time} should be a solid window for ${phrase}.`
+            cta: 'Start',
+            reason: `Clear skies — around ${bestWindow.time} suits <strong>${escapeBriefHtml(outdoor.title)}</strong>.`
           });
         } else if (outdoor) {
           candidates.push({
             score: 79,
             type: 'habit',
             habit: outdoor,
-            cta: 'Tap to start',
-            reason: `Weather looks fair today — good conditions for ${phrase}.`
+            cta: 'Start',
+            reason: `Weather looks fair — good for <strong>${escapeBriefHtml(outdoor.title)}</strong>.`
           });
         }
       }
 
-      // Free block from calendar total
+      // --- General free calendar block ---
       if (!quietNow && ctx.freeTime >= 40 && gapPool.length > 0) {
         const match = rankHabitsForNow(gapPool)[0];
         if (match) {
@@ -17497,31 +17883,55 @@
             score: 74,
             type: 'habit',
             habit: match,
-            cta: 'Tap to start',
-            reason: `Your calendar has roughly ${ctx.freeTime} minutes free — ${formatTaskForSuggestion(match.title)} should fit.`
+            cta: 'Start',
+            reason: `About ${ctx.freeTime} min free on the calendar — <strong>${escapeBriefHtml(match.title)}</strong> should fit.`
           });
         }
       }
 
-      // Bills: lower weight (nudge, not takeover)
-      const overdueBill = ctx.activeBills.find(b => getBillStatus(b) === 'overdue');
+      // --- Subscriptions renewing soon ---
+      try {
+        const subs = (state.subscriptions || []).filter(s => s.active !== false);
+        const soonSub = subs.find(s => {
+          if (typeof getSubscriptionRenewalDate !== 'function') return false;
+          const d = getSubscriptionRenewalDate(s);
+          if (!d) return false;
+          const days = Math.round((d - new Date(todayStr() + 'T12:00:00')) / 86400000);
+          return days >= 0 && days <= 3;
+        });
+        if (soonSub) {
+          const d = getSubscriptionRenewalDate(soonSub);
+          const days = Math.round((d - new Date(todayStr() + 'T12:00:00')) / 86400000);
+          candidates.push({
+            score: 58,
+            type: 'tip',
+            tipId: 'sub-renew',
+            cta: 'Subscriptions',
+            action: 'life-subs',
+            reason: `<strong>${escapeBriefHtml(soonSub.name)}</strong> renews ${days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`} — worth a glance.`
+          });
+        }
+      } catch (_) { /* optional path */ }
+
+      // --- Bills (nudge, not takeover) ---
+      const overdueBill = (ctx.activeBills || []).find(b => getBillStatus(b) === 'overdue');
       if (overdueBill) {
         candidates.push({
-          score: 38,
+          score: 82,
           type: 'bill',
           bill: overdueBill,
           cta: 'Mark paid',
-          reason: `<strong>${overdueBill.name}</strong> is overdue — handle in Life when you have a sec.`
+          reason: `<strong>${escapeBriefHtml(overdueBill.name)}</strong> is overdue — a quick Life tab fix.`
         });
       }
-      const dueTodayBill = ctx.activeBills.find(b => getBillStatus(b) === 'due_today');
+      const dueTodayBill = (ctx.activeBills || []).find(b => getBillStatus(b) === 'due_today');
       if (dueTodayBill) {
         candidates.push({
-          score: 32,
+          score: 70,
           type: 'bill',
           bill: dueTodayBill,
           cta: 'Mark paid',
-          reason: `<strong>${dueTodayBill.name}</strong> is due today (Life tab).`
+          reason: `<strong>${escapeBriefHtml(dueTodayBill.name)}</strong> is due today.`
         });
       }
 
@@ -18563,9 +18973,21 @@
       const billFootnoteEl = document.getElementById('smart-bill-footnote');
       if (suggestion) {
         textEl.innerHTML = suggestion.reason;
-        if (ctaEl) ctaEl.textContent = suggestion.cta || 'Tap to start';
+        if (ctaEl) ctaEl.textContent = suggestion.cta || 'Open';
         if (labelEl) {
-          labelEl.textContent = suggestion.type === 'welcome' ? 'Welcome' : suggestion.type === 'tip' ? 'App Tip' : 'Smart Suggestion';
+          const typeLabel = {
+            welcome: 'Welcome',
+            tip: 'App Tip',
+            weather: 'Weather',
+            bill: 'Bill',
+            grocery: 'Life',
+            schedule: 'Schedule',
+            streak: 'Streak',
+            progress: 'Progress',
+            event: 'Calendar',
+            reschedule: 'Plan'
+          }[suggestion.type] || 'Smart Suggestion';
+          labelEl.textContent = typeLabel;
         }
         const billNote = suggestion.type !== 'bill' ? getManualBillFootnote(ctx.activeBills) : '';
         if (billFootnoteEl) {
@@ -18619,6 +19041,12 @@
       const habitId = banner.dataset.suggestionHabit;
       const billId = banner.dataset.suggestionBill;
       const action = banner.dataset.suggestionAction;
+      rememberSmartSuggestion(
+        habitId ? `habit:${habitId}:${type || ''}`
+          : billId ? `bill:${billId}`
+          : banner.dataset.suggestionTip ? `tip:${banner.dataset.suggestionTip}`
+          : `${type || ''}`
+      );
 
       if (type === 'tip') {
         advanceAppTip();
@@ -18663,7 +19091,8 @@
       } else if (type === 'reschedule' && habitId) {
         const habit = state.habits.find(h => h.id === habitId);
         showToast(habit ? `Tip: plan ${habit.title} on a free calendar day` : 'Check Life → Schedule for open days');
-        switchTab('today');
+        switchTab('life');
+        switchLifePanel('schedule');
       } else if (type === 'grocery') {
         switchTab('life');
         switchLifePanel('grocery');
@@ -18672,7 +19101,7 @@
         switchLifePanel('schedule');
       } else if (type === 'weather') {
         showOutdoorWeatherPane();
-      } else if (habitId) {
+      } else if (habitId && (type === 'habit' || type === 'progress' || type === 'streak' || type === 'event' || !type)) {
         const habit = state.habits.find(h => h.id === habitId);
         if (habit) {
           completeHabit(habitId);
@@ -18680,6 +19109,13 @@
           updateSmartBanner();
           showToast('That task is no longer on your list');
           return;
+        }
+      } else if (habitId) {
+        // Fallback: scroll Today and toast the task rather than force-complete
+        const habit = state.habits.find(h => h.id === habitId);
+        if (habit) {
+          switchTab('today');
+          showToast(habit.title);
         }
       } else {
         showQuickTaskModal({ mode: 'habit' });
@@ -18726,7 +19162,9 @@
           showOutdoorWeatherPane();
           break;
         case 'energy':
-          document.getElementById('energy-1')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          if (typeof energyExpanded !== 'undefined') energyExpanded = true;
+          if (typeof syncEnergyCompactUI === 'function') syncEnergyCompactUI();
+          document.getElementById('energy-choices')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           showToast('Tap Low, Medium, or High to match how you feel');
           break;
         case 'quick-add':
@@ -18757,6 +19195,14 @@
       if (state.settings.tutorialActive) return;
       const banner = document.getElementById('smart-banner');
       const type = banner?.dataset.suggestionType;
+      const habitId = banner?.dataset.suggestionHabit;
+      const billId = banner?.dataset.suggestionBill;
+      rememberSmartSuggestion(
+        habitId ? `habit:${habitId}:${type || ''}`
+          : billId ? `bill:${billId}`
+          : banner?.dataset.suggestionTip ? `tip:${banner.dataset.suggestionTip}`
+          : `${type || ''}`
+      );
 
       if (state.settings.showWelcomeBanner) {
         hideWelcomeSpotlight();
@@ -18779,8 +19225,9 @@
         return;
       }
 
+      // Rotate to the next best suggestion instead of blanking the panel
       ensureSmartBannerHandler(banner);
-      if (banner) banner.classList.add('hidden');
+      updateSmartBanner();
     }
 
     // ==================== VOICE ====================
