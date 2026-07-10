@@ -4577,9 +4577,12 @@
       height: clamp(5.6rem, 20vw, 7rem);
       opacity: 0;
       transform: translateY(10px) scale(0.92);
+      /* Light mark on deep teal — soft glow keeps fluke/ring detail readable */
       filter:
-        drop-shadow(0 0 22px rgba(107, 191, 176, 0.32))
-        drop-shadow(0 8px 24px rgba(4, 28, 26, 0.32));
+        drop-shadow(0 0 1px rgba(255, 255, 255, 0.35))
+        drop-shadow(0 0 18px rgba(232, 244, 240, 0.28))
+        drop-shadow(0 0 36px rgba(107, 191, 176, 0.35))
+        drop-shadow(0 10px 28px rgba(4, 28, 26, 0.4));
     }
 
     .splash-mark.is-in {
@@ -5802,7 +5805,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v126';
+    const HARBOR_BUILD = 'v127';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
