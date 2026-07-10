@@ -5713,14 +5713,29 @@
       margin-bottom: 0.55rem;
     }
     .proj-pride {
-      font-size: 0.78rem;
-      line-height: 1.45;
-      color: rgb(var(--harbor-primary-light));
       background: rgba(47, 155, 140, 0.1);
       border: 1px solid rgba(47, 155, 140, 0.16);
       border-radius: 0.9rem;
-      padding: 0.65rem 0.75rem;
+      padding: 0.7rem 0.8rem;
       margin-bottom: 0.75rem;
+    }
+    .proj-pride-main {
+      font-size: 0.82rem;
+      font-weight: 650;
+      line-height: 1.4;
+      letter-spacing: -0.01em;
+      color: rgb(var(--harbor-text));
+    }
+    .proj-pride-main strong {
+      color: rgb(var(--harbor-primary-light));
+      font-weight: 750;
+    }
+    .proj-pride-soft {
+      margin-top: 0.35rem;
+      font-size: 0.72rem;
+      line-height: 1.4;
+      color: rgb(var(--harbor-muted));
+      font-weight: 500;
     }
     .proj-stat-row {
       display: flex;
@@ -7269,7 +7284,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v169';
+    const HARBOR_BUILD = 'v170';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -10294,103 +10309,367 @@
           : 'Numbers are defaults — update body metrics in User Profile for better accuracy.';
       }
 
-      if (type === 'savings') {
-        const cycles = getPeriodsIn30Days(habit);
-        result.equivalent = periodic
-          ? `At ${formatVal(perPeriod)} ${formatIntervalLabel(habit.interval_days).toLowerCase()}, you're on track for ~${formatVal(projected30)} over the next 30 days (${cycles} cycle${cycles === 1 ? '' : 's'}).`
-          : `At this pace you could save ~${formatVal(projected30)} over the next 30 days.`;
-      } else if (type === 'steps' || type === 'miles') {
-        result.equivalent = getFitnessFunProjection(habit, projected30, type, result.streakCalorieDetail);
-      } else if (type === 'pages') {
-        result.equivalent = getPagesFunProjection(projected30);
-      } else {
-        result.equivalent = `Based on your logged ${habit.unit || 'values'}, not streak guesses.`;
-      }
+      // Pride line — metric-first so any custom task still gets a calm “so what?”
+      result.prideHtml = buildOutlookPride({
+        habit,
+        type,
+        projected30,
+        periodic,
+        perPeriod,
+        formatVal
+      });
+      // Back-compat for anything still reading .equivalent
+      result.equivalent = result.prideHtml;
 
       return result;
     }
 
-    /** Clever, human 30-day “so what?” lines for fitness metrics. */
-    function getFitnessFunProjection(habit, projected30, type, loggedCal) {
-      const title = (habit.title || '').toLowerCase();
-      let miles = Number(projected30) || 0;
-      if (type === 'steps') miles = projected30 / (METRICS.stepsPerMile || 2000);
-      if (miles <= 0) {
-        return 'Log today’s distance (or steps) below to unlock a 30-day forecast with a little flair.';
-      }
+    // ── Habit Outlook pride lines ──────────────────────────────────────────
+    // Metric type drives the comparison (works for any user title).
+    // Title only lightly flavors known activities; unknowns stay generic & kind.
 
-      const miLabel = miles >= 10 ? miles.toFixed(0) : miles.toFixed(1);
-      const calBit = loggedCal?.totalCal
-        ? ` You’ve already burned ~${loggedCal.totalCal.toLocaleString()} kcal in this window.`
-        : '';
-
-      // ── Swim ──────────────────────────────────────────────
-      if (/\b(swim|swimming|swam|laps?)\b/i.test(title)) {
-        const channelMi = 21; // Dover–Calais (classic Channel)
-        const crossings = miles / channelMi;
-        const olympicLengths = Math.round((miles * 1609.34) / 50); // 50 m pool
-        if (crossings >= 0.85) {
-          return `Thirty days in the water at this pace is about <strong>${miLabel} mi</strong> — roughly <strong>${crossings.toFixed(1)} English Channel crossings</strong> (Dover to Calais is ~${channelMi} mi). Your goggles would need a passport.${calBit}`;
-        }
-        return `Keep this up for 30 days and you’ll log around <strong>${miLabel} mi</strong> swimming — about <strong>${olympicLengths.toLocaleString()} lengths</strong> of an Olympic pool. The dolphins would be taking notes.${calBit}`;
-      }
-
-      // ── Run / jog ─────────────────────────────────────────
-      if (/\b(run|running|jog|jogging)\b/i.test(title)) {
-        const nyStateLength = 330; // approx N–S length of New York State (mi)
-        const manhattanLen = 13.4;
-        if (miles >= nyStateLength) {
-          return `Thirty days of running projects to ~<strong>${miLabel} mi</strong> — enough to cover the length of <strong>New York State</strong> (~${nyStateLength} mi) and still have leftover miles for a victory bagel.${calBit}`;
-        }
-        const manhattans = miles / manhattanLen;
-        const marathons = miles / 26.2;
-        if (manhattans >= 1.2) {
-          return `At this clip, 30 days is ~<strong>${miLabel} mi</strong> — about <strong>${manhattans.toFixed(1)} trips the length of Manhattan</strong>, or ~${marathons.toFixed(1)} marathons. The city that never sleeps… because you’re still on mile eight.${calBit}`;
-        }
-        return `Thirty days of running lands around <strong>${miLabel} mi</strong> — roughly <strong>${marathons.toFixed(1)} marathons</strong> stacked end to end. Future you is already lacing up.${calBit}`;
-      }
-
-      // ── Bike / cycle ──────────────────────────────────────
-      if (/\b(bike|biking|cycle|cycling|spin)\b/i.test(title)) {
-        const tourStage = 110; // typical TdF stage length (mi)
-        const stages = miles / tourStage;
-        if (stages >= 1) {
-          return `Thirty days on the bike is ~<strong>${miLabel} mi</strong> — about <strong>${stages.toFixed(1)} Tour de France stages</strong> (~${tourStage} mi each). Yellow jersey energy, no team car required.${calBit}`;
-        }
-        return `Keep pedaling and 30 days nets ~<strong>${miLabel} mi</strong> — enough to ride from the city to the countryside and back with stories to tell.${calBit}`;
-      }
-
-      // ── Hike ──────────────────────────────────────────────
-      if (/\b(hike|hiking|trail)\b/i.test(title)) {
-        const appalachianDay = 12; // rough long-day AT pace
-        const days = miles / appalachianDay;
-        return `Thirty days of trail time projects to ~<strong>${miLabel} mi</strong> — like <strong>${days.toFixed(1)} solid Appalachian Trail days</strong> (~${appalachianDay} mi each). The blisters would be legendary.${calBit}`;
-      }
-
-      // ── Walk / steps ──────────────────────────────────────
-      if (type === 'steps' || /\b(walk|walking|steps?)\b/i.test(title)) {
-        const earthMi = 24901;
-        const pctEarth = (miles / earthMi) * 100;
-        const footballFields = Math.round(miles / 0.0568); // ~100 yd field
-        if (type === 'steps') {
-          return `Thirty days of steps projects to ~<strong>${Math.round(projected30).toLocaleString()} steps</strong> (~${miLabel} mi) — about <strong>${footballFields.toLocaleString()} football fields</strong> of pavement. Your shoes are filing for overtime.${calBit}`;
-        }
-        return `Thirty days of walking is ~<strong>${miLabel} mi</strong> — roughly <strong>${footballFields.toLocaleString()} football fields</strong>${pctEarth >= 0.1 ? `, or ~${pctEarth.toFixed(2)}% of the way around Earth` : ''}. Sidewalks fear you.${calBit}`;
-      }
-
-      // ── Generic distance fitness ──────────────────────────
-      const marathons = miles / 26.2;
-      return `Over 30 days you’re on track for ~<strong>${miLabel} mi</strong> of movement — about <strong>${marathons.toFixed(1)} marathon distances</strong>. Future you is already proud.${calBit}`;
+    function outlookPrideHtml(main, soft = '') {
+      if (!main) return '';
+      return `<div class="proj-pride"><div class="proj-pride-main">${main}</div>${soft ? `<div class="proj-pride-soft">${soft}</div>` : ''}</div>`;
     }
 
-    function getPagesFunProjection(projected30) {
-      const pages = Math.round(projected30);
-      if (pages <= 0) return 'Log pages as you go to unlock a 30-day reading forecast.';
-      const novels = pages / 300; // rough novel length
-      if (novels >= 1) {
-        return `Thirty days of reading projects to ~<strong>${pages.toLocaleString()} pages</strong> — about <strong>${novels.toFixed(1)} novels</strong> (at ~300 pages each). Your nightstand is clearing its schedule.`;
+    function outlookFmtInt(n) {
+      return Math.round(Number(n) || 0).toLocaleString();
+    }
+
+    function outlookFmtMi(miles) {
+      const m = Number(miles) || 0;
+      if (m >= 100) return Math.round(m).toLocaleString();
+      if (m >= 10) return m.toFixed(0);
+      if (m >= 1) return m.toFixed(1);
+      return m.toFixed(2);
+    }
+
+    function outlookFmtMoney(n) {
+      return '$' + Math.round(Number(n) || 0).toLocaleString();
+    }
+
+    /** Scale band: low | mid | high — keeps small efforts kind, big ones proud. */
+    function outlookScale(value, lowMax, midMax) {
+      const v = Number(value) || 0;
+      if (v <= lowMax) return 'low';
+      if (v <= midMax) return 'mid';
+      return 'high';
+    }
+
+    /**
+     * Activity family for flavor only. Unknown titles → metric-generic family
+     * so "Rollerblade park", "Elliptical 20m", "Push wheelchair" still work.
+     */
+    function classifyOutlookActivity(habit, type) {
+      if (type === 'steps') return 'steps';
+      if (type === 'pages') return 'pages';
+      if (type === 'savings') return 'savings';
+      if (type === 'custom') return 'custom';
+
+      const title = (habit?.title || '').toLowerCase();
+      if (typeof isSwimHabit === 'function' && isSwimHabit(habit)) return 'swim';
+      if (/\b(swim|swimming|swam|laps?)\b/i.test(title)) return 'swim';
+      if (/\b(run|running|jog|jogging|5k|10k|half[\s-]?marathon|marathon)\b/i.test(title)) return 'run';
+      if (/\b(bike|biking|cycle|cycling|spin|peloton|ride)\b/i.test(title)) return 'bike';
+      if (/\b(hike|hiking|trail|backpacking)\b/i.test(title)) return 'hike';
+      if (
+        (typeof isPetWalkingActivity === 'function' && isPetWalkingActivity(habit))
+        || /\b(walk|walking|steps?|stroll|dog walk)\b/i.test(title)
+      ) return 'walk';
+      if (/\b(row|rowing|kayak|paddle|ski|skate|roller|elliptical|climb|wheel|push|scoot|board)\b/i.test(title)) {
+        return 'distance';
       }
-      return `At this pace you’ll log ~<strong>${pages.toLocaleString()} pages</strong> in 30 days — a healthy stack of chapters. Bookmark that feeling.`;
+      // Any other miles-type habit: generic distance (safe for thousands of titles)
+      if (type === 'miles') return 'distance';
+      return 'generic';
+    }
+
+    function buildOutlookPride({ habit, type, projected30, periodic, perPeriod, formatVal }) {
+      const n = Number(projected30) || 0;
+      if (n <= 0) {
+        return outlookPrideHtml(
+          'Log a little of what you did to unlock a 30-day outlook.',
+          'One honest entry is enough to start.'
+        );
+      }
+
+      const family = classifyOutlookActivity(habit, type);
+
+      if (family === 'savings') return buildSavingsPride(n, { periodic, perPeriod, habit, formatVal });
+      if (family === 'pages') return buildPagesPride(n);
+      if (family === 'steps') return buildStepsPride(n);
+      if (family === 'custom') return buildCustomPride(n, habit, formatVal);
+      // miles / distance families
+      return buildDistancePride(n, family);
+    }
+
+    function buildSavingsPride(amount, { periodic, perPeriod, habit, formatVal }) {
+      const dollars = Math.round(amount);
+      const scale = outlookScale(dollars, 40, 250);
+      const total = outlookFmtMoney(dollars);
+      // Real-world anchors (approx monthly streaming / coffee habit)
+      const streamingMonths = dollars / 15;
+      const coffeeDays = dollars / 5;
+
+      let main;
+      let soft;
+      if (scale === 'low') {
+        main = `About <strong>${total}</strong> over the next 30 days — a quiet start toward something real.`;
+        soft = coffeeDays >= 1
+          ? `Like setting aside roughly ${outlookFmtInt(coffeeDays)} coffee runs on purpose.`
+          : 'Small deposits still change the direction.';
+      } else if (scale === 'mid') {
+        main = `On track for about <strong>${total}</strong> this month.`;
+        soft = streamingMonths >= 1
+          ? `That’s roughly <strong>${streamingMonths.toFixed(1)} months</strong> of a typical streaming plan.`
+          : 'A pace you can feel.';
+      } else {
+        main = `Projected savings: about <strong>${total}</strong> in 30 days.`;
+        soft = dollars >= 1000
+          ? 'That’s a serious buffer building — keep the rhythm, not the pressure.'
+          : 'A real step toward a safety net or a goal you’ve named.';
+      }
+
+      if (periodic && perPeriod > 0 && habit?.interval_days > 1) {
+        soft = `${formatVal(perPeriod)} ${formatIntervalLabel(habit.interval_days).toLowerCase()} · ${soft}`;
+      }
+      return outlookPrideHtml(main, soft);
+    }
+
+    function buildPagesPride(pagesRaw) {
+      const pages = Math.round(pagesRaw);
+      const scale = outlookScale(pages, 90, 350);
+      const pLabel = outlookFmtInt(pages);
+      // ~280–320 is a common paperback; 80 ≈ a long essay / short novella chunk
+      const novels = pages / 300;
+      const chapters = pages / 12;
+
+      if (scale === 'low') {
+        return outlookPrideHtml(
+          `About <strong>${pLabel} pages</strong> over 30 days.`,
+          chapters >= 2
+            ? `That’s roughly <strong>${outlookFmtInt(chapters)} chapters</strong> — a habit that stacks.`
+            : 'Even a few pages a day keep the story moving.'
+        );
+      }
+      if (scale === 'mid') {
+        return outlookPrideHtml(
+          `On pace for about <strong>${pLabel} pages</strong> this month.`,
+          novels >= 0.5
+            ? `Around <strong>${novels.toFixed(1)} books</strong> at ~300 pages each.`
+            : 'A solid stack of chapters without rushing.'
+        );
+      }
+      return outlookPrideHtml(
+        `About <strong>${pLabel} pages</strong> ahead at this pace.`,
+        `That’s roughly <strong>${novels.toFixed(1)} novels</strong> — your queue is getting shorter.`
+      );
+    }
+
+    function buildStepsPride(stepsRaw) {
+      const steps = Math.round(stepsRaw);
+      const miles = steps / (METRICS.stepsPerMile || 2200);
+      const scale = outlookScale(steps, 60000, 200000);
+      const fields = Math.max(1, Math.round(miles / 0.0568)); // ~100 yd field
+      const sLabel = outlookFmtInt(steps);
+      const miLabel = outlookFmtMi(miles);
+
+      if (scale === 'low') {
+        return outlookPrideHtml(
+          `About <strong>${sLabel} steps</strong> (~${miLabel} mi) over 30 days.`,
+          'A gentle base — consistency matters more than a hero day.'
+        );
+      }
+      if (scale === 'mid') {
+        return outlookPrideHtml(
+          `On pace for ~<strong>${sLabel} steps</strong> (~${miLabel} mi).`,
+          `That’s about <strong>${outlookFmtInt(fields)} football fields</strong> of ground covered.`
+        );
+      }
+      const pctEarth = (miles / 24901) * 100;
+      return outlookPrideHtml(
+        `About <strong>${sLabel} steps</strong> — roughly <strong>${miLabel} mi</strong> this month.`,
+        pctEarth >= 0.05
+          ? `Nearly <strong>${pctEarth.toFixed(2)}%</strong> of the way around Earth, one day at a time.`
+          : `About <strong>${outlookFmtInt(fields)} football fields</strong> of your own making.`
+      );
+    }
+
+    function buildCustomPride(amount, habit, formatVal) {
+      const unit = (habit?.unit || 'units').trim() || 'units';
+      const scale = outlookScale(amount, 20, 100);
+      const value = typeof formatVal === 'function' ? formatVal(amount) : `${outlookFmtInt(amount)} ${unit}`;
+
+      if (scale === 'low') {
+        return outlookPrideHtml(
+          `About <strong>${value}</strong> over the next 30 days.`,
+          'Your own measure, your own pace — the trend is what matters.'
+        );
+      }
+      if (scale === 'mid') {
+        return outlookPrideHtml(
+          `On track for about <strong>${value}</strong> this month.`,
+          'Logged from what you actually did — not a guess from the streak alone.'
+        );
+      }
+      return outlookPrideHtml(
+        `Strong pace: about <strong>${value}</strong> ahead in 30 days.`,
+        'Keep logging so Outlook stays honest as life shifts.'
+      );
+    }
+
+    /**
+     * Distance-based pride for miles-type metrics.
+     * family: swim | run | bike | hike | walk | distance
+     * Unknown sports still use safe marathon / 5K / field anchors.
+     */
+    function buildDistancePride(milesRaw, family) {
+      const miles = Number(milesRaw) || 0;
+      const scale = outlookScale(miles, 18, 90);
+      const mi = outlookFmtMi(miles);
+      const marathons = miles / 26.2;
+      const fiveKs = miles / 3.1;
+      const fields = Math.max(1, Math.round(miles / 0.0568));
+
+      // Optional flavor — only when family is known; never invent sport-specific jokes for unknowns
+      if (family === 'swim') {
+        const poolLengths50m = Math.round((miles * 1609.34) / 50);
+        const channel = miles / 21;
+        if (scale === 'low') {
+          return outlookPrideHtml(
+            `About <strong>${mi} mi</strong> in the water over 30 days.`,
+            poolLengths50m >= 5
+              ? `Roughly <strong>${outlookFmtInt(poolLengths50m)} lengths</strong> of a 50 m pool.`
+              : 'A calm pool habit still moves the needle.'
+          );
+        }
+        if (scale === 'mid') {
+          return outlookPrideHtml(
+            `On pace for ~<strong>${mi} mi</strong> swimming.`,
+            `About <strong>${outlookFmtInt(poolLengths50m)} Olympic-pool lengths</strong> — steady water work.`
+          );
+        }
+        return outlookPrideHtml(
+          `About <strong>${mi} mi</strong> of swimming ahead.`,
+          channel >= 0.5
+            ? `Around <strong>${channel.toFixed(1)}×</strong> an English Channel distance (~21 mi).`
+            : `Nearly <strong>${marathons.toFixed(1)} marathon distances</strong> in the water.`
+        );
+      }
+
+      if (family === 'run') {
+        if (scale === 'low') {
+          return outlookPrideHtml(
+            `About <strong>${mi} mi</strong> of running over 30 days.`,
+            fiveKs >= 1
+              ? `That’s roughly <strong>${fiveKs.toFixed(1)} five-Ks</strong> stacked across the month.`
+              : 'A gentle running base is still a base.'
+          );
+        }
+        if (scale === 'mid') {
+          return outlookPrideHtml(
+            `On pace for ~<strong>${mi} mi</strong> of running.`,
+            `About <strong>${marathons.toFixed(1)} marathon distances</strong> end to end.`
+          );
+        }
+        return outlookPrideHtml(
+          `About <strong>${mi} mi</strong> of running ahead.`,
+          marathons >= 4
+            ? `That’s past <strong>${marathons.toFixed(1)} full marathons</strong> — serious monthly mileage.`
+            : `Around <strong>${marathons.toFixed(1)} marathons</strong> of road underfoot.`
+        );
+      }
+
+      if (family === 'bike') {
+        const tourStage = 110;
+        const stages = miles / tourStage;
+        if (scale === 'low') {
+          return outlookPrideHtml(
+            `About <strong>${mi} mi</strong> on the bike this month.`,
+            'Easy miles still count as training.'
+          );
+        }
+        if (scale === 'mid') {
+          return outlookPrideHtml(
+            `On pace for ~<strong>${mi} mi</strong> of riding.`,
+            stages >= 0.4
+              ? `About <strong>${stages.toFixed(1)} Tour-stage lengths</strong> (~${tourStage} mi each).`
+              : `Roughly <strong>${marathons.toFixed(1)} marathon distances</strong> on two wheels.`
+          );
+        }
+        return outlookPrideHtml(
+          `About <strong>${mi} mi</strong> of cycling ahead.`,
+          stages >= 1
+            ? `Around <strong>${stages.toFixed(1)} full stage lengths</strong> — a real block of riding.`
+            : `Nearly <strong>${marathons.toFixed(1)} marathons</strong> of distance on the bike.`
+        );
+      }
+
+      if (family === 'hike') {
+        const trailDays = miles / 12;
+        if (scale === 'low') {
+          return outlookPrideHtml(
+            `About <strong>${mi} mi</strong> on trail over 30 days.`,
+            'Short outings still build trail legs.'
+          );
+        }
+        return outlookPrideHtml(
+          `On pace for ~<strong>${mi} mi</strong> of hiking.`,
+          trailDays >= 1
+            ? `Like <strong>${trailDays.toFixed(1)} solid trail days</strong> at ~12 mi each.`
+            : `About <strong>${outlookFmtInt(fields)} football fields</strong> of path.`
+        );
+      }
+
+      if (family === 'walk') {
+        if (scale === 'low') {
+          return outlookPrideHtml(
+            `About <strong>${mi} mi</strong> of walking over 30 days.`,
+            'A quiet, reliable pace — that is the point.'
+          );
+        }
+        if (scale === 'mid') {
+          return outlookPrideHtml(
+            `On pace for ~<strong>${mi} mi</strong> of walking.`,
+            `About <strong>${outlookFmtInt(fields)} football fields</strong> of ground.`
+          );
+        }
+        return outlookPrideHtml(
+          `About <strong>${mi} mi</strong> of walking ahead.`,
+          `Roughly <strong>${marathons.toFixed(1)} marathon distances</strong> — one neighborhood at a time.`
+        );
+      }
+
+      // Generic distance — works for elliptical, wheelchair, skate, "morning loop", etc.
+      if (scale === 'low') {
+        return outlookPrideHtml(
+          `About <strong>${mi} mi</strong> of movement over the next 30 days.`,
+          fiveKs >= 1
+            ? `That’s roughly <strong>${fiveKs.toFixed(1)} five-K distances</strong> at your own pace.`
+            : 'A steady base from whatever this activity is for you.'
+        );
+      }
+      if (scale === 'mid') {
+        return outlookPrideHtml(
+          `On pace for ~<strong>${mi} mi</strong> this month.`,
+          `About <strong>${marathons.toFixed(1)} marathon distances</strong> — measured from your logs, not a guess.`
+        );
+      }
+      return outlookPrideHtml(
+        `About <strong>${mi} mi</strong> ahead at this pace.`,
+        `Past <strong>${marathons.toFixed(1)} full marathons</strong> end to end — whatever you call the activity.`
+      );
+    }
+
+    /** @deprecated use buildOutlookPride */
+    function getFitnessFunProjection(habit, projected30, type) {
+      return buildOutlookPride({ habit, type, projected30 });
+    }
+
+    /** @deprecated use buildOutlookPride */
+    function getPagesFunProjection(projected30) {
+      return buildPagesPride(projected30);
     }
 
     // ==================== PRIORITIZATION BY ENERGY ====================
@@ -22407,10 +22686,13 @@
         return;
       }
 
-      // Pride first: equivalent headline, then stats
-      const pride = proj.equivalent
-        ? `<div class="proj-pride">${proj.equivalent}</div>`
-        : '';
+      // Pride first: calm “so what?” block, then stats
+      const pride = proj.prideHtml
+        || (proj.equivalent
+          ? (String(proj.equivalent).includes('proj-pride')
+            ? proj.equivalent
+            : `<div class="proj-pride"><div class="proj-pride-main">${proj.equivalent}</div></div>`)
+          : '');
       const primaryMetric = proj.metrics.find(m => /30-day/i.test(m.label)) || proj.metrics[proj.metrics.length - 1];
       const headline = primaryMetric
         ? `At this pace: <span class="text-harbor-primary-light">${primaryMetric.value}</span> ahead`
