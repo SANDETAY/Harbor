@@ -5756,6 +5756,148 @@
       font-variant-numeric: tabular-nums;
       text-align: right;
     }
+    /* Energy / fat insight — educational, playful, calm */
+    .energy-insight {
+      border-radius: 1.05rem;
+      border: 1px solid rgba(47, 155, 140, 0.16);
+      background:
+        linear-gradient(155deg, rgba(47, 155, 140, 0.09) 0%, rgba(245, 200, 120, 0.08) 48%, rgb(var(--harbor-raised) / 0.55) 100%);
+      padding: 0.85rem 0.9rem 0.8rem;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+    }
+    html[data-theme="dark"] .energy-insight {
+      border-color: rgba(72, 178, 162, 0.14);
+      background:
+        linear-gradient(155deg, rgba(47, 155, 140, 0.12) 0%, rgba(180, 130, 60, 0.08) 50%, rgb(var(--harbor-raised) / 0.5) 100%);
+      box-shadow: 0 1px 0 rgba(154, 214, 202, 0.05) inset;
+    }
+    .energy-insight-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.7rem;
+    }
+    .energy-insight-badge {
+      width: 2.15rem;
+      height: 2.15rem;
+      border-radius: 0.75rem;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: #fff;
+      background: linear-gradient(155deg, #6BCFC0 0%, #2F9B8C 55%, #C4A574 130%);
+      box-shadow: 0 4px 12px rgba(47, 155, 140, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    }
+    .energy-insight-title {
+      font-size: 0.72rem;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+      margin-bottom: 0.3rem;
+    }
+    .energy-insight-rule {
+      font-size: 0.8rem;
+      line-height: 1.4;
+      color: rgb(var(--harbor-text));
+      font-weight: 500;
+    }
+    .energy-insight-rule strong {
+      color: rgb(var(--harbor-primary-light));
+      font-weight: 750;
+    }
+    .energy-insight-approx {
+      display: block;
+      margin-top: 0.2rem;
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: rgb(var(--harbor-muted));
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .energy-insight-you {
+      margin-top: 0.7rem;
+      padding: 0.6rem 0.7rem;
+      border-radius: 0.8rem;
+      background: rgb(var(--harbor-surface) / 0.85);
+      border: 1px solid rgba(47, 155, 140, 0.12);
+    }
+    .energy-insight-you-kicker {
+      display: block;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+      margin-bottom: 0.25rem;
+    }
+    .energy-insight-you-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem 0.45rem;
+    }
+    .energy-insight-kcal {
+      font-size: 1.05rem;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+      color: rgb(var(--harbor-text));
+    }
+    .energy-insight-kcal-unit {
+      font-size: 0.72rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-muted));
+      letter-spacing: 0;
+    }
+    .energy-insight-arrow {
+      color: rgb(var(--harbor-muted) / 0.7);
+      font-size: 0.85rem;
+    }
+    .energy-insight-lbs {
+      font-size: 0.82rem;
+      color: rgb(var(--harbor-text));
+      font-weight: 550;
+    }
+    .energy-insight-lbs strong {
+      color: rgb(var(--harbor-primary-light));
+      font-weight: 750;
+    }
+    .energy-insight-compare {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.65rem;
+    }
+    .energy-insight-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      max-width: 100%;
+      padding: 0.35rem 0.6rem 0.35rem 0.45rem;
+      border-radius: 999px;
+      background: rgb(var(--harbor-surface) / 0.9);
+      border: 1px solid rgba(47, 155, 140, 0.14);
+      font-size: 0.7rem;
+      line-height: 1.25;
+      color: rgb(var(--harbor-text));
+    }
+    .energy-insight-chip-emoji {
+      font-size: 0.9rem;
+      line-height: 1;
+    }
+    .energy-insight-chip-text strong {
+      font-weight: 750;
+      color: rgb(var(--harbor-primary-light));
+      font-variant-numeric: tabular-nums;
+    }
+    .energy-insight-soft {
+      margin-top: 0.65rem;
+      font-size: 0.7rem;
+      line-height: 1.4;
+      color: rgb(var(--harbor-muted));
+    }
+
     .proj-milestone {
       margin-top: 0.65rem;
       font-size: 0.72rem;
@@ -7284,7 +7426,7 @@
       appVersion: '1.0.0'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v170';
+    const HARBOR_BUILD = 'v171';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -10116,34 +10258,126 @@
       return {
         kcalPerLb: METRICS.kcalPerLbFat,
         lbsEquivalent: lbs,
-        formattedLbs: lbs >= 1 ? lbs.toFixed(1) : lbs >= 0.1 ? lbs.toFixed(2) : lbs.toFixed(3)
+        formattedLbs: lbs >= 1 ? lbs.toFixed(1) : lbs >= 0.1 ? lbs.toFixed(2) : lbs.toFixed(3),
+        kcal
       };
+    }
+
+    /**
+     * Fun + educational energy comparisons for a kcal total.
+     * Uses rough everyday anchors (not lab precision) so numbers feel human.
+     */
+    function getEnergyPlayComparisons(kcal) {
+      const k = Math.max(0, Number(kcal) || 0);
+      if (k <= 0) return [];
+
+      // Everyday anchors (approx kcal)
+      const anchors = [
+        { key: 'butter', emoji: '🧈', label: 'sticks of butter', unit: 100, min: 0.5 },
+        { key: 'banana', emoji: '🍌', label: 'bananas', unit: 105, min: 1 },
+        { key: 'slice', emoji: '🍕', label: 'pizza slices', unit: 285, min: 0.5 },
+        { key: 'avocado', emoji: '🥑', label: 'avocados', unit: 240, min: 0.5 },
+        { key: 'latte', emoji: '☕', label: 'lattes', unit: 190, min: 1 },
+        { key: 'stairs', emoji: '🪜', label: 'flights of stairs (rough)', unit: 10, min: 8 },
+        { key: 'walk', emoji: '👟', label: 'brisk 15‑min walks', unit: 70, min: 1 }
+      ];
+
+      // Pick 2 best-fitting comparisons so the card stays scannable
+      const scored = anchors.map(a => {
+        const qty = k / a.unit;
+        const nice = qty >= 10 ? Math.round(qty) : qty >= 2 ? Math.round(qty * 10) / 10 : Math.round(qty * 10) / 10;
+        // Prefer comparisons that read as 1–40 range
+        const fit = qty >= a.min && qty <= 40 ? 1 : qty > 40 ? 0.4 : 0.2;
+        return { ...a, qty: nice, fit, raw: qty };
+      }).filter(a => a.raw >= a.min * 0.85);
+
+      scored.sort((a, b) => b.fit - a.fit || Math.abs(Math.log(a.raw + 0.1)) - Math.abs(Math.log(b.raw + 0.1)));
+      const picks = scored.slice(0, 2);
+
+      // Always include a food + an activity-ish one when possible
+      if (picks.length >= 2) {
+        const hasFood = picks.some(p => ['butter', 'banana', 'slice', 'avocado', 'latte'].includes(p.key));
+        const hasMove = picks.some(p => ['stairs', 'walk'].includes(p.key));
+        if (!hasMove) {
+          const move = scored.find(p => p.key === 'walk' || p.key === 'stairs');
+          if (move) picks[1] = move;
+        } else if (!hasFood) {
+          const food = scored.find(p => ['banana', 'latte', 'slice', 'avocado'].includes(p.key));
+          if (food) picks[0] = food;
+        }
+      }
+      return picks;
+    }
+
+    function formatEnergyQty(qty) {
+      const n = Number(qty) || 0;
+      if (n >= 20) return Math.round(n).toLocaleString();
+      if (n >= 2) return (Math.round(n * 10) / 10).toString();
+      return (Math.round(n * 10) / 10).toString();
     }
 
     function renderFatCalorieInsight(totalKcal) {
       const insight = getFatBurnInsight(totalKcal);
-      const streakLine = totalKcal > 0
-        ? `<div class="text-xs text-harbor-primary-light mt-2 pt-2 border-t border-harbor-border/50">
-            Your streak burn <span class="tabular-nums font-semibold">~${Math.round(totalKcal).toLocaleString()} kcal</span>
-            ≈ <span class="font-semibold text-amber-300/90">${insight.formattedLbs} lb</span> of fat energy
+      const kcal = insight.kcal;
+      const hasBurn = kcal > 0;
+      const comparisons = hasBurn ? getEnergyPlayComparisons(kcal) : [];
+      const lbs = insight.lbsEquivalent;
+      const scale = lbs < 0.15 ? 'low' : lbs < 0.75 ? 'mid' : 'high';
+
+      // Educational soft line — honest about the 3500 rule
+      let teachSoft;
+      if (!hasBurn) {
+        teachSoft = 'Log a walk, run, or swim to see how your movement stacks up against this rule of thumb.';
+      } else if (scale === 'low') {
+        teachSoft = 'Small burns still matter — fat loss is a long average of many quiet days, not one heroic session.';
+      } else if (scale === 'mid') {
+        teachSoft = 'Real weight change also depends on food, sleep, and water — this is energy context, not a promise.';
+      } else {
+        teachSoft = 'Impressive work. The scale can lag (water, muscle, hormones) even when energy balance is real.';
+      }
+
+      const youLine = hasBurn
+        ? `<div class="energy-insight-you">
+            <span class="energy-insight-you-kicker">Your logged movement</span>
+            <div class="energy-insight-you-row">
+              <span class="energy-insight-kcal tabular-nums">~${Math.round(kcal).toLocaleString()} <span class="energy-insight-kcal-unit">kcal</span></span>
+              <span class="energy-insight-arrow" aria-hidden="true">→</span>
+              <span class="energy-insight-lbs">~<strong class="tabular-nums">${insight.formattedLbs}</strong> lb of fat energy</span>
+            </div>
+          </div>`
+        : '';
+
+      const compareHtml = comparisons.length
+        ? `<div class="energy-insight-compare" role="list">
+            ${comparisons.map(c => `
+              <div class="energy-insight-chip" role="listitem">
+                <span class="energy-insight-chip-emoji" aria-hidden="true">${c.emoji}</span>
+                <span class="energy-insight-chip-text">
+                  <strong class="tabular-nums">${formatEnergyQty(c.qty)}</strong> ${c.label}
+                </span>
+              </div>
+            `).join('')}
           </div>`
         : '';
 
       return `
-        <div class="mt-3 rounded-2xl border border-harbor-border/50 bg-harbor-raised/40 px-3.5 py-3">
-          <div class="flex items-start gap-2.5">
-            <div class="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <i class="fa-solid fa-fire-flame-curved text-amber-400/90 text-sm"></i>
+        <div class="energy-insight mt-3">
+          <div class="energy-insight-head">
+            <div class="energy-insight-badge" aria-hidden="true">
+              <i class="fa-solid fa-fire-flame-curved"></i>
             </div>
             <div class="min-w-0 flex-1">
-              <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1">Fat burn context</div>
-              <div class="text-xs text-harbor-text leading-relaxed">
-                About <span class="font-semibold tabular-nums">${insight.kcalPerLb.toLocaleString()} kcal</span>
-                ≈ <span class="font-semibold">1 lb</span> of body fat.
+              <div class="energy-insight-title">Energy &amp; fat — the fun science</div>
+              <div class="energy-insight-rule">
+                Rule of thumb: about <strong class="tabular-nums">${insight.kcalPerLb.toLocaleString()} kcal</strong>
+                is the energy stored in <strong>1 lb</strong> of body fat
+                <span class="energy-insight-approx">(a classic estimate, not a lab measurement)</span>.
               </div>
-              ${streakLine}
             </div>
           </div>
+          ${youLine}
+          ${compareHtml}
+          <div class="energy-insight-soft">${teachSoft}</div>
         </div>
       `;
     }
