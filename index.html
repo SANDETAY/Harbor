@@ -5396,6 +5396,179 @@
       background: rgba(47, 155, 140, 0.14);
     }
 
+    /* Streak cards — fire + metric pride */
+    .streak-card {
+      border-radius: 1.15rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background:
+        linear-gradient(160deg, rgba(255, 255, 255, 0.5) 0%, rgb(var(--harbor-surface)) 70%);
+      box-shadow: var(--harbor-shadow-sm);
+      padding: 0.85rem 0.95rem;
+      cursor: pointer;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    html[data-theme="dark"] .streak-card {
+      background: linear-gradient(160deg, rgba(32, 52, 48, 0.9) 0%, rgb(var(--harbor-surface)) 100%);
+    }
+    .streak-card.is-selected {
+      border-color: rgba(47, 155, 140, 0.5);
+      box-shadow: var(--harbor-glow-primary), var(--harbor-shadow-sm);
+    }
+    .streak-card.is-done-today {
+      border-color: rgba(47, 155, 140, 0.28);
+    }
+    .streak-card.is-at-risk {
+      border-color: rgba(212, 168, 48, 0.4);
+    }
+    .streak-card-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: rgb(var(--harbor-text));
+      line-height: 1.25;
+    }
+    .streak-card-meta {
+      font-size: 0.68rem;
+      color: rgb(var(--harbor-muted));
+      margin-top: 0.15rem;
+    }
+    .streak-card-metric {
+      margin-top: 0.45rem;
+      font-size: 0.72rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-primary-light));
+      font-variant-numeric: tabular-nums;
+    }
+    .streak-card-days {
+      font-size: 2rem;
+      font-weight: 750;
+      font-family: var(--harbor-font-display);
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: rgb(var(--harbor-primary-light));
+      font-variant-numeric: tabular-nums;
+    }
+    .streak-card-days-unit {
+      font-size: 0.65rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-primary-light));
+      opacity: 0.85;
+    }
+    .streak-week-dots {
+      display: flex;
+      gap: 0.28rem;
+      margin-top: 0.55rem;
+    }
+    .streak-week-dot {
+      width: 0.48rem;
+      height: 0.48rem;
+      border-radius: 999px;
+      background: rgb(var(--harbor-border));
+    }
+    .streak-week-dot.is-done {
+      background: rgb(var(--harbor-primary));
+      box-shadow: 0 0 0 2px rgba(47, 155, 140, 0.15);
+    }
+    .streak-week-dot.is-pass {
+      background: rgba(47, 155, 140, 0.45);
+    }
+    .streak-week-dot.is-today {
+      outline: 1.5px solid rgb(var(--harbor-primary-light));
+      outline-offset: 1px;
+    }
+    .streak-status-chip {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.4rem;
+      border-radius: 999px;
+      margin-top: 0.35rem;
+    }
+    .streak-status-chip.is-done {
+      background: rgba(47, 155, 140, 0.14);
+      color: rgb(var(--harbor-primary-light));
+    }
+    .streak-status-chip.is-due {
+      background: rgba(212, 168, 48, 0.16);
+      color: #a67c12;
+    }
+    html[data-theme="dark"] .streak-status-chip.is-due {
+      color: #fbbf24;
+    }
+    .streak-status-chip.is-quiet {
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+    }
+
+    /* Compact Harbor Day extras */
+    .harbor-day-extras.hidden { display: none; }
+    .harbor-day-treats.hidden { display: none; }
+    .harbor-day-link-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.25rem 0;
+      cursor: pointer;
+    }
+    .harbor-goal-chip.is-custom-add {
+      border-style: dashed;
+      color: rgb(var(--harbor-primary-light));
+    }
+
+    .proj-headline {
+      font-size: 1.05rem;
+      font-weight: 750;
+      letter-spacing: -0.025em;
+      line-height: 1.3;
+      color: rgb(var(--harbor-text));
+      margin-bottom: 0.55rem;
+    }
+    .proj-pride {
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: rgb(var(--harbor-primary-light));
+      background: rgba(47, 155, 140, 0.1);
+      border: 1px solid rgba(47, 155, 140, 0.16);
+      border-radius: 0.9rem;
+      padding: 0.65rem 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .proj-stat-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.35rem 0;
+      border-top: 1px solid rgb(var(--harbor-border) / 0.7);
+      font-size: 0.8rem;
+    }
+    .proj-stat-row:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+    .proj-stat-label { color: rgb(var(--harbor-muted)); }
+    .proj-stat-value {
+      font-weight: 700;
+      color: rgb(var(--harbor-text));
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .proj-milestone {
+      margin-top: 0.65rem;
+      font-size: 0.72rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-primary-light));
+      background: rgb(var(--harbor-raised));
+      border-radius: 0.75rem;
+      padding: 0.5rem 0.65rem;
+      border: 1px solid rgb(var(--harbor-border));
+    }
+
     .harbor-mode-btn.is-selected {
       border-color: rgba(47, 155, 140, 0.65);
       background: rgba(47, 155, 140, 0.14);
@@ -6823,18 +6996,28 @@
 
       <!-- STREAKS TAB -->
       <div id="tab-content-streaks" class="tab-content px-5 pb-6 bg-transparent hidden">
-        <div class="streaks-body">
-          <div id="streaks-list" class="space-y-3"></div>
-          <div id="reward-bank-panel"></div>
+        <div class="streaks-tab-head mb-3">
+          <div class="section-header font-semibold text-harbor-text">Streaks</div>
+          <div class="text-[11px] text-harbor-muted leading-snug mt-0.5">See your fire, track what you measure, earn rest.</div>
         </div>
 
-        <!-- Habit Outlook -->
-        <div class="mt-6">
+        <!-- Harbor Day reward hero -->
+        <div id="reward-bank-panel" class="mb-4"></div>
+
+        <!-- Your fires -->
+        <div class="flex items-baseline justify-between gap-2 mb-2">
+          <div class="section-header font-semibold text-harbor-text text-[0.95rem]">Your fires</div>
+          <div id="streaks-count-label" class="text-[10px] text-harbor-muted tabular-nums"></div>
+        </div>
+        <div id="streaks-list" class="space-y-2.5"></div>
+
+        <!-- Habit Outlook — opens when a streak is selected -->
+        <div class="mt-5" id="habit-outlook-section">
           <div class="section-header font-semibold text-harbor-text mb-1">Habit Outlook</div>
-          <div class="text-[10px] text-harbor-muted mb-2">Pace and trends for habits with a goal — steps, miles, pages, savings, and more.</div>
-          <div id="projection-panel" 
-            class="bg-harbor-surface border border-harbor-border rounded-3xl p-4 text-sm">
-            <div id="projection-hint" class="text-harbor-muted text-xs">Tap a habit with a goal to see your pace and a gentle 30-day outlook.</div>
+          <div class="text-[10px] text-harbor-muted mb-2">Tap a streak above to see pace, pride stats, and log metrics.</div>
+          <div id="projection-panel"
+            class="bg-harbor-surface border border-harbor-border rounded-3xl p-4 text-sm shadow-[var(--harbor-shadow-sm)]">
+            <div id="projection-hint" class="text-harbor-muted text-xs leading-relaxed">Pick a habit to see where you’re headed — and celebrate the progress.</div>
             <div id="projection-content" class="hidden"></div>
           </div>
         </div>
@@ -6928,7 +7111,7 @@
       appVersion: 'preview-1.4'
     };
     // Bump when shipping visible copy/UI so testers can confirm they are not on a stale cache.
-    const HARBOR_BUILD = 'v164';
+    const HARBOR_BUILD = 'v165';
     const MAX_MEAL_PRESETS = 10;
     const MEAL_PRESETS_VERSION = 2; // themed Sun–Sat dinner grocery lists
 
@@ -7942,6 +8125,7 @@
       if (!state.rewardBank.passMilestones) state.rewardBank.passMilestones = {};
       if (state.rewardBank.bankedHarborDays == null) state.rewardBank.bankedHarborDays = 0;
       if (state.rewardBank.goalTreat === undefined) state.rewardBank.goalTreat = null;
+      if (!Array.isArray(state.rewardBank.customTreats)) state.rewardBank.customTreats = [];
       if (!state.habitPasses) state.habitPasses = {};
       if (!state.feedbackLog) state.feedbackLog = [];
       if (state.rewardBank.cheatDaysUsed != null && state.rewardBank.cheatDownsUsed == null) {
@@ -15630,10 +15814,10 @@
       }
       if (currentTab === 'streaks') renderRewardBank();
       
-      const ptsMsg = pointsEarned ? ` · +${pointsEarned} toward Harbor Day` : '';
+      const ptsMsg = pointsEarned ? ` · +${pointsEarned} fills Harbor Day` : '';
       const passMsg = passAwarded ? ' · 🌊 Pass earned' : '';
       const multiMsg = need > 1 ? ` (${afterCount}/${need} today)` : '';
-      showToast(`Great job! ${habit.title} logged${multiMsg}${ptsMsg}${passMsg}`);
+      showToast(`🔥 ${habit.title}${multiMsg}${ptsMsg}${passMsg}`);
       maybeAdvanceTutorial('habit-complete');
       
       // Gentle autonomous follow-up
@@ -20617,6 +20801,7 @@
       if (!state.rewardBank.passMilestones) state.rewardBank.passMilestones = {};
       if (state.rewardBank.bankedHarborDays == null) state.rewardBank.bankedHarborDays = 0;
       if (state.rewardBank.goalTreat === undefined) state.rewardBank.goalTreat = null;
+      if (!Array.isArray(state.rewardBank.customTreats)) state.rewardBank.customTreats = [];
       if (!state.habitPasses) state.habitPasses = {};
       return state.rewardBank;
     }
@@ -20678,9 +20863,59 @@
       showToast(treat ? `${treat.emoji || '✨'} Working toward: ${treat.label}` : 'Goal cleared — pick any treat when you claim');
     }
 
-    function getHarborTreatById(id) {
-      return CHEAT_DAY_TREATS.find(t => t.id === id) || null;
+    function getCustomHarborTreats() {
+      const bank = ensureRewardBank();
+      if (!Array.isArray(bank.customTreats)) bank.customTreats = [];
+      return bank.customTreats;
     }
+
+    function getAllHarborTreats() {
+      return [...CHEAT_DAY_TREATS, ...getCustomHarborTreats()];
+    }
+
+    function getHarborTreatById(id) {
+      if (!id) return null;
+      const all = getAllHarborTreats();
+      const found = all.find(t => t.id === id);
+      if (found) return found;
+      // Goal may be a one-off custom not yet in the list
+      const goal = getHarborGoalTreat();
+      if (goal && goal.id === id) return goal;
+      return null;
+    }
+
+    function addCustomHarborTreat(label, emoji) {
+      const clean = String(label || '').trim().slice(0, 40);
+      if (!clean) {
+        showToast('Enter a reward name', 'warn');
+        return null;
+      }
+      const bank = ensureRewardBank();
+      if (!Array.isArray(bank.customTreats)) bank.customTreats = [];
+      const treat = {
+        id: 'custom-' + Date.now(),
+        emoji: (emoji || '🎁').slice(0, 4),
+        label: clean,
+        isCustom: true
+      };
+      bank.customTreats.push(treat);
+      // Cap custom list
+      if (bank.customTreats.length > 12) bank.customTreats = bank.customTreats.slice(-12);
+      setHarborGoalTreat(treat);
+      return treat;
+    }
+
+    function promptCustomHarborTreat() {
+      const label = prompt('What reward are you working toward?', '');
+      if (label == null) return;
+      const emoji = prompt('Pick an emoji for it (optional)', '🎁') || '🎁';
+      const treat = addCustomHarborTreat(label, emoji.trim() || '🎁');
+      if (treat) showToast(`${treat.emoji} Saved: ${treat.label}`);
+    }
+
+    // Session UI state for compact Harbor Day
+    let harborTreatPickerOpen = false;
+    let harborDayExtrasOpen = false;
 
     function getHarborModeById(id) {
       return HARBOR_CLAIM_MODES.find(m => m.id === id) || HARBOR_CLAIM_MODES[0];
@@ -21169,14 +21404,17 @@
           </div>
 
           <div class="text-[10px] uppercase tracking-wider text-harbor-primary-light font-semibold mb-1.5">Your treat</div>
-          <div class="grid grid-cols-2 gap-2 mb-4" id="cheat-treat-grid">
-            ${CHEAT_DAY_TREATS.map(t => `
-              <button type="button" data-treat-id="${t.id}" class="cheat-treat-btn px-3 py-2.5 rounded-2xl border border-harbor-border bg-harbor-raised text-left active:opacity-90 ${goal && goal.id === t.id ? 'is-selected' : ''}">
+          <div class="grid grid-cols-2 gap-2 mb-2" id="cheat-treat-grid">
+            ${getAllHarborTreats().map(t => `
+              <button type="button" data-treat-id="${escapeBriefHtml(t.id)}" class="cheat-treat-btn px-3 py-2.5 rounded-2xl border border-harbor-border bg-harbor-raised text-left active:opacity-90 ${goal && goal.id === t.id ? 'is-selected' : ''}">
                 <div class="text-xl mb-0.5">${t.emoji}</div>
-                <div class="text-[11px] font-semibold text-harbor-text leading-snug">${t.label}</div>
+                <div class="text-[11px] font-semibold text-harbor-text leading-snug">${escapeBriefHtml(t.label)}</div>
               </button>
             `).join('')}
           </div>
+          <button type="button" id="cheat-custom-treat" class="w-full mb-4 py-2.5 rounded-2xl border border-dashed border-harbor-primary/40 text-[11px] font-semibold text-harbor-primary-light">
+            ＋ My own reward
+          </button>
 
           <button type="button" data-mode-id="${primaryMode.id}" id="harbor-mode-primary"
             class="harbor-mode-btn is-selected w-full text-left px-3.5 py-3 rounded-2xl border border-harbor-primary/40 bg-harbor-primary/10 mb-2">
@@ -21216,9 +21454,9 @@
       `;
       document.body.appendChild(modal);
 
-      let selectedTreat = goal && getHarborTreatById(goal.id)
-        ? getHarborTreatById(goal.id)
-        : (goal ? { id: goal.id, emoji: goal.emoji, label: goal.label } : null);
+      let selectedTreat = goal
+        ? (getHarborTreatById(goal.id) || { id: goal.id, emoji: goal.emoji, label: goal.label })
+        : null;
       let selectedMode = 'full';
 
       const confirmBtn = modal.querySelector('#cheat-redeem-confirm');
@@ -21231,9 +21469,9 @@
         if (fromBank) {
           confirmBtn.textContent = `Use credit · ${mode.short} · ${selectedTreat.emoji} ${selectedTreat.label}`;
         } else if (selectedMode === 'bank') {
-          confirmBtn.textContent = `Bank for later · ${selectedTreat.emoji} ${selectedTreat.label} · ${cost} pts`;
+          confirmBtn.textContent = `Bank for later · ${selectedTreat.emoji} ${selectedTreat.label}`;
         } else {
-          confirmBtn.textContent = `Claim ${mode.short} · ${selectedTreat.emoji} ${selectedTreat.label} · ${cost} pts`;
+          confirmBtn.textContent = `Claim ${mode.short} · ${selectedTreat.emoji} ${selectedTreat.label}`;
         }
       };
 
@@ -21241,6 +21479,14 @@
         selectedMode = id;
         modal.querySelectorAll('.harbor-mode-btn').forEach(b => {
           b.classList.toggle('is-selected', b.dataset.modeId === id);
+        });
+        syncConfirm();
+      };
+
+      const selectTreat = (treat) => {
+        selectedTreat = treat;
+        modal.querySelectorAll('.cheat-treat-btn').forEach(b => {
+          b.classList.toggle('is-selected', b.dataset.treatId === treat?.id);
         });
         syncConfirm();
       };
@@ -21260,11 +21506,19 @@
       modal.querySelectorAll('.cheat-treat-btn').forEach(btn => {
         if (selectedTreat && btn.dataset.treatId === selectedTreat.id) btn.classList.add('is-selected');
         btn.onclick = () => {
-          modal.querySelectorAll('.cheat-treat-btn').forEach(b => b.classList.remove('is-selected'));
-          btn.classList.add('is-selected');
-          selectedTreat = CHEAT_DAY_TREATS.find(t => t.id === btn.dataset.treatId) || null;
-          syncConfirm();
+          selectTreat(getHarborTreatById(btn.dataset.treatId));
         };
+      });
+
+      modal.querySelector('#cheat-custom-treat')?.addEventListener('click', () => {
+        const label = prompt('What reward are you claiming?', selectedTreat?.label || '');
+        if (label == null) return;
+        const emoji = prompt('Emoji (optional)', selectedTreat?.emoji || '🎁') || '🎁';
+        const treat = addCustomHarborTreat(label, emoji.trim() || '🎁');
+        if (!treat) return;
+        // Re-open claim modal with new treat selected (list grew)
+        modal.remove();
+        showCheatDayRedeemModal(options);
       });
 
       syncConfirm();
@@ -21286,7 +21540,7 @@
       if (!isCheatDayFundEnabled()) {
         panel.innerHTML = `
           <div class="harbor-day-card text-center">
-            <div class="text-xs text-harbor-muted">Harbor Day is off — enable in Settings for earned rest from real progress.</div>
+            <div class="text-xs text-harbor-muted">Harbor Day is off — turn it on in Settings to earn rest from real progress.</div>
           </div>`;
         return;
       }
@@ -21299,11 +21553,19 @@
       const goal = getHarborGoalTreat();
       const banked = bank.bankedHarborDays || 0;
       const passes = bank.skipToken || 0;
+      const lastEarn = bank.lastEarned && bank.lastEarnedAt && (Date.now() - bank.lastEarnedAt < 120000)
+        ? bank.lastEarned
+        : 0;
 
-      const goalChips = CHEAT_DAY_TREATS.map(t => {
+      // Open picker if no goal yet so first visit is clear
+      if (!goal) harborTreatPickerOpen = true;
+
+      const treats = getAllHarborTreats();
+      const goalChips = treats.map(t => {
         const selected = goal && goal.id === t.id;
-        return `<button type="button" class="harbor-goal-chip ${selected ? 'is-selected' : ''}" data-goal-id="${t.id}">${t.emoji} ${t.label}</button>`;
-      }).join('');
+        return `<button type="button" class="harbor-goal-chip ${selected ? 'is-selected' : ''}" data-goal-id="${escapeBriefHtml(t.id)}">${t.emoji} ${escapeBriefHtml(t.label)}</button>`;
+      }).join('') + `
+        <button type="button" class="harbor-goal-chip is-custom-add" data-custom-treat="1">＋ My reward</button>`;
 
       const passHtml = `
         <div class="harbor-day-action mb-2 ${passes ? 'is-ready' : ''}">
@@ -21313,8 +21575,8 @@
               <div class="text-[11px] font-semibold text-harbor-text">Streak Pass${passes ? ` · ${passes}` : ''}</div>
               <div class="text-[9px] text-harbor-muted leading-snug">
                 ${passes
-                  ? 'On Today, Pass a streak habit to keep the fire without completing it.'
-                  : 'Earn at 7, 14, 21, and 30-day milestones · hold max 2'}
+                  ? 'On Today, use Pass to keep a streak without completing it.'
+                  : 'Earn at 7 · 14 · 21 · 30-day milestones · hold max 2'}
               </div>
             </div>
           </div>
@@ -21331,49 +21593,44 @@
               <span class="text-[10px] font-semibold text-harbor-primary-light">Use</span>
             </div>
           </button>`
-        : '';
+        : `<div class="harbor-day-action mb-2 opacity-80">
+            <div class="flex items-center gap-2.5">
+              <span class="text-base leading-none">🏦</span>
+              <div class="flex-1 min-w-0">
+                <div class="text-[11px] font-semibold text-harbor-text">Bank for later</div>
+                <div class="text-[9px] text-harbor-muted leading-snug">When you claim, you can save rest for a hard week</div>
+              </div>
+            </div>
+          </div>`;
 
-      const activeGuides = getActiveRewardGuides().filter(g =>
-        !String(g.label || '').toLowerCase().includes('badge') &&
-        !String(g.label || '').toLowerCase().includes('boost') &&
-        !String(g.label || '').toLowerCase().includes('theme')
-      );
-      const activeGuidesHtml = activeGuides.length
-        ? `<div class="mb-2.5 space-y-1.5">
-            ${activeGuides.map(g => `
-              <div class="flex gap-2 items-start px-0.5">
-                <span class="text-sm leading-none mt-0.5">${g.emoji}</span>
-                <div class="min-w-0">
-                  <div class="text-[10px] font-semibold text-harbor-text">${g.label}</div>
-                  <div class="text-[9px] text-harbor-muted leading-snug">${g.text}</div>
-                </div>
-              </div>`).join('')}
+      const activeMode = typeof getActiveHarborMode === 'function' ? getActiveHarborMode() : null;
+      const activeBanner = activeMode
+        ? `<div class="mb-2.5 px-2.5 py-2 rounded-xl bg-harbor-primary/10 border border-harbor-primary/25 text-[11px] text-harbor-text leading-snug">
+            ${getHarborModeById(activeMode).emoji} <strong>${getHarborModeById(activeMode).label}</strong> is active — streaks stay protected.
           </div>`
         : '';
 
       panel.innerHTML = `
         <div class="harbor-day-card">
-          <div class="flex items-center justify-between gap-2 mb-3">
-            <div>
-              <div class="harbor-day-kicker">Harbor Day</div>
-              <div class="text-[15px] font-semibold text-harbor-text tracking-tight mt-0.5">
-                ${goal ? `${goal.emoji} ${goal.label}` : 'Name your rest'}
-              </div>
-            </div>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <div class="harbor-day-kicker">Harbor Day</div>
             <div class="text-right">
               <div class="harbor-day-pts">${bank.points}<span class="text-harbor-muted font-medium">/${cost}</span></div>
-              <div class="text-[9px] text-harbor-muted mt-0.5">${pct}%</div>
+              ${lastEarn ? `<div class="text-[9px] text-harbor-primary-light font-semibold">+${lastEarn} just now</div>` : `<div class="text-[9px] text-harbor-muted">${pct}%</div>`}
             </div>
           </div>
 
-          <div class="text-[10px] text-harbor-muted leading-snug mb-2">
-            ${goal
-              ? 'Due tasks fill the meter. Claim a full day when ready — or choose another shape of rest.'
-              : 'Pick a treat. Earn it with real due work. Claim when the meter fills.'}
+          <div class="text-[15px] font-semibold text-harbor-text tracking-tight mb-1">
+            ${goal ? `${goal.emoji} ${escapeBriefHtml(goal.label)}` : 'Pick a reward you’re working toward'}
           </div>
+          <button type="button" class="harbor-day-link-btn mb-2" id="harbor-treat-toggle" aria-expanded="${harborTreatPickerOpen ? 'true' : 'false'}">
+            ${goal ? (harborTreatPickerOpen ? 'Hide rewards' : 'Change reward') : 'Choose a reward'}
+          </button>
 
-          <div class="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5 px-0.5 mb-1" style="-webkit-overflow-scrolling:touch;">
-            ${goalChips}
+          <div class="harbor-day-treats ${harborTreatPickerOpen ? '' : 'hidden'}" id="harbor-treat-picker">
+            <div class="flex gap-1.5 overflow-x-auto pb-1.5 -mx-0.5 px-0.5 mb-2" style="-webkit-overflow-scrolling:touch;">
+              ${goalChips}
+            </div>
           </div>
 
           <div class="cheat-fund-jar">
@@ -21382,32 +21639,52 @@
               <div class="cheat-fund-fill" style="width:${pct}%"></div>
             </div>
           </div>
-          <div class="text-[10px] text-harbor-primary-light mb-3 leading-snug">${getCheatDayEstimate()}</div>
+          <div class="text-[10px] text-harbor-primary-light mb-2.5 leading-snug">${getCheatDayEstimate()}</div>
 
-          ${activeGuidesHtml}
-          ${bankedHtml}
-          ${passHtml}
+          ${activeBanner}
 
           <button type="button" onclick="redeemCheatDay()" class="harbor-day-cta" ${canRedeem || cooldown > 0 ? '' : 'disabled'}>
             ${cooldown > 0
               ? `Recharging · ${cooldown}d left`
               : canRedeem
-                ? `Claim Full Day${goal ? ` · ${goal.emoji}` : ''}`
-                : `${Math.max(0, cost - bank.points)} pts to go`}
+                ? `Claim rest${goal ? ` · ${goal.emoji}` : ''}`
+                : goal
+                  ? `Keep going · ${Math.max(0, cost - bank.points)} to go`
+                  : 'Pick a reward to start'}
           </button>
-          <div class="text-[9px] text-harbor-muted text-center mt-2.5 leading-snug">
-            Full day by default · Moment, Window, or Bank in claim
+
+          <button type="button" class="harbor-day-link-btn w-full text-center mt-2" id="harbor-extras-toggle" aria-expanded="${harborDayExtrasOpen ? 'true' : 'false'}">
+            ${harborDayExtrasOpen ? 'Hide Pass & Bank' : 'Streak Pass & Bank'}
+          </button>
+          <div class="harbor-day-extras ${harborDayExtrasOpen ? '' : 'hidden'} mt-2" id="harbor-day-extras">
+            ${bankedHtml}
+            ${passHtml}
           </div>
         </div>
       `;
 
+      panel.querySelector('#harbor-treat-toggle')?.addEventListener('click', () => {
+        harborTreatPickerOpen = !harborTreatPickerOpen;
+        renderRewardBank();
+      });
+      panel.querySelector('#harbor-extras-toggle')?.addEventListener('click', () => {
+        harborDayExtrasOpen = !harborDayExtrasOpen;
+        renderRewardBank();
+      });
+      panel.querySelector('[data-custom-treat]')?.addEventListener('click', () => {
+        promptCustomHarborTreat();
+      });
       panel.querySelectorAll('[data-goal-id]').forEach(btn => {
         btn.onclick = () => {
           const treat = getHarborTreatById(btn.dataset.goalId);
           if (!treat) return;
           const cur = getHarborGoalTreat();
           if (cur && cur.id === treat.id) setHarborGoalTreat(null);
-          else setHarborGoalTreat(treat);
+          else {
+            setHarborGoalTreat(treat);
+            harborTreatPickerOpen = false;
+          }
+          renderRewardBank();
         };
       });
     }
@@ -21477,8 +21754,82 @@
       showToast(`No longer tracking streak: ${habit.title}`);
     }
 
+    function getStreakWeekDots(habitId) {
+      const comps = new Set(getCompletions(habitId) || []);
+      const passes = new Set(getHabitPasses(habitId) || []);
+      const skips = new Set(getHabitSkips(habitId) || []);
+      const today = todayStr();
+      const dots = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setHours(12, 0, 0, 0);
+        d.setDate(d.getDate() - i);
+        const ds = dateStrLocal(d);
+        dots.push({
+          date: ds,
+          done: comps.has(ds),
+          pass: passes.has(ds),
+          skip: skips.has(ds),
+          isToday: ds === today
+        });
+      }
+      return dots;
+    }
+
+    function getStreakMetricPreview(habit) {
+      if (!isQuantitativeHabit(habit)) return '';
+      try {
+        const todayLog = getTodaysMetricLog(habit);
+        const type = getHabitMetricType(habit);
+        const target = habit.target_value;
+        const unit = habit.unit || (type === 'steps' ? 'steps' : type === 'pages' ? 'pages' : type === 'savings' ? '$' : type === 'miles' ? 'mi' : '');
+        if (todayLog) {
+          const v = todayLog.displayValue != null ? todayLog.displayValue : todayLog.value;
+          const u = todayLog.displayUnit || unit;
+          const shown = type === 'steps' || type === 'pages'
+            ? Math.round(Number(v)).toLocaleString()
+            : type === 'savings'
+              ? `$${Math.round(Number(v)).toLocaleString()}`
+              : formatDistanceAmount(v, u);
+          if (target != null && type !== 'miles') {
+            return `Today ${shown} ${u !== '$' ? u : ''} · goal ${Number(target).toLocaleString()}`.replace(/\s+/g, ' ').trim();
+          }
+          if (target != null && type === 'miles') {
+            return `Today ${shown} ${u} · goal ${target}`;
+          }
+          return `Today ${shown}${u && u !== '$' ? ` ${u}` : ''}`;
+        }
+        if (target != null) {
+          if (type === 'savings') return `Goal $${Number(target).toLocaleString()}`;
+          return `Goal ${Number(target).toLocaleString()}${unit ? ` ${unit}` : ''}`;
+        }
+        return 'Tap to log & see outlook';
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function getStreakCardStatus(habit) {
+      const done = isCompletedToday(habit.id);
+      if (done) return { id: 'done', label: 'Done today', cls: 'is-done' };
+      if (isDueToday(habit)) return { id: 'due', label: 'Due today', cls: 'is-due' };
+      const streak = computeCurrentStreak(habit.id);
+      if (streak <= 0) return { id: 'quiet', label: 'Start a run', cls: 'is-quiet' };
+      return { id: 'active', label: 'On a run', cls: 'is-done' };
+    }
+
+    function getNextPassMilestone(habitId) {
+      const streak = computeCurrentStreak(habitId);
+      const bank = ensureRewardBank();
+      const earned = bank.passMilestones?.[habitId] || [];
+      const next = HARBOR_PASS_MILESTONES.find(m => streak < m && !earned.includes(m));
+      if (!next) return null;
+      return { at: next, left: next - streak };
+    }
+
     function renderStreakCards() {
       const container = document.getElementById('streaks-list');
+      const countLabel = document.getElementById('streaks-count-label');
       if (!container) return;
       container.innerHTML = '';
 
@@ -21487,21 +21838,55 @@
         if (!projected || !shouldTrackStreak(projected)) currentProjectionHabit = null;
       }
 
-      const active = state.habits
+      // All streak-tracked habits — including day 0 so the tab never feels empty mid-rebuild
+      const rows = state.habits
         .filter(h => shouldTrackStreak(h))
-        .map(h => ({ habit: h, streak: computeCurrentStreak(h.id) }))
-        .filter(x => x.streak > 0)
-        .sort((a, b) => b.streak - a.streak);
+        .map(h => {
+          const streak = computeCurrentStreak(h.id);
+          const status = getStreakCardStatus(h);
+          const due = isDueToday(h) && !isCompletedToday(h.id);
+          return { habit: h, streak, status, due };
+        })
+        .sort((a, b) => {
+          // Due today first, then higher streak, then title
+          if (a.due !== b.due) return a.due ? -1 : 1;
+          if (b.streak !== a.streak) return b.streak - a.streak;
+          return String(a.habit.title || '').localeCompare(String(b.habit.title || ''));
+        });
 
-      if (active.length === 0) {
+      if (countLabel) {
+        countLabel.textContent = rows.length
+          ? `${rows.length} habit${rows.length === 1 ? '' : 's'}`
+          : '';
+      }
+
+      if (rows.length === 0) {
         currentProjectionHabit = null;
-        container.innerHTML = harborEmptyHtml('🔥', 'No Streaks Yet', 'Add a daily Habit from Today — chores and one-time tasks don’t build streaks.');
+        container.innerHTML = harborEmptyHtml(
+          '🔥',
+          'No streak habits yet',
+          'Add a daily habit from Today or Library — that’s what builds fire here.',
+          `<div class="harbor-empty-actions">
+            <button type="button" class="chip-add-btn" onclick="switchTab('today'); showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add habit</button>
+            <button type="button" class="chip-tool-btn" onclick="switchTab('library')">Browse Library</button>
+          </div>`
+        );
+        updateProjectionHint();
         return;
       }
 
-      active.forEach(({ habit, streak }) => {
+      rows.forEach(({ habit, streak, status }) => {
         const longest = getLongestStreak(habit.id);
         const isSelected = currentProjectionHabit === habit.id;
+        const metric = getStreakMetricPreview(habit);
+        const dots = getStreakWeekDots(habit.id);
+        const cardClass = [
+          'streak-card',
+          isSelected ? 'is-selected' : '',
+          status.id === 'done' ? 'is-done-today' : '',
+          status.id === 'due' ? 'is-at-risk' : ''
+        ].filter(Boolean).join(' ');
+
         const row = document.createElement('div');
         row.className = 'swipe-row';
         row.dataset.habitId = habit.id;
@@ -21509,29 +21894,31 @@
         row.dataset.swipeType = 'streak';
 
         const actionsHtml = `
-          <button type="button" class="swipe-action swipe-action-view" data-action="view" aria-label="View projections"><i class="fa-solid fa-chart-line"></i> View</button>
-          <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete streak"><i class="fa-solid fa-trash-can"></i> Delete</button>
+          <button type="button" class="swipe-action swipe-action-view" data-action="view" aria-label="View outlook"><i class="fa-solid fa-chart-line"></i> Outlook</button>
+          <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Stop streak"><i class="fa-solid fa-trash-can"></i> Remove</button>
         `;
         const contentHtml = `
-          <div class="flex justify-between items-start gap-2 w-full" onclick="showProjections('${habit.id}')">
+          <div class="flex justify-between items-start gap-3 w-full" onclick="showProjections('${habit.id}')">
             <div class="flex-1 min-w-0">
-              <div class="font-semibold mb-0.5">${habit.title}</div>
-              <div class="text-xs text-harbor-muted">${habit.category} • longest ${longest}d${isQuantitativeHabit(habit) ? ' • measurable' : ''}</div>
+              <div class="streak-card-title truncate">${escapeBriefHtml(habit.title)}</div>
+              <div class="streak-card-meta">Longest ${longest}d${isQuantitativeHabit(habit) ? ' · measurable' : ''}</div>
+              ${metric ? `<div class="streak-card-metric">${escapeBriefHtml(metric)}</div>` : ''}
+              <div class="streak-week-dots" aria-hidden="true">
+                ${dots.map(d => `<span class="streak-week-dot${d.done ? ' is-done' : ''}${d.pass && !d.done ? ' is-pass' : ''}${d.isToday ? ' is-today' : ''}"></span>`).join('')}
+              </div>
+              <span class="streak-status-chip ${status.cls}">${status.label}</span>
             </div>
-            <div class="flex items-start gap-2 flex-shrink-0">
+            <div class="flex items-start gap-1.5 flex-shrink-0">
               <div class="text-right">
-                <div class="flex items-baseline justify-end gap-x-1">
-                  <span class="text-4xl font-display font-semibold tabular-nums text-harbor-primary-light">${streak}</span>
-                  <span class="text-xs text-harbor-primary-light">days</span>
-                </div>
+                <div class="streak-card-days">${streak}</div>
+                <div class="streak-card-days-unit">day${streak === 1 ? '' : 's'}</div>
               </div>
               <button type="button" onclick="deleteStreak('${habit.id}', event)"
-                class="row-inline-actions text-harbor-muted hover:text-rose-400 text-sm px-1 pt-0.5" title="Delete streak permanently">×</button>
+                class="row-inline-actions text-harbor-muted hover:text-rose-400 text-sm px-1 pt-0.5" title="Stop tracking streak">×</button>
             </div>
           </div>
         `;
-        row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
-          `harbor-card bg-harbor-surface border rounded-3xl px-4 py-3.5 cursor-pointer active:bg-harbor-border ${isSelected ? 'border-harbor-primary/60 shadow-[var(--harbor-glow-primary)]' : 'border-harbor-border'}`);
+        row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml, cardClass);
         container.appendChild(row);
       });
       bindSwipeRows(container);
@@ -21575,10 +21962,13 @@
       const habit = state.habits.find(h => h.id === habitId);
       if (!habit) return;
       maybeAdvanceTutorial('projection-open');
-      
-      const proj = getProjections(habit, computeCurrentStreak(habitId));
-      
+
+      const streak = computeCurrentStreak(habitId);
+      const longest = getLongestStreak(habitId);
+      const proj = getProjections(habit, streak);
+
       const panel = document.getElementById('projection-content');
+      if (!panel) return;
       panel.classList.remove('hidden');
       updateProjectionHint();
       renderStreakCards();
@@ -21586,45 +21976,56 @@
       const metricLogger = isQuantitativeHabit(habit) ? renderProjectionMetricLogger(habit) : '';
       const showFatInsight = getHabitMetricType(habit) === 'miles' || getHabitMetricType(habit) === 'steps';
       const fatInsightHtml = showFatInsight ? renderFatCalorieInsight(proj.fatInsightKcal || 0) : '';
+      const milestone = getNextPassMilestone(habitId);
+      const milestoneHtml = milestone
+        ? `<div class="proj-milestone">🌊 ${milestone.left} day${milestone.left === 1 ? '' : 's'} to a Streak Pass (${milestone.at}-day mark)</div>`
+        : (streak >= 7
+          ? `<div class="proj-milestone">🔥 ${streak}-day fire · longest ${longest}d</div>`
+          : `<div class="proj-milestone">🔥 ${streak} day${streak === 1 ? '' : 's'} · longest ${longest}d · keep the chain</div>`);
 
       if (!proj.canProject) {
         panel.innerHTML = `
-          <div class="font-semibold text-base mb-1">${proj.title}</div>
-          <div class="text-xs bg-harbor-raised px-3 py-3 rounded-2xl text-harbor-muted leading-relaxed">${proj.message}</div>
+          <div class="proj-headline">${escapeBriefHtml(proj.title)}</div>
+          <div class="text-xs bg-harbor-raised px-3 py-3 rounded-2xl text-harbor-muted leading-relaxed mb-2">${proj.message}</div>
+          ${milestoneHtml}
           ${fatInsightHtml}
           ${metricLogger}
-          <div class="text-xs text-center mt-3 text-harbor-muted">${metricLogger ? 'Log an activity to see projections' : 'Only measurable goals get 30-day projections'}</div>
+          <div class="text-[10px] text-center mt-3 text-harbor-muted">${metricLogger ? 'Log once to unlock your 30-day outlook' : 'Add a target (steps, miles, pages…) for projections'}</div>
         `;
         bindProjectionMetricLogger(panel, habitId);
-        finishProjectionPanelRender(panel);
+        finishProjectionPanelRender(document.getElementById('projection-panel') || panel);
         return;
       }
 
+      // Pride first: equivalent headline, then stats
+      const pride = proj.equivalent
+        ? `<div class="proj-pride">${proj.equivalent}</div>`
+        : '';
+      const primaryMetric = proj.metrics.find(m => /30-day/i.test(m.label)) || proj.metrics[proj.metrics.length - 1];
+      const headline = primaryMetric
+        ? `At this pace: <span class="text-harbor-primary-light">${primaryMetric.value}</span> ahead`
+        : escapeBriefHtml(proj.title);
+
       panel.innerHTML = `
-        <div class="font-semibold text-base mb-1">${proj.title}</div>
-        <div class="text-xs text-harbor-muted mb-3">Last 30 days</div>
-        
-        <div class="space-y-2 text-sm">
+        <div class="proj-headline">${headline}</div>
+        ${pride}
+        <div class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted mb-1.5">Last 30 days</div>
+        <div>
           ${proj.metrics.map(m => `
-            <div class="flex justify-between">
-              <div class="text-harbor-text">${m.label}</div>
-              <div class="font-semibold text-right">${m.value}</div>
+            <div class="proj-stat-row">
+              <div class="proj-stat-label">${m.label}</div>
+              <div class="proj-stat-value">${m.value}</div>
             </div>
           `).join('')}
         </div>
-        
-        ${proj.equivalent ? `<div class="mt-3 text-xs bg-harbor-surface/60 px-3 py-2 rounded-2xl text-harbor-primary-light">${proj.equivalent}</div>` : ''}
+        ${milestoneHtml}
         ${fatInsightHtml}
-        ${proj.profileNote ? `<div class="mt-2 text-[10px] text-harbor-muted leading-snug px-1">${proj.profileNote}</div>` : ''}
+        ${proj.profileNote ? `<div class="mt-2 text-[10px] text-harbor-muted leading-snug">${proj.profileNote}</div>` : ''}
         ${metricLogger}
-        
-        <div class="text-xs text-center mt-3 text-harbor-muted">Tap another streak to compare</div>
-        <div class="text-[9px] text-center mt-2 text-harbor-muted/50 tabular-nums">Harbor ${HARBOR_BUILD}</div>
+        <div class="text-[10px] text-center mt-3 text-harbor-muted">Tap another fire to compare</div>
       `;
       bindProjectionMetricLogger(panel, habitId);
-      
-      // Scroll into view on mobile
-      panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      finishProjectionPanelRender(document.getElementById('projection-panel') || panel);
     }
 
     // ==================== WEATHER + REAL CONTEXT (lightweight) ====================
