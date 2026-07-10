@@ -4328,21 +4328,40 @@
       background: rgba(8, 18, 18, 0.55);
     }
 
+    /* Same shell as day-events — must be fixed bottom sheet or KPI taps look like no-ops */
     #summary-kpi-detail-modal {
-      z-index: 270;
+      position: fixed;
+      inset: 0;
+      z-index: 280;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      background: rgba(8, 18, 18, 0.55);
     }
 
     #summary-kpi-detail-modal .summary-kpi-detail-sheet {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 32rem;
       max-height: min(78vh, 36rem);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
+      background: rgb(var(--harbor-surface));
+      color: rgb(var(--harbor-text));
+      border-top: 1px solid rgb(var(--harbor-border));
+      border-radius: 1.5rem 1.5rem 0 0;
+      box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.4);
+      -webkit-overflow-scrolling: touch;
     }
 
     .summary-kpi-detail-list {
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      flex: 1;
-      min-height: 0;
+      flex: 1 1 auto;
+      min-height: 4rem;
+      max-height: min(52vh, 24rem);
       margin: 0 -0.15rem;
       padding: 0 0.15rem 0.25rem;
     }
@@ -8030,7 +8049,7 @@
     // Bump MINOR for larger feature sets, PATCH for fixes. Reserve 1.0.0 for store launch.
     const HARBOR_VERSION = '0.9.3';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 184;
+    const HARBOR_BUILD_NUMBER = 185;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -8055,7 +8074,8 @@
         highlights: [
           'Tap the Tasks, Events, Bills, or Grocery boxes in Summary to open the full list for that range',
           'Weekly chores (for example, mow the lawn) now show on Today and in Summary as soon as you add them',
-          'Family member tags on events keep the color on the event title — no extra filler circle next to the name'
+          'Family member tags on events keep the color on the event title — no extra filler circle next to the name',
+          'Summary list sheet layout fixed so tapped boxes actually show your items'
         ]
       },
       {
@@ -19409,8 +19429,9 @@
           return `<div class="summary-empty py-4 text-center">No tasks in this range. Add one from Today or the Library.</div>`;
         }
         return tasks.map(item => {
-          const h = item.habit;
-          const due = item.daysUntil <= 0
+          const h = item?.habit;
+          if (!h) return '';
+          const due = (item.daysUntil ?? 0) <= 0
             ? 'Due today'
             : item.daysUntil === 1
               ? 'Tomorrow'
@@ -19424,7 +19445,7 @@
           return `
             <div class="summary-kpi-detail-row">
               <div class="summary-kpi-detail-main">
-                <div class="summary-kpi-detail-title">${escapeBriefHtml(h.title)}</div>
+                <div class="summary-kpi-detail-title">${escapeBriefHtml(h.title || 'Untitled')}</div>
                 <div class="summary-kpi-detail-meta">
                   <span>${escapeBriefHtml(due)}</span>
                   <span>·</span>
@@ -19433,7 +19454,7 @@
                 </div>
               </div>
             </div>`;
-        }).join('');
+        }).filter(Boolean).join('');
       }
 
       if (kind === 'events') {
@@ -19513,14 +19534,6 @@
     function showSummaryKpiDetail(kind) {
       if (!kind) return;
       closeSummaryKpiDetail();
-      let brief;
-      try {
-        brief = buildSummary(summaryMode || 'day');
-      } catch (err) {
-        console.error('[Harbor] KPI detail failed', err);
-        showToast('Couldn’t open that list');
-        return;
-      }
 
       const titles = {
         tasks: 'Tasks',
@@ -19529,28 +19542,42 @@
         grocery: 'Grocery'
       };
       const title = titles[kind] || 'Details';
-      const counts = {
-        tasks: (brief.tasks || []).length,
-        events: flattenBriefEvents(brief).length,
-        bills: (brief.bills || []).length,
-        grocery: (state.groceryMaster || []).filter(g => !g.checked).length
-      };
-      const count = counts[kind] ?? 0;
-      const jump = {
+      const jumpDefs = {
         tasks: { label: 'Open Today', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('today'); } },
         events: { label: 'Full schedule', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('life'); switchLifePanel('schedule'); } },
         bills: { label: 'Open Bills', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('life'); switchLifePanel('bills'); } },
         grocery: { label: 'Open Grocery', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('life'); switchLifePanel('grocery'); } }
-      }[kind];
+      };
+      const jump = jumpDefs[kind];
+
+      let rangeLabel = 'Today';
+      let count = 0;
+      let rowsHtml = '';
+      try {
+        const brief = buildSummary(summaryMode || 'day');
+        rangeLabel = brief.mode === 'day' ? 'Today' : brief.mode === 'month' ? 'This month' : 'This week';
+        const counts = {
+          tasks: (brief.tasks || []).length,
+          events: flattenBriefEvents(brief).length,
+          bills: (brief.bills || []).length,
+          grocery: (state.groceryMaster || []).filter(g => !g.checked).length
+        };
+        count = counts[kind] ?? 0;
+        rowsHtml = renderSummaryKpiDetailRows(kind, brief);
+      } catch (err) {
+        console.error('[Harbor] KPI detail failed', err);
+        rowsHtml = `<div class="summary-empty py-4 text-center">Couldn’t load this list. Close and try again.</div>`;
+      }
 
       const modal = document.createElement('div');
       modal.id = 'summary-kpi-detail-modal';
-      modal.className = 'modal-overlay-blur';
+      // fixed + flex items-end matches other bottom sheets; dedicated CSS fills the rest
+      modal.className = 'fixed inset-0 modal-overlay-blur flex items-end justify-center';
       modal.setAttribute('role', 'dialog');
       modal.setAttribute('aria-modal', 'true');
       modal.setAttribute('aria-label', title);
       modal.innerHTML = `
-        <div class="absolute inset-0" data-kpi-detail-backdrop="1"></div>
+        <div class="absolute inset-0" data-kpi-detail-backdrop="1" aria-hidden="true"></div>
         <div class="summary-kpi-detail-sheet summary-day-events-sheet modal-sheet p-5 text-sm" data-sheet-panel="1">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-0.5 flex items-center justify-between gap-2">
@@ -19558,23 +19585,23 @@
             <button type="button" class="modal-close-chip" data-kpi-detail-close="1" aria-label="Close">Close</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-3">
-            ${count} item${count === 1 ? '' : 's'} · ${escapeBriefHtml(
-              brief.mode === 'day' ? 'Today' : brief.mode === 'month' ? 'This month' : 'This week'
-            )}
+            ${count} item${count === 1 ? '' : 's'} · ${escapeBriefHtml(rangeLabel)}
           </div>
-          <div class="summary-kpi-detail-list" id="summary-kpi-detail-list">
-            ${renderSummaryKpiDetailRows(kind, brief)}
+          <div class="summary-kpi-detail-list" id="summary-kpi-detail-list" data-sheet-scroll="1">
+            ${rowsHtml}
           </div>
           ${jump ? `<button type="button" id="summary-kpi-detail-jump"
-            class="w-full mt-3 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-semibold text-harbor-primary-light active:bg-harbor-border">
-            ${escapeBriefHtml(jump.label)} <i class="fa-solid fa-arrow-right text-[9px] ml-1"></i>
+            class="w-full mt-3 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-semibold text-harbor-primary-light active:bg-harbor-border flex-shrink-0">
+            ${escapeBriefHtml(jump.label)} <i class="fa-solid fa-arrow-right text-[9px] ml-1" aria-hidden="true"></i>
           </button>` : ''}
         </div>`;
       document.body.appendChild(modal);
 
+      const ignoreBackdropUntil = Date.now() + 350;
       modal.querySelector('[data-kpi-detail-backdrop]')?.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (Date.now() < ignoreBackdropUntil) return;
         closeSummaryKpiDetail();
       });
       modal.querySelector('[data-kpi-detail-close]')?.addEventListener('click', (e) => {
@@ -19585,7 +19612,9 @@
       modal.querySelector('.summary-kpi-detail-sheet')?.addEventListener('click', (e) => {
         e.stopPropagation();
       });
-      modal.querySelector('#summary-kpi-detail-jump')?.addEventListener('click', () => {
+      modal.querySelector('#summary-kpi-detail-jump')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         if (jump?.action) jump.action();
       });
       requestAnimationFrame(() => {
