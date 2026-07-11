@@ -1095,13 +1095,20 @@
         transition: transform 0.24s var(--harbor-ease-out);
       }
 
-      .swipe-row-content.habit-card:active,
-      .swipe-row-content.harbor-card:active {
+      /* Only kill press scale when closed — never snap an open swipe closed under a tap */
+      .swipe-row:not(.is-open):not(.is-swiping) .swipe-row-content.habit-card:active,
+      .swipe-row:not(.is-open):not(.is-swiping) .swipe-row-content.harbor-card:active {
         transform: none;
       }
 
       .swipe-row.is-open .swipe-row-content {
         transform: translateX(calc(-1 * var(--swipe-reveal)));
+      }
+
+      .swipe-action {
+        touch-action: manipulation;
+        -webkit-user-select: none;
+        user-select: none;
       }
 
       .swipe-row-hint {
@@ -10493,7 +10500,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 303;
+    const HARBOR_BUILD_NUMBER = 304;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -10518,9 +10525,17 @@
       {
         version: '0.9',
         date: '2026-07-11',
-        title: 'Header palette fix · build 260',
-        intro: 'Date/menu header is painted per palette (no more stuck Harbor Mint bar in Safari).',
+        title: 'Swipe Undo fix · build 304',
+        intro: 'Swipe Undo on completed tasks works again for weekly/monthly and multi-log Frequency.',
         sections: [
+          {
+            heading: 'Completed tasks',
+            items: [
+              'Swipe left → Undo restores the latest completion in the current period (not only “today”)',
+              'Weekly / monthly tasks that finished earlier in the period can be undone',
+              'Multi-log (e.g. 2×) steps back one completion per Undo (2/2 → 1/2 → active)'
+            ]
+          },
           {
             heading: 'Color palettes',
             items: [
@@ -23942,12 +23957,24 @@
         const revealPx = actions.offsetWidth || SWIPE_REVEAL_PX;
 
         row.querySelectorAll('.swipe-action').forEach(btn => {
-          btn.addEventListener('click', (e) => {
+          // pointerup + click: iOS sometimes drops the synthetic click after a swipe open
+          const fireSwipeAction = (e) => {
             e.preventDefault();
             e.stopPropagation();
+            if (row.dataset.swipeActionLock === '1') return;
+            row.dataset.swipeActionLock = '1';
+            setTimeout(() => { delete row.dataset.swipeActionLock; }, 420);
+            const action = btn.dataset.action;
             closeAllSwipeRows();
-            runSwipeRowAction(row, btn.dataset.action);
+            runSwipeRowAction(row, action);
+          };
+          btn.addEventListener('pointerup', (e) => {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            // Only fire from pointerup when the row is open (avoids accidental mid-swipe)
+            if (!row.classList.contains('is-open') && !row.classList.contains('is-swiping')) return;
+            fireSwipeAction(e);
           });
+          btn.addEventListener('click', fireSwipeAction);
         });
 
         let startX = 0;
@@ -24613,20 +24640,71 @@
       showToast(`Skipped — streak reset for ${habit.title}`);
     }
 
-    /** Undo today's completion(s) — returns task to the active list */
+    /**
+     * Undo the latest completion that counts for the current period.
+     * Frequency N× and weekly/monthly tasks no longer require the log to be dated "today"
+     * (isCompletedToday is period-based since build 300).
+     * Multi-log: removes one completion per undo so 2/2 → 1/2 → active.
+     */
     function undoCompleteHabit(habitId) {
-      const habit = state.habits.find(h => h.id === habitId);
-      if (!habit) return;
-      const today = todayStr();
-      const comps = state.completions?.[habitId];
-      if (!comps || !comps.includes(today)) {
-        showToast('Nothing to undo for today');
+      const idKey = String(habitId ?? '');
+      const habit = (state.habits || []).find(h => String(h.id) === idKey);
+      if (!habit) {
+        showToast('Task not found');
         return;
       }
-      state.completions[habitId] = comps.filter(d => d !== today);
-      // Drop care/metric log for today so Streak Preview stays honest
-      if (state.metricLogs?.[habitId]) {
-        state.metricLogs[habitId] = state.metricLogs[habitId].filter(e => e.date !== today);
+      const hid = habit.id;
+      const today = todayStr();
+      if (!state.completions) state.completions = {};
+      // Prefer the live habit id key; fall back to string key from data attributes
+      let comps = state.completions[hid];
+      if (!Array.isArray(comps) && Array.isArray(state.completions[idKey])) {
+        comps = state.completions[idKey];
+      }
+      if (!Array.isArray(comps) || !comps.length) {
+        showToast('Nothing to undo');
+        return;
+      }
+
+      const inCurrentPeriod = (dateStr) => {
+        if (!dateStr) return false;
+        // Daily / one-off: only undo logs on this calendar day
+        if (typeof isOneOffTask === 'function' && isOneOffTask(habit)) return dateStr === today;
+        if (typeof isDailyTask === 'function' && isDailyTask(habit)) return dateStr === today;
+        // Weekly / monthly / custom interval: any log in the open period
+        if (typeof getHabitPeriodKey === 'function') {
+          return getHabitPeriodKey(habit, dateStr) === getHabitPeriodKey(habit, today);
+        }
+        return dateStr === today;
+      };
+
+      // Last matching index (multi-log may store the same date multiple times)
+      let removeIdx = -1;
+      for (let i = comps.length - 1; i >= 0; i--) {
+        if (inCurrentPeriod(comps[i])) {
+          removeIdx = i;
+          break;
+        }
+      }
+      if (removeIdx < 0) {
+        showToast('Nothing to undo for this period');
+        return;
+      }
+
+      const removedDate = comps[removeIdx];
+      const next = comps.slice();
+      next.splice(removeIdx, 1);
+      state.completions[hid] = next;
+      if (String(hid) !== idKey && state.completions[idKey] === comps) {
+        state.completions[idKey] = next;
+      }
+
+      // Drop care/metric log for that day only if no remaining logs that day
+      if (state.metricLogs?.[hid]) {
+        const stillOnDate = next.some(d => d === removedDate);
+        if (!stillOnDate) {
+          state.metricLogs[hid] = state.metricLogs[hid].filter(e => e.date !== removedDate);
+        }
       }
       // Soft reverse of Harbor Day points from a mistaken complete (best-effort)
       if (typeof ensureRewardBank === 'function' && typeof getStreakPointsForCompletion === 'function') {
@@ -24646,8 +24724,17 @@
       renderStreaks();
       updateSmartBanner();
       updateHeaderContext();
-      if (currentProjectionHabit === habitId) showProjections(habitId);
-      showToast(`Restored · ${habit.title}`);
+      if (currentProjectionHabit === hid || currentProjectionHabit === habitId) showProjections(hid);
+      const need = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
+      const left = typeof countCompletionsInPeriod === 'function'
+        ? countCompletionsInPeriod(habit, today)
+        : next.filter(inCurrentPeriod).length;
+      if (left > 0 && need > 1) {
+        const periodWord = typeof getFrequencyPeriodLabel === 'function' ? getFrequencyPeriodLabel(habit) : 'this period';
+        showToast(`Undone · ${habit.title} · ${left}/${need} ${periodWord}`);
+      } else {
+        showToast(`Restored · ${habit.title}`);
+      }
     }
 
     function completeHabit(habitId, e) {
