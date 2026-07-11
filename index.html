@@ -9195,9 +9195,6 @@
               </button>
             </div>
           </div>
-          <div class="text-[10px] text-harbor-muted leading-snug mb-2 px-0.5">
-            Rent, utilities, loans — due dates you <strong class="text-harbor-text">pay</strong>. Streaming and memberships belong under <strong class="text-harbor-primary-light">Subscriptions</strong>.
-          </div>
           <div id="bills-monthly-total" class="hidden bills-spend-card mb-3" aria-live="polite"></div>
           <div id="bills-list" class="space-y-2"></div>
         </div>
@@ -9376,7 +9373,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 240;
+    const HARBOR_BUILD_NUMBER = 241;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -15608,7 +15605,6 @@
       (state.bills || []).forEach(normalizeBillAmountFields);
       const monthlyTotal = getMonthlyBillsTotal();
       const halves = getBillHalfMonthTotals();
-      const billsWithAmount = (state.bills || []).filter(b => getBillPerPaymentAmount(b) > 0).length;
 
       if (!(monthlyTotal > 0) && !(halves.first > 0 || halves.second > 0)) {
         totalEl.classList.add('hidden');
@@ -15626,10 +15622,6 @@
           <div class="min-w-0">
             <div class="bills-spend-label">Monthly total</div>
             <div class="bills-spend-value">${formatBillAmountPrecise(monthlyTotal)}</div>
-          </div>
-          <div class="bills-spend-meta">
-            ${billsWithAmount} bill${billsWithAmount === 1 ? '' : 's'} with amounts
-            <br>Multi-pay bills count every due date
           </div>
         </div>
         <div class="bills-spend-halves" role="group" aria-label="Half-month bill totals">
