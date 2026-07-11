@@ -10457,7 +10457,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 291;
+    const HARBOR_BUILD_NUMBER = 292;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -21154,49 +21154,69 @@
       const bank = String(t.bankCategory || '');
       const type = `${t.bankType || ''} ${t.bankTypeGroup || ''}`;
       const desc = `${t.bankDescription || ''} ${t.description || ''}`;
+      const blob = `${desc} ${bank} ${type}`;
       if (isBudgetIncomeBankCategory(bank)) return true;
-      if (/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|direct\s*deposit|dividend|interest\b|atm\s*rebate/i.test(desc)) return true;
-      if (/ach\s*credit/i.test(type) && /salary|deposit|dfas|veteran|payroll|income/i.test(desc + ' ' + bank)) return true;
-      if (t.category === 'income' || t.categoryAuto === 'income') return true;
-      return false;
-    }
-
-    /** Infer credit/debit when indicator was never stored or import was wrong */
-    function detectBudgetIsCredit(t) {
-      if (!t) return false;
-      const ind = String(t.creditDebitIndicator || t.indicator || '').trim().toLowerCase();
-      if (ind === 'credit' || ind === 'cr' || ind === 'c') return true;
-      if (ind === 'debit' || ind === 'dr' || ind === 'd') return false;
-      const typeStr = String(t.bankType || '');
-      const typeGroup = String(t.bankTypeGroup || '');
-      const bank = String(t.bankCategory || '');
-      const desc = `${t.bankDescription || ''} ${t.description || ''}`;
-      // Explicit credit types from bank CSV
-      if (/ach\s*credit/i.test(typeStr) || /^credit$/i.test(typeStr.trim())) return true;
-      if (/^credit$/i.test(typeGroup.trim()) && !/debit/i.test(typeStr)) return true;
-      // Paychecks / benefits / deposits
-      if (isBudgetIncomeBankCategory(bank)) return true;
-      if (/salary\s*\/\s*regular|salary\/regular|from\s*dfas|dfas-|department\s*of\s*veteran|vacp\s*treas|paycheck|payroll|direct\s*deposit/i.test(desc)) {
+      // Paychecks / military / benefits — do not require isCredit (indicator can be wrong)
+      if (/salary|paycheck|payroll|regular\s*income|dfas|veteran\s*affairs|vacp|social\s*security|ssa\s*treas|direct\s*deposit/i.test(blob)) {
         return true;
       }
-      if (/dividend|atm\s*rebate|interest\s*paid|deposit\b/i.test(desc) && !/debit/i.test(typeStr)) {
-        // inbound money language
-        if (!/ach\s*debit|pos|debit-?dc/i.test(desc + ' ' + typeStr)) return true;
+      if (/dividend|interest\s*paid|atm\s*rebate|tax\s*refund|irs\s*treas/i.test(desc)) return true;
+      if (/ach\s*credit/i.test(type) && /salary|deposit|dfas|veteran|payroll|income|benefit/i.test(desc + ' ' + bank)) {
+        return true;
       }
-      if (t.isCredit === true) return true;
+      // Bank Category deposits / paychecks even if description was renamed
+      if (/paycheck|salary|deposit|investment\s*income|interest|refund/i.test(bank)) return true;
       if (t.category === 'income' || t.categoryAuto === 'income') return true;
       return false;
     }
 
     /**
-     * Income lens: paychecks, deposits, and other money-in credits.
+     * Infer credit/debit.
+     * IMPORTANT: paycheck / ACH Credit / bank income tags must win even if a bad
+     * import stored creditDebitIndicator as "debit" (that bug made Income = ATM rebates only).
+     */
+    function detectBudgetIsCredit(t) {
+      if (!t) return false;
+      const typeStr = String(t.bankType || '');
+      const typeGroup = String(t.bankTypeGroup || '');
+      const bank = String(t.bankCategory || '');
+      const desc = `${t.bankDescription || ''} ${t.description || ''}`;
+      const blob = `${desc} ${bank} ${typeStr} ${typeGroup}`;
+
+      // 1) Strong money-in signals first (never blocked by a bad indicator)
+      if (isBudgetTrueIncomeSignal(t)) return true;
+      if (isBudgetIncomeBankCategory(bank)) return true;
+      if (/ach\s*credit/i.test(typeStr) || /^credit$/i.test(typeStr.trim())) return true;
+      if (/^credit$/i.test(typeGroup.trim()) && !/debit/i.test(typeStr)) return true;
+      if (/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|regular\s*income|direct\s*deposit/i.test(blob)) {
+        return true;
+      }
+
+      // 2) Stored indicator from CSV
+      const ind = String(t.creditDebitIndicator || t.indicator || '').trim().toLowerCase();
+      if (ind === 'credit' || ind === 'cr' || ind === 'c') return true;
+      // Only trust debit indicator when there is no conflicting money-in signal (already checked above)
+      if (ind === 'debit' || ind === 'dr' || ind === 'd') return false;
+
+      // 3) Fallbacks
+      if (t.isCredit === true) return true;
+      if (t.category === 'income' || t.categoryAuto === 'income') return true;
+      if (/\bdeposit\b/i.test(desc) && !/ach\s*debit|pos|debit-?dc/i.test(desc + ' ' + typeStr)) return true;
+      if (/dividend|atm\s*rebate|interest\s*paid/i.test(desc)) return true;
+      return false;
+    }
+
+    /**
+     * Income lens: paychecks, deposits, benefits, and other money-in.
      */
     function isBudgetIncomeTransaction(t) {
       if (!t) return false;
+      if (isBudgetTrueIncomeSignal(t)) return true;
       if (detectBudgetIsCredit(t)) return true;
       if (t.isCredit) return true;
-      if (t.category === 'income') return true;
-      if (isBudgetTrueIncomeSignal(t)) return true;
+      if (t.category === 'income' || t.categoryAuto === 'income') return true;
+      // ACH Credit type even if description is sparse
+      if (/ach\s*credit/i.test(String(t.bankType || ''))) return true;
       return false;
     }
 
@@ -21275,8 +21295,8 @@
      */
     function reclassifyAllBudgetTransactions(force = false) {
       const budget = ensureBudgetState();
-      if (!force && budget._fullRecatV9) return false;
-      budget._fullRecatV9 = true;
+      if (!force && budget._fullRecatV10) return false;
+      budget._fullRecatV10 = true;
       let changed = 0;
       (budget.transactions || []).forEach(t => {
         if (!t) return;
@@ -21287,10 +21307,16 @@
         const typeGroupStr = t.bankTypeGroup || '';
         const userLocked = !!(t.categoryFromRule && t.category && t.categoryAuto && t.category !== t.categoryAuto);
 
-        // 1) Fix credit/debit
-        const shouldCredit = detectBudgetIsCredit(t);
+        // 1) Fix credit/debit — income signals beat a bad stored "debit" indicator
+        let shouldCredit = detectBudgetIsCredit(t);
+        if (!shouldCredit && isBudgetTrueIncomeSignal(t)) shouldCredit = true;
         if (!!t.isCredit !== shouldCredit) {
           t.isCredit = shouldCredit;
+          changed++;
+        }
+        // Repair stored indicator when paychecks were wrongly tagged debit
+        if (shouldCredit && /^(debit|dr|d)$/i.test(String(t.creditDebitIndicator || '').trim())) {
+          t.creditDebitIndicator = 'credit';
           changed++;
         }
 
@@ -21299,10 +21325,23 @@
           type: typeStr,
           typeGroup: typeGroupStr
         });
-        if (shouldCredit) {
+        if (shouldCredit || isBudgetTrueIncomeSignal(t)) {
           const fromBank = mapBankCategoryToHarbor(bankCategory);
-          if (isBudgetIncomeBankCategory(bankCategory) || fromBank === 'income') {
-            autoCat = 'income';
+          if (isBudgetIncomeBankCategory(bankCategory) || fromBank === 'income' || isBudgetTrueIncomeSignal(t)) {
+            // Paychecks / VA / deposits — always Income (not demoted to other)
+            if (/transfer\s+from|from\s+savings|from\s+checking/i.test(bankDesc) && !isBudgetIncomeBankCategory(bankCategory)
+              && !/salary|paycheck|dfas|veteran|payroll|regular\s*income/i.test(bankDesc)) {
+              autoCat = fromBank === 'savings' ? 'savings' : 'transfers';
+            } else if (fromBank === 'transfers' || fromBank === 'savings') {
+              // Zelle-in / transfer-from-savings stay as moves; paychecks never have those bank cats
+              if (isBudgetIncomeBankCategory(bankCategory) || /salary|paycheck|dfas|veteran|payroll|regular\s*income/i.test(bankDesc + bankCategory)) {
+                autoCat = 'income';
+              } else {
+                autoCat = fromBank;
+              }
+            } else {
+              autoCat = 'income';
+            }
           } else if (fromBank === 'transfers' || fromBank === 'savings') {
             autoCat = fromBank;
           } else if (/transfer\s+from|from\s+savings|from\s+checking|zelle|venmo|cash\s*app/i.test(bankDesc)) {
@@ -21310,8 +21349,15 @@
           } else {
             autoCat = 'income';
           }
+          t.isCredit = true;
         } else if (autoCat === 'income') {
-          autoCat = 'other';
+          // Only demote if it truly is not income
+          if (!isBudgetTrueIncomeSignal({ ...t, category: autoCat, categoryAuto: autoCat })) {
+            autoCat = 'other';
+          } else {
+            t.isCredit = true;
+            shouldCredit = true;
+          }
         }
 
         // 3) Apply merchant memory on top of auto
@@ -21748,6 +21794,7 @@
       delete budget._fullRecatV7;
       delete budget._fullRecatV8;
       delete budget._fullRecatV9;
+      delete budget._fullRecatV10;
       // Any successful CSV import finishes the monthly budget-review task
       if (typeof markBudgetReviewCompleteFromImport === 'function') {
         markBudgetReviewCompleteFromImport({ silent: true });
@@ -22281,8 +22328,8 @@
       if (!state.budget._rulesHarvested) {
         harvestBudgetMerchantRulesFromTransactions();
       }
-      // Always reclassify once on this build — new buckets + bills split
-      if (!state.budget._fullRecatV9) {
+      // Always reclassify once on this build — fix Income (paychecks vs ATM rebate only)
+      if (!state.budget._fullRecatV10) {
         reclassifyAllBudgetTransactions(true);
       } else if (!state.budget._otherRecatV2) {
         state.budget._otherRecatV2 = true;
