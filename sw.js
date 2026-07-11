@@ -1,4 +1,4 @@
-const CACHE_NAME = 'harbor-preview-v251';
+const CACHE_NAME = 'harbor-preview-v260';
 const PRECACHE = [
   './harbor-favicon-32.png',
   './harbor-apple-touch.png',
@@ -12,10 +12,13 @@ const PRECACHE = [
 ];
 
 self.addEventListener('install', (event) => {
+  // Drop every old cache immediately so palette/CSS ships (not stuck on Mint shell)
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE))
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+      .then(() => caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('message', (event) => {

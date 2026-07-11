@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="is-splash-active">
+<html lang="en" class="is-splash-active" data-theme="harbor">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -24,14 +24,16 @@
         else if (!allowed[t]) t = 'harbor';
         document.documentElement.setAttribute('data-theme', t);
         document.documentElement.style.colorScheme = t === 'dark' ? 'dark' : 'light';
+        var metaMap = {
+          harbor: '#D6E8E2', dark: '#0A1614', lilac: '#E8E4F0',
+          blush: '#F8E4E8', wood: '#E8DED0', lagoon: '#DCEAF2'
+        };
+        var solid = metaMap[t] || metaMap.harbor;
+        // Paint status-bar / overscroll immediately (iOS translucent status bar)
+        document.documentElement.style.backgroundColor = solid;
+        if (document.body) document.body.style.backgroundColor = solid;
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) {
-          var metaMap = {
-            harbor: '#D6E8E2', dark: '#0A1614', lilac: '#E8E4F0',
-            blush: '#F8E4E8', wood: '#E8DED0', lagoon: '#DCEAF2'
-          };
-          meta.setAttribute('content', metaMap[t] || metaMap.harbor);
-        }
+        if (meta) meta.setAttribute('content', solid);
       } catch (e) { /* ignore */ }
     })();
   </script>
@@ -85,7 +87,12 @@
        Day: soft seafoam wash + mint cards. Night: deep lagoon teal.
        Deep teal actions in both. Dark is optional coastal night.
        ═══════════════════════════════════════════════════════════ */
-    :root, html[data-theme="harbor"] {
+    /*
+     * Mint palette ONLY when theme is harbor (or unset).
+     * Never use bare `html { …mint… }` — that matched every theme and fought Blush/Lilac/etc.
+     */
+    html:not([data-theme]),
+    html[data-theme="harbor"] {
       /* Harbor Mint — splash-inspired seafoam */
       --harbor-bg: 214 232 226;
       --harbor-surface: 236 245 241;
@@ -289,18 +296,13 @@
       color-scheme: light;
     }
 
-    html[data-theme="dark"] .site-header {
-      background: linear-gradient(180deg, rgba(16, 32, 29, 0.94) 0%, rgba(8, 18, 16, 0.88) 100%);
-      border-bottom-color: rgba(72, 178, 162, 0.12);
-    }
-
     html[data-theme="dark"] .chip-add-btn,
     html[data-theme="dark"] .today-add-btn {
-      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #FFFFFF;
       box-shadow:
-        0 2px 14px rgba(47, 155, 140, 0.35),
-        0 0 0 1px rgba(72, 178, 162, 0.2),
+        0 2px 14px rgb(var(--harbor-primary) / 0.35),
+        0 0 0 1px rgb(var(--harbor-primary) / 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.28);
     }
 
@@ -330,8 +332,8 @@
     }
 
     html[data-theme="dark"] .life-chip-indicator {
-      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
-      box-shadow: 0 2px 12px rgba(47, 155, 140, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
+      box-shadow: 0 2px 12px rgb(var(--harbor-primary) / 0.35), inset 0 1px 0 rgb(var(--harbor-primary-light) / 0.22);
     }
 
     html[data-theme="dark"] .main-nav-indicator {
@@ -339,14 +341,19 @@
     }
 
     html[data-theme="dark"] .summary-toggle-btn.is-active {
-      background: linear-gradient(135deg, #56C4B4 0%, #2F9B8C 100%);
+      background: linear-gradient(135deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #FFFFFF;
-      box-shadow: 0 4px 16px rgba(47, 155, 140, 0.35);
+      box-shadow: 0 4px 16px rgb(var(--harbor-primary) / 0.35);
     }
 
     html[data-theme="dark"] .summary-orb-glow {
       background:
-        radial-gradient(circle at 50% 45%, rgba(72, 178, 162, 0.28) 0%, rgba(47, 155, 140, 0.08) 48%, transparent 72%);
+        radial-gradient(
+          circle at 50% 45%,
+          rgb(var(--harbor-primary) / 0.28) 0%,
+          rgb(var(--harbor-primary) / 0.08) 48%,
+          transparent 72%
+        );
     }
 
     html[data-theme="dark"] .summary-orb-spin {
@@ -354,9 +361,9 @@
         from 210deg,
         transparent 0deg,
         transparent 55deg,
-        rgba(196, 165, 116, 0.12) 90deg,
-        rgba(154, 214, 202, 0.75) 120deg,
-        rgba(72, 178, 162, 0.4) 150deg,
+        rgb(var(--harbor-accent) / 0.14) 90deg,
+        rgb(var(--harbor-primary-light) / 0.75) 120deg,
+        rgb(var(--harbor-primary) / 0.4) 150deg,
         transparent 200deg,
         transparent 360deg
       );
@@ -368,7 +375,7 @@
     }
 
     html[data-theme="dark"] .swipe-action-edit {
-      background: linear-gradient(180deg, #56C4B4 0%, #268276 100%);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #FFFFFF;
     }
 
@@ -531,12 +538,12 @@
 
     html[data-theme="dark"] .smart-suggestions-toggle[aria-checked="true"],
     html[data-theme="dark"] .harbor-switch[aria-checked="true"] {
-      background: rgb(72 178 162);
+      background: rgb(var(--harbor-primary));
     }
 
     html[data-theme="dark"] .smart-suggestions-toggle[aria-checked="true"] > span,
     html[data-theme="dark"] .harbor-switch[aria-checked="true"] > span {
-      background: #081210;
+      background: rgb(var(--harbor-bg));
     }
 
     .theme-teal-hint {
@@ -546,23 +553,23 @@
       margin-top: 0.5rem;
       padding: 0.5rem 0.7rem;
       border-radius: 0.85rem;
-      background: rgba(47, 155, 140, 0.06);
-      border: 1px solid rgba(47, 155, 140, 0.12);
+      background: rgb(var(--harbor-primary) / 0.08);
+      border: 1px solid rgb(var(--harbor-primary) / 0.14);
       font-size: 0.625rem;
       color: rgb(var(--harbor-muted));
       line-height: 1.35;
     }
     html[data-theme="dark"] .theme-teal-hint {
-      background: rgba(72, 178, 162, 0.1);
-      border-color: rgba(72, 178, 162, 0.18);
+      background: rgb(var(--harbor-primary) / 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.2);
     }
 
     .theme-teal-dot {
       width: 0.55rem;
       height: 0.55rem;
       border-radius: 9999px;
-      background: #2F9B8C;
-      box-shadow: 0 0 0 2px rgba(47, 155, 140, 0.25);
+      background: rgb(var(--harbor-primary));
+      box-shadow: 0 0 0 2px rgb(var(--harbor-primary) / 0.28);
       flex-shrink: 0;
     }
 
@@ -603,7 +610,8 @@
     }
 
     html {
-      background-color: var(--harbor-body-solid, #D6E8E2);
+      /* Hex tokens — reliable under iOS status bar / safe-area (no slash-alpha) */
+      background-color: var(--harbor-body-solid) !important;
       height: -webkit-fill-available;
     }
 
@@ -612,13 +620,13 @@
       font-size: var(--harbor-text-base);
       line-height: 1.45;
       letter-spacing: -0.011em;
-      background-color: var(--harbor-body-solid, #D6E8E2) !important;
+      background-color: var(--harbor-body-solid) !important;
       background-image: linear-gradient(
         175deg,
-        var(--harbor-body-g1, #C5DCD4) 0%,
-        var(--harbor-body-g2, #D6E8E2) 26%,
-        var(--harbor-body-g3, #E0EDE8) 62%,
-        var(--harbor-body-g4, #E8F2EE) 100%
+        var(--harbor-body-g1) 0%,
+        var(--harbor-body-g2) 26%,
+        var(--harbor-body-g3) 62%,
+        var(--harbor-body-g4) 100%
       ) !important;
       background-attachment: fixed;
       color: rgb(var(--harbor-text));
@@ -748,20 +756,20 @@
 
     #task-list .habit-card,
     #task-list .swipe-row-content.habit-card {
-      border: 1px solid rgba(47, 155, 140, 0.14) !important;
+      border: 1px solid rgb(var(--harbor-primary) / 0.14) !important;
       background:
         linear-gradient(165deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 100%) !important;
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.55) inset,
-        0 4px 16px rgba(18, 48, 44, 0.06),
-        0 1px 2px rgba(18, 48, 44, 0.04) !important;
+        0 4px 16px rgb(var(--harbor-text) / 0.06),
+        0 1px 2px rgb(var(--harbor-text) / 0.04) !important;
     }
 
     html[data-theme="dark"] #task-list .habit-card,
     html[data-theme="dark"] #task-list .swipe-row-content.habit-card {
-      border-color: rgba(72, 178, 162, 0.14) !important;
-      background: linear-gradient(165deg, rgba(28, 48, 44, 0.95) 0%, rgb(var(--harbor-surface)) 100%) !important;
-      box-shadow: 0 1px 0 rgba(154, 214, 202, 0.05) inset, 0 8px 20px rgba(0, 10, 8, 0.4) !important;
+      border-color: rgb(var(--harbor-primary) / 0.16) !important;
+      background: linear-gradient(165deg, rgb(var(--harbor-raised) / 0.95) 0%, rgb(var(--harbor-surface)) 100%) !important;
+      box-shadow: 0 1px 0 rgb(var(--harbor-primary-light) / 0.05) inset, 0 8px 20px rgba(0, 10, 8, 0.4) !important;
     }
 
     #task-list .task-complete-hit {
@@ -781,12 +789,12 @@
 
     /* Multi-log (e.g. feed dogs 2×/day) — compact 1/2 in the complete hit */
     #task-list .task-complete-hit.is-multi {
-      border-color: rgba(47, 155, 140, 0.35);
-      background: rgba(47, 155, 140, 0.06);
+      border-color: rgb(var(--harbor-primary) / 0.35);
+      background: rgb(var(--harbor-primary) / 0.06);
     }
     #task-list .task-complete-hit.is-multi.is-partial {
-      border-color: rgba(47, 155, 140, 0.55);
-      background: rgba(47, 155, 140, 0.14);
+      border-color: rgb(var(--harbor-primary) / 0.55);
+      background: rgb(var(--harbor-primary) / 0.14);
     }
     #task-list .habit-hit-frac {
       font-size: 0.72rem;
@@ -806,7 +814,7 @@
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.02em;
       color: rgb(var(--harbor-primary-light));
-      background: rgba(47, 155, 140, 0.12);
+      background: rgb(var(--harbor-primary) / 0.12);
       padding: 0.1rem 0.4rem;
       border-radius: 999px;
       line-height: 1.25;
@@ -855,8 +863,8 @@
     }
     #task-list .habit-card.is-smart-focus,
     #task-list .swipe-row-content.habit-card.is-smart-focus {
-      border-color: rgba(47, 155, 140, 0.55) !important;
-      box-shadow: 0 0 0 2px rgba(47, 155, 140, 0.22), var(--harbor-shadow-sm) !important;
+      border-color: rgb(var(--harbor-primary) / 0.55) !important;
+      box-shadow: 0 0 0 2px rgb(var(--harbor-primary) / 0.22), var(--harbor-shadow-sm) !important;
       transition: box-shadow 0.35s ease, border-color 0.35s ease;
     }
     .harbor-empty-actions {
@@ -874,8 +882,8 @@
       margin: 0.5rem 1.25rem 0.25rem;
       padding: 0.75rem 0.85rem;
       border-radius: 1rem;
-      border: 1px solid rgba(47, 155, 140, 0.22);
-      background: linear-gradient(155deg, rgba(47, 155, 140, 0.08), rgb(var(--harbor-surface)));
+      border: 1px solid rgb(var(--harbor-primary) / 0.22);
+      background: linear-gradient(155deg, rgb(var(--harbor-primary) / 0.08), rgb(var(--harbor-surface)));
       box-shadow: var(--harbor-shadow-sm);
     }
     .calendar-nudge-card .nudge-title {
@@ -916,7 +924,7 @@
     }
     .cal-connect-provider:hover,
     .cal-connect-provider:focus-visible {
-      border-color: rgba(47, 155, 140, 0.45);
+      border-color: rgb(var(--harbor-primary) / 0.45);
       outline: none;
     }
     .cal-connect-provider-icon {
@@ -942,7 +950,7 @@
       color: #f5f5f7;
     }
     .cal-connect-provider-icon.is-file {
-      background: rgba(47, 155, 140, 0.12);
+      background: rgb(var(--harbor-primary) / 0.12);
       color: rgb(var(--harbor-primary));
     }
     .cal-connect-provider-icon.is-other {
@@ -982,7 +990,7 @@
       justify-content: center;
       font-size: 0.68rem;
       font-weight: 700;
-      background: rgba(47, 155, 140, 0.14);
+      background: rgb(var(--harbor-primary) / 0.14);
       color: rgb(var(--harbor-primary));
       margin-top: 0.05rem;
     }
@@ -1002,8 +1010,8 @@
       margin-bottom: 0.65rem;
     }
     .cal-connect-path-card.is-recommended {
-      border-color: rgba(47, 155, 140, 0.35);
-      background: linear-gradient(155deg, rgba(47, 155, 140, 0.08), rgb(var(--harbor-raised) / 0.5));
+      border-color: rgb(var(--harbor-primary) / 0.35);
+      background: linear-gradient(155deg, rgb(var(--harbor-primary) / 0.08), rgb(var(--harbor-raised) / 0.5));
     }
     .cal-connect-path-label {
       font-size: 0.62rem;
@@ -1197,7 +1205,7 @@
 
     .harbor-empty {
       background:
-        radial-gradient(ellipse at 50% 0%, rgba(47, 155, 140, 0.1) 0%, transparent 62%),
+        radial-gradient(ellipse at 50% 0%, rgb(var(--harbor-primary) / 0.12) 0%, transparent 62%),
         rgb(var(--harbor-surface));
       border: 1px solid rgb(var(--harbor-border) / 0.9);
       border-radius: var(--harbor-radius-xl);
@@ -1302,9 +1310,9 @@
       /* Avoid filter:drop-shadow — it can paint a rectangular envelope behind the pill */
     }
     html[data-theme="dark"] .main-nav-surface {
-      border-color: rgba(72, 178, 162, 0.22);
+      border-color: rgb(var(--harbor-primary) / 0.22);
       box-shadow:
-        0 1px 0 rgba(154, 214, 202, 0.1) inset,
+        0 1px 0 rgb(var(--harbor-primary-light) / 0.1) inset,
         0 12px 30px rgba(0, 0, 0, 0.48),
         0 2px 8px rgba(0, 0, 0, 0.28);
     }
@@ -1417,9 +1425,9 @@
       opacity: 0.88;
     }
 
-    /* Soft teal pill under active tab — Harbor, not iOS */
+    /* Soft active-tab pill — follows palette primary (not fixed mint) */
     .main-nav-tab.nav-active {
-      color: #1C7066 !important;
+      color: rgb(var(--harbor-primary-light)) !important;
       border-bottom-color: transparent;
       background: transparent !important;
       font-weight: 650;
@@ -1430,7 +1438,11 @@
       position: absolute;
       inset: 0.12rem 0.18rem;
       border-radius: 0.85rem;
-      background: linear-gradient(180deg, rgba(47, 155, 140, 0.16) 0%, rgba(47, 155, 140, 0.08) 100%);
+      background: linear-gradient(
+        180deg,
+        rgb(var(--harbor-primary) / 0.16) 0%,
+        rgb(var(--harbor-primary) / 0.08) 100%
+      );
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
       z-index: -1;
       pointer-events: none;
@@ -1439,11 +1451,12 @@
       color: rgb(var(--harbor-primary-light)) !important;
     }
     html[data-theme="dark"] .main-nav-tab.nav-active::before {
-      background: linear-gradient(180deg, rgba(72, 178, 162, 0.2) 0%, rgba(47, 155, 140, 0.1) 100%);
-      box-shadow: inset 0 1px 0 rgba(154, 214, 202, 0.1);
-    }
-    html[data-theme="harbor"] .main-nav-tab.nav-active {
-      color: #1F7A6E !important;
+      background: linear-gradient(
+        180deg,
+        rgb(var(--harbor-primary) / 0.22) 0%,
+        rgb(var(--harbor-primary) / 0.1) 100%
+      );
+      box-shadow: inset 0 1px 0 rgb(var(--harbor-primary-light) / 0.1);
     }
 
     .life-subnav {
@@ -1453,8 +1466,8 @@
       padding: 0.28rem;
       margin-bottom: 0.85rem;
       border-radius: var(--harbor-radius-md);
-      border: 1px solid rgba(47, 155, 140, 0.16);
-      background: rgba(236, 245, 241, 0.82);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
+      background: rgb(var(--harbor-surface) / 0.86);
       box-shadow: var(--harbor-shadow-sm);
       backdrop-filter: blur(12px) saturate(1.08);
       -webkit-backdrop-filter: blur(12px) saturate(1.08);
@@ -1473,8 +1486,8 @@
       left: 0;
       width: 25%;
       border-radius: calc(var(--harbor-radius-md) - 0.15rem);
-      background: linear-gradient(180deg, #3CB5A6 0%, #2F9B8C 100%);
-      box-shadow: 0 2px 10px rgba(47, 155, 140, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
+      box-shadow: 0 2px 10px rgb(var(--harbor-primary) / 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35);
       pointer-events: none;
       z-index: 0;
       opacity: 1;
@@ -1484,8 +1497,8 @@
       will-change: transform, width;
     }
     html[data-theme="dark"] .life-chip-indicator {
-      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
-      box-shadow: 0 2px 12px rgba(47, 155, 140, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
+      box-shadow: 0 2px 12px rgb(var(--harbor-primary) / 0.35), inset 0 1px 0 rgb(var(--harbor-primary-light) / 0.2);
     }
 
     .life-nav-tab {
@@ -1624,23 +1637,48 @@
       flex-shrink: 0;
       position: relative;
       z-index: 50;
-      border-bottom: 1px solid rgba(47, 155, 140, 0.14);
-      background: linear-gradient(
+      /* Per-theme paints — also set inline by applyThemeCssVars (Safari-safe) */
+      border-bottom: 1px solid rgb(var(--harbor-border));
+      background-color: var(--harbor-body-solid, #D6E8E2);
+      background-image: linear-gradient(
         180deg,
-        rgba(214, 232, 226, 0.92) 0%,
-        rgba(224, 237, 232, 0.78) 100%
+        var(--harbor-body-g1, #C5DCD4) 0%,
+        var(--harbor-body-g2, #D6E8E2) 55%,
+        var(--harbor-body-g3, #E0EDE8) 100%
       );
-      backdrop-filter: blur(22px) saturate(1.2);
-      -webkit-backdrop-filter: blur(22px) saturate(1.2);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
 
+    html[data-theme="blush"] .site-header {
+      background-color: #F8E4E8;
+      background-image: linear-gradient(180deg, #F2D6DC 0%, #F8E4E8 55%, #FCEEF1 100%);
+      border-bottom-color: #E6C8D0;
+    }
+    html[data-theme="lilac"] .site-header {
+      background-color: #E8E4F0;
+      background-image: linear-gradient(180deg, #DDD6EE 0%, #E8E4F0 55%, #F0ECF8 100%);
+      border-bottom-color: #C8BEDC;
+    }
+    html[data-theme="wood"] .site-header {
+      background-color: #E8DED0;
+      background-image: linear-gradient(180deg, #DDD0BC 0%, #E8DED0 55%, #F0E8DC 100%);
+      border-bottom-color: #C8B8A0;
+    }
+    html[data-theme="lagoon"] .site-header {
+      background-color: #DCEAF2;
+      background-image: linear-gradient(180deg, #C8DCE8 0%, #DCEAF2 55%, #E8F2F8 100%);
+      border-bottom-color: #B4D0E0;
+    }
     html[data-theme="dark"] .site-header {
-      border-bottom-color: rgba(72, 178, 162, 0.12);
-      background: linear-gradient(
-        180deg,
-        rgba(16, 32, 29, 0.92) 0%,
-        rgba(8, 18, 16, 0.72) 100%
-      );
+      border-bottom-color: rgb(var(--harbor-border));
+      background-color: #081210;
+      background-image: linear-gradient(180deg, #10201D 0%, #0C1816 100%);
+    }
+    html[data-theme="harbor"] .site-header {
+      background-color: #D6E8E2;
+      background-image: linear-gradient(180deg, #C5DCD4 0%, #D6E8E2 55%, #E0EDE8 100%);
+      border-bottom-color: #BAD2CA;
     }
 
     .site-header-inner {
@@ -1825,7 +1863,7 @@
       box-sizing: border-box;
       background:
         linear-gradient(165deg, rgba(255, 255, 255, 0.4) 0%, rgb(var(--harbor-surface)) 100%);
-      border: 1px solid rgba(47, 155, 140, 0.14);
+      border: 1px solid rgb(var(--harbor-primary) / 0.14);
       border-radius: calc(var(--harbor-radius-xl) + 0.1rem);
       padding: 0.95rem 1rem 0.9rem;
       box-shadow: var(--harbor-shadow-sm);
@@ -1913,8 +1951,8 @@
     }
 
     .energy-btn.is-idle {
-      background: rgba(236, 245, 241, 0.88);
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      background: rgb(var(--harbor-surface) / 0.9);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
       color: rgb(var(--harbor-muted));
       box-shadow: var(--harbor-shadow-sm);
       backdrop-filter: blur(10px);
@@ -1923,7 +1961,7 @@
 
     html[data-theme="dark"] .energy-btn.is-idle {
       background: rgba(24, 42, 38, 0.88);
-      border-color: rgba(72, 178, 162, 0.16);
+      border-color: rgb(var(--harbor-primary) / 0.16);
       box-shadow: var(--harbor-shadow-sm);
     }
 
@@ -1980,15 +2018,15 @@
     }
 
     .status-bar {
-      background: rgba(224, 237, 232, 0.92);
-      border-top: 1px solid rgba(47, 155, 140, 0.14);
+      background: rgb(var(--harbor-raised) / 0.94);
+      border-top: 1px solid rgb(var(--harbor-primary) / 0.14);
       backdrop-filter: blur(16px) saturate(1.15);
       -webkit-backdrop-filter: blur(16px) saturate(1.15);
       padding-bottom: calc(0.5rem + var(--safe-bottom));
     }
     html[data-theme="dark"] .status-bar {
-      background: rgba(16, 32, 29, 0.92);
-      border-top-color: rgba(72, 178, 162, 0.12);
+      background: rgb(var(--harbor-surface) / 0.94);
+      border-top-color: rgb(var(--harbor-primary) / 0.14);
     }
 
     .status-bar-btn {
@@ -2093,8 +2131,8 @@
     }
     .platform-pick-btn:hover,
     .platform-pick-btn:active {
-      border-color: rgba(107, 191, 176, 0.45);
-      background: rgba(47, 155, 140, 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.45);
+      background: rgb(var(--harbor-primary) / 0.12);
     }
     .platform-pick-btn i {
       color: rgb(var(--harbor-primary-light));
@@ -2125,8 +2163,8 @@
       margin-bottom: 0.5rem;
     }
     .sub-cancel-choice:active {
-      background: rgba(47, 155, 140, 0.12);
-      border-color: rgba(107, 191, 176, 0.4);
+      background: rgb(var(--harbor-primary) / 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.4);
     }
     .sub-cancel-choice .sub-cancel-title {
       font-size: 0.88rem;
@@ -2180,13 +2218,13 @@
     }
 
     .qt-recur-chip:hover {
-      border-color: rgba(47, 155, 140, 0.45);
+      border-color: rgb(var(--harbor-primary) / 0.45);
       color: rgb(var(--harbor-text));
     }
 
     .qt-recur-chip.is-active {
       border-color: rgb(var(--harbor-primary));
-      background: rgba(47, 155, 140, 0.15);
+      background: rgb(var(--harbor-primary) / 0.15);
       color: rgb(var(--harbor-text));
     }
 
@@ -2203,8 +2241,8 @@
 
     .qt-kind-chip.is-active {
       border-color: rgb(var(--harbor-primary));
-      background: rgba(47, 155, 140, 0.14);
-      box-shadow: 0 0 0 1px rgba(47, 155, 140, 0.2);
+      background: rgb(var(--harbor-primary) / 0.14);
+      box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.2);
     }
 
     .qt-kind-chip:active {
@@ -2240,16 +2278,16 @@
     #metric-input-modal .metric-sheet {
       background:
         linear-gradient(165deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 42%, rgb(var(--harbor-surface)) 100%);
-      border-top: 1px solid rgba(47, 155, 140, 0.18);
+      border-top: 1px solid rgb(var(--harbor-primary) / 0.18);
       box-shadow:
-        0 -8px 32px rgba(18, 48, 44, 0.1),
+        0 -8px 32px rgb(var(--harbor-text) / 0.1),
         0 0 0 1px rgba(255, 255, 255, 0.35) inset;
     }
     html[data-theme="dark"] #metric-input-modal .metric-sheet {
       background:
-        linear-gradient(165deg, rgba(28, 48, 44, 0.95) 0%, rgb(var(--harbor-surface)) 55%);
-      border-top-color: rgba(72, 178, 162, 0.16);
-      box-shadow: 0 -12px 40px rgba(0, 8, 6, 0.55), 0 0 0 1px rgba(154, 214, 202, 0.06) inset;
+        linear-gradient(165deg, rgb(var(--harbor-raised) / 0.95) 0%, rgb(var(--harbor-surface)) 55%);
+      border-top-color: rgb(var(--harbor-primary) / 0.18);
+      box-shadow: 0 -12px 40px rgba(0, 8, 6, 0.55), 0 0 0 1px rgb(var(--harbor-primary-light) / 0.06) inset;
     }
     #metric-input-modal .metric-icon-badge {
       width: 3rem;
@@ -2261,33 +2299,33 @@
       font-size: 1.2rem;
       flex-shrink: 0;
       color: #fff;
-      background: linear-gradient(155deg, #56C4B4 0%, #2F9B8C 55%, #1A6B61 100%);
+      background: linear-gradient(155deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       box-shadow:
-        0 6px 18px rgba(47, 155, 140, 0.32),
+        0 6px 18px rgb(var(--harbor-primary) / 0.32),
         0 0 0 1px rgba(255, 255, 255, 0.22) inset;
     }
     #metric-input-modal .metric-input-wrap {
       display: flex;
       align-items: stretch;
       border-radius: 1.15rem;
-      border: 1.5px solid rgba(47, 155, 140, 0.22);
+      border: 1.5px solid rgb(var(--harbor-primary) / 0.22);
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-raised)) 100%);
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.5) inset,
-        0 4px 14px rgba(18, 48, 44, 0.05);
+        0 4px 14px rgb(var(--harbor-text) / 0.05);
       overflow: hidden;
       transition: border-color 0.18s ease, box-shadow 0.18s ease;
     }
     html[data-theme="dark"] #metric-input-modal .metric-input-wrap {
-      border-color: rgba(72, 178, 162, 0.22);
-      background: linear-gradient(180deg, rgba(28, 48, 44, 0.9) 0%, rgb(var(--harbor-raised)) 100%);
-      box-shadow: 0 1px 0 rgba(154, 214, 202, 0.06) inset, 0 6px 16px rgba(0, 8, 6, 0.35);
+      border-color: rgb(var(--harbor-primary) / 0.22);
+      background: linear-gradient(180deg, rgb(var(--harbor-raised) / 0.9) 0%, rgb(var(--harbor-raised)) 100%);
+      box-shadow: 0 1px 0 rgb(var(--harbor-primary-light) / 0.06) inset, 0 6px 16px rgba(0, 8, 6, 0.35);
     }
     #metric-input-modal .metric-input-wrap:focus-within {
-      border-color: rgba(47, 155, 140, 0.55);
+      border-color: rgb(var(--harbor-primary) / 0.55);
       box-shadow:
-        0 0 0 3px rgba(47, 155, 140, 0.16),
+        0 0 0 3px rgb(var(--harbor-primary) / 0.16),
         0 1px 0 rgba(255, 255, 255, 0.4) inset;
     }
     #metric-input-modal .metric-input-field {
@@ -2333,16 +2371,16 @@
       transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
     }
     #metric-input-modal .metric-unit-chip.is-on {
-      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       border-color: transparent;
       color: #fff;
-      box-shadow: 0 3px 12px rgba(47, 155, 140, 0.28);
+      box-shadow: 0 3px 12px rgb(var(--harbor-primary) / 0.28);
     }
     #metric-input-modal .metric-save-btn {
-      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #fff;
       box-shadow:
-        0 4px 16px rgba(47, 155, 140, 0.3),
+        0 4px 16px rgb(var(--harbor-primary) / 0.3),
         0 0 0 1px rgba(255, 255, 255, 0.18) inset;
     }
     #metric-input-modal .metric-save-btn:active {
@@ -2354,26 +2392,26 @@
       margin-top: 1rem;
       padding: 0.9rem 0.95rem 0.95rem;
       border-radius: 1.15rem;
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
       background:
-        linear-gradient(155deg, rgba(47, 155, 140, 0.07) 0%, rgb(var(--harbor-raised) / 0.55) 100%);
+        linear-gradient(155deg, rgb(var(--harbor-primary) / 0.07) 0%, rgb(var(--harbor-raised) / 0.55) 100%);
     }
     html[data-theme="dark"] .proj-metric-panel {
-      border-color: rgba(72, 178, 162, 0.14);
-      background: linear-gradient(155deg, rgba(47, 155, 140, 0.1) 0%, rgb(var(--harbor-raised) / 0.45) 100%);
+      border-color: rgb(var(--harbor-primary) / 0.14);
+      background: linear-gradient(155deg, rgb(var(--harbor-primary) / 0.1) 0%, rgb(var(--harbor-raised) / 0.45) 100%);
     }
     .proj-metric-panel .proj-metric-input-wrap {
       display: flex;
       align-items: stretch;
       border-radius: 0.95rem;
-      border: 1.5px solid rgba(47, 155, 140, 0.2);
+      border: 1.5px solid rgb(var(--harbor-primary) / 0.2);
       background: rgb(var(--harbor-surface));
       overflow: hidden;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     .proj-metric-panel .proj-metric-input-wrap:focus-within {
-      border-color: rgba(47, 155, 140, 0.5);
-      box-shadow: 0 0 0 3px rgba(47, 155, 140, 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.5);
+      box-shadow: 0 0 0 3px rgb(var(--harbor-primary) / 0.12);
     }
     .proj-metric-panel .proj-metric-input-wrap input {
       flex: 1;
@@ -2398,7 +2436,7 @@
       font-weight: 700;
       letter-spacing: 0.02em;
       color: #fff;
-      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       white-space: nowrap;
     }
 
@@ -2432,8 +2470,8 @@
     .modal-close-chip:hover,
     .modal-close-chip:focus-visible {
       color: rgb(var(--harbor-text));
-      border-color: rgba(47, 155, 140, 0.28);
-      background: rgba(47, 155, 140, 0.1);
+      border-color: rgb(var(--harbor-primary) / 0.28);
+      background: rgb(var(--harbor-primary) / 0.1);
       outline: none;
     }
 
@@ -2443,13 +2481,13 @@
 
     .modal-close-chip:active {
       transform: scale(0.97);
-      background: rgba(47, 155, 140, 0.22);
+      background: rgb(var(--harbor-primary) / 0.22);
     }
 
     html[data-theme="dark"] .modal-close-chip {
       color: rgba(232, 242, 238, 0.82);
-      background: rgba(72, 178, 162, 0.1);
-      border-color: rgba(72, 178, 162, 0.22);
+      background: rgb(var(--harbor-primary) / 0.1);
+      border-color: rgb(var(--harbor-primary) / 0.22);
     }
 
     /* Sheet swipe-to-dismiss */
@@ -2487,12 +2525,12 @@
     .input-polish:focus-visible {
       outline: none;
       border-color: rgb(var(--harbor-primary-light));
-      box-shadow: 0 0 0 3px rgba(107, 191, 176, 0.22);
+      box-shadow: 0 0 0 3px rgb(var(--harbor-primary) / 0.22);
     }
 
     #onboarding {
       background:
-        radial-gradient(ellipse 130% 70% at 50% -15%, rgba(47, 155, 140, 0.2) 0%, transparent 52%),
+        radial-gradient(ellipse 130% 70% at 50% -15%, rgb(var(--harbor-primary) / 0.2) 0%, transparent 52%),
         radial-gradient(ellipse 80% 50% at 100% 100%, rgba(30, 58, 74, 0.35) 0%, transparent 50%),
         rgb(var(--harbor-bg));
     }
@@ -2519,7 +2557,7 @@
     }
 
     .onboarding-progress-dot.is-done {
-      background: rgba(107, 191, 176, 0.55);
+      background: rgb(var(--harbor-primary) / 0.55);
     }
 
     .onboarding-step-label {
@@ -2563,12 +2601,12 @@
     .onboarding-card.is-selected,
     .onboarding-option.is-selected {
       border-color: rgb(var(--harbor-primary)) !important;
-      background: rgba(47, 155, 140, 0.12) !important;
+      background: rgb(var(--harbor-primary) / 0.12) !important;
       box-shadow: var(--harbor-glow-primary);
     }
 
     .onboarding-option {
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
       border-radius: 1.25rem;
       padding: 1rem;
       cursor: pointer;
@@ -2595,7 +2633,7 @@
     }
 
     .onboarding-feature {
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
       border-radius: 1.1rem;
       padding: 0.85rem 0.95rem;
       background:
@@ -2619,7 +2657,7 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      background: rgba(47, 155, 140, 0.14);
+      background: rgb(var(--harbor-primary) / 0.14);
       color: rgb(var(--harbor-primary-light));
       font-size: 0.9rem;
     }
@@ -2721,35 +2759,50 @@
       padding-right: 1rem;
       padding-top: 0.45rem;
       padding-bottom: 0.45rem;
-      background: transparent;
+      /* Match active palette wash so the strip never shows mint under the card */
+      background-color: var(--harbor-body-solid);
+      background-image: linear-gradient(
+        180deg,
+        var(--harbor-body-g2) 0%,
+        var(--harbor-body-g3) 100%
+      );
       border-bottom: none;
     }
 
     #header-weather.weather-glass {
       border-radius: 1.15rem;
-      border: 1px solid rgba(47, 155, 140, 0.18);
-      background:
-        linear-gradient(145deg, rgba(255, 255, 255, 0.45) 0%, rgba(224, 237, 232, 0.92) 48%, rgba(214, 232, 226, 0.95) 100%);
-      backdrop-filter: blur(16px) saturate(1.15);
-      -webkit-backdrop-filter: blur(16px) saturate(1.15);
+      border: 1px solid rgb(var(--harbor-border));
+      /* Opaque palette fills (dock tokens) — no translucent mint body bleed */
+      background-color: var(--harbor-dock-g2);
+      background-image: linear-gradient(
+        145deg,
+        var(--harbor-dock-g1) 0%,
+        var(--harbor-dock-g2) 48%,
+        var(--harbor-dock-g3) 100%
+      );
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       box-shadow: var(--harbor-shadow-sm);
       padding: 0.55rem 0.65rem 0.6rem;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     #header-weather.weather-glass:active {
-      border-color: rgba(47, 155, 140, 0.32);
-      box-shadow:
-        var(--harbor-shadow-sm),
-        0 0 0 1px rgba(47, 155, 140, 0.1);
+      border-color: rgb(var(--harbor-primary));
+      box-shadow: var(--harbor-shadow-sm), 0 0 0 1px rgb(var(--harbor-primary) / 0.12);
     }
 
     html[data-theme="dark"] #header-weather.weather-glass {
-      border-color: rgba(72, 178, 162, 0.18);
-      background:
-        linear-gradient(145deg, rgba(24, 42, 38, 0.95) 0%, rgba(16, 32, 29, 0.92) 55%, rgba(12, 26, 24, 0.95) 100%);
+      border-color: rgb(var(--harbor-border));
+      background-color: var(--harbor-dock-g2);
+      background-image: linear-gradient(
+        145deg,
+        var(--harbor-dock-g1) 0%,
+        var(--harbor-dock-g2) 55%,
+        var(--harbor-dock-g3) 100%
+      );
       box-shadow:
-        inset 0 1px 0 rgba(154, 214, 202, 0.08),
+        inset 0 1px 0 rgb(var(--harbor-primary-light) / 0.08),
         0 8px 22px rgba(0, 10, 8, 0.35);
     }
 
@@ -2782,74 +2835,107 @@
       min-width: 3.15rem;
       min-height: 3.35rem;
       border-radius: 0.85rem !important;
-      border: 1px solid rgba(47, 155, 140, 0.16) !important;
-      background: rgba(236, 245, 241, 0.95) !important;
+      border: 1px solid rgb(var(--harbor-border)) !important;
+      /* Solid palette base (hex token) + optional rain-tier wash via background-image */
+      background-color: var(--harbor-dock-g1) !important;
+      background-image: none !important;
       color: rgb(var(--harbor-text)) !important;
-      backdrop-filter: blur(6px);
       box-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) inset;
     }
+    /*
+     * Rain tiers: light wash only — base stays palette so clear hours
+     * don't repaint the banner Harbor Mint on Blush/Lilac/Wood/Lagoon.
+     */
     .header-weather-chip.weather-chip-good {
-      background: rgba(47, 155, 140, 0.14) !important;
-      border-color: rgba(47, 155, 140, 0.3) !important;
-      color: #1C7066 !important;
+      background-color: var(--harbor-dock-g1) !important;
+      background-image: linear-gradient(180deg, rgba(46, 160, 110, 0.14), rgba(46, 160, 110, 0.05)) !important;
+      border-color: rgba(46, 160, 110, 0.38) !important;
+      color: rgb(var(--harbor-text)) !important;
     }
     .header-weather-chip.weather-chip-ok {
-      background: rgba(212, 168, 48, 0.14) !important;
-      border-color: rgba(184, 148, 48, 0.32) !important;
-      color: #7a5a12 !important;
+      background-color: var(--harbor-dock-g1) !important;
+      background-image: linear-gradient(180deg, rgba(212, 168, 48, 0.16), rgba(212, 168, 48, 0.06)) !important;
+      border-color: rgba(184, 148, 48, 0.4) !important;
+      color: rgb(var(--harbor-text)) !important;
     }
     .header-weather-chip.weather-chip-poor {
-      background: rgba(196, 110, 86, 0.12) !important;
-      border-color: rgba(196, 110, 86, 0.3) !important;
-      color: #8f3d2c !important;
+      background-color: var(--harbor-dock-g1) !important;
+      background-image: linear-gradient(180deg, rgba(196, 110, 86, 0.16), rgba(196, 110, 86, 0.06)) !important;
+      border-color: rgba(196, 110, 86, 0.4) !important;
+      color: rgb(var(--harbor-text)) !important;
     }
 
     html[data-theme="dark"] .header-weather-chip {
-      background: rgba(24, 42, 38, 0.9) !important;
-      border-color: rgba(72, 178, 162, 0.16) !important;
+      background-color: var(--harbor-dock-g1) !important;
+      background-image: none !important;
+      border-color: rgb(var(--harbor-border)) !important;
       color: rgb(var(--harbor-text)) !important;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
     html[data-theme="dark"] .header-weather-chip.weather-chip-good {
-      background: rgba(72, 178, 162, 0.2) !important;
-      border-color: rgba(72, 178, 162, 0.4) !important;
-      color: #9AD6CA !important;
+      background-color: var(--harbor-dock-g1) !important;
+      background-image: linear-gradient(180deg, rgba(72, 178, 162, 0.22), rgba(72, 178, 162, 0.08)) !important;
+      border-color: rgba(72, 178, 162, 0.42) !important;
     }
     html[data-theme="dark"] .header-weather-chip.weather-chip-ok {
-      background: rgba(184, 148, 48, 0.18) !important;
-      border-color: rgba(212, 181, 106, 0.35) !important;
-      color: #E8D090 !important;
+      background-color: var(--harbor-dock-g1) !important;
+      background-image: linear-gradient(180deg, rgba(212, 181, 106, 0.2), rgba(212, 181, 106, 0.08)) !important;
+      border-color: rgba(212, 181, 106, 0.4) !important;
     }
     html[data-theme="dark"] .header-weather-chip.weather-chip-poor {
-      background: rgba(196, 110, 86, 0.16) !important;
-      border-color: rgba(220, 140, 118, 0.35) !important;
-      color: #F0B8A8 !important;
+      background-color: var(--harbor-dock-g1) !important;
+      background-image: linear-gradient(180deg, rgba(220, 140, 118, 0.2), rgba(220, 140, 118, 0.08)) !important;
+      border-color: rgba(220, 140, 118, 0.4) !important;
     }
 
     .weather-pane-row {
-      transition: background-color 0.15s ease;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+      background-color: var(--harbor-dock-g2);
+      background-image: none;
+      border: 1px solid rgb(var(--harbor-border));
     }
     .weather-pane-row.weather-chip-good {
-      background: rgba(47, 155, 140, 0.1);
-      border-color: rgba(47, 155, 140, 0.26);
+      background-color: var(--harbor-dock-g2);
+      background-image: linear-gradient(90deg, rgba(46, 160, 110, 0.12), transparent 70%);
+      border-color: rgba(46, 160, 110, 0.32);
     }
     .weather-pane-row.weather-chip-ok {
-      background: rgba(212, 168, 48, 0.1);
-      border-color: rgba(184, 148, 48, 0.28);
+      background-color: var(--harbor-dock-g2);
+      background-image: linear-gradient(90deg, rgba(212, 168, 48, 0.14), transparent 70%);
+      border-color: rgba(184, 148, 48, 0.35);
     }
     .weather-pane-row.weather-chip-poor {
-      background: rgba(196, 110, 86, 0.1);
-      border-color: rgba(196, 110, 86, 0.26);
+      background-color: var(--harbor-dock-g2);
+      background-image: linear-gradient(90deg, rgba(196, 110, 86, 0.14), transparent 70%);
+      border-color: rgba(196, 110, 86, 0.35);
     }
+    .weather-legend-swatch {
+      display: inline-block;
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      vertical-align: middle;
+      margin-right: 0.1rem;
+    }
+    .weather-legend-swatch.weather-chip-good {
+      background: rgba(46, 160, 110, 0.65);
+      border-color: rgba(46, 160, 110, 0.8);
+    }
+    .weather-legend-swatch.weather-chip-ok {
+      background: rgba(212, 168, 48, 0.65);
+      border-color: rgba(184, 148, 48, 0.8);
+    }
+    .weather-legend-swatch.weather-chip-poor {
+      background: rgba(196, 110, 86, 0.6);
+      border-color: rgba(196, 110, 86, 0.75);
+    }
+    /* "Now" ring only — do not override green/yellow/red rain tiers */
     .weather-pane-row.is-now {
-      border-color: rgba(47, 155, 140, 0.42);
-      background: rgba(47, 155, 140, 0.12);
-      box-shadow: 0 0 0 1px rgba(47, 155, 140, 0.1);
+      box-shadow: inset 0 0 0 1.5px rgb(var(--harbor-primary) / 0.55), 0 1px 0 rgba(255, 255, 255, 0.06);
     }
     html[data-theme="dark"] .weather-pane-row.is-now {
-      border-color: rgba(107, 191, 176, 0.45);
-      background: rgba(107, 191, 176, 0.08);
-      box-shadow: none;
+      box-shadow: inset 0 0 0 1.5px rgb(var(--harbor-primary-light) / 0.55);
     }
 
     /* Weather forecast sheet — sticky header + independent scroll body */
@@ -2975,7 +3061,7 @@
     }
 
     .sub-brand-logo {
-      --brand-color: #2F9B8C;
+      --brand-color: rgb(var(--harbor-primary-light));
       --logo-size: 44px;
       position: relative;
       width: var(--logo-size);
@@ -2991,7 +3077,7 @@
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.18);
       box-shadow:
-        0 4px 12px rgba(18, 48, 44, 0.14),
+        0 4px 12px rgb(var(--harbor-text) / 0.14),
         0 1px 0 rgba(255, 255, 255, 0.2) inset;
     }
     html[data-theme="dark"] .sub-brand-logo {
@@ -3119,7 +3205,7 @@
       transform: scale(0.96);
     }
     .library-filter-chip.is-active {
-      background: rgba(47, 155, 140, 0.18);
+      background: rgb(var(--harbor-primary) / 0.18);
       border-color: rgb(var(--harbor-primary));
       font-weight: 600;
     }
@@ -3129,7 +3215,7 @@
       overflow: hidden;
       background:
         linear-gradient(155deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 72%);
-      border: 1px solid rgba(47, 155, 140, 0.14);
+      border: 1px solid rgb(var(--harbor-primary) / 0.14);
       border-radius: 1.15rem;
       padding: 0.9rem 0.95rem;
       min-height: 4.35rem;
@@ -3142,19 +3228,19 @@
       border-color: rgb(var(--harbor-border) / 0.9);
     }
     .library-task-card:hover {
-      border-color: rgba(47, 155, 140, 0.28);
+      border-color: rgb(var(--harbor-primary) / 0.28);
       box-shadow: var(--harbor-shadow-md);
     }
     .library-task-card:active {
       transform: scale(0.992);
     }
     .library-task-card.is-added {
-      border-color: rgba(47, 155, 140, 0.42);
+      border-color: rgb(var(--harbor-primary) / 0.42);
       background:
-        linear-gradient(155deg, rgba(47, 155, 140, 0.1) 0%, rgb(var(--harbor-surface)) 70%);
+        linear-gradient(155deg, rgb(var(--harbor-primary) / 0.1) 0%, rgb(var(--harbor-surface)) 70%);
     }
     html[data-theme="dark"] .library-task-card.is-added {
-      background: linear-gradient(160deg, rgba(72, 178, 162, 0.12) 0%, rgb(var(--harbor-surface)) 100%);
+      background: linear-gradient(160deg, rgb(var(--harbor-primary) / 0.12) 0%, rgb(var(--harbor-surface)) 100%);
     }
     .library-task-card.just-added {
       animation: libPop 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
@@ -3238,9 +3324,9 @@
       opacity: 0.85;
     }
     .library-meta-chip.chip-energy-low {
-      background: rgba(47, 155, 140, 0.12);
+      background: rgb(var(--harbor-primary) / 0.12);
       color: rgb(var(--harbor-primary-light));
-      border-color: rgba(47, 155, 140, 0.18);
+      border-color: rgb(var(--harbor-primary) / 0.18);
     }
     .library-meta-chip.chip-energy-med {
       background: rgba(245, 158, 11, 0.12);
@@ -3264,9 +3350,9 @@
       border-color: rgb(var(--harbor-border) / 0.85);
     }
     .library-meta-chip.chip-cadence {
-      background: rgba(47, 155, 140, 0.08);
+      background: rgb(var(--harbor-primary) / 0.08);
       color: rgb(var(--harbor-primary-light));
-      border-color: rgba(47, 155, 140, 0.14);
+      border-color: rgb(var(--harbor-primary) / 0.14);
     }
     .library-meta-chip.chip-pro {
       background: rgba(14, 165, 233, 0.12);
@@ -3312,8 +3398,8 @@
       background:
         linear-gradient(155deg, rgba(255, 255, 255, 0.4) 0%, rgb(var(--harbor-surface)) 100%) !important;
       box-shadow: var(--harbor-shadow-sm) !important;
-      border: 1px solid rgba(47, 155, 140, 0.14) !important;
-      border-left: 3px solid #2F9B8C !important;
+      border: 1px solid rgb(var(--harbor-primary) / 0.14) !important;
+      border-left: 3px solid rgb(var(--harbor-primary-light)) !important;
       border-radius: var(--harbor-radius-xl) !important;
     }
 
@@ -3360,7 +3446,7 @@
 
     @keyframes welcomeBannerGlow {
       0%, 100% { box-shadow: var(--harbor-shadow-sm), var(--harbor-glow-primary); }
-      50% { box-shadow: var(--harbor-shadow-sm), 0 0 0 3px rgba(107, 191, 176, 0.28), var(--harbor-glow-primary); }
+      50% { box-shadow: var(--harbor-shadow-sm), 0 0 0 3px rgb(var(--harbor-primary) / 0.28), var(--harbor-glow-primary); }
     }
 
     #smart-cta.welcome-cta-pulse {
@@ -3370,8 +3456,8 @@
     }
 
     @keyframes welcomeCtaPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(107, 191, 176, 0.5); transform: scale(1); }
-      50% { box-shadow: 0 0 0 5px rgba(107, 191, 176, 0); transform: scale(1.05); }
+      0%, 100% { box-shadow: 0 0 0 0 rgb(var(--harbor-primary) / 0.5); transform: scale(1); }
+      50% { box-shadow: 0 0 0 5px rgb(var(--harbor-primary) / 0); transform: scale(1.05); }
     }
 
     #smart-bill-footnote {
@@ -3388,7 +3474,7 @@
       width: 2.25rem;
       height: 2.25rem;
       border-radius: 0.75rem;
-      border: 1px solid rgba(47, 155, 140, 0.2);
+      border: 1px solid rgb(var(--harbor-primary) / 0.22);
       background: rgb(var(--harbor-surface));
       color: rgb(var(--harbor-text));
       transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
@@ -3398,7 +3484,7 @@
     .app-menu-trigger.is-open {
       color: rgb(var(--harbor-primary-light));
       background: rgb(var(--harbor-raised));
-      border-color: rgba(47, 155, 140, 0.4);
+      border-color: rgb(var(--harbor-primary) / 0.42);
     }
 
     .app-menu-wrap {
@@ -3550,7 +3636,7 @@
     }
 
     .settings-card {
-      border: 1px solid rgba(47, 155, 140, 0.14);
+      border: 1px solid rgb(var(--harbor-primary) / 0.14);
       border-radius: var(--harbor-radius-xl);
       background:
         linear-gradient(165deg, rgba(255, 255, 255, 0.35) 0%, rgb(var(--harbor-surface)) 100%);
@@ -3558,8 +3644,8 @@
       overflow: hidden;
     }
     html[data-theme="dark"] .settings-card {
-      border-color: rgba(72, 178, 162, 0.16);
-      background: linear-gradient(165deg, rgba(28, 48, 44, 0.75) 0%, rgb(var(--harbor-surface)) 100%);
+      border-color: rgb(var(--harbor-primary) / 0.16);
+      background: linear-gradient(165deg, rgb(var(--harbor-raised) / 0.75) 0%, rgb(var(--harbor-surface)) 100%);
     }
 
     .settings-row {
@@ -3931,12 +4017,12 @@
     }
     .person-pick-add {
       border-style: dashed;
-      border-color: rgba(107, 191, 176, 0.45);
+      border-color: rgb(var(--harbor-primary) / 0.45);
       color: rgb(var(--harbor-primary-light));
-      background: rgba(47, 155, 140, 0.08);
+      background: rgb(var(--harbor-primary) / 0.08);
     }
     .person-pick-add:active {
-      background: rgba(47, 155, 140, 0.18);
+      background: rgb(var(--harbor-primary) / 0.18);
     }
     /* Add Event sheet: outer shell fixed height; inner body scrolls so custom duration is reachable */
     #add-calendar-event-modal .modal-sheet-event {
@@ -3979,8 +4065,8 @@
       text-decoration-color: rgb(var(--harbor-muted) / 0.55);
     }
     .cal-event-row--now {
-      border-color: rgba(47, 155, 140, 0.45);
-      box-shadow: 0 0 0 1px rgba(47, 155, 140, 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.45);
+      box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.12);
     }
     .cal-event-phase-pill {
       display: inline-flex;
@@ -3995,7 +4081,7 @@
       flex-shrink: 0;
     }
     .cal-event-phase-pill.is-now {
-      background: rgba(47, 155, 140, 0.16);
+      background: rgb(var(--harbor-primary) / 0.16);
       color: rgb(var(--harbor-primary-light));
     }
     .cal-event-phase-pill.is-past {
@@ -4020,7 +4106,7 @@
       opacity: 0.55;
     }
     .summary-timeline-row.is-now {
-      border-left: 2px solid rgba(47, 155, 140, 0.45);
+      border-left: 2px solid rgb(var(--harbor-primary) / 0.45);
       padding-left: 0.35rem;
     }
     .schedule-earlier-hdr {
@@ -4243,7 +4329,7 @@
       padding: 0.42rem 0.72rem;
       min-height: 2.15rem;
       border-radius: 999px;
-      border: 1px solid rgba(47, 155, 140, 0.2);
+      border: 1px solid rgb(var(--harbor-primary) / 0.2);
       background: rgb(var(--harbor-surface));
       color: rgb(var(--harbor-primary-light));
       box-shadow: var(--harbor-shadow-sm);
@@ -4265,20 +4351,20 @@
     .chip-tool-btn.is-active,
     .chip-tool-btn[aria-expanded="true"],
     #work-schedule-chip.is-set {
-      border-color: rgba(47, 155, 140, 0.4);
-      background: rgba(47, 155, 140, 0.1);
+      border-color: rgb(var(--harbor-primary) / 0.4);
+      background: rgb(var(--harbor-primary) / 0.1);
       color: rgb(var(--harbor-text));
     }
     html[data-theme="dark"] .chip-tool-btn {
-      border-color: rgba(72, 178, 162, 0.22);
+      border-color: rgb(var(--harbor-primary) / 0.22);
       background: rgb(var(--harbor-raised));
       color: rgb(var(--harbor-primary-light));
     }
     html[data-theme="dark"] .chip-tool-btn.is-active,
     html[data-theme="dark"] .chip-tool-btn[aria-expanded="true"],
     html[data-theme="dark"] #work-schedule-chip.is-set {
-      border-color: rgba(72, 178, 162, 0.4);
-      background: rgba(72, 178, 162, 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.4);
+      background: rgb(var(--harbor-primary) / 0.12);
       color: rgb(var(--harbor-text));
     }
     .schedule-free-pill {
@@ -4289,8 +4375,8 @@
       font-size: 0.68rem;
       font-weight: 650;
       color: rgb(var(--harbor-primary-light));
-      background: rgba(47, 155, 140, 0.1);
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      background: rgb(var(--harbor-primary) / 0.1);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
       border-radius: 999px;
       padding: 0.18rem 0.55rem;
       line-height: 1.25;
@@ -4302,20 +4388,20 @@
       color: rgb(var(--harbor-text));
       padding: 0.32rem 0.7rem;
       background: rgba(255, 255, 255, 0.55);
-      border-color: rgba(47, 155, 140, 0.18);
+      border-color: rgb(var(--harbor-primary) / 0.18);
       box-shadow: var(--harbor-shadow-sm);
     }
     .schedule-free-pill:empty {
       display: none;
     }
     html[data-theme="dark"] .schedule-free-pill {
-      background: rgba(72, 178, 162, 0.12);
-      border-color: rgba(72, 178, 162, 0.2);
+      background: rgb(var(--harbor-primary) / 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.2);
     }
     html[data-theme="dark"] .schedule-free-pill--hero {
       color: rgb(var(--harbor-text));
       background: rgba(24, 42, 38, 0.75);
-      border-color: rgba(72, 178, 162, 0.2);
+      border-color: rgb(var(--harbor-primary) / 0.2);
     }
     .schedule-sync-quiet:empty {
       display: none;
@@ -4333,7 +4419,7 @@
       min-width: 11.5rem;
       padding: 0.35rem;
       border-radius: 0.95rem;
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
       background: rgb(var(--harbor-surface));
       box-shadow: var(--harbor-shadow-md);
     }
@@ -4379,7 +4465,7 @@
       gap: 0.45rem;
       padding: 0.48rem 0.75rem;
       border-radius: 999px;
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
       background: rgba(255, 255, 255, 0.55);
       box-shadow: var(--harbor-shadow-sm);
       color: rgb(var(--harbor-text));
@@ -4388,7 +4474,7 @@
     }
     html[data-theme="dark"] .energy-compact-btn {
       background: rgba(24, 42, 38, 0.75);
-      border-color: rgba(72, 178, 162, 0.2);
+      border-color: rgb(var(--harbor-primary) / 0.2);
     }
     .energy-compact-kicker {
       font-size: 0.62rem;
@@ -4474,8 +4560,8 @@
       margin-top: 0.45rem;
       padding: 0.28rem 0.55rem 0.28rem 0.5rem;
       border-radius: 999px;
-      border: 1px solid rgba(47, 155, 140, 0.35);
-      background: rgba(47, 155, 140, 0.1);
+      border: 1px solid rgb(var(--harbor-primary) / 0.35);
+      background: rgb(var(--harbor-primary) / 0.1);
       color: rgb(var(--harbor-primary));
       font-size: 0.68rem;
       font-weight: 700;
@@ -4486,8 +4572,8 @@
     }
     html[data-theme="dark"] .install-home-banner-link {
       color: rgb(var(--harbor-primary-light));
-      border-color: rgba(47, 155, 140, 0.4);
-      background: rgba(47, 155, 140, 0.14);
+      border-color: rgb(var(--harbor-primary) / 0.4);
+      background: rgb(var(--harbor-primary) / 0.14);
     }
     .install-home-banner-link:active {
       opacity: 0.88;
@@ -4525,8 +4611,8 @@
       -webkit-tap-highlight-color: transparent;
     }
     .ig-brand-chip.is-active {
-      border-color: rgba(47, 155, 140, 0.5);
-      background: rgba(47, 155, 140, 0.14);
+      border-color: rgb(var(--harbor-primary) / 0.5);
+      background: rgb(var(--harbor-primary) / 0.14);
       color: rgb(var(--harbor-text));
     }
 
@@ -4558,8 +4644,8 @@
       cursor: pointer;
     }
     .qt-min-chip.is-active {
-      border-color: rgba(47, 155, 140, 0.45);
-      background: rgba(47, 155, 140, 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.45);
+      background: rgb(var(--harbor-primary) / 0.12);
       color: rgb(var(--harbor-text));
     }
     .qt-times-row {
@@ -4583,8 +4669,8 @@
       cursor: pointer;
     }
     .qt-times-chip.is-active {
-      border-color: rgba(47, 155, 140, 0.45);
-      background: rgba(47, 155, 140, 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.45);
+      background: rgb(var(--harbor-primary) / 0.12);
       color: rgb(var(--harbor-text));
     }
     .qt-energy-row {
@@ -4610,8 +4696,8 @@
     .qt-energy-chip.is-active,
     button.qt-diff.is-active,
     button.qt-diff.border-harbor-primary {
-      border-color: rgba(47, 155, 140, 0.45) !important;
-      background: rgba(47, 155, 140, 0.12) !important;
+      border-color: rgb(var(--harbor-primary) / 0.45) !important;
+      background: rgb(var(--harbor-primary) / 0.12) !important;
       color: rgb(var(--harbor-text)) !important;
     }
     .qt-weekday-section {
@@ -4641,8 +4727,8 @@
       transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
     }
     .qt-weekday-chip.is-active {
-      border-color: rgba(47, 155, 140, 0.5);
-      background: rgba(47, 155, 140, 0.14);
+      border-color: rgb(var(--harbor-primary) / 0.5);
+      background: rgb(var(--harbor-primary) / 0.14);
       color: rgb(var(--harbor-text));
     }
     .qt-weekday-hint {
@@ -4681,7 +4767,7 @@
       opacity: 1 !important;
       font-weight: 750;
       color: rgb(var(--harbor-text)) !important;
-      background: rgba(47, 155, 140, 0.2) !important;
+      background: rgb(var(--harbor-primary) / 0.2) !important;
       border-color: rgb(var(--harbor-primary)) !important;
     }
     .library-header {
@@ -4692,7 +4778,7 @@
       padding-bottom: 0.4rem;
       margin-bottom: 0;
       border-bottom: 1px solid rgb(var(--harbor-border) / 0.55);
-      box-shadow: 0 6px 12px -8px rgba(18, 48, 44, 0.18);
+      box-shadow: 0 6px 12px -8px rgb(var(--harbor-text) / 0.18);
     }
     html[data-theme="dark"] .library-header {
       background: rgb(var(--harbor-bg));
@@ -4706,7 +4792,7 @@
     .person-color-swatch.is-selected {
       outline: 2.5px solid rgb(var(--harbor-primary));
       outline-offset: 3px;
-      box-shadow: 0 0 0 4px rgba(47, 155, 140, 0.28), 0 2px 8px rgba(18, 48, 44, 0.18);
+      box-shadow: 0 0 0 4px rgb(var(--harbor-primary) / 0.28), 0 2px 8px rgb(var(--harbor-text) / 0.18);
       transform: scale(1.08);
     }
     .person-color-swatch {
@@ -4755,13 +4841,18 @@
       display: none !important;
     }
 
-    /* Soft breathing teal ambient */
+    /* Soft breathing primary ambient (follows palette) */
     .summary-orb-glow {
       position: absolute;
       inset: -18%;
       border-radius: 999px;
       background:
-        radial-gradient(circle at 50% 45%, rgba(47, 155, 140, 0.38) 0%, rgba(47, 155, 140, 0.12) 42%, transparent 70%);
+        radial-gradient(
+          circle at 50% 45%,
+          rgb(var(--harbor-primary) / 0.38) 0%,
+          rgb(var(--harbor-primary) / 0.12) 42%,
+          transparent 70%
+        );
       filter: blur(10px);
       animation: orbAmbientGlow 3.2s ease-in-out infinite;
       pointer-events: none;
@@ -4779,9 +4870,9 @@
         from 200deg,
         transparent 0deg,
         transparent 50deg,
-        rgba(176, 138, 72, 0.15) 85deg,
-        rgba(154, 214, 202, 0.85) 115deg,
-        rgba(47, 155, 140, 0.55) 145deg,
+        rgb(var(--harbor-accent) / 0.18) 85deg,
+        rgb(var(--harbor-primary-light) / 0.75) 115deg,
+        rgb(var(--harbor-primary) / 0.55) 145deg,
         transparent 190deg,
         transparent 360deg
       );
@@ -4817,12 +4908,12 @@
     }
 
     html[data-theme="dark"] .summary-orb-core {
-      background: linear-gradient(155deg, #48B2A2 0%, #2A6F66 48%, #163D38 100%);
-      border-color: rgba(154, 214, 202, 0.35);
+      background: linear-gradient(155deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 55%, rgb(var(--harbor-raised)) 100%);
+      border-color: rgb(var(--harbor-primary-light) / 0.35);
       box-shadow:
-        0 1px 0 rgba(180, 230, 220, 0.18) inset,
+        0 1px 0 rgb(var(--harbor-primary-light) / 0.18) inset,
         0 12px 28px rgba(0, 0, 0, 0.52),
-        0 0 0 1px rgba(72, 178, 162, 0.2);
+        0 0 0 1px rgb(var(--harbor-primary) / 0.2);
     }
 
     .summary-orb-core::before {
@@ -4880,15 +4971,15 @@
       z-index: 3;
       opacity: 1;
       background: rgba(255, 255, 255, 0.85);
-      border: 0.5px solid rgba(47, 155, 140, 0.18);
+      border: 0.5px solid rgb(var(--harbor-primary) / 0.18);
       border-radius: 999px;
       padding: 0.12rem 0.42rem;
-      box-shadow: 0 2px 8px rgba(18, 48, 44, 0.08);
+      box-shadow: 0 2px 8px rgb(var(--harbor-text) / 0.08);
     }
     html[data-theme="dark"] .summary-orb-label {
       color: #C8F0E6;
       background: rgba(12, 28, 26, 0.82);
-      border-color: rgba(72, 178, 162, 0.35);
+      border-color: rgb(var(--harbor-primary) / 0.35);
       text-shadow: none;
       opacity: 1;
     }
@@ -4913,12 +5004,12 @@
       line-height: 1;
       color: #0F2E2A;
       background:
-        linear-gradient(165deg, rgba(255, 255, 255, 0.98) 0%, rgba(236, 245, 241, 0.96) 55%, rgba(224, 237, 232, 0.98) 100%);
+        linear-gradient(165deg, rgba(255, 255, 255, 0.98) 0%, rgb(var(--harbor-surface) / 0.96) 55%, rgb(var(--harbor-raised) / 0.98) 100%);
       border: 1px solid rgba(255, 255, 255, 0.95);
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 1) inset,
-        0 4px 12px rgba(18, 48, 44, 0.16),
-        0 0 0 1.5px rgba(47, 155, 140, 0.22);
+        0 4px 12px rgb(var(--harbor-text) / 0.16),
+        0 0 0 1.5px rgb(var(--harbor-primary) / 0.22);
       z-index: 5;
       pointer-events: none;
       animation: fabBadgeIn 0.35s var(--harbor-ease-out) both;
@@ -4933,8 +5024,8 @@
       height: 0.28rem;
       border-radius: 999px;
       transform: translateY(-50%);
-      background: linear-gradient(145deg, #56C4B4, #2F9B8C);
-      box-shadow: 0 0 0 1px rgba(47, 155, 140, 0.2);
+      background: linear-gradient(145deg, rgb(var(--harbor-primary)), rgb(var(--harbor-primary-light)));
+      box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.2);
       opacity: 0;
       /* reserved for optional accent; keep layout clean without the dot */
       display: none;
@@ -4943,12 +5034,12 @@
     html[data-theme="dark"] .summary-orb-badge {
       color: #E8F2EE;
       background:
-        linear-gradient(165deg, rgba(36, 58, 54, 0.98) 0%, rgba(16, 32, 29, 0.98) 100%);
-      border-color: rgba(72, 178, 162, 0.35);
+        linear-gradient(165deg, rgba(36, 58, 54, 0.98) 0%, rgb(var(--harbor-surface) / 0.98) 100%);
+      border-color: rgb(var(--harbor-primary) / 0.35);
       box-shadow:
-        0 1px 0 rgba(154, 214, 202, 0.12) inset,
+        0 1px 0 rgb(var(--harbor-primary-light) / 0.12) inset,
         0 6px 14px rgba(0, 0, 0, 0.45),
-        0 0 0 1.5px rgba(72, 178, 162, 0.22);
+        0 0 0 1.5px rgb(var(--harbor-primary) / 0.22);
     }
 
     .summary-orb-badge.hidden {
@@ -4966,8 +5057,8 @@
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.55) inset,
         0 14px 30px rgba(30, 90, 82, 0.42),
-        0 4px 10px rgba(18, 48, 44, 0.16),
-        0 0 28px rgba(47, 155, 140, 0.3);
+        0 4px 10px rgb(var(--harbor-text) / 0.16),
+        0 0 28px rgb(var(--harbor-primary) / 0.3);
     }
 
     .summary-orb:active {
@@ -5020,8 +5111,8 @@
     }
 
     @keyframes orbTutorialPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(47, 155, 140, 0.35), 0 12px 28px rgba(18, 58, 52, 0.22); }
-      50% { box-shadow: 0 0 0 10px rgba(47, 155, 140, 0), 0 12px 28px rgba(18, 58, 52, 0.22); }
+      0%, 100% { box-shadow: 0 0 0 0 rgb(var(--harbor-primary) / 0.35), 0 12px 28px rgb(var(--harbor-text) / 0.22); }
+      50% { box-shadow: 0 0 0 10px rgb(var(--harbor-primary) / 0), 0 12px 28px rgb(var(--harbor-text) / 0.22); }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -5091,14 +5182,14 @@
       padding: 0.48rem 0.95rem;
       min-height: 2.15rem;
       border-radius: 999px;
-      background: linear-gradient(180deg, #3AADA0 0%, #2F9B8C 100%);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #FFFFFF;
       border: none;
       line-height: 1;
       white-space: nowrap;
       box-shadow:
-        0 2px 12px rgba(47, 155, 140, 0.34),
-        0 0 0 1px rgba(47, 155, 140, 0.18),
+        0 2px 12px rgb(var(--harbor-primary) / 0.34),
+        0 0 0 1px rgb(var(--harbor-primary) / 0.18),
         inset 0 1px 0 rgba(255, 255, 255, 0.28);
       transition: transform 0.12s ease, opacity 0.12s ease, box-shadow 0.15s ease;
       cursor: pointer;
@@ -5166,7 +5257,7 @@
       font-weight: 600;
       padding: 0.1rem 0.35rem;
       border-radius: 999px;
-      background: rgba(47, 155, 140, 0.15);
+      background: rgb(var(--harbor-primary) / 0.15);
       color: rgb(var(--harbor-primary-light));
       white-space: nowrap;
     }
@@ -5205,11 +5296,11 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: var(--harbor-radius-xl) var(--harbor-radius-xl) 0 0;
-      border-top: 1px solid rgba(47, 155, 140, 0.14);
+      border-top: 1px solid rgb(var(--harbor-primary) / 0.14);
       background:
-        radial-gradient(ellipse 90% 50% at 50% -10%, rgba(47, 155, 140, 0.1) 0%, transparent 55%),
+        radial-gradient(ellipse 90% 50% at 50% -10%, rgb(var(--harbor-primary) / 0.1) 0%, transparent 55%),
         rgb(var(--harbor-surface));
-      box-shadow: var(--harbor-shadow-md), 0 -8px 32px rgba(18, 48, 44, 0.1);
+      box-shadow: var(--harbor-shadow-md), 0 -8px 32px rgb(var(--harbor-text) / 0.1);
       isolation: isolate;
       animation: sheetUp var(--harbor-duration-slow) var(--harbor-ease-out) forwards;
     }
@@ -5249,8 +5340,8 @@
     }
     .summary-sheet-done:active {
       transform: scale(0.985);
-      background: rgba(47, 155, 140, 0.12);
-      border-color: rgba(47, 155, 140, 0.35);
+      background: rgb(var(--harbor-primary) / 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.35);
     }
     .summary-sheet-dismiss-hint {
       display: none;
@@ -5276,9 +5367,9 @@
       }
     }
     html[data-theme="dark"] .summary-sheet {
-      border-top-color: rgba(72, 178, 162, 0.16);
+      border-top-color: rgb(var(--harbor-primary) / 0.16);
       background:
-        radial-gradient(ellipse 90% 50% at 50% -10%, rgba(72, 178, 162, 0.1) 0%, transparent 55%),
+        radial-gradient(ellipse 90% 50% at 50% -10%, rgb(var(--harbor-primary) / 0.1) 0%, transparent 55%),
         rgb(var(--harbor-surface));
       box-shadow: var(--harbor-shadow-md), 0 -10px 36px rgba(0, 10, 8, 0.45);
     }
@@ -5388,8 +5479,8 @@
     }
     .summary-kpi-detail-done:active {
       transform: scale(0.985);
-      background: rgba(47, 155, 140, 0.12);
-      border-color: rgba(47, 155, 140, 0.35);
+      background: rgb(var(--harbor-primary) / 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.35);
     }
     html[data-theme="dark"] .summary-kpi-detail-done {
       background: rgba(24, 42, 38, 0.95);
@@ -5535,8 +5626,8 @@
 
     .summary-pull-today-btn {
       flex-shrink: 0;
-      border: 1px solid rgba(47, 155, 140, 0.45);
-      background: rgba(47, 155, 140, 0.12);
+      border: 1px solid rgb(var(--harbor-primary) / 0.45);
+      background: rgb(var(--harbor-primary) / 0.12);
       color: rgb(var(--harbor-primary-light));
       font-size: 0.62rem;
       font-weight: 700;
@@ -5552,7 +5643,7 @@
     }
 
     .summary-pull-today-btn.is-on {
-      border-color: rgba(47, 155, 140, 0.3);
+      border-color: rgb(var(--harbor-primary) / 0.3);
       background: transparent;
       color: rgb(var(--harbor-muted));
       font-weight: 600;
@@ -5601,7 +5692,7 @@
       height: 2.45rem;
       border-radius: 0.85rem;
       /* Solid teal plate — same family as the FAB (not a washed mint wash) */
-      background: linear-gradient(155deg, #4BC4B4 0%, #2F9B8C 48%, #1F7A6E 100%);
+      background: linear-gradient(155deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 48%, rgb(var(--harbor-primary-light)) 100%);
       border: 1.5px solid rgba(255, 255, 255, 0.55);
       display: flex;
       align-items: center;
@@ -5622,8 +5713,8 @@
       opacity: 0.98;
     }
     html[data-theme="dark"] .summary-dash-mark {
-      background: linear-gradient(155deg, #48B2A2 0%, #2A6F66 48%, #163D38 100%);
-      border-color: rgba(154, 214, 202, 0.35);
+      background: linear-gradient(155deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 48%, rgb(var(--harbor-raised)) 100%);
+      border-color: rgb(var(--harbor-primary-light) / 0.35);
       box-shadow:
         0 1px 0 rgba(180, 230, 220, 0.16) inset,
         0 6px 14px rgba(0, 0, 0, 0.4);
@@ -5673,9 +5764,9 @@
     }
 
     .summary-toggle-btn.is-active {
-      background: linear-gradient(135deg, #3CB5A6 0%, #2F9B8C 100%);
+      background: linear-gradient(135deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #fff;
-      box-shadow: 0 4px 14px rgba(47, 155, 140, 0.28);
+      box-shadow: 0 4px 14px rgb(var(--harbor-primary) / 0.28);
     }
 
     /* Summary month glance calendar */
@@ -5732,27 +5823,27 @@
     }
 
     .summary-month-cal-day.is-week:not(.is-past):not(.is-today) {
-      background: rgba(47, 155, 140, 0.08);
-      border-color: rgba(47, 155, 140, 0.18);
+      background: rgb(var(--harbor-primary) / 0.08);
+      border-color: rgb(var(--harbor-primary) / 0.18);
     }
 
     .summary-month-cal-day.is-today {
       border-color: rgb(var(--harbor-primary));
-      box-shadow: 0 0 0 1px rgba(47, 155, 140, 0.22);
+      box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.22);
       color: rgb(var(--harbor-text));
       font-weight: 750;
-      background: rgba(47, 155, 140, 0.14);
+      background: rgb(var(--harbor-primary) / 0.14);
     }
 
     .summary-month-cal-day.has-event {
-      border-color: rgba(47, 155, 140, 0.42);
+      border-color: rgb(var(--harbor-primary) / 0.42);
       cursor: pointer;
     }
 
     .summary-month-cal-day.has-event:hover,
     .summary-month-cal-day.has-event:focus-visible {
       border-color: rgb(var(--harbor-primary));
-      background: rgba(47, 155, 140, 0.16);
+      background: rgb(var(--harbor-primary) / 0.16);
       outline: none;
     }
 
@@ -5762,7 +5853,7 @@
 
     .summary-month-cal-day.is-interactive:hover,
     .summary-month-cal-day.is-interactive:focus-visible {
-      border-color: rgba(47, 155, 140, 0.4);
+      border-color: rgb(var(--harbor-primary) / 0.4);
       outline: none;
     }
 
@@ -5771,7 +5862,7 @@
       height: 0.28rem;
       border-radius: 999px;
       background: rgb(var(--harbor-primary));
-      box-shadow: 0 0 5px rgba(47, 155, 140, 0.35);
+      box-shadow: 0 0 5px rgb(var(--harbor-primary) / 0.35);
     }
 
     .summary-month-cal-day.is-past .summary-month-cal-dot {
@@ -5798,7 +5889,7 @@
 
     .summary-month-cal-day {
       pointer-events: auto;
-      -webkit-tap-highlight-color: rgba(107, 191, 176, 0.25);
+      -webkit-tap-highlight-color: rgb(var(--harbor-primary) / 0.25);
     }
 
     .summary-day-events-sheet {
@@ -5888,8 +5979,8 @@
     }
 
     button.summary-kpi:hover {
-      border-color: rgba(47, 155, 140, 0.5);
-      box-shadow: var(--harbor-shadow-sm), 0 0 0 1px rgba(47, 155, 140, 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.5);
+      box-shadow: var(--harbor-shadow-sm), 0 0 0 1px rgb(var(--harbor-primary) / 0.12);
     }
 
     button.summary-kpi:active {
@@ -5907,8 +5998,8 @@
     }
 
     .summary-kpi.is-live {
-      border-color: rgba(47, 155, 140, 0.4);
-      background: linear-gradient(160deg, rgba(47, 155, 140, 0.12), rgb(var(--harbor-raised)));
+      border-color: rgb(var(--harbor-primary) / 0.4);
+      background: linear-gradient(160deg, rgb(var(--harbor-primary) / 0.12), rgb(var(--harbor-raised)));
     }
 
     .summary-kpi-val {
@@ -5945,9 +6036,9 @@
       border-radius: 1.25rem;
       padding: 1rem 1rem 0.95rem;
       margin-bottom: 0.85rem;
-      border: 1px solid rgba(47, 155, 140, 0.28);
+      border: 1px solid rgb(var(--harbor-primary) / 0.28);
       background:
-        radial-gradient(ellipse 80% 70% at 10% 0%, rgba(47, 155, 140, 0.14) 0%, transparent 55%),
+        radial-gradient(ellipse 80% 70% at 10% 0%, rgb(var(--harbor-primary) / 0.14) 0%, transparent 55%),
         linear-gradient(155deg, rgb(var(--harbor-surface)) 0%, rgb(var(--harbor-raised)) 100%);
       box-shadow: var(--harbor-shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.45);
     }
@@ -6023,7 +6114,7 @@
       width: 1.4rem;
       height: 1.4rem;
       border-radius: 0.45rem;
-      background: rgba(47, 155, 140, 0.14);
+      background: rgb(var(--harbor-primary) / 0.14);
       color: rgb(var(--harbor-primary-light));
       font-size: 0.68rem;
       font-weight: 750;
@@ -6106,7 +6197,7 @@
       font-size: 0.62rem;
       font-weight: 700;
       color: rgb(var(--harbor-primary-light));
-      background: rgba(47, 155, 140, 0.12);
+      background: rgb(var(--harbor-primary) / 0.12);
       border-radius: 999px;
       padding: 0.12rem 0.45rem;
     }
@@ -6168,7 +6259,7 @@
       padding-top: 0.1rem;
     }
     .summary-pulse-row:active {
-      background: rgba(47, 155, 140, 0.06);
+      background: rgb(var(--harbor-primary) / 0.06);
     }
     .summary-pulse-icon {
       width: 1.7rem;
@@ -6180,7 +6271,7 @@
       flex-shrink: 0;
       font-size: 0.7rem;
       margin-top: 0.05rem;
-      background: rgba(47, 155, 140, 0.12);
+      background: rgb(var(--harbor-primary) / 0.12);
       color: rgb(var(--harbor-primary-light));
     }
     .summary-pulse-icon.is-alert {
@@ -6225,7 +6316,7 @@
     .summary-pulse-fill {
       height: 100%;
       border-radius: inherit;
-      background: linear-gradient(90deg, #3CB5A6, #2F9B8C);
+      background: linear-gradient(90deg, rgb(var(--harbor-primary)), rgb(var(--harbor-primary-light)));
       min-width: 0;
       transition: width 0.35s var(--harbor-ease-out);
     }
@@ -6248,7 +6339,7 @@
       -webkit-tap-highlight-color: transparent;
     }
     .summary-pulse-chip:active {
-      background: rgba(47, 155, 140, 0.1);
+      background: rgb(var(--harbor-primary) / 0.1);
     }
     html[data-theme="dark"] .summary-pulse-icon.is-alert {
       color: #e0b84a;
@@ -6300,13 +6391,13 @@
     }
     html[data-theme="dark"] .summary-month-cal-day.is-today {
       color: rgb(var(--harbor-text));
-      background: rgba(72, 178, 162, 0.16);
+      background: rgb(var(--harbor-primary) / 0.16);
       border-color: rgb(var(--harbor-primary-light));
-      box-shadow: 0 0 0 1px rgba(72, 178, 162, 0.28);
+      box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.28);
     }
     html[data-theme="dark"] .summary-month-cal-dot {
       background: rgb(var(--harbor-primary-light));
-      box-shadow: 0 0 6px rgba(72, 178, 162, 0.45);
+      box-shadow: 0 0 6px rgb(var(--harbor-primary) / 0.45);
     }
     html[data-theme="dark"] .summary-kpi {
       background: rgb(var(--harbor-raised));
@@ -6319,13 +6410,13 @@
       color: #fbbf24;
     }
     html[data-theme="dark"] .summary-kpi.is-live {
-      border-color: rgba(72, 178, 162, 0.4);
-      background: linear-gradient(160deg, rgba(72, 178, 162, 0.12), rgb(var(--harbor-raised)));
+      border-color: rgb(var(--harbor-primary) / 0.4);
+      background: linear-gradient(160deg, rgb(var(--harbor-primary) / 0.12), rgb(var(--harbor-raised)));
     }
     html[data-theme="dark"] .summary-focus {
-      border-color: rgba(72, 178, 162, 0.32);
+      border-color: rgb(var(--harbor-primary) / 0.32);
       background:
-        radial-gradient(ellipse 80% 70% at 10% 0%, rgba(72, 178, 162, 0.14) 0%, transparent 55%),
+        radial-gradient(ellipse 80% 70% at 10% 0%, rgb(var(--harbor-primary) / 0.14) 0%, transparent 55%),
         linear-gradient(155deg, rgb(var(--harbor-surface)) 0%, rgb(var(--harbor-raised)) 100%);
       box-shadow: var(--harbor-shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
@@ -6365,7 +6456,7 @@
 
     .feedback-rating-btn.is-selected {
       border-color: rgb(var(--harbor-primary));
-      background: rgba(47, 155, 140, 0.2);
+      background: rgb(var(--harbor-primary) / 0.2);
       color: rgb(var(--harbor-primary-light));
     }
 
@@ -6393,9 +6484,9 @@
     .tutorial-overlay.is-above-summary .tutorial-highlight {
       z-index: 345 !important;
       box-shadow:
-        0 0 0 2.5px rgba(107, 191, 176, 0.95),
-        0 0 0 6px rgba(47, 155, 140, 0.2),
-        0 0 20px rgba(47, 155, 140, 0.35) !important;
+        0 0 0 2.5px rgb(var(--harbor-primary) / 0.95),
+        0 0 0 6px rgb(var(--harbor-primary) / 0.2),
+        0 0 20px rgb(var(--harbor-primary) / 0.35) !important;
       background: transparent !important;
     }
     .tutorial-overlay.is-above-summary .tutorial-highlight.is-hidden,
@@ -6416,8 +6507,8 @@
       position: relative;
       z-index: 5 !important;
       box-shadow:
-        0 0 0 3px rgba(107, 191, 176, 0.95),
-        0 0 0 8px rgba(47, 155, 140, 0.22),
+        0 0 0 3px rgb(var(--harbor-primary) / 0.95),
+        0 0 0 8px rgb(var(--harbor-primary) / 0.22),
         var(--harbor-glow-primary) !important;
       animation: orbTutorialPulse 1.2s ease-in-out infinite;
     }
@@ -6452,7 +6543,7 @@
     #welcome-spotlight-highlight {
       position: fixed;
       border-radius: 0.85rem;
-      box-shadow: 0 0 0 9999px rgba(10, 31, 30, 0.82), 0 0 0 2px rgba(107, 191, 176, 0.9), var(--harbor-glow-primary);
+      box-shadow: 0 0 0 9999px rgba(10, 31, 30, 0.82), 0 0 0 2px rgb(var(--harbor-primary) / 0.9), var(--harbor-glow-primary);
       transition: top 0.32s var(--harbor-ease-out), left 0.32s var(--harbor-ease-out), width 0.32s var(--harbor-ease-out), height 0.32s var(--harbor-ease-out);
       pointer-events: none;
       z-index: 186;
@@ -6467,7 +6558,7 @@
     .tutorial-highlight {
       position: fixed;
       border-radius: 1rem;
-      box-shadow: 0 0 0 9999px rgba(10, 31, 30, 0.78), 0 0 0 2px rgba(107, 191, 176, 0.85), var(--harbor-glow-primary);
+      box-shadow: 0 0 0 9999px rgba(10, 31, 30, 0.78), 0 0 0 2px rgb(var(--harbor-primary) / 0.85), var(--harbor-glow-primary);
       transition:
         top 0.48s cubic-bezier(0.22, 1, 0.36, 1),
         left 0.48s cubic-bezier(0.22, 1, 0.36, 1),
@@ -6564,8 +6655,8 @@
       width: 100%;
       padding: 0.55rem 0.75rem;
       border-radius: 0.75rem;
-      border: 1px solid rgba(107, 191, 176, 0.35);
-      background: rgba(47, 155, 140, 0.12);
+      border: 1px solid rgb(var(--harbor-primary) / 0.35);
+      background: rgb(var(--harbor-primary) / 0.12);
       color: rgb(var(--harbor-primary-light));
       font-size: 0.72rem;
       font-weight: 650;
@@ -6574,7 +6665,7 @@
     }
 
     .tutorial-install-cta:active {
-      background: rgba(47, 155, 140, 0.2);
+      background: rgb(var(--harbor-primary) / 0.2);
     }
 
     .tutorial-install-platform {
@@ -6661,14 +6752,14 @@
     .cal-picker-day.is-selected,
     .cal-picker-day.is-range-start,
     .cal-picker-day.is-range-end {
-      background: rgba(47, 155, 140, 0.28);
+      background: rgb(var(--harbor-primary) / 0.28);
       border-color: rgb(var(--harbor-primary));
       color: rgb(var(--harbor-primary-light));
     }
 
     .cal-picker-day.is-in-range {
-      background: rgba(47, 155, 140, 0.12);
-      border-color: rgba(47, 155, 140, 0.25);
+      background: rgb(var(--harbor-primary) / 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.25);
       color: rgb(var(--harbor-text));
       border-radius: 0.35rem;
     }
@@ -6777,9 +6868,9 @@
 
     .cal-ampm-btn.is-active {
       border-color: rgb(var(--harbor-primary));
-      background: rgba(47, 155, 140, 0.18);
+      background: rgb(var(--harbor-primary) / 0.18);
       color: rgb(var(--harbor-primary-light));
-      box-shadow: 0 0 0 1px rgba(47, 155, 140, 0.25);
+      box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.25);
     }
 
     .cal-format-chip {
@@ -6806,7 +6897,7 @@
 
     .cal-format-chip.is-active {
       border-color: rgb(var(--harbor-primary));
-      background: rgba(47, 155, 140, 0.15);
+      background: rgb(var(--harbor-primary) / 0.15);
       color: rgb(var(--harbor-primary-light));
     }
 
@@ -6815,13 +6906,13 @@
       border-radius: 1.1rem;
       border: 1px solid rgb(var(--harbor-border));
       background:
-        linear-gradient(160deg, rgba(47, 155, 140, 0.08) 0%, rgb(var(--harbor-raised)) 55%);
+        linear-gradient(160deg, rgb(var(--harbor-primary) / 0.08) 0%, rgb(var(--harbor-raised)) 55%);
       box-shadow: var(--harbor-shadow-sm);
       padding: 0.85rem 0.95rem 0.8rem;
     }
     html[data-theme="dark"] .bills-spend-card {
       background:
-        linear-gradient(160deg, rgba(47, 155, 140, 0.12) 0%, rgb(var(--harbor-raised)) 60%);
+        linear-gradient(160deg, rgb(var(--harbor-primary) / 0.12) 0%, rgb(var(--harbor-raised)) 60%);
     }
     .bills-spend-top {
       display: flex;
@@ -6895,9 +6986,9 @@
       gap: 0.35rem;
       margin: 0 0 0.65rem;
       padding: 0.45rem 0.75rem;
-      border: 1px dashed rgba(107, 191, 176, 0.4);
+      border: 1px dashed rgb(var(--harbor-primary) / 0.4);
       border-radius: 999px;
-      background: rgba(47, 155, 140, 0.08);
+      background: rgb(var(--harbor-primary) / 0.08);
       color: rgb(var(--harbor-primary-light));
       font-size: 0.72rem;
       font-weight: 600;
@@ -6909,7 +7000,7 @@
       color: rgb(var(--harbor-text));
       border-style: solid;
       border-color: rgb(var(--harbor-primary));
-      background: rgba(47, 155, 140, 0.15);
+      background: rgb(var(--harbor-primary) / 0.15);
     }
 
     .cal-duration-custom-wrap {
@@ -6930,7 +7021,7 @@
     }
 
     .empty-state {
-      background: radial-gradient(ellipse at 50% 0%, rgba(47, 155, 140, 0.08) 0%, transparent 65%), rgb(var(--harbor-surface));
+      background: radial-gradient(ellipse at 50% 0%, rgb(var(--harbor-primary) / 0.08) 0%, transparent 65%), rgb(var(--harbor-surface));
     }
 
     .projection-bar {
@@ -6951,8 +7042,8 @@
       height: 1.2rem;
       padding: 0;
       border-radius: 999px;
-      border: 1px solid rgba(47, 155, 140, 0.28);
-      background: rgba(47, 155, 140, 0.1);
+      border: 1px solid rgb(var(--harbor-primary) / 0.28);
+      background: rgb(var(--harbor-primary) / 0.1);
       color: rgb(var(--harbor-primary-light));
       font-size: 0.68rem;
       line-height: 1;
@@ -6965,15 +7056,15 @@
       transform: scale(0.94);
     }
     .harbor-info-btn[aria-expanded="true"] {
-      background: rgba(47, 155, 140, 0.2);
-      border-color: rgba(47, 155, 140, 0.4);
+      background: rgb(var(--harbor-primary) / 0.2);
+      border-color: rgb(var(--harbor-primary) / 0.4);
     }
     .harbor-info-tip {
       font-size: 0.72rem;
       line-height: 1.4;
       color: rgb(var(--harbor-muted));
-      background: rgba(47, 155, 140, 0.08);
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      background: rgb(var(--harbor-primary) / 0.08);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
       border-radius: 0.85rem;
       padding: 0.55rem 0.7rem;
     }
@@ -6982,13 +7073,13 @@
       font-weight: 650;
     }
     html[data-theme="dark"] .harbor-info-btn {
-      border-color: rgba(72, 178, 162, 0.3);
-      background: rgba(72, 178, 162, 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.3);
+      background: rgb(var(--harbor-primary) / 0.12);
       color: rgb(var(--harbor-primary-light));
     }
     html[data-theme="dark"] .harbor-info-tip {
-      background: rgba(72, 178, 162, 0.1);
-      border-color: rgba(72, 178, 162, 0.2);
+      background: rgb(var(--harbor-primary) / 0.1);
+      border-color: rgb(var(--harbor-primary) / 0.2);
     }
 
     /* Harbor Day card — sleek minimal */
@@ -6999,20 +7090,20 @@
       border-radius: var(--harbor-radius-xl);
       background:
         linear-gradient(165deg, rgba(255, 255, 255, 0.4) 0%, rgb(var(--harbor-surface)) 55%, rgb(var(--harbor-raised)) 100%);
-      border: 1px solid rgba(47, 155, 140, 0.14);
+      border: 1px solid rgb(var(--harbor-primary) / 0.14);
       box-shadow: var(--harbor-shadow-sm);
       overflow: hidden;
     }
     html[data-theme="dark"] .harbor-day-card {
-      background: linear-gradient(165deg, rgba(28, 48, 44, 0.9) 0%, rgb(var(--harbor-surface)) 60%);
-      border-color: rgba(72, 178, 162, 0.16);
+      background: linear-gradient(165deg, rgb(var(--harbor-raised) / 0.9) 0%, rgb(var(--harbor-surface)) 60%);
+      border-color: rgb(var(--harbor-primary) / 0.16);
     }
     .harbor-day-card::before {
       content: '';
       position: absolute;
       inset: 0 0 auto 0;
       height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(47, 155, 140, 0.45), transparent);
+      background: linear-gradient(90deg, transparent, rgb(var(--harbor-primary) / 0.45), transparent);
       opacity: 1;
       pointer-events: none;
     }
@@ -7050,8 +7141,8 @@
       justify-content: center;
       font-size: 1.05rem;
       line-height: 1;
-      background: rgba(47, 155, 140, 0.1);
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      background: rgb(var(--harbor-primary) / 0.1);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
       transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .cheat-fund-jar.is-earning .cheat-fund-jar-icon {
@@ -7068,9 +7159,9 @@
     .cheat-fund-fill {
       height: 100%;
       border-radius: 9999px;
-      background: linear-gradient(90deg, rgba(47, 155, 140, 0.55), rgb(var(--harbor-primary-light)));
+      background: linear-gradient(90deg, rgb(var(--harbor-primary) / 0.55), rgb(var(--harbor-primary-light)));
       transition: width 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
-      box-shadow: 0 0 10px rgba(47, 155, 140, 0.28);
+      box-shadow: 0 0 10px rgb(var(--harbor-primary) / 0.28);
     }
     .cheat-fund-earn-pop {
       animation: cheatFundPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -7099,8 +7190,8 @@
       100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
     }
     .cheat-day-today-banner {
-      background: linear-gradient(155deg, rgba(47, 155, 140, 0.14), rgb(var(--harbor-surface)));
-      border: 1px solid rgba(47, 155, 140, 0.18);
+      background: linear-gradient(155deg, rgb(var(--harbor-primary) / 0.14), rgb(var(--harbor-surface)));
+      border: 1px solid rgb(var(--harbor-primary) / 0.18);
     }
     html[data-theme="dark"] .cheat-day-today-banner {
       background: linear-gradient(155deg, rgba(255, 255, 255, 0.06), rgba(18, 18, 18, 0.9));
@@ -7123,7 +7214,7 @@
 
     .cheat-fund-milestone.is-passed {
       background: rgb(var(--harbor-primary-light));
-      box-shadow: 0 0 0 2px rgba(47, 155, 140, 0.22);
+      box-shadow: 0 0 0 2px rgb(var(--harbor-primary) / 0.22);
     }
 
     .harbor-day-action {
@@ -7136,8 +7227,8 @@
       transition: border-color 0.15s, background 0.15s, opacity 0.15s;
     }
     .harbor-day-action.is-ready {
-      border-color: rgba(47, 155, 140, 0.32);
-      background: rgba(47, 155, 140, 0.08);
+      border-color: rgb(var(--harbor-primary) / 0.32);
+      background: rgb(var(--harbor-primary) / 0.08);
     }
     .harbor-day-action:disabled {
       opacity: 0.55;
@@ -7165,8 +7256,8 @@
       opacity: 0.92;
     }
     .cheat-treat-btn.is-selected {
-      border-color: rgba(47, 155, 140, 0.65);
-      background: rgba(47, 155, 140, 0.14);
+      border-color: rgb(var(--harbor-primary) / 0.65);
+      background: rgb(var(--harbor-primary) / 0.14);
     }
 
     /* Streak cards — fire + metric pride */
@@ -7184,11 +7275,11 @@
       background: linear-gradient(160deg, rgba(32, 52, 48, 0.9) 0%, rgb(var(--harbor-surface)) 100%);
     }
     .streak-card.is-selected {
-      border-color: rgba(47, 155, 140, 0.5);
+      border-color: rgb(var(--harbor-primary) / 0.5);
       box-shadow: var(--harbor-glow-primary), var(--harbor-shadow-sm);
     }
     .streak-card.is-done-today {
-      border-color: rgba(47, 155, 140, 0.28);
+      border-color: rgb(var(--harbor-primary) / 0.28);
     }
     .streak-card.is-at-risk {
       border-color: rgba(212, 168, 48, 0.4);
@@ -7240,10 +7331,10 @@
     }
     .streak-week-dot.is-done {
       background: rgb(var(--harbor-primary));
-      box-shadow: 0 0 0 2px rgba(47, 155, 140, 0.15);
+      box-shadow: 0 0 0 2px rgb(var(--harbor-primary) / 0.15);
     }
     .streak-week-dot.is-pass {
-      background: rgba(47, 155, 140, 0.45);
+      background: rgb(var(--harbor-primary) / 0.45);
     }
     .streak-week-dot.is-today {
       outline: 1.5px solid rgb(var(--harbor-primary-light));
@@ -7265,14 +7356,14 @@
       margin-bottom: 0.75rem;
       padding: 0.7rem 0.85rem;
       border-radius: 1rem;
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
       background:
-        linear-gradient(155deg, rgba(47, 155, 140, 0.1) 0%, rgb(var(--harbor-surface)) 70%);
+        linear-gradient(155deg, rgb(var(--harbor-primary) / 0.1) 0%, rgb(var(--harbor-surface)) 70%);
       box-shadow: var(--harbor-shadow-sm);
     }
     html[data-theme="dark"] .streak-fleet-health {
-      border-color: rgba(72, 178, 162, 0.14);
-      background: linear-gradient(155deg, rgba(47, 155, 140, 0.12) 0%, rgb(var(--harbor-surface)) 75%);
+      border-color: rgb(var(--harbor-primary) / 0.14);
+      background: linear-gradient(155deg, rgb(var(--harbor-primary) / 0.12) 0%, rgb(var(--harbor-surface)) 75%);
     }
     .streak-fleet-health-main {
       font-size: 0.8rem;
@@ -7330,7 +7421,7 @@
       margin-top: 0.15rem;
       padding: 0.7rem 0.85rem;
       border-radius: 0.95rem;
-      border: 1px dashed rgba(47, 155, 140, 0.28);
+      border: 1px dashed rgb(var(--harbor-primary) / 0.28);
       background: rgb(var(--harbor-raised) / 0.55);
       color: rgb(var(--harbor-primary-light));
       font-size: 0.78rem;
@@ -7391,7 +7482,7 @@
     }
 
     .streak-status-chip.is-done {
-      background: rgba(47, 155, 140, 0.14);
+      background: rgb(var(--harbor-primary) / 0.14);
       color: rgb(var(--harbor-primary-light));
     }
     .streak-status-chip.is-due {
@@ -7433,8 +7524,8 @@
       margin-bottom: 0.55rem;
     }
     .proj-pride {
-      background: rgba(47, 155, 140, 0.1);
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      background: rgb(var(--harbor-primary) / 0.1);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
       border-radius: 0.9rem;
       padding: 0.7rem 0.8rem;
       margin-bottom: 0.75rem;
@@ -7479,17 +7570,17 @@
     /* Energy / fat insight — educational, playful, calm */
     .energy-insight {
       border-radius: 1.05rem;
-      border: 1px solid rgba(47, 155, 140, 0.16);
+      border: 1px solid rgb(var(--harbor-primary) / 0.16);
       background:
-        linear-gradient(155deg, rgba(47, 155, 140, 0.09) 0%, rgba(245, 200, 120, 0.08) 48%, rgb(var(--harbor-raised) / 0.55) 100%);
+        linear-gradient(155deg, rgb(var(--harbor-primary) / 0.09) 0%, rgba(245, 200, 120, 0.08) 48%, rgb(var(--harbor-raised) / 0.55) 100%);
       padding: 0.85rem 0.9rem 0.8rem;
       box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset;
     }
     html[data-theme="dark"] .energy-insight {
-      border-color: rgba(72, 178, 162, 0.14);
+      border-color: rgb(var(--harbor-primary) / 0.14);
       background:
-        linear-gradient(155deg, rgba(47, 155, 140, 0.12) 0%, rgba(180, 130, 60, 0.08) 50%, rgb(var(--harbor-raised) / 0.5) 100%);
-      box-shadow: 0 1px 0 rgba(154, 214, 202, 0.05) inset;
+        linear-gradient(155deg, rgb(var(--harbor-primary) / 0.12) 0%, rgba(180, 130, 60, 0.08) 50%, rgb(var(--harbor-raised) / 0.5) 100%);
+      box-shadow: 0 1px 0 rgb(var(--harbor-primary-light) / 0.05) inset;
     }
     .energy-insight-head {
       display: flex;
@@ -7506,8 +7597,8 @@
       justify-content: center;
       font-size: 0.9rem;
       color: #fff;
-      background: linear-gradient(155deg, #6BCFC0 0%, #2F9B8C 55%, #C4A574 130%);
-      box-shadow: 0 4px 12px rgba(47, 155, 140, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+      background: linear-gradient(155deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 55%, #C4A574 130%);
+      box-shadow: 0 4px 12px rgb(var(--harbor-primary) / 0.28), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
     }
     .energy-insight-title {
       font-size: 0.72rem;
@@ -7541,7 +7632,7 @@
       padding: 0.6rem 0.7rem;
       border-radius: 0.8rem;
       background: rgb(var(--harbor-surface) / 0.85);
-      border: 1px solid rgba(47, 155, 140, 0.12);
+      border: 1px solid rgb(var(--harbor-primary) / 0.12);
     }
     .energy-insight-you-kicker {
       display: block;
@@ -7597,7 +7688,7 @@
       padding: 0.35rem 0.6rem 0.35rem 0.45rem;
       border-radius: 999px;
       background: rgb(var(--harbor-surface) / 0.9);
-      border: 1px solid rgba(47, 155, 140, 0.14);
+      border: 1px solid rgb(var(--harbor-primary) / 0.14);
       font-size: 0.7rem;
       line-height: 1.25;
       color: rgb(var(--harbor-text));
@@ -7646,15 +7737,15 @@
     #custom-reward-modal .reward-sheet {
       background:
         linear-gradient(165deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 40%, rgb(var(--harbor-surface)) 100%);
-      border-top: 1px solid rgba(47, 155, 140, 0.18);
+      border-top: 1px solid rgb(var(--harbor-primary) / 0.18);
       box-shadow:
-        0 -8px 32px rgba(18, 48, 44, 0.1),
+        0 -8px 32px rgb(var(--harbor-text) / 0.1),
         0 0 0 1px rgba(255, 255, 255, 0.35) inset;
     }
     html[data-theme="dark"] #custom-reward-modal .reward-sheet {
-      background: linear-gradient(165deg, rgba(28, 48, 44, 0.95) 0%, rgb(var(--harbor-surface)) 55%);
-      border-top-color: rgba(72, 178, 162, 0.16);
-      box-shadow: 0 -12px 40px rgba(0, 8, 6, 0.55), 0 0 0 1px rgba(154, 214, 202, 0.06) inset;
+      background: linear-gradient(165deg, rgb(var(--harbor-raised) / 0.95) 0%, rgb(var(--harbor-surface)) 55%);
+      border-top-color: rgb(var(--harbor-primary) / 0.16);
+      box-shadow: 0 -12px 40px rgba(0, 8, 6, 0.55), 0 0 0 1px rgb(var(--harbor-primary-light) / 0.06) inset;
     }
     #custom-reward-modal .reward-sheet-header {
       position: sticky;
@@ -7679,18 +7770,18 @@
       justify-content: center;
       font-size: 1.55rem;
       flex-shrink: 0;
-      background: linear-gradient(155deg, rgba(47, 155, 140, 0.18) 0%, rgba(47, 155, 140, 0.06) 100%);
-      border: 1px solid rgba(47, 155, 140, 0.2);
-      box-shadow: 0 4px 14px rgba(47, 155, 140, 0.12);
+      background: linear-gradient(155deg, rgb(var(--harbor-primary) / 0.18) 0%, rgb(var(--harbor-primary) / 0.06) 100%);
+      border: 1px solid rgb(var(--harbor-primary) / 0.2);
+      box-shadow: 0 4px 14px rgb(var(--harbor-primary) / 0.12);
     }
     html[data-theme="dark"] #custom-reward-modal .reward-preview {
-      background: linear-gradient(155deg, rgba(72, 178, 162, 0.2) 0%, rgba(28, 48, 44, 0.6) 100%);
-      border-color: rgba(72, 178, 162, 0.22);
+      background: linear-gradient(155deg, rgb(var(--harbor-primary) / 0.2) 0%, rgb(var(--harbor-raised) / 0.6) 100%);
+      border-color: rgb(var(--harbor-primary) / 0.22);
     }
     #custom-reward-modal .reward-field {
       width: 100%;
       border-radius: 1rem;
-      border: 1.5px solid rgba(47, 155, 140, 0.2);
+      border: 1.5px solid rgb(var(--harbor-primary) / 0.2);
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgb(var(--harbor-raised)) 100%);
       padding: 0.85rem 1rem;
@@ -7703,12 +7794,12 @@
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     html[data-theme="dark"] #custom-reward-modal .reward-field {
-      border-color: rgba(72, 178, 162, 0.2);
-      background: linear-gradient(180deg, rgba(28, 48, 44, 0.9) 0%, rgb(var(--harbor-raised)) 100%);
+      border-color: rgb(var(--harbor-primary) / 0.2);
+      background: linear-gradient(180deg, rgb(var(--harbor-raised) / 0.9) 0%, rgb(var(--harbor-raised)) 100%);
     }
     #custom-reward-modal .reward-field:focus {
-      border-color: rgba(47, 155, 140, 0.5);
-      box-shadow: 0 0 0 3px rgba(47, 155, 140, 0.14);
+      border-color: rgb(var(--harbor-primary) / 0.5);
+      box-shadow: 0 0 0 3px rgb(var(--harbor-primary) / 0.14);
     }
     #custom-reward-modal .reward-field::placeholder {
       color: rgb(var(--harbor-muted) / 0.55);
@@ -7734,15 +7825,15 @@
     }
     #custom-reward-modal .reward-emoji-btn.is-on {
       border-color: transparent;
-      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
-      box-shadow: 0 3px 12px rgba(47, 155, 140, 0.28);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
+      box-shadow: 0 3px 12px rgb(var(--harbor-primary) / 0.28);
       transform: scale(1.04);
     }
     #custom-reward-modal .reward-save-btn {
-      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #fff;
       box-shadow:
-        0 4px 16px rgba(47, 155, 140, 0.3),
+        0 4px 16px rgb(var(--harbor-primary) / 0.3),
         0 0 0 1px rgba(255, 255, 255, 0.18) inset;
     }
     #custom-reward-modal .reward-save-btn:active {
@@ -7755,12 +7846,12 @@
     #harbor-choice-modal .harbor-prompt-sheet {
       background:
         linear-gradient(165deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 40%, rgb(var(--harbor-surface)) 100%);
-      border-top: 1px solid rgba(47, 155, 140, 0.18);
+      border-top: 1px solid rgb(var(--harbor-primary) / 0.18);
     }
     html[data-theme="dark"] #harbor-text-modal .harbor-prompt-sheet,
     html[data-theme="dark"] #harbor-choice-modal .harbor-prompt-sheet {
-      background: linear-gradient(165deg, rgba(28, 48, 44, 0.95) 0%, rgb(var(--harbor-surface)) 55%);
-      border-top-color: rgba(72, 178, 162, 0.16);
+      background: linear-gradient(165deg, rgb(var(--harbor-raised) / 0.95) 0%, rgb(var(--harbor-surface)) 55%);
+      border-top-color: rgb(var(--harbor-primary) / 0.16);
     }
     #harbor-text-modal,
     #harbor-choice-modal {
@@ -7786,7 +7877,7 @@
     #harbor-text-modal .harbor-prompt-field {
       width: 100%;
       border-radius: 1rem;
-      border: 1.5px solid rgba(47, 155, 140, 0.2);
+      border: 1.5px solid rgb(var(--harbor-primary) / 0.2);
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgb(var(--harbor-raised)) 100%);
       padding: 0.85rem 1rem;
       font-size: 1rem;
@@ -7796,12 +7887,12 @@
       font-family: var(--harbor-font);
     }
     html[data-theme="dark"] #harbor-text-modal .harbor-prompt-field {
-      border-color: rgba(72, 178, 162, 0.2);
-      background: linear-gradient(180deg, rgba(28, 48, 44, 0.9) 0%, rgb(var(--harbor-raised)) 100%);
+      border-color: rgb(var(--harbor-primary) / 0.2);
+      background: linear-gradient(180deg, rgb(var(--harbor-raised) / 0.9) 0%, rgb(var(--harbor-raised)) 100%);
     }
     #harbor-text-modal .harbor-prompt-field:focus {
-      border-color: rgba(47, 155, 140, 0.5);
-      box-shadow: 0 0 0 3px rgba(47, 155, 140, 0.14);
+      border-color: rgb(var(--harbor-primary) / 0.5);
+      box-shadow: 0 0 0 3px rgb(var(--harbor-primary) / 0.14);
     }
     #harbor-choice-modal .harbor-choice-chip {
       flex: 1;
@@ -7817,15 +7908,15 @@
     }
     #harbor-choice-modal .harbor-choice-chip.is-on {
       border-color: transparent;
-      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #fff;
-      box-shadow: 0 3px 12px rgba(47, 155, 140, 0.28);
+      box-shadow: 0 3px 12px rgb(var(--harbor-primary) / 0.28);
     }
     #harbor-text-modal .harbor-prompt-save,
     #harbor-choice-modal .harbor-prompt-save {
-      background: linear-gradient(180deg, #56C4B4 0%, #2F9B8C 100%);
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #fff;
-      box-shadow: 0 4px 16px rgba(47, 155, 140, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+      box-shadow: 0 4px 16px rgb(var(--harbor-primary) / 0.3), 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
     }
 
     .proj-milestone {
@@ -7840,8 +7931,8 @@
     }
 
     .harbor-mode-btn.is-selected {
-      border-color: rgba(47, 155, 140, 0.65);
-      background: rgba(47, 155, 140, 0.14);
+      border-color: rgb(var(--harbor-primary) / 0.65);
+      background: rgb(var(--harbor-primary) / 0.14);
     }
 
     .harbor-goal-chip {
@@ -7859,8 +7950,8 @@
     }
 
     .harbor-goal-chip.is-selected {
-      border-color: rgba(47, 155, 140, 0.55);
-      background: rgba(47, 155, 140, 0.16);
+      border-color: rgb(var(--harbor-primary) / 0.55);
+      background: rgb(var(--harbor-primary) / 0.16);
       color: rgb(var(--harbor-primary-light));
     }
 
@@ -7879,8 +7970,8 @@
     }
 
     .sub-tier-row.is-selected {
-      border-color: rgba(107, 191, 176, 0.55);
-      background: rgba(107, 191, 176, 0.1);
+      border-color: rgb(var(--harbor-primary) / 0.55);
+      background: rgb(var(--harbor-primary) / 0.1);
     }
 
     .bill-day-btn {
@@ -8014,7 +8105,7 @@
       pointer-events: none;
       background:
         radial-gradient(ellipse 80% 50% at 50% 16%, rgba(255, 236, 210, 0.2) 0%, transparent 55%),
-        radial-gradient(ellipse 55% 40% at 50% 48%, rgba(107, 191, 176, 0.14) 0%, transparent 62%);
+        radial-gradient(ellipse 55% 40% at 50% 48%, rgb(var(--harbor-primary) / 0.14) 0%, transparent 62%);
     }
 
     .splash-waves {
@@ -8088,7 +8179,7 @@
       filter:
         drop-shadow(0 0 1px rgba(255, 255, 255, 0.35))
         drop-shadow(0 0 18px rgba(232, 244, 240, 0.28))
-        drop-shadow(0 0 36px rgba(107, 191, 176, 0.35))
+        drop-shadow(0 0 36px rgb(var(--harbor-primary) / 0.35))
         drop-shadow(0 10px 28px rgba(4, 28, 26, 0.4));
     }
 
@@ -8120,7 +8211,7 @@
       transform: translateY(12px);
       text-shadow:
         0 0 24px rgba(244, 239, 230, 0.28),
-        0 0 48px rgba(107, 191, 176, 0.16),
+        0 0 48px rgb(var(--harbor-primary) / 0.16),
         0 2px 14px rgba(8, 30, 28, 0.28);
     }
 
@@ -8169,7 +8260,7 @@
         90deg,
         transparent 0%,
         rgba(244, 239, 230, 0.15) 18%,
-        rgba(107, 191, 176, 0.75) 50%,
+        rgb(var(--harbor-primary) / 0.75) 50%,
         rgba(244, 239, 230, 0.15) 82%,
         transparent 100%
       );
@@ -8840,16 +8931,16 @@
         top: 0.2rem;
         bottom: 0.35rem;
         border-radius: var(--harbor-radius-md) var(--harbor-radius-md) 0.35rem 0.35rem;
-        background: linear-gradient(180deg, rgba(47, 155, 140, 0.22) 0%, rgba(47, 155, 140, 0.06) 100%);
+        background: linear-gradient(180deg, rgb(var(--harbor-primary) / 0.22) 0%, rgb(var(--harbor-primary) / 0.06) 100%);
         box-shadow: inset 0 -2px 0 rgb(var(--harbor-primary));
       }
       html[data-theme="dark"] .main-nav-indicator {
-        background: linear-gradient(180deg, rgba(72, 178, 162, 0.28) 0%, rgba(47, 155, 140, 0.1) 100%);
-        box-shadow: inset 0 -2px 0 #48B2A2;
+        background: linear-gradient(180deg, rgb(var(--harbor-primary) / 0.28) 0%, rgb(var(--harbor-primary) / 0.1) 100%);
+        box-shadow: inset 0 -2px 0 rgb(var(--harbor-primary));
       }
       html[data-theme="harbor"] .main-nav-indicator {
-        background: linear-gradient(180deg, rgba(60, 181, 166, 0.28) 0%, rgba(47, 155, 140, 0.08) 100%);
-        box-shadow: inset 0 -2px 0 #2F9B8C;
+        background: linear-gradient(180deg, rgba(60, 181, 166, 0.28) 0%, rgb(var(--harbor-primary) / 0.08) 100%);
+        box-shadow: inset 0 -2px 0 rgb(var(--harbor-primary-light));
       }
 
       /* Desktop tab order: Today · Life · Streaks · Library (classic) */
@@ -8909,7 +9000,7 @@
         box-shadow:
           0 1px 0 rgba(255, 255, 255, 0.45) inset,
           0 10px 28px rgba(30, 90, 82, 0.32),
-          0 2px 8px rgba(18, 48, 44, 0.12);
+          0 2px 8px rgb(var(--harbor-text) / 0.12);
       }
       .summary-orb-glow {
         opacity: 0.75;
@@ -9620,7 +9711,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 251;
+    const HARBOR_BUILD_NUMBER = 260;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -9642,6 +9733,51 @@
      * Product train stays on 0.9 until 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '0.9',
+        date: '2026-07-11',
+        title: 'Header palette fix · build 260',
+        intro: 'Date/menu header is painted per palette (no more stuck Harbor Mint bar in Safari).',
+        sections: [
+          {
+            heading: 'Color palettes',
+            items: [
+              'Top header (date, tasks today, menu) uses hard-coded per-theme colors + inline paint',
+              'Fixed CSS bug: mint rules no longer apply to bare html for every theme',
+              'Pick Blush/Lilac/Driftwood/Lagoon again after a hard refresh'
+            ]
+          },
+          {
+            heading: 'Apple calendar',
+            items: [
+              'iCloud share links are valid, but browsers + public helpers are blocked by Apple',
+              'Use Import .ics file (guided steps in-app) — loads past + upcoming events',
+              'Native APK can use Capacitor HTTP (no CORS) once rebuilt'
+            ]
+          },
+          {
+            heading: 'Weather colors',
+            items: [
+              'Green = clear (under 20% rain)',
+              'Yellow = possible (20–49%)',
+              'Rose = likely (50%+ or active rain/storm/snow)'
+            ]
+          },
+          {
+            heading: 'Calendar',
+            items: [
+              'Apple / family feeds import past + upcoming events (about 2 years back → 18 months ahead)',
+              'Recurring events expand; empty titles and iCloud links handled more reliably',
+              'After update: Schedule → refresh feeds (enable network helper if prompted)'
+            ]
+          }
+        ],
+        highlights: [
+          'Theme chrome matches selected palette end-to-end',
+          'Weather chip colors track rain chance tiers',
+          'Calendar feeds pull past + current + upcoming events'
+        ]
+      },
       {
         version: '0.9',
         date: '2026-07-10',
@@ -11772,7 +11908,7 @@
 
     // ==================== HOUSEHOLD PROFILES ====================
     const HOUSEHOLD_COLOR_PALETTE = [
-      '#2F9B8C', // teal (default Me)
+      'rgb(var(--harbor-primary-light))', // teal (default Me)
       '#A78BFA', // lavender
       '#F97316', // orange
       '#38BDF8', // sky
@@ -21861,19 +21997,25 @@
       const startDow = new Date(year, month, 1).getDay();
       const monthTitle = monthStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 
-      // Event counts for each day this month (full month, including this week)
+      // Per-day occurrence counts (for dots) + unique event count for the month header
       const eventCountByDate = {};
+      const uniqueEventsInMonth = new Set();
       getAllCalendarEvents().forEach(e => {
         const s = getEventDate(e);
         const en = getEventEndDate(e);
         const cursor = new Date(s + 'T12:00:00');
         const endD = new Date(en + 'T12:00:00');
+        let touchesMonth = false;
         while (cursor <= endD) {
           const ds = dateStrLocal(cursor);
           if (ds >= monthBounds.start && ds <= monthBounds.end) {
             eventCountByDate[ds] = (eventCountByDate[ds] || 0) + 1;
+            touchesMonth = true;
           }
           cursor.setDate(cursor.getDate() + 1);
+        }
+        if (touchesMonth) {
+          uniqueEventsInMonth.add(e.id || `${s}|${e.time || ''}|${(e.title || '').toLowerCase()}`);
         }
       });
 
@@ -21887,7 +22029,7 @@
       }
 
       let eventDays = 0;
-      let eventCount = 0;
+      const eventCount = uniqueEventsInMonth.size;
       for (let day = 1; day <= daysInMonth; day++) {
         const ds = dateStrLocal(new Date(year, month, day));
         const isToday = ds === today;
@@ -21897,7 +22039,6 @@
         const hasTask = taskDates.has(ds);
         if (hasEvent) {
           eventDays += 1;
-          eventCount += nEvents;
         }
 
         const classes = [
@@ -23327,6 +23468,10 @@
       return map[wDesc] || (wDesc ? wDesc.charAt(0).toUpperCase() + wDesc.slice(1) : 'Clear');
     }
 
+    /**
+     * Outdoor-comfort score for ranking “best hour” windows (tasks/advice).
+     * Not used for chip colors — those follow rain/inclimate tiers below.
+     */
     function scoreWeatherHour(temp, precip, code, wind) {
       let score = 0;
       if (precip < 15) score += 3;
@@ -23341,13 +23486,37 @@
       return score;
     }
 
-    function weatherChipClass(score) {
-      // Semantic classes — light mint + dark overrides live in CSS
-      return score >= 3
-        ? 'weather-chip-good'
-        : score >= 0
-          ? 'weather-chip-ok'
-          : 'weather-chip-poor';
+    /**
+     * Rain / inclimate tier for chip colors (matches what users read as “X% rain”).
+     * green = clear · yellow = possible · red = likely
+     * Thresholds are monotonic in precip so 22% can never outrank 29% as “worse”.
+     */
+    function getWeatherInclimateTier(precip, code) {
+      const p = Math.max(0, Math.min(100, Number(precip) || 0));
+      const c = Number(code) || 0;
+
+      // Open-Meteo / WMO weather codes
+      const isThunder = c >= 95;
+      const isSnow = (c >= 71 && c <= 77) || (c >= 85 && c <= 86);
+      const isHeavyRainOrShower = (c >= 61 && c <= 67) || (c >= 80 && c <= 82);
+      const isDrizzle = c >= 51 && c <= 57;
+
+      // Red — inclimate likely (or actively wet / storm / snow)
+      if (isThunder || isSnow || isHeavyRainOrShower || p >= 50) return 'poor';
+
+      // Yellow — possible rain (or light drizzle codes)
+      if (isDrizzle || p >= 20) return 'ok';
+
+      // Green — clear enough for outdoor plans
+      return 'good';
+    }
+
+    function weatherChipClass(precip, code) {
+      // Semantic classes — light mint / amber / rose overrides live in CSS
+      const tier = getWeatherInclimateTier(precip, code);
+      if (tier === 'good') return 'weather-chip-good';
+      if (tier === 'ok') return 'weather-chip-ok';
+      return 'weather-chip-poor';
     }
 
     function formatWeatherHourLabel(date) {
@@ -23386,6 +23555,7 @@
         const wind = forecast.wind[i] || 5;
         const wDesc = getWeatherDescFromCode(code);
         const score = scoreWeatherHour(temp, precip, code, wind);
+        const inclimateTier = getWeatherInclimateTier(precip, code);
         const icon = getWeatherIcon(wDesc);
 
         items.push({
@@ -23393,13 +23563,14 @@
           dayKey,
           dayLabel: getWeatherDayLabel(t),
           score,
+          inclimateTier,
           wDesc,
           condition: formatWeatherCondition(wDesc),
           temp,
           precip,
           wind: Math.round(wind),
           icon,
-          chipCls: weatherChipClass(score),
+          chipCls: weatherChipClass(precip, code),
           isNow: items.length === 0
         });
       }
@@ -23704,20 +23875,27 @@
               </div>
             </div>
 
-            <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-2 px-0.5">Next 24 hours</div>
+            <div class="flex items-center justify-between gap-2 mb-2 px-0.5">
+              <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold">Next 24 hours</div>
+              <div class="flex items-center gap-1.5 text-[9px] text-harbor-muted font-medium" aria-label="Color key for rain chance">
+                <span class="inline-flex items-center gap-0.5"><span class="weather-legend-swatch weather-chip-good"></span>Clear</span>
+                <span class="inline-flex items-center gap-0.5"><span class="weather-legend-swatch weather-chip-ok"></span>Possible</span>
+                <span class="inline-flex items-center gap-0.5"><span class="weather-legend-swatch weather-chip-poor"></span>Likely</span>
+              </div>
+            </div>
             <div class="space-y-1.5 mb-3" id="weather-pane-hours"></div>
 
             <div class="text-xs text-harbor-muted leading-relaxed px-0.5">
               ${data.bestTime && data.bestScore >= 3
-                ? `Peak conditions around <span class="text-harbor-primary-light font-medium">${data.bestTime}</span>. `
+                ? `Peak outdoor comfort around <span class="text-harbor-primary-light font-medium">${data.bestTime}</span>. `
                 : ''}
+              Colors track rain odds: <span class="text-harbor-text">green under 20%</span>,
+              <span class="text-harbor-text">yellow 20–49%</span>,
+              <span class="text-harbor-text">rose 50%+</span>
+              (active rain, storms, or snow also show rose).
               ${data.hasOutdoorTasks
-                ? (data.anyRain
-                    ? 'Highlighted rows show the best outdoor windows. Rain risk rises in rose-tinted hours.'
-                    : 'Green-tinted hours are best for yard work, walks, and outdoor chores.')
-                : (data.anyRain
-                    ? 'Rose-tinted hours have higher rain chance. Plan accordingly.'
-                    : 'Hour-by-hour breakdown through tomorrow.')}
+                ? ' Use green hours for yard work, walks, and outdoor chores.'
+                : ''}
             </div>
 
             <button type="button" data-weather-dismiss="1"
@@ -27798,42 +27976,84 @@
         label: 'Harbor Mint',
         hint: 'Soft seafoam day',
         meta: '#D6E8E2',
-        preview: 'linear-gradient(135deg, #C5DCD4 0%, #2F9B8C 55%, #1C7066 100%)'
+        preview: 'linear-gradient(135deg, #C5DCD4 0%, #2F9B8C 55%, #1C7066 100%)',
+        vars: {
+          bg: '214 232 226', surface: '236 245 241', raised: '224 237 232', border: '186 210 202',
+          primary: '47 155 140', primaryLight: '28 112 102', accent: '176 138 72',
+          text: '18 40 37', muted: '86 110 104', low: '196 110 86', med: '184 148 48', high: '47 155 140',
+          bodySolid: '#D6E8E2', g1: '#C5DCD4', g2: '#D6E8E2', g3: '#E0EDE8', g4: '#E8F2EE',
+          dock1: '#F7FBF9', dock2: '#ECF5F1', dock3: '#E2EFE9'
+        }
       },
       {
         id: 'dark',
         label: 'Dark Mode',
         hint: 'Coastal night',
         meta: '#0A1614',
-        preview: 'linear-gradient(135deg, #10201D 0%, #081210 50%, #48B2A2 100%)'
+        preview: 'linear-gradient(135deg, #10201D 0%, #081210 50%, #48B2A2 100%)',
+        vars: {
+          bg: '8 18 16', surface: '16 32 29', raised: '24 42 38', border: '42 68 62',
+          primary: '72 178 162', primaryLight: '154 214 202', accent: '196 165 116',
+          text: '232 242 238', muted: '132 158 150', low: '220 140 118', med: '212 181 106', high: '72 178 162',
+          bodySolid: '#081210', g1: '#10201D', g2: '#0C1816', g3: '#081210', g4: '#061412',
+          dock1: '#1A322E', dock2: '#12241F', dock3: '#0C1816'
+        }
       },
       {
         id: 'lilac',
         label: 'Harbor Lilac',
         hint: 'Lavender dusk',
         meta: '#E8E4F0',
-        preview: 'linear-gradient(135deg, #DDD6EE 0%, #7C6CB4 55%, #58488C 100%)'
+        preview: 'linear-gradient(135deg, #DDD6EE 0%, #7C6CB4 55%, #58488C 100%)',
+        vars: {
+          bg: '232 228 240', surface: '246 243 252', raised: '238 234 248', border: '200 190 220',
+          primary: '124 108 180', primaryLight: '88 72 140', accent: '196 150 180',
+          text: '40 32 56', muted: '110 100 130', low: '196 110 86', med: '184 148 48', high: '124 108 180',
+          bodySolid: '#E8E4F0', g1: '#DDD6EE', g2: '#E8E4F0', g3: '#F0ECF8', g4: '#F7F5FC',
+          dock1: '#FBFAFE', dock2: '#F6F3FC', dock3: '#EEEAF8'
+        }
       },
       {
         id: 'blush',
         label: 'Harbor Blush',
         hint: 'Pastel pink',
         meta: '#F8E4E8',
-        preview: 'linear-gradient(135deg, #F2D6DC 0%, #D4788C 55%, #A0465F 100%)'
+        preview: 'linear-gradient(135deg, #F2D6DC 0%, #D4788C 55%, #A0465F 100%)',
+        vars: {
+          bg: '248 228 232', surface: '255 246 248', raised: '252 236 240', border: '230 200 208',
+          primary: '212 120 140', primaryLight: '160 70 95', accent: '196 150 100',
+          text: '56 32 40', muted: '130 100 110', low: '196 110 86', med: '184 148 48', high: '212 120 140',
+          bodySolid: '#F8E4E8', g1: '#F2D6DC', g2: '#F8E4E8', g3: '#FCEEF1', g4: '#FFF8FA',
+          dock1: '#FFFBFC', dock2: '#FFF6F8', dock3: '#FCEEF1'
+        }
       },
       {
         id: 'wood',
         label: 'Driftwood',
         hint: 'Warm sand & walnut',
         meta: '#E8DED0',
-        preview: 'linear-gradient(135deg, #DDD0BC 0%, #8C6440 55%, #604428 100%)'
+        preview: 'linear-gradient(135deg, #DDD0BC 0%, #8C6440 55%, #604428 100%)',
+        vars: {
+          bg: '232 222 208', surface: '245 238 228', raised: '236 226 212', border: '200 184 160',
+          primary: '140 100 64', primaryLight: '96 68 40', accent: '180 130 70',
+          text: '48 36 24', muted: '120 100 80', low: '196 110 86', med: '184 148 48', high: '140 100 64',
+          bodySolid: '#E8DED0', g1: '#DDD0BC', g2: '#E8DED0', g3: '#F0E8DC', g4: '#F7F2EA',
+          dock1: '#FCFAF6', dock2: '#F5EEE4', dock3: '#EDE4D6'
+        }
       },
       {
         id: 'lagoon',
         label: 'Harbor Lagoon',
         hint: 'Soft coastal blue',
         meta: '#DCEAF2',
-        preview: 'linear-gradient(135deg, #C8DCE8 0%, #3882A0 55%, #205870 100%)'
+        preview: 'linear-gradient(135deg, #C8DCE8 0%, #3882A0 55%, #205870 100%)',
+        vars: {
+          bg: '220 234 242', surface: '240 248 252', raised: '228 240 248', border: '180 208 224',
+          primary: '56 130 160', primaryLight: '32 88 112', accent: '200 160 100',
+          text: '20 40 52', muted: '90 120 140', low: '196 110 86', med: '184 148 48', high: '56 130 160',
+          bodySolid: '#DCEAF2', g1: '#C8DCE8', g2: '#DCEAF2', g3: '#E8F2F8', g4: '#F2F8FC',
+          dock1: '#FAFCFD', dock2: '#F0F8FC', dock3: '#E4F0F8'
+        }
       }
     ];
     const HARBOR_THEME_IDS = HARBOR_THEMES.map(t => t.id);
@@ -27854,6 +28074,86 @@
       return HARBOR_THEMES.find(t => t.id === theme)?.label || 'Harbor Mint';
     }
 
+    /** Paint every palette token on <html> + header chrome (Safari-safe, beats stale CSS). */
+    function applyThemeCssVars(themeId) {
+      const th = HARBOR_THEMES.find(t => t.id === themeId) || HARBOR_THEMES[0];
+      const v = th.vars || {};
+      const root = document.documentElement;
+      const set = (name, val) => {
+        if (val != null && val !== '') root.style.setProperty(name, val);
+      };
+      set('--harbor-bg', v.bg);
+      set('--harbor-surface', v.surface);
+      set('--harbor-raised', v.raised);
+      set('--harbor-border', v.border);
+      set('--harbor-primary', v.primary);
+      set('--harbor-primary-light', v.primaryLight);
+      set('--harbor-accent', v.accent);
+      set('--harbor-text', v.text);
+      set('--harbor-muted', v.muted);
+      set('--harbor-low', v.low);
+      set('--harbor-med', v.med);
+      set('--harbor-high', v.high);
+      set('--harbor-body-solid', v.bodySolid);
+      set('--harbor-body-g1', v.g1);
+      set('--harbor-body-g2', v.g2);
+      set('--harbor-body-g3', v.g3);
+      set('--harbor-body-g4', v.g4);
+      set('--harbor-dock-g1', v.dock1);
+      set('--harbor-dock-g2', v.dock2);
+      set('--harbor-dock-g3', v.dock3);
+      set('--harbor-dawn', v.g1);
+      set('--harbor-mint', v.raised);
+
+      const solid = v.bodySolid || th.meta;
+      const headerGrad = `linear-gradient(180deg, ${v.g1} 0%, ${v.g2} 55%, ${v.g3} 100%)`;
+      const bodyGrad = `linear-gradient(175deg, ${v.g1} 0%, ${v.g2} 26%, ${v.g3} 62%, ${v.g4} 100%)`;
+
+      // Status bar / page wash
+      root.style.setProperty('background-color', solid, 'important');
+      if (document.body) {
+        document.body.style.setProperty('background-color', solid, 'important');
+        document.body.style.setProperty('background-image', bodyGrad, 'important');
+      }
+
+      // Top header (date / tasks / menu) — paint directly so it cannot stay Mint
+      const header = document.getElementById('site-header');
+      if (header) {
+        header.style.setProperty('background-color', solid, 'important');
+        header.style.setProperty('background-image', headerGrad, 'important');
+        header.style.setProperty('border-bottom-color', `rgb(${v.border})`, 'important');
+      }
+      const weatherRow = document.getElementById('app-weather-row');
+      if (weatherRow) {
+        weatherRow.style.setProperty('background-color', solid, 'important');
+        weatherRow.style.setProperty(
+          'background-image',
+          `linear-gradient(180deg, ${v.g2} 0%, ${v.g3} 100%)`,
+          'important'
+        );
+      }
+      const weatherCard = document.getElementById('header-weather');
+      if (weatherCard) {
+        weatherCard.style.setProperty('background-color', v.dock2, 'important');
+        weatherCard.style.setProperty(
+          'background-image',
+          `linear-gradient(145deg, ${v.dock1} 0%, ${v.dock2} 48%, ${v.dock3} 100%)`,
+          'important'
+        );
+        weatherCard.style.setProperty('border-color', `rgb(${v.border})`, 'important');
+      }
+      document.querySelectorAll('.app-menu-trigger').forEach((btn) => {
+        btn.style.setProperty('background-color', v.surface ? `rgb(${v.surface})` : v.dock1, 'important');
+        btn.style.setProperty('border-color', `rgb(${v.border})`, 'important');
+        btn.style.setProperty('color', `rgb(${v.text})`, 'important');
+      });
+      // Date / task lines follow palette text
+      const dateLine = document.getElementById('header-date-line');
+      const taskLine = document.getElementById('header-task-line');
+      if (dateLine) dateLine.style.setProperty('color', `rgb(${v.text})`, 'important');
+      if (taskLine) taskLine.style.setProperty('color', `rgb(${v.primaryLight})`, 'important');
+    }
+
     function applyAppTheme(theme) {
       let t = theme === 'mono' ? 'dark' : theme === 'light' ? 'harbor' : theme;
       if (!HARBOR_THEME_IDS.includes(t)) t = 'harbor';
@@ -27863,11 +28163,23 @@
       }
       document.documentElement.setAttribute('data-theme', t);
       document.documentElement.style.colorScheme = t === 'dark' ? 'dark' : 'light';
-      const funActive = state?.settings?.funThemeUntil && state.settings.funThemeUntil >= todayStr();
-      if (!funActive) {
-        const metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (metaTheme) metaTheme.setAttribute('content', themeMetaColor(t));
+
+      // Drop fun-theme overrides so palette tokens aren't stuck on a temporary accent
+      document.documentElement.removeAttribute('data-fun-theme');
+
+      const funActive = state?.settings?.funThemeUntil
+        && typeof todayStr === 'function'
+        && state.settings.funThemeUntil >= todayStr();
+      applyThemeCssVars(t);
+      if (funActive && typeof refreshFunTheme === 'function') {
+        refreshFunTheme();
       }
+      const solid = themeMetaColor(t);
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme && !funActive) metaTheme.setAttribute('content', solid);
+
+      // Re-paint after layout (Safari sometimes paints header before vars stick)
+      requestAnimationFrame(() => applyThemeCssVars(t));
     }
 
     function refreshFunTheme() {
@@ -29920,14 +30232,15 @@
                     </button>
                   </div>
                   <p class="settings-help-text mt-2 mb-0">
-                    Guided Google &amp; Apple steps, or a private .ics file.
+                    Paste an iCloud <strong>webcal://</strong> or https share link, Google secret .ics, or import a file.
+                    Apple calendars need the network helper (Harbor turns it on automatically when needed).
                   </p>
                   <div id="settings-calendar-feeds" class="space-y-2 mt-2"></div>
                 </div>
                 <div class="settings-row is-top">
                   <div class="settings-row-copy">
                     <div class="settings-row-title">Network helper</div>
-                    <div class="settings-row-desc">Only if a live link is blocked (often Google). Off by default — Harbor will ask when needed.</div>
+                    <div class="settings-row-desc">Needed for Apple iCloud &amp; many Google links. Auto-on when those hosts block the browser. Off by default otherwise.</div>
                   </div>
                   <button type="button" id="calendar-cors-helper-toggle" role="switch" aria-checked="${corsHelperOn ? 'true' : 'false'}"
                     aria-label="Network helper" class="smart-suggestions-toggle harbor-switch mt-0.5">
@@ -29996,6 +30309,7 @@
           const id = btn.dataset.themeId;
           if (!id) return;
           applyAppTheme(id);
+          try { saveState(); } catch (_) { /* ignore */ }
           modal.querySelectorAll('.theme-swatch').forEach(b => {
             const on = b.dataset.themeId === id;
             b.classList.toggle('is-active', on);
@@ -30795,7 +31109,8 @@
 
     function parseICSDate(value) {
       if (!value) return null;
-      const raw = String(value).trim();
+      // Strip Apple/Google TZID suffixes sometimes left on values ("20240101T100000" only)
+      const raw = String(value).trim().split(/\s+/)[0];
       const isUtc = /z$/i.test(raw);
       const digits = raw.replace(/[^0-9]/g, '');
       if (digits.length < 8) return null;
@@ -30810,7 +31125,57 @@
       if (isUtc) {
         return new Date(Date.UTC(+y, +mo - 1, +d, +h, +mi, +sec));
       }
+      // Floating / TZID times: interpret in the device’s local zone (good enough for Harbor’s day view)
       return new Date(`${y}-${mo}-${d}T${h}:${mi}:${sec}`);
+    }
+
+    /**
+     * Import window for ICS feeds/files.
+     * Past events are kept so family calendars and history show up (not only “next week”).
+     * Caps protect localStorage size on long recurring series.
+     */
+    const ICS_IMPORT_PAST_DAYS = 730;      // ~2 years back
+    const ICS_IMPORT_FUTURE_DAYS = 548;   // ~18 months ahead
+    const ICS_IMPORT_MAX_EVENTS = 3000;   // hard cap per parse
+    const ICS_RRULE_MAX_OCC = 1200;
+
+    function getICSImportWindow() {
+      const min = new Date();
+      min.setHours(0, 0, 0, 0);
+      min.setDate(min.getDate() - ICS_IMPORT_PAST_DAYS);
+      const max = new Date();
+      max.setHours(23, 59, 59, 999);
+      max.setDate(max.getDate() + ICS_IMPORT_FUTURE_DAYS);
+      return {
+        minDate: dateStrLocal(min),
+        maxDate: dateStrLocal(max),
+        pastDays: ICS_IMPORT_PAST_DAYS,
+        futureDays: ICS_IMPORT_FUTURE_DAYS
+      };
+    }
+
+    /** Title for a VEVENT — Apple sometimes omits SUMMARY on busy/blocked blocks. */
+    function extractICSEventTitle(block) {
+      const summary = decodeICSText(
+        (block.match(/(?:^|\n)SUMMARY[^:\n]*:([^\n]*)/i) || [])[1]
+      );
+      if (summary) return summary.slice(0, 120);
+      const desc = decodeICSText(
+        (block.match(/(?:^|\n)DESCRIPTION[^:\n]*:([^\n]*)/i) || [])[1]
+      );
+      if (desc) return desc.replace(/\s+/g, ' ').trim().slice(0, 80) || 'Calendar event';
+      const loc = decodeICSText(
+        (block.match(/(?:^|\n)LOCATION[^:\n]*:([^\n]*)/i) || [])[1]
+      );
+      if (loc) return loc.slice(0, 80);
+      return 'Calendar event';
+    }
+
+    /** Pull first ICS property value; works after unfoldICSText (folded lines joined). */
+    function extractICSProp(block, name) {
+      const re = new RegExp(`(?:^|\\n)${name}[^:\\n]*:([^\\n]*)`, 'i');
+      const m = block.match(re);
+      return m ? String(m[1] || '').trim() : '';
     }
 
     function parseICSDurationMinutes(value) {
@@ -30825,38 +31190,186 @@
       return total > 0 ? Math.min(480, Math.max(15, total)) : null;
     }
 
+    /** Parse RRULE body (with or without "RRULE:" prefix) into uppercased key→value map. */
+    function parseICSRrule(raw) {
+      const parts = {};
+      String(raw || '')
+        .replace(/^RRULE:/i, '')
+        .split(';')
+        .forEach(piece => {
+          const idx = piece.indexOf('=');
+          if (idx < 1) return;
+          const key = piece.slice(0, idx).trim().toUpperCase();
+          const val = piece.slice(idx + 1).trim();
+          if (key) parts[key] = val;
+        });
+      return parts;
+    }
+
+    /** Collect EXDATE day strings (local) for a VEVENT block. */
+    function parseICSExdates(block) {
+      const set = new Set();
+      const re = /(?:^|\n)EXDATE[^:\n]*:([^\n]+)/gi;
+      let m;
+      while ((m = re.exec(block)) !== null) {
+        String(m[1] || '').split(',').forEach(part => {
+          const d = parseICSDate(part.trim());
+          if (d && !isNaN(d.getTime())) set.add(dateStrLocal(d));
+        });
+      }
+      return set;
+    }
+
+    /**
+     * Expand a master VEVENT DTSTART through a basic RRULE into occurrence Date objects
+     * that fall within [rangeStartStr, rangeEndStr] (inclusive, local YYYY-MM-DD).
+     * Supports FREQ=DAILY|WEEKLY|MONTHLY|YEARLY with INTERVAL, COUNT, UNTIL, BYDAY (weekly).
+     * Apple/Google family calendars almost always use past DTSTART + RRULE for routines.
+     */
+    function expandICSRruleOccurrences(start, rruleParts, rangeStartStr, rangeEndStr, options = {}) {
+      const maxOcc = options.maxOcc || ICS_RRULE_MAX_OCC;
+      const freq = String(rruleParts.FREQ || '').toUpperCase();
+      if (!freq || !start || isNaN(start.getTime())) return [];
+
+      const interval = Math.max(1, parseInt(rruleParts.INTERVAL || '1', 10) || 1);
+      const countLimit = rruleParts.COUNT != null ? Math.max(0, parseInt(rruleParts.COUNT, 10) || 0) : null;
+      const until = rruleParts.UNTIL ? parseICSDate(rruleParts.UNTIL) : null;
+      const startDs = dateStrLocal(start);
+      const dowMap = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
+      const out = [];
+
+      if (freq === 'DAILY') {
+        const cursor = new Date(start.getTime());
+        let generated = 0;
+        let guard = 0;
+        while (out.length < maxOcc && guard < 4000) {
+          if (countLimit != null && generated >= countLimit) break;
+          if (until && cursor.getTime() > until.getTime()) break;
+          const ds = dateStrLocal(cursor);
+          if (ds > rangeEndStr && ds >= startDs) break;
+          if (ds >= startDs) {
+            if (ds >= rangeStartStr && ds <= rangeEndStr) out.push(new Date(cursor.getTime()));
+            generated += 1;
+          }
+          cursor.setDate(cursor.getDate() + interval);
+          guard += 1;
+        }
+      } else if (freq === 'WEEKLY') {
+        let byday = String(rruleParts.BYDAY || '')
+          .split(',')
+          .map(s => s.replace(/[^A-Za-z]/g, '').toUpperCase())
+          .filter(s => s in dowMap);
+        if (!byday.length) {
+          const names = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+          byday = [names[start.getDay()]];
+        }
+        const bydayNums = [...new Set(byday.map(d => dowMap[d]))].sort((a, b) => a - b);
+        // Week anchor: Sunday of the DTSTART week (matches SU=0)
+        const weekStart = new Date(start.getTime());
+        weekStart.setHours(0, 0, 0, 0);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        let generated = 0;
+        let weeks = 0;
+        // ~2 years past + 18 months future needs more than 800 weeks of headroom
+        outerWeekly: while (out.length < maxOcc && weeks < 1600) {
+          for (const dow of bydayNums) {
+            if (countLimit != null && generated >= countLimit) break outerWeekly;
+            const occ = new Date(weekStart.getTime());
+            occ.setDate(weekStart.getDate() + dow);
+            occ.setHours(start.getHours(), start.getMinutes(), start.getSeconds(), 0);
+            const ds = dateStrLocal(occ);
+            if (ds < startDs) continue;
+            if (until && occ.getTime() > until.getTime()) break outerWeekly;
+            if (ds > rangeEndStr) break outerWeekly;
+            if (ds >= rangeStartStr) out.push(occ);
+            generated += 1;
+          }
+          weekStart.setDate(weekStart.getDate() + 7 * interval);
+          weeks += 1;
+        }
+      } else if (freq === 'MONTHLY') {
+        const byMonthDay = rruleParts.BYMONTHDAY
+          ? parseInt(String(rruleParts.BYMONTHDAY).split(',')[0], 10)
+          : start.getDate();
+        const dayOfMonth = Math.min(31, Math.max(1, byMonthDay || start.getDate()));
+        const cursor = new Date(start.getFullYear(), start.getMonth(), 1,
+          start.getHours(), start.getMinutes(), start.getSeconds());
+        let generated = 0;
+        let guard = 0;
+        while (out.length < maxOcc && guard < 400) {
+          if (countLimit != null && generated >= countLimit) break;
+          const year = cursor.getFullYear();
+          const month = cursor.getMonth();
+          const dim = new Date(year, month + 1, 0).getDate();
+          const day = Math.min(dayOfMonth, dim);
+          const occ = new Date(year, month, day, start.getHours(), start.getMinutes(), start.getSeconds());
+          if (dateStrLocal(occ) < startDs) {
+            cursor.setMonth(cursor.getMonth() + interval);
+            guard += 1;
+            continue;
+          }
+          if (until && occ.getTime() > until.getTime()) break;
+          const ds = dateStrLocal(occ);
+          if (ds > rangeEndStr) break;
+          if (ds >= rangeStartStr) out.push(occ);
+          generated += 1;
+          cursor.setMonth(cursor.getMonth() + interval);
+          guard += 1;
+        }
+      } else if (freq === 'YEARLY') {
+        const cursor = new Date(start.getTime());
+        let generated = 0;
+        let guard = 0;
+        while (out.length < maxOcc && guard < 80) {
+          if (countLimit != null && generated >= countLimit) break;
+          if (until && cursor.getTime() > until.getTime()) break;
+          const ds = dateStrLocal(cursor);
+          if (ds > rangeEndStr && ds >= startDs) break;
+          if (ds >= startDs) {
+            if (ds >= rangeStartStr && ds <= rangeEndStr) out.push(new Date(cursor.getTime()));
+            generated += 1;
+          }
+          cursor.setFullYear(cursor.getFullYear() + interval);
+          guard += 1;
+        }
+      } else if (startDs >= rangeStartStr && startDs <= rangeEndStr) {
+        // Unsupported FREQ — fall back to DTSTART only
+        out.push(new Date(start.getTime()));
+      }
+
+      return out.slice(0, maxOcc);
+    }
+
     function parseICSContent(text) {
       const unfolded = unfoldICSText(text);
       if (!/BEGIN:VCALENDAR/i.test(unfolded)) return [];
 
       const blocks = unfolded.split(/BEGIN:VEVENT/i).slice(1);
-      const minDate = dateStrLocal(new Date(Date.now() - 14 * 86400000));
-      const maxAhead = new Date();
-      maxAhead.setDate(maxAhead.getDate() + 180);
-      const maxDate = dateStrLocal(maxAhead);
+      const { minDate, maxDate } = getICSImportWindow();
       const events = [];
       const stamp = Date.now();
 
       blocks.forEach((block, i) => {
-        const summary = decodeICSText(
-          (block.match(/SUMMARY[^:;\r\n]*:([^\r\n]+)/i) || block.match(/DESCRIPTION[^:;\r\n]*:([^\r\n]+)/i) || [])[1]
-        );
-        const dtstartLine = (block.match(/DTSTART[^:;\r\n]*:[^\r\n]+/i) || [])[0] || '';
-        const dtendLine = (block.match(/DTEND[^:;\r\n]*:[^\r\n]+/i) || [])[0] || '';
-        const dtstart = (block.match(/DTSTART[^:;\r\n]*:([^\r\n]+)/i) || [])[1]?.trim();
-        const dtend = (block.match(/DTEND[^:;\r\n]*:([^\r\n]+)/i) || [])[1]?.trim();
-        const durationRaw = (block.match(/DURATION[^:;\r\n]*:([^\r\n]+)/i) || [])[1]?.trim();
-        if (!summary) return;
+        if (events.length >= ICS_IMPORT_MAX_EVENTS) return;
+
+        // Skip cancelled instances
+        const status = extractICSProp(block, 'STATUS');
+        if (status && /CANCELLED/i.test(status)) return;
+
+        const summary = extractICSEventTitle(block);
+        const dtstartLine = (block.match(/(?:^|\n)DTSTART[^:\n]*:[^\n]+/i) || [])[0] || '';
+        const dtendLine = (block.match(/(?:^|\n)DTEND[^:\n]*:[^\n]+/i) || [])[0] || '';
+        const dtstart = extractICSProp(block, 'DTSTART');
+        const dtend = extractICSProp(block, 'DTEND');
+        const durationRaw = extractICSProp(block, 'DURATION');
+        const rruleRaw = extractICSProp(block, 'RRULE');
+        const uid = extractICSProp(block, 'UID');
 
         const start = parseICSDate(dtstart);
         if (!start || isNaN(start.getTime())) return;
 
-        const eventDate = dateStrLocal(start);
-        // Keep events that start in range, or multi-day spans still covering today→max
-        if (eventDate > maxDate) return;
-
-        const isDateOnly = /VALUE=DATE/i.test(dtstartLine) || /VALUE=DATE/i.test(block)
-          || (dtstart && !/[T:]/i.test(dtstart) && String(dtstart).replace(/[^0-9]/g, '').length === 8);
+        const isDateOnly = /VALUE=DATE/i.test(dtstartLine)
+          || (dtstart && !/[T]/i.test(dtstart) && String(dtstart).replace(/[^0-9]/g, '').length === 8);
 
         const end = dtend ? parseICSDate(dtend) : null;
         let durationMin = parseICSDurationMinutes(durationRaw);
@@ -30865,45 +31378,88 @@
         }
         if (!durationMin) durationMin = isDateOnly ? 1440 : 60;
 
-        // Multi-day end date (RFC 5545: all-day DTEND is exclusive)
-        let endDate = null;
+        // Inclusive multi-day span length in days (0 = single day)
+        let spanExtraDays = 0;
         if (end && !isNaN(end.getTime())) {
           let endDs = dateStrLocal(end);
           const endIsDateOnly = /VALUE=DATE/i.test(dtendLine)
-            || (dtend && !/[T:]/i.test(dtend) && String(dtend).replace(/[^0-9]/g, '').length === 8);
+            || (dtend && !/[T]/i.test(dtend) && String(dtend).replace(/[^0-9]/g, '').length === 8);
           if (isDateOnly || endIsDateOnly) {
+            // RFC 5545: all-day DTEND is exclusive
             const exclusive = new Date(endDs + 'T12:00:00');
             exclusive.setDate(exclusive.getDate() - 1);
             endDs = dateStrLocal(exclusive);
           }
-          if (endDs > eventDate) endDate = endDs;
-        } else if (durationMin >= 1440) {
-          const days = Math.max(0, Math.ceil(durationMin / 1440) - 1);
-          if (days > 0) {
-            const d = new Date(eventDate + 'T12:00:00');
-            d.setDate(d.getDate() + days);
-            endDate = dateStrLocal(d);
+          const startDs0 = dateStrLocal(start);
+          if (endDs > startDs0) {
+            const a = new Date(startDs0 + 'T12:00:00');
+            const b = new Date(endDs + 'T12:00:00');
+            spanExtraDays = Math.max(0, Math.round((b - a) / 86400000));
           }
+        } else if (durationMin >= 1440) {
+          spanExtraDays = Math.max(0, Math.ceil(durationMin / 1440) - 1);
         }
 
-        // Drop fully past multi-day / single events outside import window
+        const timeStr = isDateOnly
+          ? '09:00'
+          : `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
+        const durationOut = Math.min(durationMin, spanExtraDays > 0 ? 1440 : 480);
+        const exdates = parseICSExdates(block);
+        const rruleParts = rruleRaw ? parseICSRrule(rruleRaw) : null;
+
+        const pushOccurrence = (occDate, occIndex) => {
+          if (events.length >= ICS_IMPORT_MAX_EVENTS) return;
+          const eventDate = dateStrLocal(occDate);
+          let endDate = null;
+          if (spanExtraDays > 0) {
+            const d = new Date(eventDate + 'T12:00:00');
+            d.setDate(d.getDate() + spanExtraDays);
+            endDate = dateStrLocal(d);
+          }
+          const spanEnd = endDate || eventDate;
+          if (spanEnd < minDate) return;
+          if (eventDate > maxDate) return;
+          if (exdates.has(eventDate)) return;
+
+          const idBase = uid
+            ? `ev-ics-${uid.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40)}`
+            : `ev-ics-${stamp}-${i}`;
+          events.push({
+            id: `${idBase}-${eventDate}${occIndex ? '-' + occIndex : ''}`,
+            date: eventDate,
+            endDate: endDate || undefined,
+            time: timeStr,
+            title: summary,
+            durationMin: durationOut
+          });
+        };
+
+        if (rruleParts && rruleParts.FREQ) {
+          // Expand recurring masters (Apple/Google almost always use past DTSTART + RRULE)
+          const occurrences = expandICSRruleOccurrences(start, rruleParts, minDate, maxDate, {
+            maxOcc: ICS_RRULE_MAX_OCC
+          });
+          occurrences.forEach((occ, idx) => pushOccurrence(occ, idx));
+          return;
+        }
+
+        // Single (non-recurring) event — includes historical one-offs within the window
+        const eventDate = dateStrLocal(start);
+        if (eventDate > maxDate) return;
+        let endDate = null;
+        if (spanExtraDays > 0) {
+          const d = new Date(eventDate + 'T12:00:00');
+          d.setDate(d.getDate() + spanExtraDays);
+          endDate = dateStrLocal(d);
+        }
         const spanEnd = endDate || eventDate;
         if (spanEnd < minDate) return;
-        if (eventDate < minDate && spanEnd < minDate) return;
-
-        events.push({
-          id: `ev-ics-${stamp}-${i}`,
-          date: eventDate,
-          endDate: endDate || undefined,
-          time: isDateOnly
-            ? '09:00'
-            : `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`,
-          title: summary,
-          durationMin: Math.min(durationMin, endDate ? 1440 : 480)
-        });
+        pushOccurrence(start, 0);
       });
 
-      return events.sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+      return events
+        .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
+        .slice(0, ICS_IMPORT_MAX_EVENTS);
     }
 
     function getCalendarFeeds() {
@@ -30949,12 +31505,20 @@
           }
         }
 
-        if (/\.ics(\?|#|$)/i.test(href) || /\/calendar\/ical\//i.test(href) || /webcal/i.test(String(rawUrl))) {
+        // Apple iCloud published / CalDAV share links often have no .ics suffix
+        const isAppleFeed = /icloud\.com|caldav\.icloud/i.test(host)
+          || /\/published\//i.test(u.pathname);
+        if (
+          /\.ics(\?|#|$)/i.test(href)
+          || /\/calendar\/ical\//i.test(href)
+          || /webcal/i.test(String(rawUrl))
+          || isAppleFeed
+        ) {
           return null;
         }
         // Soft hint for other hosts without .ics
         if (!/\.ics(\?|#|$)/i.test(href)) {
-          return 'This doesn’t look like a calendar feed link (usually ends with .ics). Try Connect Calendar for Google or Apple steps, or Import a file.';
+          return 'This doesn’t look like a calendar feed link (usually ends with .ics, or is an iCloud / Google private feed). Try Connect Calendar for guided steps, or Import a file.';
         }
       } catch {
         return 'Enter a valid http(s) or webcal calendar URL';
@@ -30997,7 +31561,90 @@
       return typeof text === 'string' && /BEGIN:VCALENDAR/i.test(text);
     }
 
+    /** Native Capacitor HTTP bypasses browser CORS (APK / TestFlight only). */
+    async function tryNativeIcsFetch(url) {
+      try {
+        const Cap = window.Capacitor;
+        if (!Cap || typeof Cap.isNativePlatform !== 'function' || !Cap.isNativePlatform()) {
+          return null;
+        }
+        const Http = Cap.Plugins?.CapacitorHttp
+          || Cap.Plugins?.Http
+          || window.CapacitorHttp
+          || null;
+        if (!Http || typeof Http.get !== 'function') return null;
+        const res = await Http.get({
+          url,
+          headers: { Accept: 'text/calendar, text/plain, */*' },
+          responseType: 'text',
+          connectTimeout: 25000,
+          readTimeout: 25000
+        });
+        const data = res && (res.data != null ? res.data : res.body);
+        if (typeof data === 'string' && looksLikeIcsCalendarText(data)) return data;
+        if (data && typeof data === 'object' && typeof data.contents === 'string' && looksLikeIcsCalendarText(data.contents)) {
+          return data.contents;
+        }
+      } catch (e) {
+        console.warn('Native calendar fetch failed', e?.message || e);
+      }
+      return null;
+    }
+
+    function showAppleCalendarFileHelp() {
+      document.getElementById('apple-cal-file-help')?.remove();
+      const modal = document.createElement('div');
+      modal.id = 'apple-cal-file-help';
+      modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[70]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" data-apple-help-close></div>
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-lg mb-1">Apple calendar — use a file</div>
+          <p class="text-xs text-harbor-muted leading-relaxed mb-3">
+            Your iCloud share link is valid, but <strong class="text-harbor-text">browsers and public network helpers are blocked from downloading Apple calendars</strong>.
+            The reliable path is a one-time (or occasional) <strong class="text-harbor-text">.ics file import</strong> — fully private, stays on this device.
+          </p>
+          <div class="rounded-2xl border border-harbor-border bg-harbor-raised/70 px-3.5 py-3 mb-3 text-[12px] text-harbor-text leading-relaxed space-y-2">
+            <div class="font-semibold text-harbor-primary-light">On her iPhone</div>
+            <ol class="list-decimal pl-4 space-y-1.5 text-harbor-muted">
+              <li>Open the <strong class="text-harbor-text">Calendar</strong> app</li>
+              <li>Tap <strong class="text-harbor-text">Calendars</strong> at the bottom → the shared calendar (e.g. Home)</li>
+              <li>Or: open the share link in Safari → share/export as calendar file</li>
+              <li>From Mac Calendar: File → Export → Export… → save <span class="text-harbor-text">.ics</span></li>
+              <li>AirDrop / Messages / Files the <span class="text-harbor-text">.ics</span> to this phone</li>
+            </ol>
+            <div class="font-semibold text-harbor-primary-light pt-1">In Harbor</div>
+            <ol class="list-decimal pl-4 space-y-1.5 text-harbor-muted">
+              <li>Tap <strong class="text-harbor-text">Import file</strong> below</li>
+              <li>Choose the <span class="text-harbor-text">.ics</span> file</li>
+              <li>Events from ~2 years back through ~18 months ahead load into Schedule</li>
+            </ol>
+          </div>
+          <button type="button" data-apple-help-import class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm mb-2">
+            Import .ics file now
+          </button>
+          <button type="button" data-apple-help-close class="w-full py-2.5 text-xs text-harbor-muted font-medium">Close</button>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.querySelectorAll('[data-apple-help-close]').forEach(el => {
+        el.addEventListener('click', () => modal.remove());
+      });
+      modal.querySelector('[data-apple-help-import]')?.addEventListener('click', () => {
+        modal.remove();
+        triggerCalendarICSImport();
+      });
+    }
+
     async function fetchIcsText(url) {
+      const icsHeaders = {
+        Accept: 'text/calendar, application/calendar, text/plain, */*'
+      };
+
+      // 0) Native app HTTP (Capacitor) — bypasses browser CORS entirely
+      const nativeText = await tryNativeIcsFetch(url);
+      if (nativeText) return nativeText;
+
       const tryFetchText = async (target, options = {}) => {
         const res = await fetch(target, {
           method: 'GET',
@@ -31005,7 +31652,7 @@
           credentials: 'omit',
           cache: 'no-store',
           referrerPolicy: 'no-referrer',
-          headers: options.headers || undefined
+          headers: options.headers || icsHeaders
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.text();
@@ -31033,21 +31680,30 @@
         return String(contents);
       };
 
-      // 1) Direct — works only if the calendar host sends CORS headers (rare for Google)
+      // 1) Direct — works only if the calendar host sends CORS headers
+      //    (Apple iCloud published calendars do not)
       try {
-        const direct = await tryFetchText(url);
+        const direct = await tryFetchText(url, { headers: icsHeaders });
         if (looksLikeIcsCalendarText(direct)) return direct;
         // Some hosts return HTML login/interstitial without throwing
         throw new Error('Direct response was not an iCalendar feed');
       } catch (directErr) {
-        if (!isCalendarCorsHelperAllowed()) {
+        // Apple / Google never send CORS — try public helpers when allowed / auto-on
+        if (!isCalendarCorsHelperAllowed() && calendarFeedLikelyNeedsHelper(url)) {
+          if (state?.settings) {
+            state.settings.calendarAllowCorsHelper = true;
+            try { saveState(); } catch (_) { /* ignore */ }
+          }
+        } else if (!isCalendarCorsHelperAllowed()) {
           const err = new Error('DIRECT_FETCH_BLOCKED');
           err.cause = directErr;
           err.code = 'DIRECT_FETCH_BLOCKED';
+          err.needsHelperLikely = calendarFeedLikelyNeedsHelper(url);
           throw err;
         }
 
         // 2) Third-party helpers (secret feed URL is visible to the helper only during this request)
+        //    Note: many public proxies block or fail iCloud — we try several, then fall back to file import.
         const proxyAttempts = [
           { name: 'allorigins-json', run: tryAllOriginsJson },
           {
@@ -31074,6 +31730,17 @@
             lastErr = e;
           }
         }
+
+        // 3) Apple: public helpers almost always fail — guide to file import
+        if (isLikelyAppleCalendarUrl(url)) {
+          const err = new Error(
+            'Apple iCloud calendars can’t be downloaded live in the browser. Import a .ics file instead.'
+          );
+          err.code = 'APPLE_NEEDS_FILE';
+          err.cause = lastErr;
+          throw err;
+        }
+
         const err = new Error(lastErr?.message || 'Calendar feed fetch failed');
         err.cause = lastErr;
         err.code = 'FEED_FETCH_FAILED';
@@ -31130,6 +31797,20 @@
       }
     }
 
+    function isLikelyAppleCalendarUrl(url) {
+      try {
+        const host = new URL(url).hostname;
+        return /icloud\.com|caldav\.icloud|apple\.com/i.test(host);
+      } catch {
+        return /icloud|caldav|webcal/i.test(String(url || ''));
+      }
+    }
+
+    /** Hosts that almost never send CORS headers to browser apps. */
+    function calendarFeedLikelyNeedsHelper(url) {
+      return isLikelyGoogleCalendarUrl(url) || isLikelyAppleCalendarUrl(url);
+    }
+
     /**
      * When the browser blocks a direct ICS fetch (common with Google), offer a
      * one-tap helper instead of sending people hunting through Settings.
@@ -31141,6 +31822,7 @@
 
         const label = feed?.label || 'your calendar';
         const isGoogle = isLikelyGoogleCalendarUrl(feed?.url);
+        const isApple = isLikelyAppleCalendarUrl(feed?.url);
         const modal = document.createElement('div');
         modal.id = 'cal-helper-offer-modal';
         modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[70]';
@@ -31148,11 +31830,17 @@
           <div class="absolute inset-0" data-cal-helper-cancel></div>
           <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm">
             <div class="modal-grab-pill" aria-hidden="true"></div>
-            <div class="font-semibold text-lg mb-1">${isGoogle ? 'Google blocked the direct link' : 'Calendar link needs a helper'}</div>
+            <div class="font-semibold text-lg mb-1">${
+              isGoogle ? 'Google blocked the direct link'
+                : isApple ? 'Apple Calendar needs a helper'
+                  : 'Calendar link needs a helper'
+            }</div>
             <p class="text-xs text-harbor-muted leading-relaxed mb-3">
               ${isGoogle
                 ? 'Browsers often block Google Calendar downloads. Harbor can use a <strong class="text-harbor-text">temporary network helper</strong> so your events load — or you can import a file instead (fully private).'
-                : 'This calendar host blocked a direct download. A temporary network helper can fetch it, or you can import a file instead.'}
+                : isApple
+                  ? 'iPhone / iCloud share links usually block direct browser downloads. Use a <strong class="text-harbor-text">temporary network helper</strong> so her events load — or export a .ics file from her calendar and Import file (fully private).'
+                  : 'This calendar host blocked a direct download. A temporary network helper can fetch it, or you can import a file instead.'}
             </p>
             <div class="cal-connect-helper-prompt mb-3">
               <p class="text-[11px] text-harbor-text leading-relaxed">
@@ -31199,6 +31887,7 @@
         if (!/BEGIN:VCALENDAR/i.test(text)) {
           throw new Error('Not a valid iCalendar feed');
         }
+        const veventCount = (String(text).match(/BEGIN:VEVENT/gi) || []).length;
         const count = importCalendarICSFromText(text, feed.label || 'calendar feed', {
           sourceId: feed.id,
           silent: true,
@@ -31207,13 +31896,29 @@
         feed.lastSyncedAt = new Date().toISOString();
         feed.lastEventCount = count;
         feed.lastError = null;
+        feed.lastRawVeventCount = veventCount;
         saveState();
         if (!silent) {
-          showToast(count
-            ? `Synced ${count} event${count === 1 ? '' : 's'} from ${feed.label}`
-            : `Feed synced — no upcoming events in ${feed.label}`);
+          if (count) {
+            const win = getICSImportWindow();
+            showToast(
+              `Synced ${count} event${count === 1 ? '' : 's'} from ${feed.label} `
+              + `(includes past ~${Math.round(win.pastDays / 30)} mo → upcoming ~${Math.round(win.futureDays / 30)} mo)`
+            );
+          } else if (veventCount > 0) {
+            showToast(
+              `Feed loaded (${veventCount} items) but none fell in Harbor’s window. `
+              + `Try Import file from her phone, or check the share link is a public .ics feed.`,
+              'warn'
+            );
+          } else {
+            showToast(
+              `Feed synced — ${feed.label} looks empty. Confirm she shared the calendar (not a single event) and refresh.`,
+              'warn'
+            );
+          }
         }
-        return { ok: true, count };
+        return { ok: true, count, veventCount };
       } catch (err) {
         // Do not log the feed URL (may contain secret tokens)
         console.error('Calendar feed sync failed', err?.code || err?.message || err);
@@ -31230,6 +31935,16 @@
             return syncCalendarFeed(feed, { ...options, allowHelperOffer: false });
           }
           return { ok: false, error: feed.lastError, offeredHelper: true };
+        }
+
+        if (err?.code === 'APPLE_NEEDS_FILE' || /APPLE_NEEDS_FILE|iCloud calendars can’t be downloaded/i.test(msg)) {
+          feed.lastError = 'Apple iCloud can’t sync live in the browser — import a .ics file.';
+          saveState();
+          if (!silent) {
+            showToast(feed.lastError, 'warn');
+            setTimeout(() => showAppleCalendarFileHelp(), 350);
+          }
+          return { ok: false, error: feed.lastError, appleNeedsFile: true };
         }
 
         if (blockedDirect) {
@@ -31254,6 +31969,9 @@
             guide || feed.lastError || `Couldn’t sync ${feed.label}. Try Import a file.`,
             'warn'
           );
+          if (isLikelyAppleCalendarUrl(feed.url)) {
+            setTimeout(() => showAppleCalendarFileHelp(), 400);
+          }
         }
         return { ok: false, error: feed.lastError };
       }
@@ -31759,16 +32477,22 @@
 
     function getCalendarStatusLabel() {
       const feeds = getCalendarFeeds();
-      const n = state.settings.importedCalendarEvents?.length || 0;
+      // Total unique events Harbor can show (feeds + manual) — matches Schedule data, not day-slots
+      const n = getAllCalendarEvents().length;
+      const feedEventN = state.settings.importedCalendarEvents?.length || 0;
       if (feeds.length && n) {
         return feeds.length === 1
-          ? `${feeds[0].label} · ${n} events`
-          : `${feeds.length} feeds · ${n} events`;
+          ? `${feeds[0].label} · ${n} event${n === 1 ? '' : 's'}`
+          : `${feeds.length} feeds · ${n} event${n === 1 ? '' : 's'}`;
       }
       if (feeds.length) {
-        return feeds.length === 1 ? feeds[0].label : `${feeds.length} calendar feeds`;
+        const emptyHint = feeds.some(f => f.lastSyncedAt && !f.lastError && !(f.lastEventCount > 0))
+          ? ' · no upcoming events yet'
+          : '';
+        return (feeds.length === 1 ? feeds[0].label : `${feeds.length} calendar feeds`) + emptyHint;
       }
-      if (n) return `${n} imported event${n === 1 ? '' : 's'}`;
+      if (n) return `${n} event${n === 1 ? '' : 's'}`;
+      if (feedEventN) return `${feedEventN} imported event${feedEventN === 1 ? '' : 's'}`;
       return 'No calendar';
     }
 
@@ -31801,7 +32525,7 @@
       const badge = document.getElementById('schedule-sync-badge');
       if (!badge) return;
       const feeds = getCalendarFeeds();
-      const n = state.settings.importedCalendarEvents?.length || 0;
+      const n = getAllCalendarEvents().length;
       // Only surface status when something is connected/imported — no empty-state CTA under work hours
       if (feeds.length) {
         const err = feeds.find(f => f.lastError);
@@ -31809,7 +32533,7 @@
           ? `<i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1"></i> Calendar feed issue · <button type="button" onclick="showCalendarFeedModal()" class="text-harbor-primary-light">fix</button>`
           : `<i class="fa-solid fa-link text-harbor-primary mr-1"></i> ${escapeBriefHtml(getCalendarStatusLabel())} · <button type="button" onclick="refreshAllCalendarFeeds()" class="text-harbor-primary-light">refresh</button>`;
       } else if (n) {
-        badge.innerHTML = `<i class="fa-regular fa-calendar text-harbor-primary-light mr-1"></i> ${n} imported event${n === 1 ? '' : 's'}`;
+        badge.innerHTML = `<i class="fa-regular fa-calendar text-harbor-primary-light mr-1"></i> ${n} event${n === 1 ? '' : 's'}`;
       } else {
         badge.innerHTML = '';
       }
@@ -32035,7 +32759,7 @@
         if (metaTheme) {
           metaTheme.setAttribute(
             'content',
-            typeof themeMetaColor === 'function' ? themeMetaColor(theme) : (theme === 'dark' ? '#0A1614' : '#D6E8E2')
+            typeof themeMetaColor === 'function' ? themeMetaColor(theme) : (themeMetaColor(getAppTheme()))
           );
         }
       } catch (_) { /* ignore */ }
@@ -32312,13 +33036,12 @@
         document.body.classList.remove('is-splash-active');
         document.documentElement.classList.remove('is-splash-active');
         try {
-          const theme = document.documentElement.getAttribute('data-theme') || 'harbor';
-          const metaTheme = document.querySelector('meta[name="theme-color"]');
-          if (metaTheme) {
-            metaTheme.setAttribute(
-              'content',
-              theme === 'dark' ? '#0A1614' : '#D6E8E2'
-            );
+          // Re-paint header after splash — Safari often showed Mint until this
+          if (typeof applyAppTheme === 'function') {
+            applyAppTheme(typeof getAppTheme === 'function' ? getAppTheme() : (state?.settings?.theme || 'harbor'));
+          } else {
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) metaTheme.setAttribute('content', themeMetaColor(getAppTheme()));
           }
         } catch (_) { /* ignore */ }
         finishBoot();
@@ -32370,6 +33093,13 @@
       taskLine.textContent = taskCount === 0
         ? 'Nothing due today'
         : `${taskCount} task${taskCount === 1 ? '' : 's'} today`;
+
+      // Re-apply palette to header chrome (keeps Blush/Lilac/etc. after text updates)
+      try {
+        if (typeof applyThemeCssVars === 'function' && typeof getAppTheme === 'function') {
+          applyThemeCssVars(getAppTheme());
+        }
+      } catch (_) { /* ignore */ }
     }
 
     async function init() {
@@ -32390,7 +33120,23 @@
     // PWA service worker — network-first with versioned cache (see sw.js CACHE_NAME)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
+        // One-time hard refresh when build number changes (kills stuck Mint shell / old CSS)
+        try {
+          const key = 'harbor_last_build';
+          const prev = localStorage.getItem(key);
+          const cur = String(HARBOR_BUILD_NUMBER);
+          if (prev && prev !== cur) {
+            localStorage.setItem(key, cur);
+            navigator.serviceWorker.getRegistrations?.().then((regs) => {
+              regs.forEach((r) => r.update().catch(() => {}));
+            });
+            // Soft signal: next controllerchange will reload
+          } else if (!prev) {
+            localStorage.setItem(key, cur);
+          }
+        } catch (_) { /* ignore */ }
+
+        navigator.serviceWorker.register('./sw.js?v=' + HARBOR_BUILD_NUMBER)
           .then((reg) => {
             reg.update().catch(() => {});
             // If a new worker is waiting, activate it so testers see copy/UI fixes promptly
