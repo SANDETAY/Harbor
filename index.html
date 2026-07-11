@@ -10429,7 +10429,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 285;
+    const HARBOR_BUILD_NUMBER = 286;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -11731,7 +11731,9 @@
     /** Title Case for library defaults — small words stay lower unless first/last. */
     const TITLE_CASE_SMALL_WORDS = new Set([
       'a', 'an', 'the', 'and', 'or', 'but', 'for', 'nor', 'on', 'at', 'to', 'by',
-      'of', 'in', 'up', 'as', 'vs', 'via', 'per', 'from', 'with', 'into', 'onto', 'over'
+      'of', 'in', 'up', 'as', 'vs', 'via', 'per', 'from', 'with', 'into', 'onto', 'over',
+      'its', "it's", 'is', 'are', 'was', 'were', 'be', 'been', 'if', 'than', 'then',
+      'so', 'yet', 'both', 'either', 'neither', 'not', 'no', 'nor', 'vs.', 'etc'
     ]);
 
     function toHarborTitleCase(input) {
@@ -14756,6 +14758,28 @@
       return habit;
     }
 
+    /**
+     * Swim / Walk / Gym etc. saved as one-off “Task” never return the next day.
+     * Promote those titles to daily habits so they repopulate after midnight.
+     */
+    function repairDailyRhythmOneOffHabits() {
+      if (!Array.isArray(state.habits)) return false;
+      let changed = false;
+      state.habits.forEach(h => {
+        if (!h || h.interval_days !== 0) return;
+        if (typeof isSchedulingTaskTitle === 'function' && isSchedulingTaskTitle(h.title)) return;
+        if (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(h.title || '')) {
+          h.interval_days = null; // daily
+          h.trackStreak = true;
+          changed = true;
+        }
+      });
+      if (changed) {
+        try { saveState(); } catch (_) { /* ignore */ }
+      }
+      return changed;
+    }
+
     function formatUpcomingLabel(habit, daysUntil) {
       if (!isHabitInSeason(habit)) {
         const when = getNextInSeasonMonthLabel(habit);
@@ -15179,6 +15203,7 @@
       else if (/semi.?annual|twice a year|every 6 months|biannual/.test(lower)) defaults.interval_days = 180;
       else if (/annual|yearly|every year|once a year/.test(lower)) defaults.interval_days = 365;
       else if (/daily|every day|each day|\ba day\b|\bper day\b/.test(lower)) defaults.interval_days = null;
+      else if (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(title)) defaults.interval_days = null;
       else if (isSchedulingTaskTitle(title)) defaults.interval_days = 0;
       if (/save|saving|money|budget|invest/.test(lower)) {
         defaults.unit = 'dollars';
@@ -15534,7 +15559,14 @@
             intervalUserPicked = true;
           }
         } else if (inferred.interval_days == null || inferred.interval_days === 1) {
-          selectedKind = /\b(habit|every day|daily|streak)\b/i.test(presetTitle) ? 'habit' : 'task';
+          // Swim, walk, gym, floss… → habit by default (not a one-off Task)
+          const looksDaily = /\b(habit|every day|daily|streak)\b/i.test(presetTitle)
+            || (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(presetTitle));
+          selectedKind = looksDaily ? 'habit' : 'task';
+          if (looksDaily) {
+            selectedInterval = null;
+            intervalUserPicked = true;
+          }
         } else if (inferred.interval_days > 1) {
           selectedKind = 'chore';
           selectedInterval = snapIntervalToSimple(inferred.interval_days);
@@ -15914,6 +15946,14 @@
         const inf = inferTaskDefaults(title);
         let minutes = parseInt(modal.querySelector('#qt-minutes').value, 10) || inf.est_minutes;
         let interval;
+        // Daily rhythm titles (Swim, Walk, Gym…) default to habit even if Type left on Task
+        const forceDailyHabit = selectedKind === 'task'
+          && !isSchedulingTaskTitle(title)
+          && typeof isDailyRhythmTitle === 'function'
+          && isDailyRhythmTitle(title);
+        if (forceDailyHabit) {
+          selectedKind = 'habit';
+        }
         if (selectedKind === 'task' || isSchedulingTaskTitle(title)) {
           interval = 0;
         } else if (selectedKind === 'habit') {
@@ -20671,13 +20711,22 @@
     // All money-out categories appear in the pie and legend (filterable).
     // moneyMove = transfers / card payments / savings — also filterable via type chips.
     const BUDGET_CATEGORIES = [
-      { id: 'housing', label: 'Mortgage & rent', color: '#4F7CFF', pie: true, fixedBill: true },
-      { id: 'utilities', label: 'Utilities & phone', color: '#7B6CF0', pie: true, fixedBill: true },
+      // Fixed bills (Bills lens) — only slices with spend show in the pie
+      { id: 'mortgage', label: 'Mortgage', color: '#4F7CFF', pie: true, fixedBill: true },
+      { id: 'rent', label: 'Rent', color: '#5A8CFF', pie: true, fixedBill: true },
+      { id: 'electric', label: 'Electric', color: '#E9A825', pie: true, fixedBill: true },
+      { id: 'water', label: 'Water', color: '#5B9FD4', pie: true, fixedBill: true },
+      { id: 'phone', label: 'Phone', color: '#8B7CF0', pie: true, fixedBill: true },
+      { id: 'internet', label: 'Internet', color: '#9B6BC9', pie: true, fixedBill: true },
+      { id: 'utilities', label: 'Other utilities', color: '#7B6CF0', pie: true, fixedBill: true },
       { id: 'insurance', label: 'Insurance', color: '#5B8DEF', pie: true, fixedBill: true },
-      { id: 'loans', label: 'Loans & car', color: '#C17B4A', pie: true, fixedBill: true },
+      { id: 'car_payment', label: 'Car payment', color: '#C17B4A', pie: true, fixedBill: true },
+      { id: 'loans', label: 'Other loans', color: '#B08A5A', pie: true, fixedBill: true },
+      // Legacy bucket (older imports) — still counts as a fixed bill
+      { id: 'housing', label: 'Housing', color: '#4F7CFF', pie: true, fixedBill: true },
       { id: 'groceries', label: 'Groceries', color: '#2F9B8C', pie: true },
       { id: 'dining', label: 'Dining out', color: '#E07A5F', pie: true },
-      { id: 'transport', label: 'Transport & gas', color: '#E9A825', pie: true },
+      { id: 'transport', label: 'Transport & gas', color: '#D4A017', pie: true },
       { id: 'shopping', label: 'Shopping', color: '#D46B8C', pie: true },
       { id: 'health', label: 'Health & pets', color: '#3DB8A8', pie: true },
       { id: 'entertainment', label: 'Entertainment', color: '#8B6BC9', pie: true },
@@ -20697,7 +20746,7 @@
     const BUDGET_KIND_OPTIONS = [
       { id: 'out', label: 'Spending', short: 'Spending', hint: 'Everything leaving the account', totalLabel: 'Total money out' },
       { id: 'wants', label: 'Wants', short: 'Wants', hint: 'Dining, shopping, clothing, entertainment & fun', totalLabel: 'Total wants' },
-      { id: 'bills', label: 'Fixed bills', short: 'Bills', hint: 'Mortgage, utilities, insurance, loans', totalLabel: 'Total fixed bills' },
+      { id: 'bills', label: 'Fixed bills', short: 'Bills', hint: 'Mortgage, rent, electric, water, phone, internet, insurance, car…', totalLabel: 'Total fixed bills' },
       { id: 'moves', label: 'Account moves', short: 'Moves', hint: 'Transfers, card payments, savings', totalLabel: 'Total account moves' },
       { id: 'income', label: 'Income', short: 'Income', hint: 'Paychecks, deposits & money in', totalLabel: 'Total income' }
     ];
@@ -20712,9 +20761,9 @@
       'travel': 'transport',
       'automotive expenses': 'transport',
       'utilities': 'utilities',
-      'telephone services': 'utilities',
-      'mortgages': 'housing',
-      'rent': 'housing',
+      'telephone services': 'phone',
+      'mortgages': 'mortgage',
+      'rent': 'rent',
       'general merchandise': 'shopping',
       'clothing/shoes': 'shopping',
       'electronics': 'shopping',
@@ -20891,10 +20940,16 @@
       if (cat === 'transfers') return 'Transfer';
       if (cat === 'credit_cards') return 'Card payment';
       if (cat === 'savings') return 'Savings';
-      if (cat === 'loans') return 'Loan / car payment';
+      if (cat === 'loans') return 'Loan payment';
+      if (cat === 'car_payment') return 'Car payment';
       if (cat === 'insurance') return 'Insurance';
-      if (cat === 'housing') return 'Mortgage / rent';
-      if (cat === 'utilities') return 'Utility / phone';
+      if (cat === 'mortgage' || cat === 'housing') return 'Mortgage';
+      if (cat === 'rent') return 'Rent';
+      if (cat === 'electric') return 'Electric';
+      if (cat === 'water') return 'Water';
+      if (cat === 'phone') return 'Phone';
+      if (cat === 'internet') return 'Internet';
+      if (cat === 'utilities') return 'Utility';
       if (cat === 'cash') return 'Cash / ATM';
       return 'Debit';
     }
@@ -20981,11 +21036,17 @@
         [/transfer\s*to\s*savings|transfer\s*to\s*certificate|savings\s*-|to\s*savings/i, 'savings'],
         [/transfer\s*to\s*loan|transfer\s*to\s*credit\s*card/i, 'transfers'],
         [/\btransfer\b/i, 'transfers'],
-        // Fixed bills / housing
-        [/freedom\s*mortgage|mortgage|rent\b|landlord|hoa\b|property\s*manag|pyl\*property/i, 'housing'],
-        [/clay\s*electric|clay\s*county\s*utility|electric|utility|utilities|water\s*bill|duke\s*energy|pg&e|t-?mobile|verizon|at&?t|comcast|xfinity|spectrum|telephone|phone\s*bill/i, 'utilities'],
+        // Fixed bills — split so Bills lens can show Mortgage, Electric, Phone, etc.
+        [/freedom\s*mortgage|\bmortgage\b/i, 'mortgage'],
+        [/\brent\b|landlord|hoa\b|property\s*manag|pyl\*property/i, 'rent'],
+        [/clay\s*electric|duke\s*energy|pg&e|florida\s*power|fpl\b|electric|power\s*co/i, 'electric'],
+        [/clay\s*county\s*utility|water\s*bill|\bwater\b|sewer|irrigation/i, 'water'],
+        [/t-?mobile|verizon|at&?t\b|phone\s*bill|telephone|mobile\s*bill|cellular/i, 'phone'],
+        [/comcast|xfinity|spectrum|cox\b|optimum|frontier|internet|fiber|broadband|isp\b/i, 'internet'],
+        [/utility|utilities|trash|garbage\s*pickup|waste\s*management|gas\s*bill|natural\s*gas/i, 'utilities'],
         [/\binsurance\b|geico|state\s*farm|progressive|allstate|usaa\s*(property|insurance)|liberty\s*mutual|nationwide|farmers\s*ins|auto\s*ins|homeowners/i, 'insurance'],
-        [/car\s*payment|auto\s*loan|vehicle\s*loan|toyota\s*financial|honda\s*financial|ford\s*credit|ally\s*auto|klarna|affirm|afterpay|\bloan\b/i, 'loans'],
+        [/car\s*payment|auto\s*loan|vehicle\s*loan|toyota\s*financial|honda\s*financial|ford\s*credit|ally\s*auto|gm\s*financial/i, 'car_payment'],
+        [/klarna|affirm|afterpay|\bloan\b/i, 'loans'],
         // Groceries & dining (wants vs needs split later for insights)
         [/publix|instacart|kroger|safeway|aldi|whole\s*foods|trader\s*joe|food\s*lion|heb|meijer|sprouts|winn[\s-]?dixie|daybreak\s*mark|grocery/i, 'groceries'],
         [/starbucks|mcdonald|chipotle|doordash|uber\s*eats|grubhub|subway|dunkin|wendy|burger|taco\s*bell|panera|chick[\s-]?fil|popeyes|pizza|restaurant|dining|cafe|coffee|smoothie|community\s*loav|sq\s*\*community/i, 'dining'],
@@ -21126,8 +21187,8 @@
      */
     function reclassifyAllBudgetTransactions(force = false) {
       const budget = ensureBudgetState();
-      if (!force && budget._fullRecatV6) return false;
-      budget._fullRecatV6 = true;
+      if (!force && budget._fullRecatV7) return false;
+      budget._fullRecatV7 = true;
       let changed = 0;
       (budget.transactions || []).forEach(t => {
         if (!t) return;
@@ -21491,8 +21552,8 @@
     }
 
     /**
-     * “Where it compounds” — discretionary wants only (coffee, dining, shopping, fun).
-     * Never shows mortgages, utilities, insurance, transfers, groceries, etc.
+     * “Where wants compound” — discretionary only (coffee, dining, shopping, fun).
+     * Merchant labels use Title Case so messy bank strings read cleanly.
      */
     function getBudgetMerchantInsights(txs, limit = 5) {
       const map = new Map();
@@ -21503,14 +21564,25 @@
         if (isBudgetMoneyMoveCategory(cat)) return;
         if (isBudgetFixedBillCategory(cat)) return;
         if (cat === 'groceries' || cat === 'transport' || cat === 'health' || cat === 'education'
-          || cat === 'charity' || cat === 'fees' || cat === 'cash' || cat === 'loans') return;
+          || cat === 'charity' || cat === 'fees' || cat === 'cash' || cat === 'loans'
+          || cat === 'car_payment') return;
         if (!isBudgetWantTransaction(t)) return;
         // Skip huge one-off wires mis-tagged as dining etc.
         const amt = Number(t.amount) || 0;
         if (amt >= 2000) return;
-        const name = normalizeBudgetMerchant(t.description);
+        let name = normalizeBudgetMerchant(t.description);
         // Skip generic transfer-looking names that snuck through
         if (/^(transfer|ach|wire|payment to|zelle)/i.test(name)) return;
+        // Beautify: Title Case, drop leftover POS/debit noise
+        name = typeof toHarborTitleCase === 'function' ? toHarborTitleCase(name) : name;
+        name = String(name || '')
+          .replace(/\bDebit-?Dc\b/gi, '')
+          .replace(/\bPos\b/gi, '')
+          .replace(/\bTst\s*\*/gi, '')
+          .replace(/\bSq\s*\*/gi, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (!name || name.length < 2) name = 'Purchase';
         const key = name.toLowerCase();
         if (!map.has(key)) map.set(key, { name, total: 0, count: 0 });
         const row = map.get(key);
@@ -21595,6 +21667,7 @@
       delete budget._fixedBillMigrated;
       delete budget._incomeRepairedV1;
       delete budget._fullRecatV6;
+      delete budget._fullRecatV7;
       // Any successful CSV import finishes the monthly budget-review task
       if (typeof markBudgetReviewCompleteFromImport === 'function') {
         markBudgetReviewCompleteFromImport({ silent: true });
@@ -22118,8 +22191,8 @@
       if (!state.budget._rulesHarvested) {
         harvestBudgetMerchantRulesFromTransactions();
       }
-      // Always reclassify once on this build — fixes empty Income + bloated Other from older imports
-      if (!state.budget._fullRecatV6) {
+      // Always reclassify once on this build — income, Other, and split fixed bills
+      if (!state.budget._fullRecatV7) {
         reclassifyAllBudgetTransactions(true);
       } else if (!state.budget._otherRecatV2) {
         state.budget._otherRecatV2 = true;
@@ -23733,6 +23806,9 @@
     function renderTasks() {
       if (typeof clearExpiredPullToTodayFlags === 'function') {
         try { clearExpiredPullToTodayFlags(); } catch (_) { /* ignore */ }
+      }
+      if (typeof repairDailyRhythmOneOffHabits === 'function') {
+        try { repairDailyRhythmOneOffHabits(); } catch (_) { /* ignore */ }
       }
       if (typeof ensureBudgetReviewTask === 'function') {
         try { ensureBudgetReviewTask(); } catch (_) { /* ignore */ }
