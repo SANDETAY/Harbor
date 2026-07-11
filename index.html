@@ -10429,7 +10429,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 289;
+    const HARBOR_BUILD_NUMBER = 290;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20744,9 +20744,10 @@
       { id: 'income', label: 'Income', color: '#3D9A6A', pie: true, income: true }
     ];
 
-    // Primary budget lenses — every CSV row lands in exactly one (see getBudgetBucket)
-    // Order: Income → Spending → Bills → Subscriptions → Savings → Expenses
+    // Primary lenses: Overview = full money-out pie for the month range.
+    // Fine-tune filters narrow that picture (Income → Spending → Bills → …).
     const BUDGET_KIND_OPTIONS = [
+      { id: 'overview', label: 'Full picture', short: 'Full picture', hint: 'All money out this period — every category on the pie', totalLabel: 'Total money out' },
       { id: 'income', label: 'Income', short: 'Income', hint: 'Paychecks, deposits & money in', totalLabel: 'Total income' },
       { id: 'spending', label: 'Spending', short: 'Spending', hint: 'Groceries, dining, shopping, gas, everyday purchases', totalLabel: 'Total spending' },
       { id: 'bills', label: 'Bills', short: 'Bills', hint: 'Mortgage, rent, electric, water, phone, internet, insurance, car…', totalLabel: 'Total bills' },
@@ -20823,7 +20824,7 @@
 
     let budgetCategoryFilter = null;
     let budgetMonthRange = 'current'; // current | last | all
-    let budgetKindFilter = 'spending'; // income | spending | bills | subscriptions | savings | expenses
+    let budgetKindFilter = 'overview'; // overview | income | spending | bills | subscriptions | savings | expenses
 
     function ensureBudgetState() {
       if (!state.budget || typeof state.budget !== 'object') {
@@ -21526,13 +21527,13 @@
       return txs;
     }
 
-    /** Month + primary bucket filter for pie + list */
+    /** Month range + optional fine-tune lens for pie + list */
     function getBudgetViewTransactions(range, kind) {
-      const k = kind || budgetKindFilter || 'spending';
+      const k = kind || budgetKindFilter || 'overview';
       let txs = getBudgetTransactionsInMonth(range);
       // Normalize legacy lens ids from older builds
       const legacy = {
-        out: 'spending',
+        out: 'overview',
         wants: 'spending',
         purchases: 'spending',
         moves: 'expenses',
@@ -21540,12 +21541,16 @@
         cards: 'expenses'
       };
       const bucket = legacy[k] || k;
+      // Full picture: everything leaving the account (all money-out categories on the pie)
+      if (bucket === 'overview' || bucket === 'all' || bucket === 'full') {
+        return txs.filter(t => !detectBudgetIsCredit(t) && getBudgetBucket(t) !== 'income');
+      }
       return txs.filter(t => getBudgetBucket(t) === bucket);
     }
 
     // Back-compat alias
     function getBudgetSpendTransactions(range) {
-      return getBudgetViewTransactions(range, 'spending');
+      return getBudgetViewTransactions(range, 'overview');
     }
 
     function normalizeBudgetMerchant(description) {
@@ -21935,7 +21940,7 @@
       };
       budgetCategoryFilter = null;
       budgetMonthRange = 'current';
-      budgetKindFilter = 'spending';
+      budgetKindFilter = 'overview';
       saveState();
       renderBudget();
       showToast('Budget cleared · category memory kept');
@@ -21957,13 +21962,15 @@
     function setBudgetMonthRange(range) {
       if (!['current', 'last', 'all'].includes(range)) range = 'current';
       budgetMonthRange = range;
+      // Month chips always show the full money-out picture; fine-tune is optional
+      budgetKindFilter = 'overview';
       budgetCategoryFilter = null;
       renderBudget();
     }
 
     function setBudgetKindFilter(kind) {
       const ok = BUDGET_KIND_OPTIONS.some(k => k.id === kind);
-      budgetKindFilter = ok ? kind : 'spending';
+      budgetKindFilter = ok ? kind : 'overview';
       budgetCategoryFilter = null;
       closeBudgetLensMenu();
       renderBudget();
@@ -22083,7 +22090,7 @@
         if (ok) {
           budgetCategoryFilter = null;
           budgetMonthRange = 'current';
-          budgetKindFilter = 'spending';
+          budgetKindFilter = 'overview';
           renderBudget();
           const remembered = typeof result === 'object' ? (result.remembered || 0) : 0;
           const mem = remembered > 0
@@ -22261,11 +22268,11 @@
       });
       // Migrate legacy kind ids from older sessions
       const kindLegacyMap = {
-        out: 'spending', wants: 'spending', purchases: 'spending',
+        out: 'overview', wants: 'spending', purchases: 'spending',
         moves: 'expenses', transfers: 'expenses', cards: 'expenses'
       };
       if (kindLegacyMap[budgetKindFilter]) budgetKindFilter = kindLegacyMap[budgetKindFilter];
-      if (!BUDGET_KIND_OPTIONS.some(k => k.id === budgetKindFilter)) budgetKindFilter = 'spending';
+      if (!BUDGET_KIND_OPTIONS.some(k => k.id === budgetKindFilter)) budgetKindFilter = 'overview';
       const kindOpt = getBudgetKindOption(budgetKindFilter);
       const lensLabel = document.getElementById('budget-lens-label');
       if (lensLabel) lensLabel.textContent = kindOpt.short || kindOpt.label;
@@ -22287,15 +22294,19 @@
           cat = (t.category === 'transfers' || t.category === 'savings') ? t.category : 'income';
         } else if (budgetKindFilter === 'subscriptions' && (t.category === 'entertainment' || !t.category)) {
           if (isBudgetSubscriptionTransaction(t)) cat = 'subscriptions';
-        } else if (budgetKindFilter === 'bills' && cat === 'housing') {
+        } else if ((budgetKindFilter === 'bills' || budgetKindFilter === 'overview') && cat === 'housing') {
           cat = 'mortgage'; // legacy → show under Mortgage when possible
         }
         totals[cat] = (totals[cat] || 0) + (Number(t.amount) || 0);
       });
 
-      // Pie categories for this lens (only slices that exist in data will show)
+      // Pie: full picture = every money-out category; fine-tune lenses narrow slices
       const pieCats = BUDGET_CATEGORIES.filter(c => {
         if (c.pie === false) return false;
+        if (budgetKindFilter === 'overview') {
+          // Full money-out pie — all categories except income
+          return c.id !== 'income';
+        }
         if (budgetKindFilter === 'income') {
           return c.id === 'income' || c.id === 'transfers' || c.id === 'savings';
         }
@@ -22311,25 +22322,30 @@
         if (budgetKindFilter === 'expenses') {
           return ['credit_cards', 'transfers', 'fees', 'cash', 'loans', 'other', 'charity'].includes(c.id);
         }
-        return true;
+        return c.id !== 'income';
       });
       const grand = pieCats.reduce((s, c) => s + (totals[c.id] || 0), 0)
         || txs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
-      if (totalLabelEl) totalLabelEl.textContent = kindOpt.totalLabel;
+      if (totalLabelEl) {
+        totalLabelEl.textContent = budgetKindFilter === 'overview'
+          ? (bounds ? `Money out · ${bounds.label}` : 'Total money out')
+          : kindOpt.totalLabel;
+      }
       if (totalEl) totalEl.textContent = formatBudgetMoney(grand);
       if (countEl) {
         if (!txs.length) {
-          // Helpful hint when month filter hides income that exists in other months
-          let hint = `No ${kindOpt.label.toLowerCase()} in this period`;
-          if (['income', 'spending', 'bills', 'subscriptions', 'savings', 'expenses'].includes(budgetKindFilter)) {
+          let hint = budgetKindFilter === 'overview'
+            ? 'No money out in this period'
+            : `No ${kindOpt.label.toLowerCase()} in this period`;
+          if (budgetKindFilter !== 'overview') {
             const allKind = getBudgetViewTransactions('all', budgetKindFilter);
-            if (allKind.length) {
-              hint += ` · ${allKind.length} in All`;
-            }
+            if (allKind.length) hint += ` · ${allKind.length} in All`;
           }
           countEl.textContent = hint;
+        } else if (budgetKindFilter === 'overview') {
+          countEl.textContent = `${txs.length} transaction${txs.length === 1 ? '' : 's'} · full picture · by posting date`;
         } else {
-          countEl.textContent = `${txs.length} transaction${txs.length === 1 ? '' : 's'} · by posting date`;
+          countEl.textContent = `${txs.length} transaction${txs.length === 1 ? '' : 's'} · ${kindOpt.short || kindOpt.label} · by posting date`;
         }
       }
 
@@ -22371,8 +22387,8 @@
 
       // Habit insights — purchases only (skip pure money-moves / income)
       if (insightsEl) {
-        // Insights for everyday spending (wants that compound)
-        const insightSource = (budgetKindFilter === 'spending' || budgetKindFilter === 'out' || budgetKindFilter === 'wants')
+        // Insights on full picture or everyday spending (wants that compound)
+        const insightSource = (budgetKindFilter === 'overview' || budgetKindFilter === 'spending' || budgetKindFilter === 'out' || budgetKindFilter === 'wants')
           ? txs
           : [];
         const insights = getBudgetMerchantInsights(insightSource, 6);
