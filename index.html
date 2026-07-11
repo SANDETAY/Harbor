@@ -5993,94 +5993,116 @@
       margin-top: 0.1rem;
     }
 
-    .summary-life-blurb {
+    /* Harbor Pulse — Overview companion to Schedule */
+    .summary-pulse-blurb {
       font-size: 0.6rem;
       color: rgb(var(--harbor-muted));
       line-height: 1.35;
-      margin: -0.2rem 0 0.55rem;
+      margin: -0.15rem 0 0.5rem;
     }
-
-    .summary-life-section {
-      padding: 0.45rem 0;
-      border-top: 1px solid rgb(var(--harbor-border) / 0.75);
-    }
-
-    .summary-life-section:first-of-type {
-      border-top: none;
-      padding-top: 0;
-    }
-
-    .summary-life-section:last-of-type {
-      padding-bottom: 0.1rem;
-    }
-
-    .summary-life-row {
+    .summary-pulse-row {
       display: flex;
       align-items: flex-start;
       gap: 0.55rem;
+      padding: 0.45rem 0;
+      border-top: 1px solid rgb(var(--harbor-border) / 0.7);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      border-radius: 0.35rem;
     }
-
-    .summary-life-icon {
-      width: 1.75rem;
-      height: 1.75rem;
-      border-radius: 0.5rem;
+    .summary-pulse-row:first-of-type {
+      border-top: none;
+      padding-top: 0.1rem;
+    }
+    .summary-pulse-row:active {
+      background: rgba(47, 155, 140, 0.06);
+    }
+    .summary-pulse-icon {
+      width: 1.7rem;
+      height: 1.7rem;
+      border-radius: 0.55rem;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      font-size: 0.68rem;
+      font-size: 0.7rem;
       margin-top: 0.05rem;
+      background: rgba(47, 155, 140, 0.12);
+      color: rgb(var(--harbor-primary-light));
     }
-
-    .summary-life-icon.is-bill {
+    .summary-pulse-icon.is-alert {
       background: rgba(212, 168, 48, 0.16);
       color: #a67c12;
     }
-
-    .summary-life-icon.is-cart {
-      background: rgba(14, 116, 144, 0.1);
-      color: #0e7490;
+    .summary-pulse-icon.is-hot {
+      background: rgba(190, 80, 70, 0.14);
+      color: #b45309;
     }
-
-    .summary-life-icon.is-sub {
-      background: rgba(124, 58, 237, 0.1);
-      color: #7c3aed;
-    }
-
-    .summary-life-main {
+    .summary-pulse-main {
       min-width: 0;
       flex: 1;
     }
-
-    .summary-life-label {
-      font-size: 0.62rem;
+    .summary-pulse-label {
+      font-size: 0.6rem;
       font-weight: 750;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: rgb(var(--harbor-muted));
-      margin-bottom: 0.12rem;
+      margin-bottom: 0.1rem;
     }
-
-    .summary-life-title {
-      font-size: 0.78rem;
+    .summary-pulse-title {
+      font-size: 0.8rem;
       font-weight: 600;
       color: rgb(var(--harbor-text));
       line-height: 1.25;
     }
-
-    .summary-life-meta {
+    .summary-pulse-meta {
       font-size: 0.6rem;
       color: rgb(var(--harbor-muted));
       margin-top: 0.12rem;
       line-height: 1.35;
     }
-
-    .summary-life-meta-line {
-      white-space: nowrap;
+    .summary-pulse-track {
+      height: 0.35rem;
+      border-radius: 999px;
+      background: rgb(var(--harbor-border) / 0.55);
       overflow: hidden;
-      text-overflow: ellipsis;
+      margin-top: 0.35rem;
     }
-
+    .summary-pulse-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #3CB5A6, #2F9B8C);
+      min-width: 0;
+      transition: width 0.35s var(--harbor-ease-out);
+    }
+    .summary-pulse-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.55rem;
+    }
+    .summary-pulse-chip {
+      appearance: none;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-surface));
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.62rem;
+      font-weight: 650;
+      padding: 0.28rem 0.55rem;
+      border-radius: 999px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .summary-pulse-chip:active {
+      background: rgba(47, 155, 140, 0.1);
+    }
+    html[data-theme="dark"] .summary-pulse-icon.is-alert {
+      color: #e0b84a;
+    }
+    html[data-theme="dark"] .summary-pulse-icon.is-hot {
+      color: #f0a070;
+    }
     .summary-life-meta-line + .summary-life-meta-line {
       margin-top: 0.06rem;
     }
@@ -6158,14 +6180,6 @@
       border-color: rgba(251, 191, 36, 0.4);
       color: #fbbf24;
       background: rgba(251, 191, 36, 0.1);
-    }
-    html[data-theme="dark"] .summary-life-icon.is-bill {
-      background: rgba(251, 191, 36, 0.12);
-      color: #fbbf24;
-    }
-    html[data-theme="dark"] .summary-life-icon.is-cart {
-      background: rgba(56, 189, 248, 0.12);
-      color: #7dd3fc;
     }
     html[data-theme="dark"] .summary-stat.is-urgent {
       color: #fbbf24;
@@ -9453,7 +9467,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 245;
+    const HARBOR_BUILD_NUMBER = 246;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -21942,107 +21956,130 @@
     }
 
     /**
-     * Household panel — intentional Life-tab admin only (bills, grocery, subscriptions).
-     * Tasks and chores live in Focus / When You Can / the Tasks KPI, not here.
+     * Harbor Pulse — Overview companion to Schedule.
+     * Free time + Harbor Day progress + only urgent life alerts (not a Life dump).
      */
-    function renderBriefLifePanel(brief) {
-      const bills = brief.bills || [];
-      const groceryN = brief.groceryTotal || 0;
-      const groceryNames = (brief.grocery || []).slice(0, 4).map(g => g.name).filter(Boolean);
-      const subs = (state.subscriptions || []).filter(s => s.active !== false);
-      const subCount = subs.length;
-      const subsMonthly = typeof getSubscriptionsMonthlyTotal === 'function' ? getSubscriptionsMonthlyTotal() : 0;
-      const sections = [];
+    function renderBriefPulsePanel(brief) {
+      const mode = brief.mode || 'day';
+      const ctx = brief.ctx || (typeof getContext === 'function' ? getContext() : {});
+      const freeMin = Math.max(0, Number(ctx.bestGap?.minutes || ctx.freeTime || 0));
+      const freeTitle = freeMin >= 20
+        ? (typeof formatFreeTimeHours === 'function' ? formatFreeTimeHours(freeMin) : `${freeMin} min`)
+        : (mode === 'day' ? 'Little open water' : 'Scan the schedule');
+      const freeMeta = freeMin >= 20
+        ? (ctx.bestGap?.beforeEvent
+          ? `before ${escapeBriefHtml(String(ctx.bestGap.beforeEvent))}`
+          : (mode === 'day' ? 'good window for a light task' : 'look for gaps between events'))
+        : (mode === 'day' ? 'calendar is packed — keep Today light' : 'open Life → Schedule for free blocks');
 
-      if (bills.length) {
-        const urgentN = bills.filter(b => {
-          const st = getBillStatus(b);
-          return st === 'overdue' || st === 'due_today';
-        }).length;
-        const billLines = bills.slice(0, 2).map(b => {
-          const st = getBillStatus(b);
-          const urgent = st === 'overdue' || st === 'due_today';
-          const days = getDaysUntilBillDue(b);
-          const when = urgent ? (st === 'overdue' ? 'overdue' : 'due today') : `in ${days}d`;
-          const auto = b.autopay ? ' · autopay' : '';
-          return `${b.name}${b.amount != null ? ` ${formatBillAmount(b.amount)}` : ''} · ${when}${auto}`;
+      const rows = [];
+      rows.push(`
+        <div class="summary-pulse-row" role="button" tabindex="0"
+          onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('schedule')">
+          <div class="summary-pulse-icon" aria-hidden="true"><i class="fa-solid fa-water"></i></div>
+          <div class="summary-pulse-main">
+            <div class="summary-pulse-label">Open water</div>
+            <div class="summary-pulse-title">${escapeBriefHtml(freeTitle)}</div>
+            <div class="summary-pulse-meta">${freeMeta}</div>
+          </div>
+        </div>`);
+
+      // Harbor Day meter — always useful if the fund is on
+      if (typeof isCheatDayFundEnabled === 'function' && isCheatDayFundEnabled()) {
+        const bank = typeof ensureRewardBank === 'function' ? ensureRewardBank() : null;
+        if (bank) {
+          const cost = typeof getCheatDayCost === 'function' ? getCheatDayCost() : 500;
+          const pct = Math.min(100, Math.round((Number(bank.points || 0) / Math.max(1, cost)) * 100));
+          const goal = bank.goalTreat;
+          const goalLabel = goal
+            ? `${goal.emoji || '⚓'} ${goal.label || 'your treat'}`
+            : 'Pick a treat on Streaks';
+          const active = typeof isCheatDayActive === 'function' && isCheatDayActive();
+          rows.push(`
+            <div class="summary-pulse-row" role="button" tabindex="0"
+              onclick="closeSummaryModal(); switchTab('streaks')">
+              <div class="summary-pulse-icon" aria-hidden="true"><i class="fa-solid fa-anchor"></i></div>
+              <div class="summary-pulse-main">
+                <div class="summary-pulse-label">Harbor Day</div>
+                <div class="summary-pulse-title">${active ? 'Rest is active today' : escapeBriefHtml(goalLabel)}</div>
+                <div class="summary-pulse-meta">${bank.points || 0} / ${cost} pts · finish Today items to fill</div>
+                <div class="summary-pulse-track" aria-hidden="true">
+                  <div class="summary-pulse-fill" style="width:${pct}%"></div>
+                </div>
+              </div>
+            </div>`);
+        }
+      }
+
+      // Only urgent money — not a full bills dump (KPIs already cover counts)
+      const urgentBills = (brief.bills || []).filter(b => {
+        const st = getBillStatus(b);
+        return st === 'overdue' || st === 'due_today';
+      }).slice(0, 2);
+      urgentBills.forEach(b => {
+        const st = getBillStatus(b);
+        const when = st === 'overdue' ? 'Overdue' : 'Due today';
+        const amt = b.amount != null ? ` · ${formatBillAmount(b.amount)}` : '';
+        rows.push(`
+          <div class="summary-pulse-row" role="button" tabindex="0"
+            onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('bills')">
+            <div class="summary-pulse-icon is-hot" aria-hidden="true"><i class="fa-solid fa-receipt"></i></div>
+            <div class="summary-pulse-main">
+              <div class="summary-pulse-label">Bill</div>
+              <div class="summary-pulse-title">${escapeBriefHtml(b.name)}</div>
+              <div class="summary-pulse-meta">${when}${amt}</div>
+            </div>
+          </div>`);
+      });
+
+      // Sub renewing within 3 days
+      try {
+        const soonSub = (state.subscriptions || []).filter(s => s.active !== false).find(s => {
+          if (typeof getSubscriptionRenewalDate !== 'function') return false;
+          const d = getSubscriptionRenewalDate(s);
+          if (!d) return false;
+          const days = Math.round((d - new Date(todayStr() + 'T12:00:00')) / 86400000);
+          return days >= 0 && days <= 3;
         });
-        const moreBills = bills.length > 2 ? bills.length - 2 : 0;
-        const headline = urgentN > 0
-          ? (urgentN === 1 ? '1 bill needs attention' : `${urgentN} bills need attention`)
-          : (bills.length === 1 ? '1 upcoming' : `${bills.length} upcoming`);
-        sections.push(`
-          <div class="summary-life-section">
-            <div class="summary-life-row">
-              <div class="summary-life-icon is-bill"><i class="fa-solid fa-receipt"></i></div>
-              <div class="summary-life-main">
-                <div class="summary-life-label">Bills</div>
-                <div class="summary-life-title">${escapeBriefHtml(headline)}</div>
-                <div class="summary-life-meta">
-                  ${billLines.map(line => `<div class="summary-life-meta-line">${escapeBriefHtml(line)}</div>`).join('')}
-                  ${moreBills ? `<div class="summary-life-meta-line">+${moreBills} more on Bills</div>` : ''}
-                </div>
+        if (soonSub) {
+          const d = getSubscriptionRenewalDate(soonSub);
+          const days = Math.round((d - new Date(todayStr() + 'T12:00:00')) / 86400000);
+          const when = days === 0 ? 'renews today' : days === 1 ? 'renews tomorrow' : `renews in ${days}d`;
+          rows.push(`
+            <div class="summary-pulse-row" role="button" tabindex="0"
+              onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('subscriptions')">
+              <div class="summary-pulse-icon is-alert" aria-hidden="true"><i class="fa-solid fa-arrows-rotate"></i></div>
+              <div class="summary-pulse-main">
+                <div class="summary-pulse-label">Subscription</div>
+                <div class="summary-pulse-title">${escapeBriefHtml(soonSub.name || soonSub.service || 'Subscription')}</div>
+                <div class="summary-pulse-meta">${when}</div>
               </div>
-            </div>
-          </div>`);
-      }
+            </div>`);
+        }
+      } catch (_) { /* optional */ }
 
+      const groceryN = brief.groceryTotal || 0;
+      const chips = [];
       if (groceryN > 0) {
-        const preview = groceryNames.join(', ');
-        sections.push(`
-          <div class="summary-life-section">
-            <div class="summary-life-row">
-              <div class="summary-life-icon is-cart"><i class="fa-solid fa-cart-shopping"></i></div>
-              <div class="summary-life-main">
-                <div class="summary-life-label">Grocery</div>
-                <div class="summary-life-title">${groceryN} item${groceryN === 1 ? '' : 's'} on your list</div>
-                <div class="summary-life-meta">
-                  <div class="summary-life-meta-line">${escapeBriefHtml(preview || 'Open Grocery to review')}</div>
-                </div>
-              </div>
-            </div>
-          </div>`);
+        chips.push(`<button type="button" class="summary-pulse-chip" onclick="event.stopPropagation(); closeSummaryModal(); switchTab('life'); switchLifePanel('grocery')">🛒 ${groceryN} grocery</button>`);
       }
-
-      if (subCount > 0) {
-        const monthlyLabel = subsMonthly > 0
-          ? `${formatSubscriptionAmount(subsMonthly)}/mo`
-          : `${subCount} active`;
-        const sample = subs.slice(0, 3).map(s => s.name || s.service || 'Subscription').filter(Boolean);
-        sections.push(`
-          <div class="summary-life-section">
-            <div class="summary-life-row">
-              <div class="summary-life-icon is-sub"><i class="fa-solid fa-arrows-rotate"></i></div>
-              <div class="summary-life-main">
-                <div class="summary-life-label">Subscriptions</div>
-                <div class="summary-life-title">${escapeBriefHtml(monthlyLabel)}${subsMonthly > 0 ? ` · ${subCount} active` : ''}</div>
-                <div class="summary-life-meta">
-                  <div class="summary-life-meta-line">${escapeBriefHtml(sample.join(', ') || 'Tracked renewals')}</div>
-                </div>
-              </div>
-            </div>
-          </div>`);
-      }
-
-      const count = bills.length + (groceryN > 0 ? 1 : 0) + (subCount > 0 ? 1 : 0);
-      const body = sections.length
-        ? sections.join('')
-        : `<div class="summary-empty">No bills, grocery items, or subscriptions need a look right now.</div>`;
+      chips.push(`<button type="button" class="summary-pulse-chip" onclick="event.stopPropagation(); closeSummaryModal(); switchTab('life'); switchLifePanel('bills')">Bills</button>`);
+      chips.push(`<button type="button" class="summary-pulse-chip" onclick="event.stopPropagation(); closeSummaryModal(); switchTab('streaks')">Streaks</button>`);
 
       return `
-        <div class="summary-panel" aria-label="Household — bills, grocery, and subscriptions">
+        <div class="summary-panel" aria-label="Harbor Pulse — free time, rest fund, and urgent alerts">
           <div class="summary-panel-hdr">
-            <div class="summary-panel-title"><i class="fa-solid fa-house text-amber-300"></i> Household</div>
-            ${count ? `<span class="summary-panel-count">${count}</span>` : ''}
+            <div class="summary-panel-title"><i class="fa-solid fa-water text-sky-400"></i> Harbor Pulse</div>
           </div>
-          <div class="summary-life-blurb">Money and lists from the Life tab — not your day-to-day tasks.</div>
-          ${body}
-          <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1">
-            <div class="summary-jump" onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('bills')">Bills</div>
-            <div class="summary-jump" onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('grocery')">Grocery</div>
-            <div class="summary-jump" onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('subscriptions')">Subs</div>
-          </div>
+          <div class="summary-pulse-blurb">The state of your harbor — not a second Life tab.</div>
+          ${rows.join('')}
+          <div class="summary-pulse-chips">${chips.join('')}</div>
         </div>`;
+    }
+
+    // Back-compat alias if anything still calls the old name
+    function renderBriefLifePanel(brief) {
+      return renderBriefPulsePanel(brief);
     }
 
     function renderSummaryModalContent(brief) {
@@ -22104,7 +22141,7 @@
 
         <div class="summary-panels">
           ${renderBriefSchedulePanel(brief)}
-          ${renderBriefLifePanel(brief)}
+          ${renderBriefPulsePanel(brief)}
         </div>
 
         ${shortTip ? `<div class="summary-footnote">${escapeBriefHtml(shortTip)}</div>` : ''}
