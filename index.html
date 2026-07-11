@@ -11,7 +11,6 @@
   <meta name="theme-color" content="#D6E8E2" id="meta-theme-color">
   <script>
     // Apply saved theme before paint to avoid flash
-    // harbor = soft mint day (default) · dark = coastal night
     (function () {
       try {
         var raw = localStorage.getItem('harbor_state_v1');
@@ -19,15 +18,19 @@
         var parsed = JSON.parse(raw);
         var s = parsed && parsed.settings ? parsed.settings : {};
         var t = s.theme;
-        // mono/light legacy → dark / harbor. Only harbor + dark remain.
+        var allowed = { harbor:1, dark:1, lilac:1, blush:1, wood:1, lagoon:1 };
         if (t === 'mono') t = 'dark';
         else if (t === 'light') t = 'harbor';
-        else if (t !== 'dark' && t !== 'harbor') t = 'harbor';
+        else if (!allowed[t]) t = 'harbor';
         document.documentElement.setAttribute('data-theme', t);
         document.documentElement.style.colorScheme = t === 'dark' ? 'dark' : 'light';
         var meta = document.querySelector('meta[name="theme-color"]');
         if (meta) {
-          meta.setAttribute('content', t === 'dark' ? '#0A1614' : '#D6E8E2');
+          var metaMap = {
+            harbor: '#D6E8E2', dark: '#0A1614', lilac: '#E8E4F0',
+            blush: '#F8E4E8', wood: '#E8DED0', lagoon: '#DCEAF2'
+          };
+          meta.setAttribute('content', metaMap[t] || metaMap.harbor);
         }
       } catch (e) { /* ignore */ }
     })();
@@ -83,21 +86,29 @@
        Deep teal actions in both. Dark is optional coastal night.
        ═══════════════════════════════════════════════════════════ */
     :root, html[data-theme="harbor"] {
-      /* Splash-inspired mint surfaces — never sterile white */
-      --harbor-bg: 214 232 226;           /* #D6E8E2 deeper mint wash */
-      --harbor-surface: 236 245 241;      /* #ECF5F1 soft mint card */
-      --harbor-raised: 224 237 232;       /* #E0EDE8 lifted row */
-      --harbor-border: 186 210 202;       /* #BAD2CA green-gray edge */
-      --harbor-primary: 47 155 140;       /* #2F9B8C brand teal */
-      --harbor-primary-light: 28 112 102; /* #1C7066 deep teal text */
-      --harbor-accent: 176 138 72;        /* warm stone (rare) */
-      --harbor-text: 18 40 37;            /* #122825 deep ink */
-      --harbor-muted: 86 110 104;         /* #566E68 */
+      /* Harbor Mint — splash-inspired seafoam */
+      --harbor-bg: 214 232 226;
+      --harbor-surface: 236 245 241;
+      --harbor-raised: 224 237 232;
+      --harbor-border: 186 210 202;
+      --harbor-primary: 47 155 140;
+      --harbor-primary-light: 28 112 102;
+      --harbor-accent: 176 138 72;
+      --harbor-text: 18 40 37;
+      --harbor-muted: 86 110 104;
       --harbor-low: 196 110 86;
       --harbor-med: 184 148 48;
       --harbor-high: 47 155 140;
-      --harbor-dawn: 200 224 216;         /* #C8E0D8 */
-      --harbor-mint: 200 220 212;         /* #C8DCD4 splash-ish mid */
+      --harbor-dawn: 200 224 216;
+      --harbor-mint: 200 220 212;
+      --harbor-body-solid: #D6E8E2;
+      --harbor-body-g1: #C5DCD4;
+      --harbor-body-g2: #D6E8E2;
+      --harbor-body-g3: #E0EDE8;
+      --harbor-body-g4: #E8F2EE;
+      --harbor-dock-g1: #F7FBF9;
+      --harbor-dock-g2: #ECF5F1;
+      --harbor-dock-g3: #E2EFE9;
 
       /* Motion */
       --harbor-ease-out: cubic-bezier(0.32, 0.72, 0, 1);
@@ -106,7 +117,6 @@
       --harbor-duration: 0.28s;
       --harbor-duration-slow: 0.4s;
 
-      /* Soft elevation — mint, not paper */
       --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.55) inset, 0 2px 10px rgba(18, 48, 44, 0.06), 0 8px 22px rgba(18, 48, 44, 0.045);
       --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.65) inset, 0 12px 36px rgba(18, 48, 44, 0.1);
       --harbor-glow-primary: 0 0 0 1px rgba(47, 155, 140, 0.18);
@@ -129,17 +139,17 @@
       color-scheme: light;
     }
 
-    /* ── DARK MODE: coastal night (pairs with mint day) ── */
+    /* ── DARK MODE: coastal night ── */
     html[data-theme="dark"] {
-      --harbor-bg: 8 18 16;               /* #081210 deep lagoon */
-      --harbor-surface: 16 32 29;         /* #10201D teal card */
-      --harbor-raised: 24 42 38;          /* #182A26 lifted row */
-      --harbor-border: 42 68 62;          /* #2A443E seafoam edge */
-      --harbor-primary: 72 178 162;       /* #48B2A2 brand teal */
-      --harbor-primary-light: 154 214 202;/* #9AD6CA soft seafoam text */
-      --harbor-accent: 196 165 116;       /* warm stone */
-      --harbor-text: 232 242 238;         /* #E8F2EE mint ink */
-      --harbor-muted: 132 158 150;        /* #849E96 */
+      --harbor-bg: 8 18 16;
+      --harbor-surface: 16 32 29;
+      --harbor-raised: 24 42 38;
+      --harbor-border: 42 68 62;
+      --harbor-primary: 72 178 162;
+      --harbor-primary-light: 154 214 202;
+      --harbor-accent: 196 165 116;
+      --harbor-text: 232 242 238;
+      --harbor-muted: 132 158 150;
       --harbor-low: 220 140 118;
       --harbor-med: 212 181 106;
       --harbor-high: 72 178 162;
@@ -148,7 +158,135 @@
       --harbor-glow-primary: 0 0 0 1px rgba(72, 178, 162, 0.28);
       --harbor-dawn: 12 28 26;
       --harbor-mint: 28 48 44;
+      --harbor-body-solid: #081210;
+      --harbor-body-g1: #10201D;
+      --harbor-body-g2: #0C1816;
+      --harbor-body-g3: #081210;
+      --harbor-body-g4: #061412;
+      --harbor-dock-g1: #1A322E;
+      --harbor-dock-g2: #12241F;
+      --harbor-dock-g3: #0C1816;
       color-scheme: dark;
+    }
+
+    /* ── Harbor Lilac — soft lavender dusk ── */
+    html[data-theme="lilac"] {
+      --harbor-bg: 232 228 240;
+      --harbor-surface: 246 243 252;
+      --harbor-raised: 238 234 248;
+      --harbor-border: 200 190 220;
+      --harbor-primary: 124 108 180;
+      --harbor-primary-light: 88 72 140;
+      --harbor-accent: 196 150 180;
+      --harbor-text: 40 32 56;
+      --harbor-muted: 110 100 130;
+      --harbor-low: 196 110 86;
+      --harbor-med: 184 148 48;
+      --harbor-high: 124 108 180;
+      --harbor-dawn: 220 214 236;
+      --harbor-mint: 210 204 230;
+      --harbor-body-solid: #E8E4F0;
+      --harbor-body-g1: #DDD6EE;
+      --harbor-body-g2: #E8E4F0;
+      --harbor-body-g3: #F0ECF8;
+      --harbor-body-g4: #F7F5FC;
+      --harbor-dock-g1: #FBFAFE;
+      --harbor-dock-g2: #F6F3FC;
+      --harbor-dock-g3: #EEEAF8;
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 2px 10px rgba(48, 36, 80, 0.07), 0 8px 22px rgba(48, 36, 80, 0.05);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 12px 36px rgba(48, 36, 80, 0.1);
+      --harbor-glow-primary: 0 0 0 1px rgba(124, 108, 180, 0.2);
+      color-scheme: light;
+    }
+
+    /* ── Harbor Blush — pastel pink coastal rose ── */
+    html[data-theme="blush"] {
+      --harbor-bg: 248 228 232;
+      --harbor-surface: 255 246 248;
+      --harbor-raised: 252 236 240;
+      --harbor-border: 230 200 208;
+      --harbor-primary: 212 120 140;
+      --harbor-primary-light: 160 70 95;
+      --harbor-accent: 196 150 100;
+      --harbor-text: 56 32 40;
+      --harbor-muted: 130 100 110;
+      --harbor-low: 196 110 86;
+      --harbor-med: 184 148 48;
+      --harbor-high: 212 120 140;
+      --harbor-dawn: 244 220 226;
+      --harbor-mint: 236 210 216;
+      --harbor-body-solid: #F8E4E8;
+      --harbor-body-g1: #F2D6DC;
+      --harbor-body-g2: #F8E4E8;
+      --harbor-body-g3: #FCEEF1;
+      --harbor-body-g4: #FFF8FA;
+      --harbor-dock-g1: #FFFBFC;
+      --harbor-dock-g2: #FFF6F8;
+      --harbor-dock-g3: #FCEEF1;
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.65) inset, 0 2px 10px rgba(80, 36, 48, 0.06), 0 8px 22px rgba(80, 36, 48, 0.045);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 12px 36px rgba(80, 36, 48, 0.09);
+      --harbor-glow-primary: 0 0 0 1px rgba(212, 120, 140, 0.22);
+      color-scheme: light;
+    }
+
+    /* ── Driftwood — warm sand & walnut ── */
+    html[data-theme="wood"] {
+      --harbor-bg: 232 222 208;
+      --harbor-surface: 245 238 228;
+      --harbor-raised: 236 226 212;
+      --harbor-border: 200 184 160;
+      --harbor-primary: 140 100 64;
+      --harbor-primary-light: 96 68 40;
+      --harbor-accent: 180 130 70;
+      --harbor-text: 48 36 24;
+      --harbor-muted: 120 100 80;
+      --harbor-low: 196 110 86;
+      --harbor-med: 184 148 48;
+      --harbor-high: 140 100 64;
+      --harbor-dawn: 220 208 188;
+      --harbor-mint: 210 196 172;
+      --harbor-body-solid: #E8DED0;
+      --harbor-body-g1: #DDD0BC;
+      --harbor-body-g2: #E8DED0;
+      --harbor-body-g3: #F0E8DC;
+      --harbor-body-g4: #F7F2EA;
+      --harbor-dock-g1: #FCFAF6;
+      --harbor-dock-g2: #F5EEE4;
+      --harbor-dock-g3: #EDE4D6;
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 2px 10px rgba(60, 40, 20, 0.07), 0 8px 22px rgba(60, 40, 20, 0.05);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.55) inset, 0 12px 36px rgba(60, 40, 20, 0.1);
+      --harbor-glow-primary: 0 0 0 1px rgba(140, 100, 64, 0.2);
+      color-scheme: light;
+    }
+
+    /* ── Harbor Lagoon — soft coastal blue (surprise) ── */
+    html[data-theme="lagoon"] {
+      --harbor-bg: 220 234 242;
+      --harbor-surface: 240 248 252;
+      --harbor-raised: 228 240 248;
+      --harbor-border: 180 208 224;
+      --harbor-primary: 56 130 160;
+      --harbor-primary-light: 32 88 112;
+      --harbor-accent: 200 160 100;
+      --harbor-text: 20 40 52;
+      --harbor-muted: 90 120 140;
+      --harbor-low: 196 110 86;
+      --harbor-med: 184 148 48;
+      --harbor-high: 56 130 160;
+      --harbor-dawn: 200 224 236;
+      --harbor-mint: 190 218 232;
+      --harbor-body-solid: #DCEAF2;
+      --harbor-body-g1: #C8DCE8;
+      --harbor-body-g2: #DCEAF2;
+      --harbor-body-g3: #E8F2F8;
+      --harbor-body-g4: #F2F8FC;
+      --harbor-dock-g1: #FAFCFD;
+      --harbor-dock-g2: #F0F8FC;
+      --harbor-dock-g3: #E4F0F8;
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 2px 10px rgba(20, 48, 72, 0.06), 0 8px 22px rgba(20, 48, 72, 0.045);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 12px 36px rgba(20, 48, 72, 0.1);
+      --harbor-glow-primary: 0 0 0 1px rgba(56, 130, 160, 0.2);
+      color-scheme: light;
     }
 
     html[data-theme="dark"] .site-header {
@@ -234,68 +372,113 @@
       color: #FFFFFF;
     }
 
-    /* Harbor mint day controls */
-    html[data-theme="harbor"] .chip-add-btn,
-    html[data-theme="harbor"] .today-add-btn {
-      background: linear-gradient(180deg, #3CB5A6 0%, #2F9B8C 100%);
+    /* Light themes share day controls (tokens drive the hue) */
+    html:not([data-theme="dark"]) .chip-add-btn,
+    html:not([data-theme="dark"]) .today-add-btn {
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #FFFFFF;
       box-shadow:
-        0 2px 12px rgba(47, 155, 140, 0.28),
-        0 0 0 1px rgba(47, 155, 140, 0.12),
+        0 2px 12px rgb(var(--harbor-primary) / 0.28),
+        0 0 0 1px rgb(var(--harbor-primary) / 0.12),
         inset 0 1px 0 rgba(255, 255, 255, 0.35);
     }
 
-    html[data-theme="harbor"] .chip-voice-btn,
-    html[data-theme="harbor"] .today-voice-btn{
+    html:not([data-theme="dark"]) .chip-voice-btn,
+    html:not([data-theme="dark"]) .today-voice-btn{
       background: rgb(var(--harbor-surface));
       border-color: rgb(var(--harbor-border));
       color: rgb(var(--harbor-text));
       box-shadow: var(--harbor-shadow-sm);
     }
 
-    html[data-theme="harbor"] .life-nav-tab.life-panel-active {
+    html:not([data-theme="dark"]) .life-nav-tab.life-panel-active {
       color: #FFFFFF !important;
       font-weight: 750;
       text-shadow: none;
     }
 
-    html[data-theme="harbor"] .main-nav-tab.nav-active {
-      color: #1F7A6E !important;
+    html:not([data-theme="dark"]) .main-nav-tab.nav-active {
+      color: rgb(var(--harbor-primary-light)) !important;
       font-weight: 650;
       text-shadow: none;
       background: transparent !important;
     }
 
-    html[data-theme="harbor"] .life-chip-indicator {
-      background: linear-gradient(180deg, #3CB5A6 0%, #2F9B8C 100%);
-      box-shadow: 0 2px 10px rgba(47, 155, 140, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    html:not([data-theme="dark"]) .life-chip-indicator {
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
+      box-shadow: 0 2px 10px rgb(var(--harbor-primary) / 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35);
     }
 
-    html[data-theme="harbor"] .main-nav-indicator {
-      /* Mobile: indicator hidden; desktop media re-enables */
-    }
-
-    html[data-theme="harbor"] .summary-toggle-btn.is-active {
-      background: linear-gradient(135deg, #3CB5A6 0%, #2F9B8C 100%);
+    html:not([data-theme="dark"]) .summary-toggle-btn.is-active {
+      background: linear-gradient(135deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #FFFFFF;
-      box-shadow: 0 4px 16px rgba(47, 155, 140, 0.24);
+      box-shadow: 0 4px 16px rgb(var(--harbor-primary) / 0.24);
     }
 
-    html[data-theme="harbor"] .swipe-action-edit {
-      background: linear-gradient(180deg, #3CB5A6 0%, #268276 100%);
+    html:not([data-theme="dark"]) .swipe-action-edit {
+      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #FFFFFF;
     }
 
-    html[data-theme="harbor"] body > .fixed.inset-0.modal-overlay-blur,
-    html[data-theme="harbor"] body > .fixed.inset-0[class*="bg-harbor-bg"]{
-      background-color: rgba(18, 40, 37, 0.38) !important;
+    html:not([data-theme="dark"]) body > .fixed.inset-0.modal-overlay-blur,
+    html:not([data-theme="dark"]) body > .fixed.inset-0[class*="bg-harbor-bg"]{
+      background-color: rgb(var(--harbor-text) / 0.38) !important;
     }
 
-    html[data-theme="harbor"] .modal-close-chip {
-      color: rgba(18, 40, 37, 0.7);
+    html:not([data-theme="dark"]) .modal-close-chip {
+      color: rgb(var(--harbor-text) / 0.7);
       background: rgb(var(--harbor-raised));
-      border-color: rgba(47, 155, 140, 0.2);
+      border-color: rgb(var(--harbor-primary) / 0.2);
     }
+
+    /* Color palette picker (Settings) */
+    .theme-palette {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+      padding: 0.15rem 0 0.35rem;
+    }
+    .theme-swatch {
+      appearance: none;
+      -webkit-appearance: none;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.4rem;
+      padding: 0.45rem;
+      border-radius: 0.9rem;
+      border: 1.5px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      cursor: pointer;
+      text-align: left;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+    }
+    .theme-swatch:active { transform: scale(0.97); }
+    .theme-swatch.is-active {
+      border-color: rgb(var(--harbor-primary));
+      box-shadow: 0 0 0 2px rgb(var(--harbor-primary) / 0.22), var(--harbor-shadow-sm);
+    }
+    .theme-swatch-preview {
+      display: block;
+      height: 2.15rem;
+      border-radius: 0.65rem;
+      border: 1px solid rgba(0,0,0,0.06);
+      background-size: 100% 100%;
+    }
+    .theme-swatch-label {
+      font-size: 0.62rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-text));
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+    .theme-swatch-check {
+      display: none;
+      font-size: 0.55rem;
+      color: rgb(var(--harbor-primary-light));
+    }
+    .theme-swatch.is-active .theme-swatch-check { display: inline; }
 
     /* ── Settings switches (explicit CSS so knobs always render) ── */
     .smart-suggestions-toggle,
@@ -420,12 +603,8 @@
     }
 
     html {
-      /* Deeper mint wash — coastal, not blank paper */
-      background-color: #D6E8E2;
+      background-color: var(--harbor-body-solid, #D6E8E2);
       height: -webkit-fill-available;
-    }
-    html[data-theme="dark"] {
-      background-color: #081210;
     }
 
     body {
@@ -433,31 +612,19 @@
       font-size: var(--harbor-text-base);
       line-height: 1.45;
       letter-spacing: -0.011em;
-      /* Soft seafoam day — stays in mint family top-to-bottom */
-      background-color: #D6E8E2 !important;
+      background-color: var(--harbor-body-solid, #D6E8E2) !important;
       background-image: linear-gradient(
         175deg,
-        #C5DCD4 0%,
-        #D6E8E2 26%,
-        #E0EDE8 62%,
-        #E8F2EE 100%
+        var(--harbor-body-g1, #C5DCD4) 0%,
+        var(--harbor-body-g2, #D6E8E2) 26%,
+        var(--harbor-body-g3, #E0EDE8) 62%,
+        var(--harbor-body-g4, #E8F2EE) 100%
       ) !important;
       background-attachment: fixed;
       color: rgb(var(--harbor-text));
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
-    }
-
-    html[data-theme="dark"] body {
-      background-color: #081210 !important;
-      background-image: linear-gradient(
-        175deg,
-        #10201D 0%,
-        #0C1816 40%,
-        #081210 72%,
-        #061412 100%
-      ) !important;
     }
 
     /* Transparent shell so mint wash shows (floating cradle dock paints itself) */
@@ -1103,17 +1270,8 @@
       /* Empty space around the pill must not block taps */
       pointer-events: none;
     }
-    html[data-theme="dark"] .main-nav,
-    html[data-theme="dark"] #main-nav-bar,
-    html[data-theme="harbor"] .main-nav,
-    html[data-theme="harbor"] #main-nav-bar {
-      background: transparent !important;
-      background-image: none !important;
-      box-shadow: none !important;
-      border: none !important;
-    }
 
-    /* Soft mint pill only — this is the visible dock, nothing else */
+    /* Soft pill only — this is the visible dock, nothing else */
     .main-nav-surface {
       position: absolute;
       left: 0;
@@ -1124,12 +1282,12 @@
       pointer-events: none;
       z-index: 0;
       background:
-        linear-gradient(168deg, #F7FBF9 0%, #ECF5F1 48%, #E2EFE9 100%);
-      border: 1px solid rgba(47, 155, 140, 0.18);
+        linear-gradient(168deg, var(--harbor-dock-g1) 0%, var(--harbor-dock-g2) 48%, var(--harbor-dock-g3) 100%);
+      border: 1px solid rgb(var(--harbor-primary) / 0.18);
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.9) inset,
-        0 10px 26px rgba(18, 48, 44, 0.12),
-        0 2px 8px rgba(18, 48, 44, 0.06);
+        0 10px 26px rgb(var(--harbor-text) / 0.1),
+        0 2px 8px rgb(var(--harbor-text) / 0.06);
       /* Bite a circle from the top center so the bar molds around the FAB */
       -webkit-mask-image: radial-gradient(
         circle var(--cradle-r) at 50% 0,
@@ -1144,8 +1302,6 @@
       /* Avoid filter:drop-shadow — it can paint a rectangular envelope behind the pill */
     }
     html[data-theme="dark"] .main-nav-surface {
-      background:
-        linear-gradient(168deg, #1A322E 0%, #12241F 52%, #0C1816 100%);
       border-color: rgba(72, 178, 162, 0.22);
       box-shadow:
         0 1px 0 rgba(154, 214, 202, 0.1) inset,
@@ -4649,12 +4805,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(155deg, #4BC4B4 0%, #2F9B8C 48%, #1F7A6E 100%);
+      background: linear-gradient(155deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary)) 48%, rgb(var(--harbor-primary-light)) 100%);
       border: 2.5px solid rgba(255, 255, 255, 0.72);
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.5) inset,
-        0 10px 24px rgba(30, 90, 82, 0.36),
-        0 3px 8px rgba(18, 48, 44, 0.14);
+        0 10px 24px rgb(var(--harbor-primary) / 0.36),
+        0 3px 8px rgb(var(--harbor-text) / 0.14);
       overflow: hidden;
       transition: box-shadow 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
     }
@@ -9467,7 +9623,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 249;
+    const HARBOR_BUILD_NUMBER = 250;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -10474,19 +10630,19 @@
       if (state.settings.studentPricing === undefined) {
         state.settings.studentPricing = false;
       }
-      // Theme: harbor = mint day (default), dark = coastal night.
-      // Legacy: mono→dark, light→harbor. Only harbor + dark remain.
+      // Theme palettes: harbor, dark, lilac, blush, wood, lagoon
+      // Legacy: mono→dark, light→harbor
       if (!state.settings.themeSchemeV2) {
         const old = state.settings.theme;
         if (old === 'mono') state.settings.theme = 'dark';
         else if (old === 'light') state.settings.theme = 'harbor';
-        else state.settings.theme = 'harbor';
+        else if (!HARBOR_THEME_IDS?.includes?.(old)) state.settings.theme = 'harbor';
         state.settings.themeSchemeV2 = true;
       } else if (state.settings.theme === 'mono') {
         state.settings.theme = 'dark';
       } else if (state.settings.theme === 'light') {
         state.settings.theme = 'harbor';
-      } else if (state.settings.theme !== 'dark' && state.settings.theme !== 'harbor') {
+      } else if (typeof HARBOR_THEME_IDS !== 'undefined' && !HARBOR_THEME_IDS.includes(state.settings.theme)) {
         state.settings.theme = 'harbor';
       }
       if (state.settings.showWelcomeBanner === undefined) {
@@ -22683,7 +22839,7 @@
         overlay.remove();
         return;
       }
-      if (typeof settingsWasOpen !== 'undefined' && overlay.querySelector?.('#dark-mode-toggle, #cheat-fund-toggle, #smart-suggestions-toggle')) {
+      if (typeof settingsWasOpen !== 'undefined' && overlay.querySelector?.('.theme-swatch, #cheat-fund-toggle, #smart-suggestions-toggle')) {
         settingsWasOpen = false;
       }
       if (typeof closeQuickTaskModal === 'function' && overlay.id === 'quick-task-modal') {
@@ -27641,31 +27797,78 @@
       applyAppTheme(state.settings?.theme || 'harbor');
     }
 
+    /** Built-in color palettes (Settings → Color palette) */
+    const HARBOR_THEMES = [
+      {
+        id: 'harbor',
+        label: 'Harbor Mint',
+        hint: 'Soft seafoam day',
+        meta: '#D6E8E2',
+        preview: 'linear-gradient(135deg, #C5DCD4 0%, #2F9B8C 55%, #1C7066 100%)'
+      },
+      {
+        id: 'dark',
+        label: 'Dark Mode',
+        hint: 'Coastal night',
+        meta: '#0A1614',
+        preview: 'linear-gradient(135deg, #10201D 0%, #081210 50%, #48B2A2 100%)'
+      },
+      {
+        id: 'lilac',
+        label: 'Harbor Lilac',
+        hint: 'Lavender dusk',
+        meta: '#E8E4F0',
+        preview: 'linear-gradient(135deg, #DDD6EE 0%, #7C6CB4 55%, #58488C 100%)'
+      },
+      {
+        id: 'blush',
+        label: 'Harbor Blush',
+        hint: 'Pastel pink',
+        meta: '#F8E4E8',
+        preview: 'linear-gradient(135deg, #F2D6DC 0%, #D4788C 55%, #A0465F 100%)'
+      },
+      {
+        id: 'wood',
+        label: 'Driftwood',
+        hint: 'Warm sand & walnut',
+        meta: '#E8DED0',
+        preview: 'linear-gradient(135deg, #DDD0BC 0%, #8C6440 55%, #604428 100%)'
+      },
+      {
+        id: 'lagoon',
+        label: 'Harbor Lagoon',
+        hint: 'Soft coastal blue',
+        meta: '#DCEAF2',
+        preview: 'linear-gradient(135deg, #C8DCE8 0%, #3882A0 55%, #205870 100%)'
+      }
+    ];
+    const HARBOR_THEME_IDS = HARBOR_THEMES.map(t => t.id);
+
     function getAppTheme() {
       const t = state?.settings?.theme;
-      // harbor = mint day (default) · dark = coastal night
-      if (t === 'mono') return 'dark'; // legacy alias
-      if (t === 'light') return 'harbor'; // light toggle removed
-      if (t === 'dark' || t === 'harbor') return t;
+      if (t === 'mono') return 'dark';
+      if (t === 'light') return 'harbor';
+      if (HARBOR_THEME_IDS.includes(t)) return t;
       return 'harbor';
     }
 
     function themeMetaColor(theme) {
-      if (theme === 'dark') return '#0A1614';
-      return '#D6E8E2'; // harbor mint day
+      return HARBOR_THEMES.find(t => t.id === theme)?.meta || '#D6E8E2';
+    }
+
+    function getThemeLabel(theme) {
+      return HARBOR_THEMES.find(t => t.id === theme)?.label || 'Harbor Mint';
     }
 
     function applyAppTheme(theme) {
-      // harbor = mint day (default) · dark = coastal night · light/mono legacy aliases
       let t = theme === 'mono' ? 'dark' : theme === 'light' ? 'harbor' : theme;
-      if (t !== 'dark' && t !== 'harbor') t = 'harbor';
+      if (!HARBOR_THEME_IDS.includes(t)) t = 'harbor';
       if (state?.settings) {
         state.settings.theme = t;
         state.settings.themeSchemeV2 = true;
       }
       document.documentElement.setAttribute('data-theme', t);
       document.documentElement.style.colorScheme = t === 'dark' ? 'dark' : 'light';
-      // Fun theme owns meta color while active
       const funActive = state?.settings?.funThemeUntil && state.settings.funThemeUntil >= todayStr();
       if (!funActive) {
         const metaTheme = document.querySelector('meta[name="theme-color"]');
@@ -29628,9 +29831,15 @@
       
       const smartSuggestionsOn = !state.settings.smartSuggestionsMuted;
       const currentTheme = getAppTheme();
-      const darkModeOn = currentTheme === 'dark';
       const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
       const corsHelperOn = state.settings.calendarAllowCorsHelper === true;
+      const themeSwatches = HARBOR_THEMES.map(th => `
+        <button type="button" role="option" class="theme-swatch${currentTheme === th.id ? ' is-active' : ''}"
+          data-theme-id="${th.id}" aria-selected="${currentTheme === th.id ? 'true' : 'false'}"
+          aria-label="${escapeBriefHtml(th.label)} — ${escapeBriefHtml(th.hint)}">
+          <span class="theme-swatch-preview" style="background:${th.preview}" aria-hidden="true"></span>
+          <span class="theme-swatch-label">${escapeBriefHtml(th.label)} <span class="theme-swatch-check" aria-hidden="true">✓</span></span>
+        </button>`).join('');
       
       modal.innerHTML = `
         <div onclick="settingsWasOpen=false; this.closest('.fixed').remove()" class="absolute inset-0"></div>
@@ -29645,22 +29854,27 @@
           </div>
 
           <div class="settings-sheet-body">
-            <!-- Appearance + features (top switches) -->
+            <!-- Color palette -->
+            <section class="settings-section" aria-labelledby="settings-sec-palette">
+              <div class="settings-section-head">
+                <h3 id="settings-sec-palette" class="settings-section-title">Color palette</h3>
+              </div>
+              <div class="settings-card">
+                <div class="settings-card-block pb-2">
+                  <div class="theme-palette" role="listbox" aria-label="App color theme">
+                    ${themeSwatches}
+                  </div>
+                  <p class="settings-help-text mt-1.5 mb-0">Tap a swatch to preview — saved when you hit Done.</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Features -->
             <section class="settings-section" aria-labelledby="settings-sec-main">
               <div class="settings-section-head">
                 <h3 id="settings-sec-main" class="settings-section-title">Preferences</h3>
               </div>
               <div class="settings-card">
-                <div class="settings-row">
-                  <div class="settings-row-copy">
-                    <div class="settings-row-title">Dark mode</div>
-                    <div class="settings-row-desc">Coastal night. Off = Harbor mint day.</div>
-                  </div>
-                  <button type="button" id="dark-mode-toggle" role="switch" aria-checked="${darkModeOn ? 'true' : 'false'}"
-                    aria-label="Dark mode" class="smart-suggestions-toggle harbor-switch">
-                    <span></span>
-                  </button>
-                </div>
                 <div class="settings-row">
                   <div class="settings-row-copy">
                     <div class="settings-row-title">Smart Suggestions</div>
@@ -29782,14 +29996,22 @@
       
       document.body.appendChild(modal);
 
-      const darkToggle = modal.querySelector('#dark-mode-toggle');
-      wireSwitchToggle(darkToggle, (on) => {
-        applyAppTheme(on ? 'dark' : 'harbor');
-        saveState();
-        showToast(on ? 'Coastal night on' : 'Harbor mint on');
+      // Color palette — live preview on tap
+      modal.querySelectorAll('.theme-swatch').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.themeId;
+          if (!id) return;
+          applyAppTheme(id);
+          modal.querySelectorAll('.theme-swatch').forEach(b => {
+            const on = b.dataset.themeId === id;
+            b.classList.toggle('is-active', on);
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+          });
+          showToast(getThemeLabel(id));
+        });
       });
+
       // Re-assert initial checked state after wiring (ensures knobs paint)
-      setSwitchChecked(darkToggle, darkModeOn);
       setSwitchChecked(modal.querySelector('#smart-suggestions-toggle'), smartSuggestionsOn);
       setSwitchChecked(modal.querySelector('#cheat-fund-toggle'), cheatFundOn);
       setSwitchChecked(modal.querySelector('#calendar-cors-helper-toggle'), corsHelperOn);
@@ -29831,9 +30053,10 @@
       if (corsHelperToggle) {
         state.settings.calendarAllowCorsHelper = corsHelperToggle.getAttribute('aria-checked') === 'true';
       }
-      const darkToggleEl = modal.querySelector('#dark-mode-toggle');
-      const darkOn = darkToggleEl?.getAttribute('aria-checked') === 'true';
-      applyAppTheme(darkOn ? 'dark' : 'harbor');
+      // Theme already applied live from palette; re-assert selected swatch if present
+      const activeSwatch = modal.querySelector('.theme-swatch.is-active');
+      if (activeSwatch?.dataset.themeId) applyAppTheme(activeSwatch.dataset.themeId);
+      else applyAppTheme(getAppTheme());
       saveState();
       settingsWasOpen = false;
       modal.remove();
@@ -29841,10 +30064,11 @@
       renderStreaks();
       updateCalendarStatusUI();
       updateSmartBanner();
+      if (typeof updateHeaderContext === 'function') updateHeaderContext();
       if (reenabledSmartSuggestions) {
         showToast('Smart suggestions turned back on');
       } else {
-        showToast(`Settings saved · ${getCalendarStatusLabel()}`);
+        showToast(`Settings saved · ${getThemeLabel(getAppTheme())}`);
       }
       
       if (currentProjectionHabit) {
