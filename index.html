@@ -2193,7 +2193,7 @@
       opacity: 0.92;
       transform: scale(0.99);
     }
-    /* Inline logger on Habit Pace — match the same calm mint field */
+    /* Inline logger on Tide Journey — match the same calm mint field */
     .proj-metric-panel {
       margin-top: 1rem;
       padding: 0.9rem 0.95rem 0.95rem;
@@ -6773,6 +6773,57 @@
       transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
+    /* Small “i” info chip (Harbor Day, etc.) */
+    .harbor-info-btn {
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.2rem;
+      height: 1.2rem;
+      padding: 0;
+      border-radius: 999px;
+      border: 1px solid rgba(47, 155, 140, 0.28);
+      background: rgba(47, 155, 140, 0.1);
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.68rem;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s ease, transform 0.12s ease;
+    }
+    .harbor-info-btn:active {
+      transform: scale(0.94);
+    }
+    .harbor-info-btn[aria-expanded="true"] {
+      background: rgba(47, 155, 140, 0.2);
+      border-color: rgba(47, 155, 140, 0.4);
+    }
+    .harbor-info-tip {
+      font-size: 0.72rem;
+      line-height: 1.4;
+      color: rgb(var(--harbor-muted));
+      background: rgba(47, 155, 140, 0.08);
+      border: 1px solid rgba(47, 155, 140, 0.16);
+      border-radius: 0.85rem;
+      padding: 0.55rem 0.7rem;
+    }
+    .harbor-info-tip strong {
+      color: rgb(var(--harbor-text));
+      font-weight: 650;
+    }
+    html[data-theme="dark"] .harbor-info-btn {
+      border-color: rgba(72, 178, 162, 0.3);
+      background: rgba(72, 178, 162, 0.12);
+      color: rgb(var(--harbor-primary-light));
+    }
+    html[data-theme="dark"] .harbor-info-tip {
+      background: rgba(72, 178, 162, 0.1);
+      border-color: rgba(72, 178, 162, 0.2);
+    }
+
     /* Harbor Day card — sleek minimal */
     .harbor-day-card {
       position: relative;
@@ -9267,20 +9318,28 @@
         </div>
         <div id="streaks-list" class="streaks-list-root"></div>
 
-        <!-- Habit Pace (was Habit Pace) -->
+        <!-- Tide Journey (habit outlook / projections) -->
         <div class="mt-5" id="habit-outlook-section">
-          <div class="section-header font-semibold text-harbor-text mb-1">Habit Pace</div>
-          <div class="text-[10px] text-harbor-muted mb-2">Tap a fire for pace, pride stats, and logging.</div>
+          <div class="section-header font-semibold text-harbor-text mb-1">Tide Journey</div>
+          <div class="text-[10px] text-harbor-muted mb-2">Tap a fire to chart where consistent effort is taking you.</div>
           <div id="projection-panel"
             class="bg-harbor-surface border border-harbor-border rounded-3xl p-4 text-sm shadow-[var(--harbor-shadow-sm)]">
-            <div id="projection-hint" class="text-harbor-muted text-xs leading-relaxed">Tap a fire above to see where you’re headed.</div>
+            <div id="projection-hint" class="text-harbor-muted text-xs leading-relaxed">Tap a fire above to see where the tide is carrying you.</div>
             <div id="projection-content" class="hidden"></div>
           </div>
         </div>
 
         <!-- Harbor Day — earned rest at the bottom -->
         <div class="mt-5">
-          <div class="section-header font-semibold text-harbor-text text-[0.95rem] mb-2">Earn rest</div>
+          <div class="flex items-center gap-1.5 mb-2">
+            <div class="section-header font-semibold text-harbor-text text-[0.95rem] mb-0">Harbor Day</div>
+            <button type="button" id="harbor-day-info-btn" class="harbor-info-btn" aria-label="What is Harbor Day?" aria-expanded="false" title="What is Harbor Day?">
+              <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div id="harbor-day-info-tip" class="harbor-info-tip hidden mb-2" role="note">
+            Finish <strong>tasks</strong>, <strong>habits</strong>, and <strong>chores</strong> on Today to fill the meter. When it’s full, claim a <strong>Harbor Day</strong> — rest without breaking your streaks.
+          </div>
           <div id="reward-bank-panel"></div>
         </div>
       </div>
@@ -9394,7 +9453,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 244;
+    const HARBOR_BUILD_NUMBER = 245;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -11389,7 +11448,7 @@
     function renderProjectionMetricLogger(habit) {
       const meta = getMetricInputMeta(habit);
       if (!meta) return '';
-      // Hide log UI during Habit Pace tutorial step (keeps the panel readable).
+      // Hide log UI during Tide Journey tutorial step (keeps the panel readable).
       if (state.settings.tutorialActive && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'projections-read') {
         return '';
       }
@@ -20473,7 +20532,10 @@
       if (fullyDone && habit.pullToToday) delete habit.pullToToday;
 
       logMetricOnComplete(habit);
-      const pointsEarned = (typeof isCheatDayFundEnabled === 'function' && isCheatDayFundEnabled())
+      // Award on full completion only — tasks, habits, and chores all contribute
+      const pointsEarned = fullyDone
+        && typeof isCheatDayFundEnabled === 'function'
+        && isCheatDayFundEnabled()
         ? awardRewardPoints(habit)
         : 0;
 
@@ -27340,15 +27402,14 @@
     }
 
     /** Only real due work fills the meter — blocks same-day spam one-offs. */
+    /**
+     * Tasks, habits, and chores all fill the Harbor Day meter.
+     * Note: called after a completion is logged, so do not require isDueToday()
+     * (that becomes false once the item is done for the day).
+     */
     function canEarnHarborPoints(habit) {
       if (!habit) return false;
-      if (typeof isDueToday === 'function' && !isDueToday(habit)) return false;
-      if (habit.is_preset || habit.trackStreak) return true;
-      // Only when we know it was created today (don't invent added_at = today)
-      if (habit.added_at && habit.added_at === todayStr()) {
-        if (typeof isOneOffTask === 'function' && isOneOffTask(habit)) return false;
-        if (!habit.interval_days) return false;
-      }
+      // One-time tasks (interval 0), habits, and chores all count
       return true;
     }
 
@@ -27536,7 +27597,7 @@
         guides.push({ emoji: '🏅', label: 'Soft badge', text: 'Shows on Streaks cards automatically — no action needed.' });
       }
       if (bank.motivationBoostUntil && bank.motivationBoostUntil >= todayStr()) {
-        guides.push({ emoji: '✨', label: 'Calm boost', text: 'Open Streaks → tap a measurable habit → read Habit Pace.' });
+        guides.push({ emoji: '✨', label: 'Calm boost', text: 'Open Streaks → tap a measurable habit → open Tide Journey.' });
       }
       if (bank.skipToken) {
         guides.push({
@@ -27981,9 +28042,24 @@
       showCheatDayRedeemModal();
     }
 
+    function wireHarborDayInfoToggle() {
+      const btn = document.getElementById('harbor-day-info-btn');
+      const tip = document.getElementById('harbor-day-info-tip');
+      if (!btn || !tip || btn.dataset.wired === '1') return;
+      btn.dataset.wired = '1';
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const willShow = tip.classList.contains('hidden');
+        tip.classList.toggle('hidden', !willShow);
+        btn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+      });
+    }
+
     function renderRewardBank() {
       const panel = document.getElementById('reward-bank-panel');
       if (!panel) return;
+      wireHarborDayInfoToggle();
 
       if (!isCheatDayFundEnabled()) {
         panel.innerHTML = `
@@ -28064,7 +28140,7 @@
       panel.innerHTML = `
         <div class="harbor-day-card">
           <div class="flex items-center justify-between gap-2 mb-1">
-            <div class="harbor-day-kicker">Harbor Day</div>
+            <div class="harbor-day-kicker">Earned rest</div>
             <div class="text-right">
               <div class="harbor-day-pts">${bank.points}<span class="text-harbor-muted font-medium">/${cost}</span></div>
               ${lastEarn ? `<div class="text-[9px] text-harbor-primary-light font-semibold">+${lastEarn} just now</div>` : `<div class="text-[9px] text-harbor-muted">${pct}%</div>`}
@@ -28553,7 +28629,7 @@
         `;
 
       row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml, cardClass);
-      // Single tap handler for Habit Pace (works with swipe rows)
+      // Single tap handler for Tide Journey (works with swipe rows)
       const content = row.querySelector('.swipe-row-content');
       if (content && !content.dataset.projectionBound) {
         content.dataset.projectionBound = '1';
@@ -30266,7 +30342,7 @@
       {
         key: 'save',
         title: '$5 in savings every day',
-        blurb: 'Tracks a simple daily metric · opens Habit Pace',
+        blurb: 'Tracks a simple daily metric · opens Tide Journey',
         category: 'personal',
         est_minutes: 2,
         difficulty: 1,
