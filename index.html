@@ -10321,7 +10321,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 278;
+    const HARBOR_BUILD_NUMBER = 279;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -11695,7 +11695,7 @@
       { id: 'microwave-clean', title: 'Deep clean microwave', librarySection: 'Monthly Maintenance', category: 'home', interval_days: 30, est_minutes: 12, difficulty: 1, is_preset: true },
       { id: 'unused-drains', title: 'Run water on unused drains', librarySection: 'Monthly Maintenance', category: 'home', interval_days: 30, est_minutes: 5, difficulty: 1, is_preset: true },
       { id: 'tire-pressure', title: 'Check tire pressure', librarySection: 'Monthly Maintenance', category: 'car', interval_days: 30, est_minutes: 8, difficulty: 1, is_preset: true },
-      { id: 'bills-review', title: 'Review bills & subscriptions', librarySection: 'Monthly Maintenance', category: 'personal', interval_days: 30, est_minutes: 15, difficulty: 1, is_preset: true },
+      // Budget review is auto-added near month-end (sys-budget-review-*) — not a library pick
 
       // Quarterly (~90 days) — seasonMonths: 0=Jan…11=Dec (includes lead-in month)
       { id: 'pre-emergent', title: 'Apply pre-emergent herbicide', librarySection: 'Quarterly', category: 'yard', interval_days: 90, est_minutes: 30, difficulty: 2, is_preset: true, note: 'Early spring before soil hits ~55°F', seasonMonths: [1, 2, 3] },
@@ -15252,6 +15252,11 @@
     }
 
     function editHabitFromToday(habitId) {
+      const habit = (state.habits || []).find(h => h.id === habitId);
+      if (typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit)) {
+        showBudgetReviewTaskSheet(habitId);
+        return;
+      }
       showQuickTaskModal({ mode: 'habit', editHabitId: habitId });
     }
 
@@ -21009,7 +21014,7 @@
       }
       if (!parsed.length) {
         showToast('Could not read transactions — check your CSV format', 'warn');
-        return 0;
+        return { added: 0, ok: false };
       }
       const budget = ensureBudgetState();
       const existingKeys = new Set(
@@ -21037,8 +21042,209 @@
       });
       budget.transactions.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
       budget.importedAt = new Date().toISOString();
+      // Any successful CSV import finishes the monthly budget-review task
+      if (typeof markBudgetReviewCompleteFromImport === 'function') {
+        markBudgetReviewCompleteFromImport({ silent: true });
+      }
       saveState();
-      return added;
+      return { added, ok: true };
+    }
+
+    // ── Monthly budget review task (auto on Today near month-end) ──
+    const BUDGET_REVIEW_ID_PREFIX = 'sys-budget-review-';
+
+    function getBudgetReviewMonthKey(d = new Date()) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      return `${y}-${m}`;
+    }
+
+    function getBudgetReviewTaskId(monthKey) {
+      return BUDGET_REVIEW_ID_PREFIX + (monthKey || getBudgetReviewMonthKey());
+    }
+
+    function isBudgetReviewHabit(habit) {
+      if (!habit) return false;
+      if (habit.is_budget_review) return true;
+      return String(habit.id || '').startsWith(BUDGET_REVIEW_ID_PREFIX);
+    }
+
+    /** Last ~week of the month (from the 25th, or last 6 days if month is short). */
+    function isInBudgetReviewWindow(d = new Date()) {
+      const day = d.getDate();
+      const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      const start = Math.min(25, Math.max(1, last - 5));
+      return day >= start;
+    }
+
+    function ensureBudgetReviewSettings() {
+      if (!state.settings || typeof state.settings !== 'object') state.settings = {};
+      if (!state.settings.budgetReview || typeof state.settings.budgetReview !== 'object') {
+        state.settings.budgetReview = { completedMonth: null, mutedUntil: null };
+      }
+      return state.settings.budgetReview;
+    }
+
+    function shouldShowBudgetReviewTask() {
+      if (!isInBudgetReviewWindow()) return false;
+      const br = ensureBudgetReviewSettings();
+      const monthKey = getBudgetReviewMonthKey();
+      if (br.completedMonth === monthKey) return false;
+      if (br.mutedUntil && String(br.mutedUntil) > todayStr()) return false;
+      return true;
+    }
+
+    function purgeDeprecatedBudgetLibraryTasks() {
+      // Old library preset “Review bills & subscriptions” — replaced by auto budget review
+      const before = (state.habits || []).length;
+      state.habits = (state.habits || []).filter(h => h && h.id !== 'bills-review');
+      if (state.completions && state.completions['bills-review']) delete state.completions['bills-review'];
+      if (state.habitSkips && state.habitSkips['bills-review']) delete state.habitSkips['bills-review'];
+      return before !== (state.habits || []).length;
+    }
+
+    function removeBudgetReviewHabits(opts = {}) {
+      const keepId = opts.keepId || null;
+      state.habits = (state.habits || []).filter(h => {
+        if (!isBudgetReviewHabit(h)) return true;
+        if (keepId && h.id === keepId) return true;
+        return false;
+      });
+    }
+
+    /** Ensure the end-of-month “Review your budget” task is on the list when needed. */
+    function ensureBudgetReviewTask() {
+      let dirty = purgeDeprecatedBudgetLibraryTasks();
+      const monthKey = getBudgetReviewMonthKey();
+      const taskId = getBudgetReviewTaskId(monthKey);
+      const show = shouldShowBudgetReviewTask();
+
+      // Drop stale month tasks
+      const before = (state.habits || []).length;
+      state.habits = (state.habits || []).filter(h => {
+        if (!isBudgetReviewHabit(h)) return true;
+        return show && h.id === taskId;
+      });
+      if ((state.habits || []).length !== before) dirty = true;
+
+      if (!show) {
+        if (dirty) saveState();
+        return dirty;
+      }
+
+      const monthLabel = new Date().toLocaleDateString(undefined, { month: 'long' });
+      let h = (state.habits || []).find(x => x.id === taskId);
+      if (!h) {
+        if (!state.habits) state.habits = [];
+        state.habits.push(stampHabitMeta({
+          id: taskId,
+          title: `Review your budget for ${monthLabel}`,
+          note: 'Open Budget and import your bank CSV to complete',
+          category: 'personal',
+          interval_days: 0,
+          est_minutes: 10,
+          difficulty: 1,
+          is_preset: false,
+          is_budget_review: true,
+          parkOnSummary: false,
+          trackStreak: false
+        }));
+        dirty = true;
+      } else {
+        const nextTitle = `Review your budget for ${monthLabel}`;
+        if (h.title !== nextTitle) { h.title = nextTitle; dirty = true; }
+        h.is_budget_review = true;
+        h.parkOnSummary = false;
+        h.interval_days = 0;
+        h.note = h.note || 'Open Budget and import your bank CSV to complete';
+        if (h.trackStreak !== false) { h.trackStreak = false; dirty = true; }
+      }
+      if (dirty) saveState();
+      return dirty;
+    }
+
+    function muteBudgetReview(days) {
+      const n = Math.max(1, Math.min(14, Number(days) || 3));
+      const br = ensureBudgetReviewSettings();
+      const d = new Date();
+      d.setHours(12, 0, 0, 0);
+      d.setDate(d.getDate() + n);
+      br.mutedUntil = dateStrLocal(d);
+      removeBudgetReviewHabits();
+      saveState();
+      renderTasks();
+      if (typeof updateSmartBanner === 'function') updateSmartBanner();
+      showToast(`Budget review muted for ${n} day${n === 1 ? '' : 's'}`);
+    }
+
+    function markBudgetReviewCompleteFromImport(opts = {}) {
+      const br = ensureBudgetReviewSettings();
+      const monthKey = getBudgetReviewMonthKey();
+      br.completedMonth = monthKey;
+      br.mutedUntil = null;
+      const taskId = getBudgetReviewTaskId(monthKey);
+      if (!state.completions) state.completions = {};
+      if (!state.completions[taskId]) state.completions[taskId] = [];
+      const today = todayStr();
+      if (!state.completions[taskId].includes(today)) state.completions[taskId].push(today);
+      // Remove from active list (completed for this month)
+      removeBudgetReviewHabits();
+      if (!opts.silent) {
+        saveState();
+        renderTasks();
+        showToast('Budget review complete for this month');
+      }
+    }
+
+    function openBudgetFromReviewTask() {
+      if (typeof selectLifeSection === 'function') selectLifeSection('budget');
+      else if (typeof switchTab === 'function') {
+        switchTab('life');
+        if (typeof switchLifePanel === 'function') switchLifePanel('budget');
+      }
+    }
+
+    function showBudgetReviewTaskSheet(habitId) {
+      const habit = (state.habits || []).find(h => h.id === habitId) || { id: habitId };
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[70]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" data-close="1"></div>
+        <div class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm" onclick="event.stopPropagation()">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-base mb-1 flex items-center justify-between gap-2">
+            <span>Budget review</span>
+            <button type="button" class="modal-close-chip" data-close="1" aria-label="Close">Close</button>
+          </div>
+          <div class="text-xs text-harbor-muted mb-3 leading-relaxed">
+            ${escapeBriefHtml(habit.title || 'Review your budget for this month')}.
+            Import a bank CSV in Budget to complete this automatically.
+          </div>
+          <button type="button" data-open="1"
+            class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold mb-2">
+            Open Budget
+          </button>
+          <div class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted mb-1.5 mt-1">Mute for a few days</div>
+          <div class="flex gap-2 mb-1">
+            <button type="button" data-mute="2" class="flex-1 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-[11px] font-semibold text-harbor-text">2 days</button>
+            <button type="button" data-mute="3" class="flex-1 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-[11px] font-semibold text-harbor-text">3 days</button>
+            <button type="button" data-mute="5" class="flex-1 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-[11px] font-semibold text-harbor-text">5 days</button>
+          </div>
+          <p class="text-[10px] text-harbor-muted mt-2 leading-snug">Muted tasks come back after the pause if you’re still in the end-of-month window.</p>
+        </div>`;
+      document.body.appendChild(modal);
+      const close = () => modal.remove();
+      modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
+      modal.querySelector('[data-open]')?.addEventListener('click', () => {
+        close();
+        openBudgetFromReviewTask();
+      });
+      modal.querySelectorAll('[data-mute]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          close();
+          muteBudgetReview(Number(btn.getAttribute('data-mute')));
+        });
+      });
     }
 
     function clearBudgetData() {
@@ -21142,13 +21348,17 @@
           showToast('Upload or paste a CSV first');
           return;
         }
-        const added = importBudgetFromBankCsv(text);
+        const result = importBudgetFromBankCsv(text);
         modal.remove();
-        if (added > 0) {
+        const added = typeof result === 'object' ? (result.added || 0) : (result || 0);
+        const ok = typeof result === 'object' ? !!result.ok : added > 0;
+        if (ok) {
           budgetCategoryFilter = null;
           budgetMonthRange = 'current';
           renderBudget();
-          showToast(`Imported ${added} transaction${added === 1 ? '' : 's'}`);
+          if (added > 0) showToast(`Imported ${added} transaction${added === 1 ? '' : 's'}`);
+          else showToast('CSV read — no new transactions (already imported)');
+          if (typeof renderTasks === 'function') renderTasks();
         }
       };
     }
@@ -22138,7 +22348,9 @@
       if (type === 'habit') {
         if (action === 'edit') {
           if (row.closest('#summary-kpi-detail-modal')) closeSummaryKpiDetail();
-          editHabitFromToday(id);
+          const h = (state.habits || []).find(x => x.id === id);
+          if (typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(h)) showBudgetReviewTaskSheet(id);
+          else editHabitFromToday(id);
         } else if (action === 'delete') {
           deleteHabitFromToday(id, null);
           if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('tasks');
@@ -22491,37 +22703,50 @@
 
       const safeTitle = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(habit.title) : habit.title;
       const safeHabitId = String(habit.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      const isBudgetReview = typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit);
       const hitClick = completed ? '' : `onclick="completeHabit('${safeHabitId}', event)"`;
       const contentHtml = `
         <div ${hitClick} class="${hitClasses}" role="${completed ? 'img' : 'button'}"
-          aria-label="${completed ? `Completed ${safeTitle}` : (isMulti ? `${safeTitle}, ${timesDone} of ${timesNeed} today` : `Complete ${safeTitle}`)}">
-          ${hitInner}
+          aria-label="${completed ? `Completed ${safeTitle}` : (isBudgetReview ? `Open budget review for ${safeTitle}` : (isMulti ? `${safeTitle}, ${timesDone} of ${timesNeed} today` : `Complete ${safeTitle}`))}">
+          ${isBudgetReview && !completed
+            ? `<i class="fa-solid fa-chart-pie text-harbor-primary-light" aria-hidden="true"></i>`
+            : hitInner}
         </div>
         <div class="flex-1 min-w-0 habit-main-tap">
           <div class="font-medium leading-tight habit-title-text${showMuted || completed ? ' text-harbor-muted' : ''}${completed ? ' line-through decoration-harbor-muted/40' : ''}"
             data-habit-title="1"
-            title="${completed ? 'Completed today' : 'Tap to complete'}">${safeTitle}</div>
+            title="${completed ? 'Completed today' : (isBudgetReview ? 'Tap to open Budget' : 'Tap to complete')}">${safeTitle}</div>
           <div class="flex items-center gap-x-2 mt-0.5 flex-wrap">
             ${completedPill}
             ${habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))
               ? `<span class="text-sky-300 text-xs px-1.5 rounded bg-sky-900/40 font-semibold">Pro booking</span>`
               : ''}
+            ${typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit)
+              ? `<span class="text-emerald-300 text-xs px-1.5 rounded bg-emerald-900/35 font-semibold">Budget</span>`
+              : ''}
             ${multiPill}
             ${freqChip ? `<span class="text-harbor-primary-light/80 text-xs px-1.5 rounded bg-harbor-primary/15">${freqChip}</span>` : ''}
-            ${isOneOffTask(habit) && !(habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))) ? `<span class="text-harbor-muted text-xs px-1.5 rounded bg-harbor-raised">One-time</span>` : ''}
+            ${isOneOffTask(habit) && !(habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))) && !(typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit)) ? `<span class="text-harbor-muted text-xs px-1.5 rounded bg-harbor-raised">One-time</span>` : ''}
             ${dueNote}
             <span class="text-xs text-harbor-muted">${habit.est_minutes} min • ${difficultyLabel} energy</span>
             ${streak > 0 ? `<span class="text-amber-300 text-xs flex items-center gap-x-0.5"><i class="fa-solid fa-fire text-amber-400"></i> ${streak}</span>` : ''}
           </div>
           ${habit.is_pro_reminder && habit.note ? `<div class="text-[10px] text-harbor-muted mt-0.5 leading-snug">${habit.note}</div>` : ''}
+          ${typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit) && habit.note ? `<div class="text-[10px] text-harbor-muted mt-0.5 leading-snug">${escapeBriefHtml(habit.note)}</div>` : ''}
         </div>
         <div class="text-right">
           ${habit.target_value ? `<div class="text-xs text-harbor-primary-light font-semibold tabular-nums">${habit.target_value} ${habit.unit}</div>` : ''}
           ${syncedStats ? `<div class="text-[9px] text-sky-300 mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
           <div class="row-inline-actions flex items-center justify-end gap-2 mt-1">
+            ${typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit) && !completed
+              ? `<button type="button" onclick="event.stopImmediatePropagation(); openBudgetFromReviewTask()" class="text-[10px] text-harbor-primary-light font-semibold px-1" title="Open Budget">Budget</button>
+                 <button type="button" onclick="event.stopImmediatePropagation(); showBudgetReviewTaskSheet('${safeHabitId}')" class="text-[10px] text-harbor-muted hover:text-amber-300 px-1" title="Mute for a few days">Mute</button>`
+              : ''}
             ${dueToday && !isOneOffTask(habit) ? `<button type="button" onclick="skipRecurringHabit('${safeHabitId}', event)" class="text-[10px] text-harbor-muted hover:text-amber-300 px-1" title="Skip this cycle — resets streak">Skip</button>` : ''}
             ${dueToday && shouldTrackStreak(habit) && (ensureRewardBank().skipToken || 0) > 0 ? `<button type="button" onclick="useSkipToken('${safeHabitId}', event)" class="text-[10px] text-harbor-primary-light hover:text-harbor-text px-1" title="Pass — keeps your streak (rare)">Pass</button>` : ''}
-            <button type="button" onclick="event.stopImmediatePropagation(); editHabitFromToday('${safeHabitId}')" class="text-[10px] text-harbor-primary-light font-medium px-1" title="Edit task">Edit</button>
+            ${!(typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit))
+              ? `<button type="button" onclick="event.stopImmediatePropagation(); editHabitFromToday('${safeHabitId}')" class="text-[10px] text-harbor-primary-light font-medium px-1" title="Edit task">Edit</button>`
+              : ''}
             <button type="button" onclick="event.stopImmediatePropagation(); showHabitDetail('${safeHabitId}')" class="text-harbor-primary-light text-xs" title="Details">
               <i class="fa-solid fa-info-circle"></i>
             </button>
@@ -22536,14 +22761,17 @@
       if (content && !completed) {
         content.dataset.completeHabit = habit.id;
         content.setAttribute('role', 'button');
-        content.setAttribute('aria-label', isMulti
-          ? `Complete ${habit.title}, ${timesDone} of ${timesNeed} today`
-          : `Complete ${habit.title}`);
+        content.setAttribute('aria-label', isBudgetReview
+          ? `Open budget review: ${habit.title}`
+          : (isMulti
+            ? `Complete ${habit.title}, ${timesDone} of ${timesNeed} today`
+            : `Complete ${habit.title}`));
       }
       content?.addEventListener('contextmenu', (e) => { e.preventDefault(); showHabitDetail(habit.id); });
       // Whole-card tap completes (title used to only expand and blocked the handler).
       // Circle still has its own handler; completeHabit is idempotent / toast-guards doubles.
       // Swipe Edit/Delete + inline actions are excluded. Completed strip is view-only.
+      // Budget review: completeHabit opens the Budget/mute sheet instead of checking off.
       if (content && !completed) {
         content.addEventListener('click', (e) => {
           if (row.dataset.swipeSuppressClick === '1') return;
@@ -22830,6 +23058,9 @@
       if (typeof clearExpiredPullToTodayFlags === 'function') {
         try { clearExpiredPullToTodayFlags(); } catch (_) { /* ignore */ }
       }
+      if (typeof ensureBudgetReviewTask === 'function') {
+        try { ensureBudgetReviewTask(); } catch (_) { /* ignore */ }
+      }
       renderTodayFeed();
       updateHeaderContext();
       if (currentTab === 'today') updateSummaryLauncher();
@@ -22910,6 +23141,11 @@
 
       const habit = state.habits.find(h => h.id === habitId);
       if (!habit) return;
+      // Budget review: open Budget / mute sheet — completes only after CSV import
+      if (typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit)) {
+        showBudgetReviewTaskSheet(habitId);
+        return;
+      }
       
       const today = todayStr();
       if (!state.completions[habitId]) state.completions[habitId] = [];
@@ -31978,6 +32214,11 @@
       if (event) event.stopImmediatePropagation();
       const habit = state.habits.find(h => h.id === habitId);
       if (!habit) return;
+      // Budget review: offer mute instead of permanent delete (it would just reappear)
+      if (typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit)) {
+        showBudgetReviewTaskSheet(habitId);
+        return;
+      }
       if (!confirm(`Remove "${habit.title}" from your tasks?`)) return;
       state.habits = state.habits.filter(h => h.id !== habitId);
       purgeHabitSideData(habitId);
@@ -35297,6 +35538,9 @@
         initNativeShell();
         repairOnboardedEmptyTodayList();
         loadCommonTasks();
+        if (typeof ensureBudgetReviewTask === 'function') {
+          try { ensureBudgetReviewTask(); } catch (_) { /* ignore */ }
+        }
         refreshCalendarCache();
         applyCalendarSync();
         updateCalendarStatusUI();
