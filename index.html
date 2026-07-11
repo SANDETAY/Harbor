@@ -10429,7 +10429,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 286;
+    const HARBOR_BUILD_NUMBER = 287;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20707,8 +20707,9 @@
     }
 
     // ==================== BUDGET (Life) ====================
-    // Tuned for bank exports (Posting Date, Credit Debit Indicator, bank Category).
-    // All money-out categories appear in the pie and legend (filterable).
+    // Tuned for US bank CSV exports (Posting Date, Credit Debit Indicator, Category).
+    // Nationwide: bank Category tags + generic keywords (mortgage, electric, rent…) work
+    // in every state; named brands (Kroger, Duke Energy, EZ-Pass…) are extras, not FL-only.
     // moneyMove = transfers / card payments / savings — also filterable via type chips.
     const BUDGET_CATEGORIES = [
       // Fixed bills (Bills lens) — only slices with spend show in the pie
@@ -21036,30 +21037,41 @@
         [/transfer\s*to\s*savings|transfer\s*to\s*certificate|savings\s*-|to\s*savings/i, 'savings'],
         [/transfer\s*to\s*loan|transfer\s*to\s*credit\s*card/i, 'transfers'],
         [/\btransfer\b/i, 'transfers'],
-        // Fixed bills — split so Bills lens can show Mortgage, Electric, Phone, etc.
-        [/freedom\s*mortgage|\bmortgage\b/i, 'mortgage'],
-        [/\brent\b|landlord|hoa\b|property\s*manag|pyl\*property/i, 'rent'],
-        [/clay\s*electric|duke\s*energy|pg&e|florida\s*power|fpl\b|electric|power\s*co/i, 'electric'],
-        [/clay\s*county\s*utility|water\s*bill|\bwater\b|sewer|irrigation/i, 'water'],
-        [/t-?mobile|verizon|at&?t\b|phone\s*bill|telephone|mobile\s*bill|cellular/i, 'phone'],
-        [/comcast|xfinity|spectrum|cox\b|optimum|frontier|internet|fiber|broadband|isp\b/i, 'internet'],
-        [/utility|utilities|trash|garbage\s*pickup|waste\s*management|gas\s*bill|natural\s*gas/i, 'utilities'],
-        [/\binsurance\b|geico|state\s*farm|progressive|allstate|usaa\s*(property|insurance)|liberty\s*mutual|nationwide|farmers\s*ins|auto\s*ins|homeowners/i, 'insurance'],
-        [/car\s*payment|auto\s*loan|vehicle\s*loan|toyota\s*financial|honda\s*financial|ford\s*credit|ally\s*auto|gm\s*financial/i, 'car_payment'],
-        [/klarna|affirm|afterpay|\bloan\b/i, 'loans'],
-        // Groceries & dining (wants vs needs split later for insights)
-        [/publix|instacart|kroger|safeway|aldi|whole\s*foods|trader\s*joe|food\s*lion|heb|meijer|sprouts|winn[\s-]?dixie|daybreak\s*mark|grocery/i, 'groceries'],
-        [/starbucks|mcdonald|chipotle|doordash|uber\s*eats|grubhub|subway|dunkin|wendy|burger|taco\s*bell|panera|chick[\s-]?fil|popeyes|pizza|restaurant|dining|cafe|coffee|smoothie|community\s*loav|sq\s*\*community/i, 'dining'],
-        [/exxon|shell|chevron|mobil|valero|gas\s*station|sunpass|uber\b|lyft|parking|toll|fuel/i, 'transport'],
-        [/amazon|amzn|costco|walmart|target|best\s*buy|ikea|nike|ebay|etsy|home\s*depot|lowe'?s?|everbank\s*concessio|concession/i, 'shopping'],
-        [/cvs|walgreens|pharmacy|dental|hospital|doctor|gym|fitness|petco|petsmart|vet\b|veterinary/i, 'health'],
-        [/netflix|spotify|hulu|disney|hbo|peacock|microsoft|redmond\s*us|openai|chatgpt|epic\s*theatres|cinema|movie|steam|xbox|playstation|youtube|apple\.com\/bill|certus\s*fusion|wm2tm/i, 'entertainment'],
-        [/sephora|ulta|salon|barber|spa/i, 'personal'],
-        [/tuition|university|college|school|coursera|udemy/i, 'education'],
-        [/church|charit|donation|tithe|elevate\s*life/i, 'charity'],
+        // Fixed bills — US-wide keywords + major national/regional providers
+        // (local co-ops still match via electric|water|mortgage|utility words)
+        [/\bmortgage\b|freedom\s*mortgage|rocket\s*mortgage|quicken\s*loans|mr\.?\s*cooper|loan\s*depot|penny\mac|caliber\s*home|nationstar|newrez|lakeview\s*loan|carrington\s*mortgage|phh\s*mortgage|ocwen|wells\s*fargo\s*home|chase\s*mortgage|bank\s*of\s*america\s*home/i, 'mortgage'],
+        [/\brent\b|landlord|hoa\b|property\s*manag|pyl\*property|apartments?\.com|cozy\s*co|avail\b|buildium|appfolio|yardi/i, 'rent'],
+        // Electric — generic words + major US utilities (local co-ops still match “electric”)
+        [/\belectric\b|power\s*co|power\s*&?\s*light|\bedison\b|duke\s*energy|pg&?e|southern\s*california\s*edison|\bsce\b|con\s*edison|\bconed\b|dominion\s*energy|american\s*electric|\baep\b|xcel\s*energy|entergy|firstenergy|ppl\s*electric|fpl\b|florida\s*power|clay\s*electric|georgia\s*power|alabama\s*power|national\s*grid|eversource|dte\s*energy|consumers\s*energy|ameren|centerpoint\s*energy|oncor|\bpseg\b|pse&g|pepco|\bbge\b|comed|commonwealth\s*edison|nv\s*energy|aps\s*electric|salt\s*river\s*project|tucson\s*electric|portland\s*general|puget\s*sound\s*energy|we\s*energies|alliant\s*energy/i, 'electric'],
+        // Water / sewer
+        [/water\s*bill|water\s*util|\bwater\b|sewer|irrigation|american\s*water|aqua\s*america|essential\s*utilities/i, 'water'],
+        // Phone — major US carriers
+        [/t-?mobile|verizon|at&?t\b|att\b|sprint\b|us\s*cellular|cricket\s*wireless|metro\s*by\s*t|boost\s*mobile|mint\s*mobile|visible\b|phone\s*bill|telephone|mobile\s*bill|cellular|wireless\s*bill/i, 'phone'],
+        // Internet / cable
+        [/comcast|xfinity|spectrum|charter\b|cox\b|optimum|altice|frontier|centurylink|lumen|windstream|mediacom|wow\s*internet|google\s*fiber|verizon\s*fios|fios\b|att\s*fiber|internet|fiber|broadband|isp\b|cable\s*bill/i, 'internet'],
+        // Other utilities (gas, trash) — after electric/water so those win first
+        [/utility|utilities|trash|garbage\s*pickup|waste\s*management|republic\s*services|gas\s*bill|natural\s*gas|nicor|peoples\s*gas|so\s*cal\s*gas|atmos\s*energy|spire\s*energy|nstar|national\s*fuel/i, 'utilities'],
+        // Insurance — national carriers
+        [/\binsurance\b|geico|state\s*farm|progressive|allstate|usaa|liberty\s*mutual|nationwide|farmers\s*ins|auto\s*ins|homeowners|travelers\b|hartford|progressive|erie\s*ins|american\s*family|amfam|metlife|prudential|aflac|lemonade\s*ins|root\s*ins/i, 'insurance'],
+        // Car payments
+        [/car\s*payment|auto\s*loan|vehicle\s*loan|toyota\s*financial|honda\s*financial|ford\s*credit|ally\s*auto|gm\s*financial|capital\s*one\s*auto|chase\s*auto|santander\s*consumer|westlake\s*financial|carmax\s*auto/i, 'car_payment'],
+        [/klarna|affirm|afterpay|sofi\s*loan|upstart|lendingclub|\bloan\b/i, 'loans'],
+        // Groceries — national + major regional chains (not one-state only)
+        [/publix|instacart|kroger|safeway|aldi|whole\s*foods|trader\s*joe|food\s*lion|heb|meijer|sprouts|winn[\s-]?dixie|albertsons|vons|ralphs|fred\s*meyer|king\s*soopers|smith'?s\s*food|qfc\b|harris\s*teeter|wegmans|shoprite|stop\s*&\s*shop|giant\s*eagle|giant\s*food|food\s*4\s*less|winco|sprouts|market\s*basket|hannaford|piggly|save\s*a\s*lot|grocery|supermarket/i, 'groceries'],
+        // Dining — national brands + delivery
+        [/starbucks|mcdonald|chipotle|doordash|uber\s*eats|grubhub|postmates|subway|dunkin|wendy|burger\s*king|taco\s*bell|panera|chick[\s-]?fil|popeyes|pizza\s*hut|domino'?s|papa\s*john|little\s*caesars|olive\s*garden|applebee|chili'?s|outback|ihop|denny'?s|sonic\b|arby'?s|five\s*guys|in-?n-?out|whataburger|culver|raising\s*cane|restaurant|dining|cafe|coffee|smoothie|sq\s*\*community/i, 'dining'],
+        // Transport — gas brands + rideshare + toll systems nationwide
+        [/exxon|shell|chevron|mobil|valero|bp\b|speedway|circle\s*k|wawa|sheetz|race\s*trac|racetrac|qt\b|quiktrip|casey'?s|gas\s*station|sunpass|ez[\s-]?pass|fastrak|tx\s*tag|peach\s*pass|nc\s*quick|i-?pass|riverlink|toll|uber\b|lyft|parking|fuel/i, 'transport'],
+        [/amazon|amzn|costco|walmart|target|best\s*buy|ikea|nike|ebay|etsy|home\s*depot|lowe'?s?|nordstrom|macys|macy'?s|kohls|kohl'?s|tj\s*maxx|marshalls|ross\s*stores|old\s*navy|gap\b|everbank\s*concessio|concession/i, 'shopping'],
+        [/cvs|walgreens|rite\s*aid|pharmacy|dental|hospital|doctor|labcorp|quest\s*diag|gym|fitness|planet\s*fitness|la\s*fitness|orangetheory|petco|petsmart|vet\b|veterinary/i, 'health'],
+        [/netflix|spotify|hulu|disney|hbo|max\b|peacock|paramount|microsoft|redmond\s*us|openai|chatgpt|cinema|movie|amc\s*theat|regal\s*cinem|steam|xbox|playstation|youtube|apple\.com\/bill|apple\s*tv|certus\s*fusion|wm2tm/i, 'entertainment'],
+        [/sephora|ulta|salon|barber|spa|great\s*clips|supercuts/i, 'personal'],
+        [/tuition|university|college|school|coursera|udemy|chegg/i, 'education'],
+        [/church|charit|donation|tithe|united\s*way|red\s*cross|gofundme|patreon/i, 'charity'],
         [/atm|cash\s*withdraw/i, 'cash'],
-        [/salary|paycheck|dfas|veteran\s*affairs|dividend|deposit|payroll/i, 'income'],
-        [/fee|service\s*charge|acct\s*integrators/i, 'fees']
+        // Income — civilian + federal/military common US payroll labels
+        [/salary|paycheck|payroll|direct\s*deposit|dfas|veteran\s*affairs|vacp|social\s*security|ssa\s*treas|irs\s*treas|tax\s*refund|dividend|deposit|adp\s*payroll|gusto|paychex|intuit\s*payroll/i, 'income'],
+        [/fee|service\s*charge|overdraft|nsf\b/i, 'fees']
       ];
       for (const [re, id] of rules) {
         if (re.test(blob)) return id;
