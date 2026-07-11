@@ -10321,7 +10321,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 279;
+    const HARBOR_BUILD_NUMBER = 280;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20633,7 +20633,7 @@
       'loans': 'loans',
       'atm/cash withdrawals': 'cash',
       'service charges/fees': 'fees',
-      'other expenses': 'other',
+      // Intentionally omit "other expenses" — bank dumps unknowns there; we re-score from description
       'paychecks/salary': 'income',
       'deposits': 'income',
       'investment income': 'income',
@@ -20641,12 +20641,21 @@
       'refunds/adjustments': 'income'
     };
 
+    // Soft bank tags: never trust alone — always try merchant/description rules first
+    const BUDGET_SOFT_BANK_CATEGORIES = new Set([
+      'other expenses', 'other', 'miscellaneous', 'misc', 'uncategorized', 'unknown', ''
+    ]);
+
     const BUDGET_MONEY_MOVE_IDS = new Set(
       BUDGET_CATEGORIES.filter(c => c.moneyMove).map(c => c.id)
     );
     const BUDGET_FIXED_BILL_IDS = new Set(
       BUDGET_CATEGORIES.filter(c => c.fixedBill).map(c => c.id)
     );
+    // “Where it compounds” — wants, not needs (coffee, dining, shopping, fun)
+    const BUDGET_DISCRETIONARY_IDS = new Set([
+      'dining', 'shopping', 'entertainment', 'personal'
+    ]);
 
     let budgetCategoryFilter = null;
     let budgetMonthRange = 'current'; // current | last | all
@@ -20730,42 +20739,71 @@
     function mapBankCategoryToHarbor(bankCategory) {
       const key = String(bankCategory || '').trim().toLowerCase();
       if (!key) return null;
+      if (BUDGET_SOFT_BANK_CATEGORIES.has(key)) return null;
       if (BUDGET_BANK_CATEGORY_MAP[key]) return BUDGET_BANK_CATEGORY_MAP[key];
-      // fuzzy contains
+      // fuzzy contains (skip soft keys)
       for (const [k, v] of Object.entries(BUDGET_BANK_CATEGORY_MAP)) {
         if (key.includes(k) || k.includes(key)) return v;
       }
       return null;
     }
 
-    function categorizeBudgetDescription(description, bankCategory) {
+    /**
+     * Score a transaction into a Harbor category.
+     * Bank Category is used when trustworthy; “Other Expenses” / empty always re-scored
+     * from Description + Type / Type Group (POS, ACH, Transfer, ATM…).
+     */
+    function categorizeBudgetDescription(description, bankCategory, meta = {}) {
+      const bankKey = String(bankCategory || '').trim().toLowerCase();
       const fromBank = mapBankCategoryToHarbor(bankCategory);
-      if (fromBank) return fromBank;
+      // Hard bank tags win (groceries, mortgages, etc.)
+      if (fromBank && !BUDGET_SOFT_BANK_CATEGORIES.has(bankKey)) return fromBank;
+
       const text = String(description || '');
+      const typeStr = String(meta.type || meta.bankType || '').toLowerCase();
+      const typeGroup = String(meta.typeGroup || meta.bankTypeGroup || '').toLowerCase();
+      const blob = `${text} ${typeStr} ${typeGroup}`;
+
       const rules = [
-        [/freedom\s*mortgage|mortgage|rent\b|landlord|hoa\b/i, 'housing'],
+        // Money movement first (often mis-tagged Other Expenses)
+        [/withdrawal\s*by\s*wire|wire\s*transfer|wire\s*out/i, 'transfers'],
+        [/ach\s*orig\s*debit|ach\s*debit\s*-\s*taylor|orig\s*debit/i, 'transfers'],
+        [/zelle|venmo|cash\s*app|apple\s*cash|paypal|p2p|peer\s*to\s*peer/i, 'transfers'],
+        [/american\s*express|amex\s*epayment|payment\s*to\s*chase|payment\s*to\s*american|credit\s*card\s*pmt|credit\s*card\s*payment/i, 'credit_cards'],
+        [/transfer\s*to\s*savings|transfer\s*to\s*certificate|savings\s*-|to\s*savings/i, 'savings'],
+        [/transfer\s*to\s*loan|transfer\s*to\s*credit\s*card/i, 'transfers'],
+        [/\btransfer\b/i, 'transfers'],
+        // Fixed bills / housing
+        [/freedom\s*mortgage|mortgage|rent\b|landlord|hoa\b|property\s*manag|pyl\*property/i, 'housing'],
         [/clay\s*electric|clay\s*county\s*utility|electric|utility|utilities|water\s*bill|duke\s*energy|pg&e|t-?mobile|verizon|at&?t|comcast|xfinity|spectrum|telephone|phone\s*bill/i, 'utilities'],
         [/\binsurance\b|geico|state\s*farm|progressive|allstate|usaa\s*(property|insurance)|liberty\s*mutual|nationwide|farmers\s*ins|auto\s*ins|homeowners/i, 'insurance'],
-        [/car\s*payment|auto\s*loan|vehicle\s*loan|toyota\s*financial|honda\s*financial|ford\s*credit|ally\s*auto|transfer\s*to\s*loan|klarna|affirm|afterpay|\bloan\b/i, 'loans'],
-        [/publix|instacart|kroger|safeway|aldi|whole\s*foods|trader\s*joe|food\s*lion|heb|meijer|sprouts|winn[\s-]?dixie|grocery/i, 'groceries'],
-        [/starbucks|mcdonald|chipotle|doordash|uber\s*eats|grubhub|subway|dunkin|wendy|burger|taco\s*bell|panera|chick[\s-]?fil|popeyes|pizza|restaurant|dining|cafe|coffee|smoothie/i, 'dining'],
+        [/car\s*payment|auto\s*loan|vehicle\s*loan|toyota\s*financial|honda\s*financial|ford\s*credit|ally\s*auto|klarna|affirm|afterpay|\bloan\b/i, 'loans'],
+        // Groceries & dining (wants vs needs split later for insights)
+        [/publix|instacart|kroger|safeway|aldi|whole\s*foods|trader\s*joe|food\s*lion|heb|meijer|sprouts|winn[\s-]?dixie|daybreak\s*mark|grocery/i, 'groceries'],
+        [/starbucks|mcdonald|chipotle|doordash|uber\s*eats|grubhub|subway|dunkin|wendy|burger|taco\s*bell|panera|chick[\s-]?fil|popeyes|pizza|restaurant|dining|cafe|coffee|smoothie|community\s*loav|sq\s*\*community/i, 'dining'],
         [/exxon|shell|chevron|mobil|valero|gas\s*station|sunpass|uber\b|lyft|parking|toll|fuel/i, 'transport'],
-        [/amazon|amzn|costco|walmart|target|best\s*buy|ikea|nike|ebay|etsy|home\s*depot|lowe'?s?/i, 'shopping'],
+        [/amazon|amzn|costco|walmart|target|best\s*buy|ikea|nike|ebay|etsy|home\s*depot|lowe'?s?|everbank\s*concessio/i, 'shopping'],
         [/cvs|walgreens|pharmacy|dental|hospital|doctor|gym|fitness|petco|petsmart|vet\b|veterinary/i, 'health'],
-        [/netflix|spotify|hulu|disney|hbo|peacock|microsoft|epic\s*theatres|cinema|movie|steam|xbox|playstation|youtube|apple\.com\/bill/i, 'entertainment'],
+        [/netflix|spotify|hulu|disney|hbo|peacock|microsoft|openai|chatgpt|epic\s*theatres|cinema|movie|steam|xbox|playstation|youtube|apple\.com\/bill|certus\s*fusion/i, 'entertainment'],
         [/sephora|ulta|salon|barber|spa/i, 'personal'],
         [/tuition|university|college|school|coursera|udemy/i, 'education'],
         [/church|charit|donation|tithe|elevate\s*life/i, 'charity'],
-        [/american\s*express|payment\s*to\s*chase|credit\s*card/i, 'credit_cards'],
-        [/transfer\s*to\s*savings|transfer\s*to\s*certificate|savings\s*-/i, 'savings'],
-        [/zelle|venmo|cash\s*app|apple\s*cash|paypal|transfer/i, 'transfers'],
         [/atm|cash\s*withdraw/i, 'cash'],
         [/salary|paycheck|dfas|veteran\s*affairs|dividend|deposit|payroll/i, 'income'],
         [/fee|service\s*charge|acct\s*integrators/i, 'fees']
       ];
       for (const [re, id] of rules) {
-        if (re.test(text)) return id;
+        if (re.test(blob)) return id;
       }
+
+      // Type / Type Group fallbacks from bank CSV columns
+      if (/^atm$/i.test(typeGroup) || /^atm$/i.test(typeStr)) return 'cash';
+      if (/^transfer$/i.test(typeGroup) || /^transfer$/i.test(typeStr)) return 'transfers';
+      if (/ach/i.test(typeGroup) || /ach/i.test(typeStr)) {
+        // Unlabeled ACH debits are usually person-to-person or bill pays → transfers
+        if (/debit/i.test(typeStr) || /debit/i.test(typeGroup) || /debit/i.test(text)) return 'transfers';
+      }
+
       if (typeof matchSubscriptionPreset === 'function' && matchSubscriptionPreset(text)) return 'entertainment';
       return 'other';
     }
@@ -20774,12 +20812,55 @@
       return BUDGET_MONEY_MOVE_IDS.has(catId);
     }
 
+    function isBudgetDiscretionaryCategory(catId) {
+      return BUDGET_DISCRETIONARY_IDS.has(catId);
+    }
+
+    /** Merchant looks like a “want” even if bank category was wrong */
+    function isBudgetWantMerchant(description) {
+      const t = String(description || '');
+      return /starbucks|dunkin|coffee|cafe|mcdonald|chipotle|doordash|uber\s*eats|grubhub|subway|wendy|burger|taco\s*bell|panera|chick[\s-]?fil|popeyes|pizza|restaurant|dining|smoothie|boba|ice\s*cream|dessert|bar\b|brewery|happy\s*hour|amazon|amzn|target|nike|ebay|etsy|sephora|ulta|netflix|spotify|hulu|disney|hbo|steam|xbox|playstation|cinema|movie|theatre|theater|openai|chatgpt|game\s*stop|ticketmaster|concert/i.test(t);
+    }
+
     // purchases = discretionary-ish: not money-moves and not fixed bills
     function isBudgetPurchaseCategory(catId) {
       if (!catId || catId === 'income') return false;
       if (isBudgetMoneyMoveCategory(catId)) return false;
       if (isBudgetFixedBillCategory(catId)) return false;
       return true;
+    }
+
+    /** Re-score bank “Other Expenses” / stale other rows that were never user-edited */
+    function recategorizeBudgetOtherTransactions() {
+      const budget = ensureBudgetState();
+      let changed = false;
+      (budget.transactions || []).forEach(t => {
+        if (!t || t.isCredit) return;
+        const bankSoft = BUDGET_SOFT_BANK_CATEGORIES.has(String(t.bankCategory || '').trim().toLowerCase())
+          || !t.bankCategory
+          || t.category === 'other'
+          || t.categoryAuto === 'other';
+        if (!bankSoft) return;
+        // Respect manual category picks
+        if (t.category && t.categoryAuto && t.category !== t.categoryAuto && t.category !== 'other') return;
+        const next = categorizeBudgetDescription(t.description, t.bankCategory, {
+          type: t.bankType,
+          typeGroup: t.bankTypeGroup
+        });
+        if (next && next !== t.category) {
+          // Only overwrite if still on auto or still stuck in Other
+          if (!t.categoryAuto || t.category === t.categoryAuto || t.category === 'other') {
+            t.category = next;
+            t.categoryAuto = next;
+            changed = true;
+          }
+        } else if (next && t.categoryAuto !== next) {
+          t.categoryAuto = next;
+          changed = true;
+        }
+      });
+      if (changed) saveState();
+      return changed;
     }
 
     /** Dedicated budget CSV reader — prefers Posting Date + Credit/Debit Indicator */
@@ -20811,7 +20892,8 @@
       // Exact-ish match — do NOT grab “Credit Debit Indicator” as a debit amount column
       const indicatorCol = findCol([/credit\s*debit\s*indicator/, /debit\s*credit/, /^dr\/?cr$/, /transaction\s*type/]);
       const bankCatCol = findCol([/^category$/, /merchant category/, /mcc description/]);
-      const typeCol = findCol([/^type$/, /type group/]);
+      const typeCol = findCol([/^type$/]);
+      const typeGroupCol = findCol([/^type group$/, /type group/]);
 
       const out = [];
       for (let i = headerIdx + 1; i < lines.length; i++) {
@@ -20829,17 +20911,21 @@
         const amount = Math.round(Math.abs(amtRaw) * 100) / 100;
 
         const indicator = (indicatorCol >= 0 ? cols[indicatorCol] : '').trim().toLowerCase();
-        const typeStr = (typeCol >= 0 ? cols[typeCol] : '').trim().toLowerCase();
+        const typeStr = (typeCol >= 0 ? cols[typeCol] : '').trim();
+        const typeGroupStr = (typeGroupCol >= 0 ? cols[typeGroupCol] : '').trim();
         let isCredit = false;
         if (indicator === 'credit' || indicator === 'cr') isCredit = true;
         else if (indicator === 'debit' || indicator === 'dr') isCredit = false;
         else if (amtRaw < 0) isCredit = false; // some banks use signed amounts
-        else if (/ach credit|deposit|payroll|salary|dividend|refund/i.test(typeStr + ' ' + desc)) isCredit = true;
+        else if (/ach credit|deposit|payroll|salary|dividend|refund/i.test(`${typeStr} ${typeGroupStr} ${desc}`)) isCredit = true;
         else isCredit = false; // default: money out
 
         const dateObj = dateCol >= 0 ? parseBudgetDate(cols[dateCol]) : null;
         const bankCategory = bankCatCol >= 0 ? String(cols[bankCatCol] || '').trim() : '';
-        let category = categorizeBudgetDescription(desc, bankCategory);
+        let category = categorizeBudgetDescription(desc, bankCategory, {
+          type: typeStr,
+          typeGroup: typeGroupStr
+        });
         if (isCredit && category !== 'income') {
           // Credits are income unless already tagged as such from bank map
           const fromBank = mapBankCategoryToHarbor(bankCategory);
@@ -20853,6 +20939,8 @@
           amount,
           isCredit,
           bankCategory,
+          bankType: typeStr,
+          bankTypeGroup: typeGroupStr,
           category
         });
       }
@@ -20968,7 +21056,15 @@
         [/clay\s*electric/i, 'Clay Electric'],
         [/t-?mobile/i, 'T-Mobile'],
         [/epic\s*theatres?/i, 'Epic Theatres'],
-        [/microsoft/i, 'Microsoft']
+        [/microsoft/i, 'Microsoft'],
+        [/openai|chatgpt/i, 'ChatGPT / OpenAI'],
+        [/community\s*loav/i, 'Community Loaves'],
+        [/daybreak\s*mark/i, 'Daybreak Market'],
+        [/dunkin/i, "Dunkin'"],
+        [/chick[\s-]?fil/i, "Chick-fil-A"],
+        [/doordash/i, 'DoorDash'],
+        [/uber\s*eats/i, 'Uber Eats'],
+        [/grubhub/i, 'Grubhub']
       ];
       for (const [re, label] of brands) {
         if (re.test(s)) return label;
@@ -20977,16 +21073,33 @@
       return s || 'Purchase';
     }
 
-    /** Habit insights — lifestyle purchases only (not card payments / transfers). */
+    /**
+     * “Where it compounds” — discretionary wants only (coffee, dining, shopping, fun).
+     * Never shows mortgages, utilities, insurance, transfers, groceries, etc.
+     */
     function getBudgetMerchantInsights(txs, limit = 5) {
       const map = new Map();
       txs.forEach(t => {
-        if (isBudgetMoneyMoveCategory(t.category)) return;
+        if (!t || t.isCredit) return;
+        const cat = t.category || 'other';
+        // Needs & account moves never appear here
+        if (isBudgetMoneyMoveCategory(cat)) return;
+        if (isBudgetFixedBillCategory(cat)) return;
+        if (cat === 'groceries' || cat === 'transport' || cat === 'health' || cat === 'education'
+          || cat === 'charity' || cat === 'fees' || cat === 'cash' || cat === 'loans') return;
+        // Only true “want” categories, or merchants that clearly look discretionary
+        const isWant = isBudgetDiscretionaryCategory(cat) || isBudgetWantMerchant(t.description);
+        if (!isWant) return;
+        // Skip huge one-off wires mis-tagged as dining etc.
+        const amt = Number(t.amount) || 0;
+        if (amt >= 2000) return;
         const name = normalizeBudgetMerchant(t.description);
+        // Skip generic transfer-looking names that snuck through
+        if (/^(transfer|ach|wire|payment to|zelle)/i.test(name)) return;
         const key = name.toLowerCase();
         if (!map.has(key)) map.set(key, { name, total: 0, count: 0 });
         const row = map.get(key);
-        row.total += Number(t.amount) || 0;
+        row.total += amt;
         row.count += 1;
       });
       return [...map.values()]
@@ -20994,7 +21107,8 @@
           ...m,
           avg: m.count > 0 ? m.total / m.count : 0
         }))
-        .filter(m => m.count >= 2 || m.total >= 35)
+        // Prefer repeats; single big wants still surface if meaningful
+        .filter(m => m.count >= 2 || (m.count === 1 && m.total >= 40 && m.total < 500))
         .sort((a, b) => b.total - a.total || b.count - a.count)
         .slice(0, limit);
     }
@@ -21026,7 +21140,10 @@
         const key = `${dateStr || ''}|${(tx.description || '').toLowerCase()}|${Number(tx.amount).toFixed(2)}|${tx.isCredit ? 'C' : 'D'}`;
         if (existingKeys.has(key)) return;
         existingKeys.add(key);
-        const cat = tx.category || categorizeBudgetDescription(tx.description, tx.bankCategory);
+        const cat = tx.category || categorizeBudgetDescription(tx.description, tx.bankCategory, {
+          type: tx.bankType,
+          typeGroup: tx.bankTypeGroup
+        });
         budget.transactions.push({
           id: 'btx-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
           date: dateStr,
@@ -21034,6 +21151,8 @@
           amount: Math.round(Number(tx.amount) * 100) / 100,
           isCredit: !!tx.isCredit,
           bankCategory: tx.bankCategory || '',
+          bankType: tx.bankType || '',
+          bankTypeGroup: tx.bankTypeGroup || '',
           category: cat,
           categoryAuto: cat,
           source: 'csv'
@@ -21472,6 +21591,10 @@
         state.budget._fixedBillMigrated = true;
         migrateBudgetFixedBillCategories();
       }
+      if (!state.budget._otherRecatV2) {
+        state.budget._otherRecatV2 = true;
+        recategorizeBudgetOtherTransactions();
+      }
       const anyTx = (ensureBudgetState().transactions || []).some(t => t && (Number(t.amount) || 0) > 0);
       if (!anyTx) {
         empty.classList.remove('hidden');
@@ -21579,11 +21702,12 @@
               ? ` That’s <strong>${top.count}×</strong> — <strong>${formatBudgetMoney(top.total)}</strong> stacked up (~${formatBudgetMoney(top.avg)} each).`
               : '';
           const hook = dailyish
-            ? `<div class="budget-insight-hook"><strong>${escapeBriefHtml(top.name)}</strong> keeps showing up.${dailyish}</div>`
-            : `<div class="budget-insight-hook">Repeats add up. Tap a row to rename or recategorize.</div>`;
+            ? `<div class="budget-insight-hook"><strong>${escapeBriefHtml(top.name)}</strong> is a want that stacks up.${dailyish}</div>`
+            : `<div class="budget-insight-hook">These are wants — not bills. Spot the habits you can cut back on.</div>`;
           insightsEl.innerHTML = `
             <div class="budget-insight-card">
-              <div class="budget-insight-title">Where it compounds</div>
+              <div class="budget-insight-title">Where wants compound</div>
+              <div class="text-[10px] text-harbor-muted mb-1.5 leading-snug">Coffee, dining out, shopping &amp; fun — not rent, utilities, or transfers.</div>
               ${insights.map(m => `
                 <div class="budget-insight-row">
                   <span class="budget-insight-name">${escapeBriefHtml(m.name)}</span>
