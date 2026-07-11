@@ -9467,7 +9467,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 247;
+    const HARBOR_BUILD_NUMBER = 248;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -22146,10 +22146,6 @@
       const kpiTasksHot = taskN > 0;
       const kpiBillsHot = billN > 0;
 
-      // Keep insight short — one line max under KPIs when useful
-      const tip = (brief.insight || '').trim();
-      const shortTip = tip.length > 110 ? tip.slice(0, 107).trim() + '…' : tip;
-
       return `
         <div class="summary-toggle" role="tablist" aria-label="Summary range">
           <button type="button" class="summary-toggle-btn ${mode === 'day' ? 'is-active' : ''}" data-brief-mode="day" role="tab" aria-selected="${mode === 'day'}">Today</button>
@@ -22186,8 +22182,6 @@
           ${renderBriefSchedulePanel(brief)}
           ${renderBriefPulsePanel(brief)}
         </div>
-
-        ${shortTip ? `<div class="summary-footnote">${escapeBriefHtml(shortTip)}</div>` : ''}
       `;
     }
 
