@@ -10429,7 +10429,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 287;
+    const HARBOR_BUILD_NUMBER = 288;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20738,7 +20738,7 @@
       { id: 'cash', label: 'Cash & ATM', color: '#8A9A96', pie: true },
       { id: 'other', label: 'Other', color: '#9AA3A0', pie: true },
       { id: 'transfers', label: 'Transfers', color: '#6B8A99', pie: true, moneyMove: true },
-      { id: 'credit_cards', label: 'Card payments', color: '#8A7A6A', pie: true, moneyMove: true },
+      { id: 'credit_cards', label: 'Debt', color: '#8A7A6A', pie: true, moneyMove: true },
       { id: 'savings', label: 'Savings moves', color: '#5A9E8E', pie: true, moneyMove: true },
       { id: 'income', label: 'Income', color: '#3D9A6A', pie: true, income: true }
     ];
@@ -20748,7 +20748,7 @@
       { id: 'out', label: 'Spending', short: 'Spending', hint: 'Everything leaving the account', totalLabel: 'Total money out' },
       { id: 'wants', label: 'Wants', short: 'Wants', hint: 'Dining, shopping, clothing, entertainment & fun', totalLabel: 'Total wants' },
       { id: 'bills', label: 'Fixed bills', short: 'Bills', hint: 'Mortgage, rent, electric, water, phone, internet, insurance, car…', totalLabel: 'Total fixed bills' },
-      { id: 'moves', label: 'Account moves', short: 'Moves', hint: 'Transfers, card payments, savings', totalLabel: 'Total account moves' },
+      { id: 'moves', label: 'Account moves', short: 'Moves', hint: 'Transfers, debt (card payments), savings', totalLabel: 'Total account moves' },
       { id: 'income', label: 'Income', short: 'Income', hint: 'Paychecks, deposits & money in', totalLabel: 'Total income' }
     ];
 
@@ -20939,7 +20939,7 @@
       if (t.isCredit) return 'Income';
       const cat = t.category || 'other';
       if (cat === 'transfers') return 'Transfer';
-      if (cat === 'credit_cards') return 'Card payment';
+      if (cat === 'credit_cards') return 'Debt';
       if (cat === 'savings') return 'Savings';
       if (cat === 'loans') return 'Loan payment';
       if (cat === 'car_payment') return 'Car payment';
@@ -21033,7 +21033,10 @@
         [/withdrawal\s*by\s*wire|wire\s*transfer|wire\s*out/i, 'transfers'],
         [/ach\s*orig\s*debit|ach\s*debit\s*-\s*taylor|orig\s*debit/i, 'transfers'],
         [/zelle|venmo|cash\s*app|apple\s*cash|paypal|p2p|peer\s*to\s*peer/i, 'transfers'],
-        [/american\s*express|amex\s*epayment|payment\s*to\s*chase|payment\s*to\s*american|credit\s*card\s*pmt|credit\s*card\s*payment/i, 'credit_cards'],
+        // Credit card / debt payments — “Payment to American Express”, “Payment to Chase”, etc.
+        [/payment\s+to\s+(american\s*express|amex|chase|citi|citibank|capital\s*one|discover|bank\s*of\s*america|wells\s*fargo|us\s*bank|synchrony|barclays|apple\s*card|goldman|marcus|navy\s*federal|penfed|usaa\s*card)/i, 'credit_cards'],
+        [/american\s*express|amex\s*epayment|amex\s*payment|payment\s*to\s*chase|payment\s*to\s*american|payment\s*to\s*citi|payment\s*to\s*discover|payment\s*to\s*capital|credit\s*card\s*pmt|credit\s*card\s*payment|credit\s*card\s*bill|cc\s*payment|card\s*payment/i, 'credit_cards'],
+        [/transfer\s+to\s+credit\s*card/i, 'credit_cards'],
         [/transfer\s*to\s*savings|transfer\s*to\s*certificate|savings\s*-|to\s*savings/i, 'savings'],
         [/transfer\s*to\s*loan|transfer\s*to\s*credit\s*card/i, 'transfers'],
         [/\btransfer\b/i, 'transfers'],
@@ -21199,8 +21202,8 @@
      */
     function reclassifyAllBudgetTransactions(force = false) {
       const budget = ensureBudgetState();
-      if (!force && budget._fullRecatV7) return false;
-      budget._fullRecatV7 = true;
+      if (!force && budget._fullRecatV8) return false;
+      budget._fullRecatV8 = true;
       let changed = 0;
       (budget.transactions || []).forEach(t => {
         if (!t) return;
@@ -21680,6 +21683,7 @@
       delete budget._incomeRepairedV1;
       delete budget._fullRecatV6;
       delete budget._fullRecatV7;
+      delete budget._fullRecatV8;
       // Any successful CSV import finishes the monthly budget-review task
       if (typeof markBudgetReviewCompleteFromImport === 'function') {
         markBudgetReviewCompleteFromImport({ silent: true });
@@ -22203,8 +22207,8 @@
       if (!state.budget._rulesHarvested) {
         harvestBudgetMerchantRulesFromTransactions();
       }
-      // Always reclassify once on this build — income, Other, and split fixed bills
-      if (!state.budget._fullRecatV7) {
+      // Always reclassify once on this build — income, Other, debt labels, split fixed bills
+      if (!state.budget._fullRecatV8) {
         reclassifyAllBudgetTransactions(true);
       } else if (!state.budget._otherRecatV2) {
         state.budget._otherRecatV2 = true;
