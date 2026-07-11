@@ -10429,7 +10429,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 283;
+    const HARBOR_BUILD_NUMBER = 284;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20696,10 +20696,10 @@
     // Compact “lens” filters (dropdown) — month chips stay primary
     const BUDGET_KIND_OPTIONS = [
       { id: 'out', label: 'Spending', short: 'Spending', hint: 'Everything leaving the account', totalLabel: 'Total money out' },
-      { id: 'wants', label: 'Wants', short: 'Wants', hint: 'Coffee, dining, shopping & fun', totalLabel: 'Total wants' },
+      { id: 'wants', label: 'Wants', short: 'Wants', hint: 'Dining, shopping, clothing, entertainment & fun', totalLabel: 'Total wants' },
       { id: 'bills', label: 'Fixed bills', short: 'Bills', hint: 'Mortgage, utilities, insurance, loans', totalLabel: 'Total fixed bills' },
       { id: 'moves', label: 'Account moves', short: 'Moves', hint: 'Transfers, card payments, savings', totalLabel: 'Total account moves' },
-      { id: 'income', label: 'Income', short: 'Income', hint: 'Credits & deposits', totalLabel: 'Total income' }
+      { id: 'income', label: 'Income', short: 'Income', hint: 'Paychecks, deposits & money in', totalLabel: 'Total income' }
     ];
 
     // Bank “Category” column → Harbor ids (Navy Fed / similar exports)
@@ -20759,10 +20759,14 @@
     const BUDGET_FIXED_BILL_IDS = new Set(
       BUDGET_CATEGORIES.filter(c => c.fixedBill).map(c => c.id)
     );
-    // “Where it compounds” — wants, not needs (coffee, dining, shopping, fun)
+    // Wants lens + insights — lifestyle / discretionary (not bills or account moves)
     const BUDGET_DISCRETIONARY_IDS = new Set([
       'dining', 'shopping', 'entertainment', 'personal'
     ]);
+    // Bank “Category” values that mean real income (not transfer-in)
+    const BUDGET_INCOME_BANK_RE = /paycheck|salary|deposit|investment\s*income|interest|refund/i;
+    // Bank categories that are lifestyle wants even when Harbor maps them oddly
+    const BUDGET_WANT_BANK_RE = /restaurant|dining|clothing|shoes|merchandise|entertainment|online\s*services|personal\s*care|electronics|home\s*improvement/i;
 
     let budgetCategoryFilter = null;
     let budgetMonthRange = 'current'; // current | last | all
@@ -21023,7 +21027,66 @@
     /** Merchant looks like a “want” even if bank category was wrong */
     function isBudgetWantMerchant(description) {
       const t = String(description || '');
-      return /starbucks|dunkin|coffee|cafe|mcdonald|chipotle|doordash|uber\s*eats|grubhub|subway|wendy|burger|taco\s*bell|panera|chick[\s-]?fil|popeyes|pizza|restaurant|dining|smoothie|boba|ice\s*cream|dessert|bar\b|brewery|happy\s*hour|amazon|amzn|target|nike|ebay|etsy|sephora|ulta|netflix|spotify|hulu|disney|hbo|steam|xbox|playstation|cinema|movie|theatre|theater|openai|chatgpt|game\s*stop|ticketmaster|concert/i.test(t);
+      return /starbucks|dunkin|coffee|cafe|mcdonald|chipotle|doordash|uber\s*eats|grubhub|subway|wendy|burger|taco\s*bell|panera|chick[\s-]?fil|popeyes|pizza|restaurant|dining|smoothie|boba|ice\s*cream|dessert|bar\b|brewery|happy\s*hour|amazon|amzn|target|nike|ebay|etsy|sephora|ulta|netflix|spotify|hulu|disney|hbo|steam|xbox|playstation|cinema|movie|theatre|theater|openai|chatgpt|game\s*stop|ticketmaster|concert|dave\s*&\s*buster|raising\s*cane|anejo|southern\s*groun|clothing|apparel|boutique/i.test(t);
+    }
+
+    function isBudgetIncomeBankCategory(bankCategory) {
+      return BUDGET_INCOME_BANK_RE.test(String(bankCategory || ''));
+    }
+
+    function isBudgetWantBankCategory(bankCategory) {
+      return BUDGET_WANT_BANK_RE.test(String(bankCategory || ''));
+    }
+
+    /** True paycheck / deposit / refund income (not “transfer from savings”) */
+    function isBudgetTrueIncomeSignal(t) {
+      if (!t) return false;
+      const bank = String(t.bankCategory || '');
+      const type = `${t.bankType || ''} ${t.bankTypeGroup || ''}`;
+      const desc = `${t.bankDescription || ''} ${t.description || ''}`;
+      if (isBudgetIncomeBankCategory(bank)) return true;
+      if (/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|direct\s*deposit|dividend|interest\b|atm\s*rebate/i.test(desc)) return true;
+      if (/ach\s*credit/i.test(type) && /salary|deposit|dfas|veteran|payroll|income/i.test(desc + ' ' + bank)) return true;
+      if (t.category === 'income' || t.categoryAuto === 'income') return true;
+      return false;
+    }
+
+    /**
+     * Income lens: money that landed in the account as a credit.
+     * Prefer true income; also include other credits (so the filter is never “broken empty”
+     * when the bank marks rows Credit).
+     */
+    function isBudgetIncomeTransaction(t) {
+      if (!t) return false;
+      if (t.isCredit) return true;
+      if (t.category === 'income') return true;
+      // Repair path: bank clearly marks income but isCredit was lost on an older import
+      if (isBudgetTrueIncomeSignal(t)) return true;
+      const type = `${t.bankType || ''} ${t.bankTypeGroup || ''}`.toLowerCase();
+      if (/\bcredit\b/.test(type) && !/\bdebit\b/.test(type)) return true;
+      return false;
+    }
+
+    /** Wants lens: lifestyle spending — dining, shopping, entertainment, fun */
+    function isBudgetWantTransaction(t) {
+      if (!t || t.isCredit) return false;
+      const cat = t.category || 'other';
+      if (isBudgetMoneyMoveCategory(cat)) return false;
+      if (isBudgetFixedBillCategory(cat)) return false;
+      // Core want categories
+      if (isBudgetDiscretionaryCategory(cat)) return true;
+      // Bank CSV lifestyle tags (Clothing/Shoes, Online Services, Restaurants/Dining…)
+      if (isBudgetWantBankCategory(t.bankCategory)) return true;
+      // Merchant name heuristics
+      const desc = `${t.description || ''} ${t.bankDescription || ''}`;
+      if (isBudgetWantMerchant(desc)) return true;
+      // Small POS “other” purchases (not wires / ACH self-pays)
+      if (cat === 'other') {
+        const d = desc.toLowerCase();
+        if (/withdrawal\s*by\s*wire|ach\s*orig|zelle|transfer/i.test(d)) return false;
+        if (/pos|debit-?dc|sq\s*\*|tst\*/i.test(d)) return true;
+      }
+      return false;
     }
 
     // purchases = discretionary-ish: not money-moves and not fixed bills
@@ -21032,6 +21095,47 @@
       if (isBudgetMoneyMoveCategory(catId)) return false;
       if (isBudgetFixedBillCategory(catId)) return false;
       return true;
+    }
+
+    /** Fix older imports where salary credits weren’t flagged isCredit / income */
+    function repairBudgetIncomeFlags() {
+      const budget = ensureBudgetState();
+      if (budget._incomeRepairedV1) return false;
+      budget._incomeRepairedV1 = true;
+      let changed = false;
+      (budget.transactions || []).forEach(t => {
+        if (!t) return;
+        const typeStr = String(t.bankType || '');
+        const type = `${typeStr} ${t.bankTypeGroup || ''}`.toLowerCase();
+        const desc = `${t.bankDescription || ''} ${t.description || ''}`;
+        const bank = String(t.bankCategory || '');
+        let shouldCredit = !!t.isCredit;
+        if (isBudgetIncomeBankCategory(bank)) shouldCredit = true;
+        if (/ach\s*credit/i.test(typeStr) || /^credit$/i.test(typeStr.trim())) shouldCredit = true;
+        if (/salary|paycheck|dfas|veteran\s*affairs|vacp|payroll/i.test(desc)
+          && !/debit/i.test(typeStr)
+          && (isBudgetIncomeBankCategory(bank) || /salary|paycheck|dfas|veteran|deposit|income/i.test(desc + ' ' + bank))) {
+          shouldCredit = true;
+        }
+        if (shouldCredit && !t.isCredit) {
+          t.isCredit = true;
+          changed = true;
+        }
+        if (shouldCredit) {
+          const trueInc = isBudgetTrueIncomeSignal(t) || isBudgetIncomeBankCategory(bank);
+          const userLocked = t.categoryFromRule && t.category !== t.categoryAuto;
+          if (!userLocked && trueInc) {
+            if (t.category !== 'income') { t.category = 'income'; changed = true; }
+            if (t.categoryAuto !== 'income') { t.categoryAuto = 'income'; changed = true; }
+          } else if (!userLocked && t.isCredit && (!t.category || t.category === 'other')) {
+            t.category = 'income';
+            t.categoryAuto = t.categoryAuto || 'income';
+            changed = true;
+          }
+        }
+      });
+      if (changed) saveState();
+      return changed;
     }
 
     /** Re-score bank “Other Expenses” / stale other rows that were never user-edited */
@@ -21132,25 +21236,45 @@
         const indicator = (indicatorCol >= 0 ? cols[indicatorCol] : '').trim().toLowerCase();
         const typeStr = (typeCol >= 0 ? cols[typeCol] : '').trim();
         const typeGroupStr = (typeGroupCol >= 0 ? cols[typeGroupCol] : '').trim();
+        const bankCategory = bankCatCol >= 0 ? String(cols[bankCatCol] || '').trim() : '';
+        const typeBlob = `${typeStr} ${typeGroupStr} ${desc} ${bankCategory}`.toLowerCase();
+
+        // Credit vs debit — bank indicator first, then type / income signals
         let isCredit = false;
-        if (indicator === 'credit' || indicator === 'cr') isCredit = true;
-        else if (indicator === 'debit' || indicator === 'dr') isCredit = false;
-        else if (amtRaw < 0) isCredit = false; // some banks use signed amounts
-        else if (/ach credit|deposit|payroll|salary|dividend|refund/i.test(`${typeStr} ${typeGroupStr} ${desc}`)) isCredit = true;
-        else isCredit = false; // default: money out
+        if (indicator === 'credit' || indicator === 'cr' || indicator === 'c') isCredit = true;
+        else if (indicator === 'debit' || indicator === 'dr' || indicator === 'd') isCredit = false;
+        else if (/ach\s*credit/i.test(typeStr) || /^credit$/i.test(typeStr)) isCredit = true;
+        else if (isBudgetIncomeBankCategory(bankCategory)) isCredit = true;
+        else if (/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|direct\s*deposit|dividend/i.test(typeBlob)
+          && !/debit/i.test(typeStr)) isCredit = true;
+        else if (amtRaw < 0) isCredit = false;
+        else isCredit = false;
 
         const dateObj = dateCol >= 0 ? parseBudgetDate(cols[dateCol]) : null;
-        const bankCategory = bankCatCol >= 0 ? String(cols[bankCatCol] || '').trim() : '';
         let category = categorizeBudgetDescription(desc, bankCategory, {
           type: typeStr,
           typeGroup: typeGroupStr
         });
-        if (isCredit && category !== 'income') {
-          // Credits are income unless already tagged as such from bank map
+
+        // Credits: map real income bank tags (and unknowns) to income; keep transfer-in as transfers
+        if (isCredit) {
           const fromBank = mapBankCategoryToHarbor(bankCategory);
-          if (fromBank === 'income' || !fromBank) category = 'income';
+          if (isBudgetIncomeBankCategory(bankCategory) || fromBank === 'income') {
+            category = 'income';
+          } else if (fromBank === 'transfers' || fromBank === 'savings') {
+            category = fromBank; // Zelle in / transfer from savings — money in, not a paycheck
+          } else if (!fromBank || fromBank === 'other' || category === 'other' || category === 'transfers') {
+            // Default inbound money → income unless clearly a transfer description
+            if (/transfer\s+from|from\s+savings|from\s+checking|zelle|venmo|cash\s*app/i.test(desc)) {
+              category = 'transfers';
+            } else {
+              category = 'income';
+            }
+          }
+        } else if (category === 'income') {
+          // Don't tag money-out as income
+          category = 'other';
         }
-        if (!isCredit && category === 'income') category = 'other';
 
         out.push({
           date: dateObj,
@@ -21221,15 +21345,13 @@
       let txs = getBudgetTransactionsInMonth(range);
       switch (k) {
         case 'income':
-          return txs.filter(t => t.isCredit);
+          return txs.filter(t => isBudgetIncomeTransaction(t));
         case 'bills':
           // Mortgage, phone/utilities, insurance, car/loans — the “keep the lights on” stack
           return txs.filter(t => !t.isCredit && isBudgetFixedBillCategory(t.category));
         case 'wants':
-          // Discretionary only — coffee, dining, shopping, fun
-          return txs.filter(t => !t.isCredit && (
-            isBudgetDiscretionaryCategory(t.category) || isBudgetWantMerchant(t.description)
-          ));
+          // Lifestyle wants — dining, shopping, entertainment, clothing, fun
+          return txs.filter(t => isBudgetWantTransaction(t));
         case 'moves':
           return txs.filter(t => !t.isCredit && isBudgetMoneyMoveCategory(t.category));
         // Legacy kinds from older builds
@@ -21314,9 +21436,7 @@
         if (isBudgetFixedBillCategory(cat)) return;
         if (cat === 'groceries' || cat === 'transport' || cat === 'health' || cat === 'education'
           || cat === 'charity' || cat === 'fees' || cat === 'cash' || cat === 'loans') return;
-        // Only true “want” categories, or merchants that clearly look discretionary
-        const isWant = isBudgetDiscretionaryCategory(cat) || isBudgetWantMerchant(t.description);
-        if (!isWant) return;
+        if (!isBudgetWantTransaction(t)) return;
         // Skip huge one-off wires mis-tagged as dining etc.
         const amt = Number(t.amount) || 0;
         if (amt >= 2000) return;
@@ -21931,6 +22051,9 @@
         state.budget._otherRecatV2 = true;
         recategorizeBudgetOtherTransactions();
       }
+      if (!state.budget._incomeRepairedV1) {
+        repairBudgetIncomeFlags();
+      }
       const anyTx = (ensureBudgetState().transactions || []).some(t => t && (Number(t.amount) || 0) > 0);
       if (!anyTx) {
         empty.classList.remove('hidden');
@@ -21969,13 +22092,22 @@
       BUDGET_CATEGORIES.forEach(c => { totals[c.id] = 0; });
       txs.forEach(t => {
         let cat = t.category || 'other';
-        if (t.isCredit) cat = 'income';
+        if (budgetKindFilter === 'income' || t.isCredit || isBudgetIncomeTransaction(t)) {
+          // Income lens: roll true income together; keep transfer-in visible if categorized as such
+          if (budgetKindFilter === 'income') {
+            cat = (t.category === 'transfers' || t.category === 'savings') ? t.category : 'income';
+          } else if (t.isCredit) {
+            cat = (t.category === 'transfers' || t.category === 'savings') ? t.category : 'income';
+          }
+        }
         totals[cat] = (totals[cat] || 0) + (Number(t.amount) || 0);
       });
 
-      // Pie = every category with amount in this view (all money-out types included)
+      // Pie = every category with amount in this view
       const pieCats = BUDGET_CATEGORIES.filter(c => {
-        if (budgetKindFilter === 'income') return c.id === 'income';
+        if (budgetKindFilter === 'income') {
+          return c.id === 'income' || c.id === 'transfers' || c.id === 'savings';
+        }
         if (c.id === 'income') return false;
         return c.pie !== false;
       });
