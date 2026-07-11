@@ -5424,27 +5424,36 @@
     }
 
     .summary-dash-mark {
-      width: 2.35rem;
-      height: 2.35rem;
-      border-radius: 0.8rem;
-      background: linear-gradient(145deg, rgba(60, 181, 166, 0.28), rgba(47, 155, 140, 0.42));
-      border: 1px solid rgba(47, 155, 140, 0.28);
+      width: 2.45rem;
+      height: 2.45rem;
+      border-radius: 0.85rem;
+      /* Solid teal plate — same family as the FAB (not a washed mint wash) */
+      background: linear-gradient(155deg, #4BC4B4 0%, #2F9B8C 48%, #1F7A6E 100%);
+      border: 1.5px solid rgba(255, 255, 255, 0.55);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      box-shadow: 0 0 12px rgba(47, 155, 140, 0.14);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.35) inset,
+        0 4px 12px rgba(30, 90, 82, 0.28);
     }
 
     .summary-dash-mark img {
-      width: 1.45rem;
-      height: 1.45rem;
+      width: 1.35rem;
+      height: 1.35rem;
       object-fit: contain;
       object-position: center center;
-      /* Match FAB: white custom anchor on teal plate */
-      filter:
-        drop-shadow(0 0 1px rgba(255, 255, 255, 0.25))
-        drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+      /* Crisp white anchor on teal — matches dock FAB */
+      filter: brightness(0) invert(1);
+      opacity: 0.98;
+    }
+    html[data-theme="dark"] .summary-dash-mark {
+      background: linear-gradient(155deg, #48B2A2 0%, #2A6F66 48%, #163D38 100%);
+      border-color: rgba(154, 214, 202, 0.35);
+      box-shadow:
+        0 1px 0 rgba(180, 230, 220, 0.16) inset,
+        0 6px 14px rgba(0, 0, 0, 0.4);
     }
 
     .summary-dash-title {
@@ -9367,7 +9376,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 239;
+    const HARBOR_BUILD_NUMBER = 240;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -13633,15 +13642,14 @@
       let base;
       if (days === 0) base = 'One-time';
       else if (!days) base = 'Daily';
-      else if (days === 2) base = '3 days a week';
-      else if (days === 3) base = '2 days a week';
       else if (days === 7) base = 'Weekly';
       else if (days === 14) base = 'Every 2 weeks';
       else if (days >= 28 && days <= 31) base = 'Monthly';
-      else if (days >= 58 && days <= 62) base = 'Every ~2 months';
-      else if (days >= 85 && days <= 95) base = 'Every 3 months';
+      else if (days >= 85 && days <= 95) base = 'Quarterly';
       else if (days >= 175 && days <= 185) base = 'Twice a year';
       else if (days >= 360) base = 'Yearly';
+      else if (days === 2) base = '3 days a week'; // legacy
+      else if (days === 3) base = '2 days a week'; // legacy
       else base = `Every ${days} days`;
 
       const weekdays = Array.isArray(habitOrWeekdays)
@@ -13652,6 +13660,16 @@
         if (dayLabel) return `${base} · ${dayLabel}`;
       }
       return base;
+    }
+
+    /** Snap legacy / freeform intervals onto the simplified How often chips */
+    function snapIntervalToSimple(days) {
+      if (days === 0) return 0;
+      if (days == null || days === 1) return null; // Daily
+      if (days <= 14) return 7; // Weekly (2×/3× week, every 2 weeks → weekly chip)
+      if (days <= 45) return 30; // Monthly
+      if (days <= 120) return 90; // Quarterly
+      return 365; // Yearly
     }
 
     function getDaysUntilHabitDue(habit) {
@@ -14029,41 +14047,20 @@
       document.getElementById('quick-task-modal')?.remove();
     }
 
-    const TASK_RECURRENCE_OPTIONS = [
+    // Shared How often chips for habits & chores (preferred days sit below)
+    const SIMPLE_RECURRENCE_OPTIONS = [
       { key: 'daily', label: 'Daily', days: null },
-      { key: '2', label: '3 days a week', days: 2 },
-      { key: '3', label: '2 days a week', days: 3 },
       { key: '7', label: 'Weekly', days: 7 },
-      { key: '14', label: 'Every 2 weeks', days: 14 },
       { key: '30', label: 'Monthly', days: 30 },
-      { key: '90', label: 'Every 3 months', days: 90 },
-      { key: '180', label: 'Twice a year', days: 180 },
+      { key: '90', label: 'Quarterly', days: 90 },
       { key: '365', label: 'Yearly', days: 365 }
     ];
-
-    const HABIT_RECURRENCE_OPTIONS = [
-      { key: 'daily', label: 'Daily', days: null },
-      { key: '2', label: '3 days a week', days: 2 },
-      { key: '3', label: '2 days a week', days: 3 },
-      { key: '7', label: 'Weekly', days: 7 }
-    ];
-
-    // Chores: primary chips stay short; "More" holds longer intervals
-    const CHORE_RECURRENCE_PRIMARY = [
-      { key: 'daily', label: 'Daily', days: null },
-      { key: '3', label: '2 days a week', days: 3 },
-      { key: '2', label: '3 days a week', days: 2 },
-      { key: '7', label: 'Weekly', days: 7 },
-      { key: '30', label: 'Monthly', days: 30 }
-    ];
-    const CHORE_RECURRENCE_MORE = [
-      { key: '14', label: 'Every 2 weeks', days: 14 },
-      { key: '90', label: 'Every 3 months', days: 90 },
-      { key: '180', label: 'Twice a year', days: 180 },
-      { key: '365', label: 'Yearly', days: 365 }
-    ];
-    const CHORE_RECURRENCE_ORDERED = CHORE_RECURRENCE_PRIMARY.concat(CHORE_RECURRENCE_MORE);
-    const CHORE_RECURRENCE_OPTIONS = CHORE_RECURRENCE_ORDERED;
+    const TASK_RECURRENCE_OPTIONS = SIMPLE_RECURRENCE_OPTIONS;
+    const HABIT_RECURRENCE_OPTIONS = SIMPLE_RECURRENCE_OPTIONS;
+    const CHORE_RECURRENCE_PRIMARY = SIMPLE_RECURRENCE_OPTIONS;
+    const CHORE_RECURRENCE_MORE = [];
+    const CHORE_RECURRENCE_ORDERED = SIMPLE_RECURRENCE_OPTIONS;
+    const CHORE_RECURRENCE_OPTIONS = SIMPLE_RECURRENCE_OPTIONS;
 
     function resolveQuickTaskInterval(title, intervalUserPicked, selectedInterval) {
       if (isSchedulingTaskTitle(title)) return 0;
@@ -14263,14 +14260,10 @@
               <span id="qt-recur-caption" class="text-[9px] text-harbor-muted/80"></span>
             </div>
             <div id="qt-recurrence-row" class="qt-recurrence-row" role="group" aria-label="How often"></div>
-            <div id="qt-recur-more-wrap" class="qt-recur-more-wrap hidden">
-              <button type="button" id="qt-recur-more-btn" class="qt-recur-more-btn">More options</button>
-              <div id="qt-recurrence-more-row" class="qt-recurrence-row mt-1.5 hidden" role="group" aria-label="More how often"></div>
-              <div id="qt-weekday-section" class="qt-weekday-section hidden">
-                <label class="block text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5">Preferred day(s)</label>
-                <div id="qt-weekday-row" class="qt-weekday-row" role="group" aria-label="Preferred days of the week"></div>
-                <div class="qt-weekday-hint">e.g. trash day · pick one or more · leave empty for any day</div>
-              </div>
+            <div id="qt-weekday-section" class="qt-weekday-section hidden">
+              <label class="block text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5 mt-2.5">Preferred day(s)</label>
+              <div id="qt-weekday-row" class="qt-weekday-row" role="group" aria-label="Preferred days of the week"></div>
+              <div id="qt-weekday-hint" class="qt-weekday-hint">Pick which day(s) it should land on · leave empty for any day</div>
             </div>
             <div id="qt-times-section" class="hidden">
               <label class="block text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mt-2.5 mb-1">Times per day</label>
@@ -14315,7 +14308,6 @@
       let selectedKind = 'task'; // task | habit | chore
       let selectedTimesPerDay = editSource?.times_per_day ? Math.max(1, Number(editSource.times_per_day) || 1) : 1;
       let selectedWeekdays = getHabitWeekdays(editSource) ? [...getHabitWeekdays(editSource)] : [];
-      let showChoreMore = !!(selectedWeekdays.length); // open More if preferred days already set
       const MINUTE_PRESETS = [
         { label: '5 min', value: 5 },
         { label: '15 min', value: 15 },
@@ -14329,7 +14321,8 @@
         else if (isNonDailyRecurring(editSource) || editSource.trackStreak === false) selectedKind = isDailyTask(editSource) && editSource.trackStreak === false ? 'chore' : (isNonDailyRecurring(editSource) ? 'chore' : 'habit');
         else selectedKind = 'habit';
         if (editSource.interval_days !== 0) {
-          selectedInterval = editSource.interval_days == null ? null : editSource.interval_days;
+          const raw = editSource.interval_days == null ? null : editSource.interval_days;
+          selectedInterval = snapIntervalToSimple(raw);
           intervalUserPicked = true;
         }
         // Chores may be daily (null) — do not force weekly on edit
@@ -14341,24 +14334,18 @@
         // Infer kind from title defaults
         if (/\b(\d+\s*x|\d+\s*times|twice|2x|3x)\b/i.test(presetTitle) || /\bper week|a week|weekly\b/i.test(presetTitle)) {
           selectedKind = /\b(chore|clean|mow|laundry)\b/i.test(presetTitle) ? 'chore' : 'habit';
-          if (/twice|2\s*x|2\s*times/i.test(presetTitle)) {
-            selectedInterval = 3;
-            intervalUserPicked = true;
-          } else if (/3\s*x|3\s*times/i.test(presetTitle)) {
-            selectedInterval = 2;
-            intervalUserPicked = true;
-          } else if (inferred.interval_days > 1) {
-            selectedInterval = inferred.interval_days;
+          if (inferred.interval_days > 1) {
+            selectedInterval = snapIntervalToSimple(inferred.interval_days);
             intervalUserPicked = true;
           } else {
-            selectedInterval = 3;
+            selectedInterval = 7; // weekly default for “per week” phrasing
             intervalUserPicked = true;
           }
         } else if (inferred.interval_days == null || inferred.interval_days === 1) {
           selectedKind = /\b(habit|every day|daily|streak)\b/i.test(presetTitle) ? 'habit' : 'task';
         } else if (inferred.interval_days > 1) {
           selectedKind = 'chore';
-          selectedInterval = inferred.interval_days;
+          selectedInterval = snapIntervalToSimple(inferred.interval_days);
           intervalUserPicked = true;
         }
       }
@@ -14398,17 +14385,39 @@
         if (opt.days != null && opt.days > 1) selectedTimesPerDay = 1;
         updateIntervalButtons();
         renderTimesPerDay();
+        renderWeekdayChips();
         refreshSummary();
+      }
+
+      function preferredDaysHint() {
+        if (selectedInterval == null || selectedInterval === 1) {
+          return 'Which days it shows · leave empty for every day';
+        }
+        if (selectedInterval === 7) {
+          return 'Which day(s) each week · leave empty for any day';
+        }
+        if (selectedInterval === 30) {
+          return 'Preferred weekday each month (when it comes due) · optional';
+        }
+        if (selectedInterval === 90) {
+          return 'Preferred weekday each quarter · optional';
+        }
+        if (selectedInterval === 365) {
+          return 'Preferred weekday each year · optional';
+        }
+        return 'Pick which day(s) it should land on · leave empty for any day';
       }
 
       function renderWeekdayChips() {
         const section = modal.querySelector('#qt-weekday-section');
         const row = modal.querySelector('#qt-weekday-row');
+        const hint = modal.querySelector('#qt-weekday-hint');
         if (!section || !row) return;
-        // Preferred days live under More for chores (and habits that open more)
-        const showSection = (selectedKind === 'chore' || selectedKind === 'habit') && showChoreMore;
+        // Always show for habits & chores so cadence + preferred day work together
+        const showSection = selectedKind === 'chore' || selectedKind === 'habit';
         section.classList.toggle('hidden', !showSection);
         if (!showSection) return;
+        if (hint) hint.textContent = preferredDaysHint();
         row.innerHTML = WEEKDAY_CHIP_OPTIONS.map(o => {
           const on = selectedWeekdays.includes(o.d);
           return `<button type="button" class="qt-weekday-chip${on ? ' is-active' : ''}" data-weekday="${o.d}" aria-pressed="${on ? 'true' : 'false'}">${o.label}</button>`;
@@ -14422,13 +14431,6 @@
             } else {
               selectedWeekdays = [...selectedWeekdays, d].sort((a, b) => a - b);
             }
-            // Weekly-style chores often need a cadence when a day is picked
-            if (selectedWeekdays.length && selectedKind === 'chore'
-                && (selectedInterval == null || selectedInterval === 0 || selectedInterval === 1)) {
-              intervalUserPicked = true;
-              selectedInterval = 7;
-              updateIntervalButtons();
-            }
             renderWeekdayChips();
             refreshSummary();
           };
@@ -14437,65 +14439,14 @@
 
       function renderRecurrenceChips() {
         if (!recurrenceRow) return;
-        const moreWrap = modal.querySelector('#qt-recur-more-wrap');
-        const moreRow = modal.querySelector('#qt-recurrence-more-row');
-        const moreBtn = modal.querySelector('#qt-recur-more-btn');
-
-        if (selectedKind === 'chore') {
-          const primary = CHORE_RECURRENCE_PRIMARY;
-          const more = CHORE_RECURRENCE_MORE;
-          recurrenceRow.innerHTML = primary.map(opt =>
-            `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
-          ).join('');
-          if (moreWrap && moreRow) {
-            moreWrap.classList.remove('hidden');
-            const inMore = more.some(o => recurrenceOptionMatches(o));
-            if (inMore || selectedWeekdays.length) showChoreMore = true;
-            moreRow.classList.toggle('hidden', !showChoreMore);
-            moreRow.innerHTML = more.map(opt =>
-              `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
-            ).join('');
-            if (moreBtn) {
-              moreBtn.textContent = showChoreMore ? 'Fewer options' : 'More options';
-              moreBtn.onclick = () => {
-                showChoreMore = !showChoreMore;
-                renderRecurrenceChips();
-              };
-            }
-          }
-        } else if (selectedKind === 'habit') {
-          // Habits: primary cadence + More for preferred days (no extra long intervals)
-          const opts = recurrenceOptionsForKind();
-          recurrenceRow.innerHTML = opts.map(opt =>
-            `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
-          ).join('');
-          if (moreWrap && moreRow) {
-            moreWrap.classList.remove('hidden');
-            moreRow.innerHTML = '';
-            moreRow.classList.add('hidden');
-            if (selectedWeekdays.length) showChoreMore = true;
-            if (moreBtn) {
-              moreBtn.textContent = showChoreMore ? 'Fewer options' : 'More options';
-              moreBtn.onclick = () => {
-                showChoreMore = !showChoreMore;
-                renderRecurrenceChips();
-              };
-            }
-          }
-        } else {
-          const opts = recurrenceOptionsForKind();
-          recurrenceRow.innerHTML = opts.map(opt =>
-            `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
-          ).join('');
-          moreWrap?.classList.add('hidden');
-        }
+        const opts = recurrenceOptionsForKind();
+        recurrenceRow.innerHTML = opts.map(opt =>
+          `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
+        ).join('');
 
         modal.querySelectorAll('.qt-recur-chip').forEach(btn => {
           btn.onclick = () => {
-            const list = selectedKind === 'chore'
-              ? CHORE_RECURRENCE_ORDERED
-              : recurrenceOptionsForKind();
-            const opt = list.find(o => o.key === btn.dataset.intervalKey)
+            const opt = SIMPLE_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey)
               || TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
             pickRecurrenceOpt(opt);
           };
@@ -14506,7 +14457,7 @@
       }
 
       function updateIntervalButtons() {
-        const opts = selectedKind === 'chore' ? CHORE_RECURRENCE_ORDERED : recurrenceOptionsForKind();
+        const opts = recurrenceOptionsForKind();
         modal.querySelectorAll('.qt-recur-chip').forEach(btn => {
           const opt = opts.find(o => o.key === btn.dataset.intervalKey)
             || TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
@@ -14641,7 +14592,7 @@
               selectedInterval = null;
             } else if (inf.interval_days > 0) {
               intervalUserPicked = true;
-              selectedInterval = inf.interval_days;
+              selectedInterval = snapIntervalToSimple(inf.interval_days);
             }
           }
         }
