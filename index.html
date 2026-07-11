@@ -10457,7 +10457,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 298;
+    const HARBOR_BUILD_NUMBER = 299;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -14961,18 +14961,14 @@
       return base;
     }
 
-    /** Snap freeform intervals onto How often chips (keep 2×/3× week & biweekly). */
+    /** Snap freeform / legacy intervals onto Daily · Weekly · Monthly chips. */
     function snapIntervalToSimple(days) {
       if (days === 0) return 0;
       if (days == null || days === 1) return null; // Daily
-      if (days === 2) return 2; // 3× a week (every other day-ish)
-      if (days === 3) return 3; // 2× a week
-      if (days === 14) return 14; // Every 2 weeks
-      if (days <= 10) return 7; // Weekly
-      if (days <= 45) return 30; // Monthly
-      if (days <= 120) return 90; // Quarterly
-      if (days <= 200) return 180; // Twice a year (if chip present)
-      return 365; // Yearly
+      // 2×/3× a week, biweekly, etc. → Weekly (use Preferred days for specific days)
+      if (days <= 20) return 7;
+      // Monthly and longer rare cadences → Monthly
+      return 30;
     }
 
     function getDaysUntilHabitDue(habit) {
@@ -15353,17 +15349,12 @@
       document.getElementById('quick-task-modal')?.remove();
     }
 
-    // How often chips — habits & chores (times/week restored; preferred days sit below)
-    // days: 2 ≈ 3×/week, days: 3 ≈ 2×/week (legacy interval model used across due logic)
+    // How often chips — habits & chores (keep simple: Daily / Weekly / Monthly)
+    // Prefer specific days under Preferred day(s) for multi-day-week patterns.
     const SIMPLE_RECURRENCE_OPTIONS = [
       { key: 'daily', label: 'Daily', days: null },
-      { key: '3', label: '2× a week', days: 3 },
-      { key: '2', label: '3× a week', days: 2 },
       { key: '7', label: 'Weekly', days: 7 },
-      { key: '14', label: 'Every 2 weeks', days: 14 },
-      { key: '30', label: 'Monthly', days: 30 },
-      { key: '90', label: 'Quarterly', days: 90 },
-      { key: '365', label: 'Yearly', days: 365 }
+      { key: '30', label: 'Monthly', days: 30 }
     ];
     const TASK_RECURRENCE_OPTIONS = SIMPLE_RECURRENCE_OPTIONS;
     const HABIT_RECURRENCE_OPTIONS = SIMPLE_RECURRENCE_OPTIONS;
@@ -15650,7 +15641,7 @@
         // Infer kind from title defaults
         if (/\b(\d+\s*x|\d+\s*times|twice|2x|3x)\b/i.test(presetTitle) || /\bper week|a week|weekly\b/i.test(presetTitle)) {
           selectedKind = /\b(chore|clean|mow|laundry)\b/i.test(presetTitle) ? 'chore' : 'habit';
-          // “twice a day” → daily + times_per_day (feed the dogs); “twice a week” → 2× a week chip
+          // “twice a day” → daily + times_per_day (feed the dogs); “twice a week” → Weekly + preferred days
           const perDay = /\b(a day|per day|each day|daily)\b/i.test(presetTitle)
             || (/\b(twice|2\s*x|2\s*times)\b/i.test(presetTitle) && !/\bweek\b/i.test(presetTitle));
           if (perDay && /\b(twice|2\s*x|2\s*times)\b/i.test(presetTitle)) {
@@ -15660,12 +15651,6 @@
           } else if (perDay && /\b(3\s*x|3\s*times|three times)\b/i.test(presetTitle)) {
             selectedInterval = null;
             selectedTimesPerDay = 3;
-            intervalUserPicked = true;
-          } else if (/\b(twice|2\s*x|2\s*times).{0,12}week\b|\b2\s*days?\s*a\s*week\b/i.test(presetTitle)) {
-            selectedInterval = 3; // 2× a week
-            intervalUserPicked = true;
-          } else if (/\b(3\s*x|3\s*times|three times).{0,12}week\b|\b3\s*days?\s*a\s*week\b/i.test(presetTitle)) {
-            selectedInterval = 2; // 3× a week
             intervalUserPicked = true;
           } else if (inferred.interval_days > 1) {
             selectedInterval = snapIntervalToSimple(inferred.interval_days);
@@ -15738,12 +15723,6 @@
         }
         if (selectedInterval === 30) {
           return 'Preferred weekday each month (when it comes due) · optional';
-        }
-        if (selectedInterval === 90) {
-          return 'Preferred weekday each quarter · optional';
-        }
-        if (selectedInterval === 365) {
-          return 'Preferred weekday each year · optional';
         }
         return 'Pick which day(s) it should land on · leave empty for any day';
       }
@@ -15876,11 +15855,11 @@
         });
         if (kindHint) {
           if (selectedKind === 'task') {
-            kindHint.textContent = 'A one-time to-do that leaves Today when you finish it. Switch to Habit or Chore for Daily, 2× a week, Weekly…';
+            kindHint.textContent = 'A one-time to-do that leaves Today when you finish it. Switch to Habit or Chore for Daily, Weekly, or Monthly.';
           } else if (selectedKind === 'habit') {
-            kindHint.textContent = 'Builds a streak. How often: Daily, 2×/3× a week, Weekly… On Daily, set times per day (e.g. feed dogs 2×).';
+            kindHint.textContent = 'Builds a streak. How often: Daily, Weekly, or Monthly. On Daily, set times per day (e.g. feed dogs 2×). Use preferred days for Mon/Wed/Fri.';
           } else {
-            kindHint.textContent = 'Repeats on a cadence — Daily, 2× a week, Weekly, Monthly… No streak pressure.';
+            kindHint.textContent = 'Repeats on a cadence — Daily, Weekly, or Monthly. Preferred days pick trash day, etc. No streak pressure.';
           }
         }
         const showRecurrence = selectedKind === 'habit' || selectedKind === 'chore';
