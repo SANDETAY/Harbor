@@ -1,7 +1,14 @@
 node_modules/
 native-www/
-ios/
-android/
+# Keep native projects in git for App Store / Play packaging
+# ios/ and android/ are committed (Pods still local)
+ios/App/Pods/
+ios/App/App/public/
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/app/src/main/assets/public/
 .idea/
 *.log
 .DS_Store
@@ -10,3 +17,10 @@ dist/
 .cap-build/
 harbor-webapp-deploy.zip
 rhythm-webapp-deploy.zip
+Harbor-debug.apk
+backups/
+prototypes/
+scripts/_palette-shots/
+scripts/_debug-*
+scripts/_test-*
+scripts/_probe-*

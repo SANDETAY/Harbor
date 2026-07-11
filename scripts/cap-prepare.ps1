@@ -42,4 +42,5 @@ if (-not (Test-Path (Join-Path $out "index.html"))) {
 }
 
 Write-Host "Prepared $out for Capacitor (webDir)."
-Write-Host "Next: npm install ; npx cap add android ; npx cap sync"
+Write-Host "Next: npx cap sync ios   (then on a Mac: cd ios/App ; pod install ; npx cap open ios)"
+Write-Host "App Store runbook: docs/APP-STORE-IOS.md"

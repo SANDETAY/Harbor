@@ -3,6 +3,8 @@
 This is the **runway** from today’s PWA to App Store / Play.  
 Do **not** start ads or complex pricing before a **TestFlight** (iOS) / internal testing (Android) build feels good to real users.
 
+**iOS App Store deep dive:** [APP-STORE-IOS.md](./APP-STORE-IOS.md) (bundle ID, Xcode, TestFlight, screenshots).
+
 ---
 
 ## 0. Prerequisites (you)

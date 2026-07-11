@@ -9711,7 +9711,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 260;
+    const HARBOR_BUILD_NUMBER = 261;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -32885,10 +32885,32 @@
       }
     }
 
+    async function initNativeShell() {
+      try {
+        const Cap = window.Capacitor;
+        if (!Cap || typeof Cap.isNativePlatform !== 'function' || !Cap.isNativePlatform()) return;
+        const StatusBar = Cap.Plugins?.StatusBar;
+        if (StatusBar?.setStyle) {
+          // Light chrome under dark status-bar icons on light themes
+          await StatusBar.setStyle({ style: 'DARK' });
+        }
+        if (StatusBar?.setBackgroundColor) {
+          const solid = getComputedStyle(document.documentElement)
+            .getPropertyValue('--harbor-body-solid').trim() || '#D6E8E2';
+          await StatusBar.setBackgroundColor({ color: solid });
+        }
+        const Splash = Cap.Plugins?.SplashScreen;
+        if (Splash?.hide) await Splash.hide();
+      } catch (e) {
+        console.warn('Native shell init', e?.message || e);
+      }
+    }
+
     function bootApp() {
 
         loadState();
         applyAppTheme(state.settings?.theme || 'harbor');
+        initNativeShell();
         repairOnboardedEmptyTodayList();
         loadCommonTasks();
         refreshCalendarCache();
@@ -33117,8 +33139,10 @@
     // Boot
     window.onload = init;
 
-    // PWA service worker — network-first with versioned cache (see sw.js CACHE_NAME)
-    if ('serviceWorker' in navigator) {
+    // PWA service worker — skip inside Capacitor native (App Store / Play WebView)
+    const isNativeCapacitor = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function'
+      && window.Capacitor.isNativePlatform());
+    if ('serviceWorker' in navigator && !isNativeCapacitor) {
       window.addEventListener('load', () => {
         // One-time hard refresh when build number changes (kills stuck Mint shell / old CSS)
         try {

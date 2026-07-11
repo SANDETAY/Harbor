@@ -3,13 +3,28 @@
   "appName": "Harbor",
   "webDir": "native-www",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "iosScheme": "capacitor"
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile",
+    "scheme": "Harbor",
+    "allowsLinkPreview": false,
+    "scrollEnabled": true
   },
   "plugins": {
     "SplashScreen": {
       "launchAutoHide": true,
+      "launchShowDuration": 1500,
       "backgroundColor": "#D6E8E2",
-      "showSpinner": false
+      "showSpinner": false,
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#D6E8E2"
     },
     "CapacitorHttp": {
       "enabled": true

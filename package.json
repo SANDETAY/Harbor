@@ -1,9 +1,9 @@
 {
   "name": "harbor-webapp",
-  "version": "0.9.2",
+  "version": "1.0.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "Harbor — calm life management PWA. Capacitor-ready for App Store / Play.",
+  "description": "Harbor \u2014 calm life management. PWA + Capacitor (App Store / Play).",
   "scripts": {
     "start": "powershell -ExecutionPolicy Bypass -File scripts/start-server.ps1",
     "preview": "powershell -ExecutionPolicy Bypass -File scripts/start-server.ps1",
@@ -11,12 +11,18 @@
     "cap:prepare": "powershell -ExecutionPolicy Bypass -File scripts/cap-prepare.ps1",
     "cap:sync": "npm run cap:prepare && npx cap sync",
     "cap:android": "npm run cap:sync && npx cap open android",
-    "cap:ios": "npm run cap:sync && npx cap open ios"
+    "cap:ios": "npm run cap:sync && npx cap open ios",
+    "cap:ios:sync": "npm run cap:prepare && npx cap sync ios",
+    "store:prepare": "npm run cap:prepare && npx cap sync"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",
+    "@capacitor/app": "^6.0.3",
     "@capacitor/core": "^6.2.0",
-    "@capacitor/ios": "^6.2.0"
+    "@capacitor/geolocation": "^6.1.1",
+    "@capacitor/ios": "^6.2.0",
+    "@capacitor/splash-screen": "^6.0.4",
+    "@capacitor/status-bar": "^6.0.3"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.2.0"
