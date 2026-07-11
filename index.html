@@ -9467,7 +9467,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 248;
+    const HARBOR_BUILD_NUMBER = 249;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -22127,7 +22127,10 @@
 
     function renderSummaryModalContent(brief) {
       const mode = brief.mode;
-      const taskN = brief.tasks.length;
+      // Day mode: match Today tab. Week/month: full range count.
+      const taskN = mode === 'day'
+        ? getBriefTodayTabTasks(brief).length
+        : (brief.tasks || []).length;
       const billN = brief.bills.length;
       const groceryN = brief.groceryTotal || 0;
       const eventN = mode === 'day'
@@ -22270,7 +22273,7 @@
         const brief = buildSummary(summaryMode || 'day');
         rangeLabel = brief.mode === 'day' ? 'Today' : brief.mode === 'month' ? 'This month' : 'This week';
         const counts = {
-          tasks: (brief.tasks || []).length,
+          tasks: brief.mode === 'day' ? getBriefTodayTabTasks(brief).length : (brief.tasks || []).length,
           events: flattenBriefEvents(brief).length,
           bills: (brief.bills || []).length,
           grocery: (state.groceryMaster || []).filter(g => !g.checked).length
@@ -22341,7 +22344,8 @@
       `;
 
       if (kind === 'tasks') {
-        const tasks = brief.tasks || [];
+        // Day mode: only items on the Today tab (parked work is under When You Can)
+        const tasks = brief.mode === 'day' ? getBriefTodayTabTasks(brief) : (brief.tasks || []);
         if (!tasks.length) {
           return `<div class="summary-empty py-4 text-center">No tasks in this range. Add one from Today or the Library.</div>`;
         }
@@ -22528,7 +22532,7 @@
         const brief = buildSummary(summaryMode || 'day');
         rangeLabel = brief.mode === 'day' ? 'Today' : brief.mode === 'month' ? 'This month' : 'This week';
         const counts = {
-          tasks: (brief.tasks || []).length,
+          tasks: brief.mode === 'day' ? getBriefTodayTabTasks(brief).length : (brief.tasks || []).length,
           events: flattenBriefEvents(brief).length,
           bills: (brief.bills || []).length,
           grocery: (state.groceryMaster || []).filter(g => !g.checked).length
@@ -24097,8 +24101,27 @@
       };
     }
 
+    /** Habits currently on the Today list (same rules as the Today tab feed). */
+    function getTodayTabHabits() {
+      return (state.habits || []).filter(h => {
+        try {
+          return typeof belongsOnTodayTab === 'function' ? belongsOnTodayTab(h) : isDueToday(h);
+        } catch (_) {
+          return false;
+        }
+      });
+    }
+
+    /** Header + empty-state counts — always match the Today tab, not energy extras. */
     function getTodayVisibleTaskCount() {
-      return getEnergyMatchedTasks(currentEnergy).length;
+      return getTodayTabHabits().length;
+    }
+
+    /** Day-mode Overview Tasks KPI / list — Today tab items only (parked live in When You Can). */
+    function getBriefTodayTabTasks(brief) {
+      const tasks = brief?.tasks || [];
+      if (brief?.mode !== 'day') return tasks;
+      return tasks.filter(t => t?.habit && belongsOnTodayTab(t.habit));
     }
 
     /** False for walks/outdoor/noisy tasks during quiet hours (e.g. 2am). */
