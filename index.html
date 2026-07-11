@@ -2748,59 +2748,79 @@
       opacity: 0.9;
     }
 
-    /* Metric log sheet — steps / pages / distance / savings */
+    /* Metric log sheet — clean distance / steps / pages entry */
     #metric-input-modal .metric-sheet {
-      background:
-        linear-gradient(165deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-surface)) 42%, rgb(var(--harbor-surface)) 100%);
-      border-top: 1px solid rgb(var(--harbor-primary) / 0.18);
-      box-shadow:
-        0 -8px 32px rgb(var(--harbor-text) / 0.1),
-        0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+      background: rgb(var(--harbor-surface));
+      border-top: 1px solid rgb(var(--harbor-border));
+      box-shadow: 0 -10px 36px rgb(var(--harbor-text) / 0.1);
+      padding-bottom: max(1.1rem, env(safe-area-inset-bottom, 0px));
     }
     html[data-theme="dark"] #metric-input-modal .metric-sheet {
-      background:
-        linear-gradient(165deg, rgb(var(--harbor-raised) / 0.95) 0%, rgb(var(--harbor-surface)) 55%);
-      border-top-color: rgb(var(--harbor-primary) / 0.18);
-      box-shadow: 0 -12px 40px rgba(0, 8, 6, 0.55), 0 0 0 1px rgb(var(--harbor-primary-light) / 0.06) inset;
+      background: rgb(var(--harbor-surface));
+      box-shadow: 0 -12px 40px rgba(0, 8, 6, 0.5);
     }
-    #metric-input-modal .metric-icon-badge {
-      width: 3rem;
-      height: 3rem;
-      border-radius: 1rem;
+    #metric-input-modal .metric-sheet-head {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      flex-shrink: 0;
-      color: #fff;
-      background: linear-gradient(155deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
-      box-shadow:
-        0 6px 18px rgb(var(--harbor-primary) / 0.32),
-        0 0 0 1px rgba(255, 255, 255, 0.22) inset;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    #metric-input-modal .metric-sheet-kicker {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+      margin-bottom: 0.2rem;
+    }
+    #metric-input-modal .metric-sheet-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: rgb(var(--harbor-text));
+      line-height: 1.25;
+    }
+    #metric-input-modal .metric-sheet-sub {
+      font-size: 0.75rem;
+      color: rgb(var(--harbor-muted));
+      margin-top: 0.2rem;
+      line-height: 1.35;
+    }
+    #metric-input-modal .metric-unit-row {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.85rem;
+    }
+    #metric-input-modal .metric-unit-chip {
+      flex: 1;
+      min-height: 2.4rem;
+      border-radius: 999px;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      font-size: 0.78rem;
+      font-weight: 700;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    #metric-input-modal .metric-unit-chip.is-on {
+      border-color: rgb(var(--harbor-primary) / 0.55);
+      background: rgb(var(--harbor-primary) / 0.14);
+      color: rgb(var(--harbor-text));
     }
     #metric-input-modal .metric-input-wrap {
       display: flex;
-      align-items: stretch;
-      border-radius: 1.15rem;
-      border: 1.5px solid rgb(var(--harbor-primary) / 0.22);
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgb(var(--harbor-raised)) 100%);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.5) inset,
-        0 4px 14px rgb(var(--harbor-text) / 0.05);
+      align-items: center;
+      border-radius: 1.1rem;
+      border: 1.5px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
       overflow: hidden;
-      transition: border-color 0.18s ease, box-shadow 0.18s ease;
-    }
-    html[data-theme="dark"] #metric-input-modal .metric-input-wrap {
-      border-color: rgb(var(--harbor-primary) / 0.22);
-      background: linear-gradient(180deg, rgb(var(--harbor-raised) / 0.9) 0%, rgb(var(--harbor-raised)) 100%);
-      box-shadow: 0 1px 0 rgb(var(--harbor-primary-light) / 0.06) inset, 0 6px 16px rgba(0, 8, 6, 0.35);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      margin-bottom: 0.65rem;
     }
     #metric-input-modal .metric-input-wrap:focus-within {
-      border-color: rgb(var(--harbor-primary) / 0.55);
-      box-shadow:
-        0 0 0 3px rgb(var(--harbor-primary) / 0.16),
-        0 1px 0 rgba(255, 255, 255, 0.4) inset;
+      border-color: rgb(var(--harbor-primary) / 0.5);
+      box-shadow: 0 0 0 3px rgb(var(--harbor-primary) / 0.12);
     }
     #metric-input-modal .metric-input-field {
       flex: 1 1 auto;
@@ -2808,58 +2828,74 @@
       border: none;
       outline: none;
       background: transparent;
-      padding: 0.95rem 0.35rem 0.95rem 1.1rem;
-      font-size: 1.35rem;
-      font-weight: 650;
-      letter-spacing: -0.02em;
+      padding: 1rem 0.5rem 1rem 1.1rem;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
       color: rgb(var(--harbor-text));
       font-variant-numeric: tabular-nums;
       font-family: var(--harbor-font);
     }
     #metric-input-modal .metric-input-field::placeholder {
-      color: rgb(var(--harbor-muted) / 0.55);
-      font-weight: 500;
-      font-size: 1.05rem;
+      color: rgb(var(--harbor-muted) / 0.45);
+      font-weight: 600;
+      font-size: 1.2rem;
     }
     #metric-input-modal .metric-unit-suffix {
-      display: flex;
-      align-items: center;
-      padding: 0 1rem 0 0.35rem;
-      font-size: 0.78rem;
+      padding: 0 1.05rem 0 0.25rem;
+      font-size: 0.85rem;
       font-weight: 700;
-      letter-spacing: 0.03em;
-      color: rgb(var(--harbor-primary-light));
-      text-transform: lowercase;
+      color: rgb(var(--harbor-muted));
       white-space: nowrap;
     }
-    #metric-input-modal .metric-unit-chip {
-      flex: 1;
-      min-height: 2.35rem;
-      border-radius: 999px;
+    #metric-input-modal .metric-quick-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    #metric-input-modal .metric-quick-chip {
+      appearance: none;
       border: 1px solid rgb(var(--harbor-border));
       background: rgb(var(--harbor-raised));
-      color: rgb(var(--harbor-muted));
+      color: rgb(var(--harbor-text));
+      border-radius: 999px;
+      padding: 0.38rem 0.72rem;
       font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+      font-weight: 650;
+      font-variant-numeric: tabular-nums;
+      cursor: pointer;
     }
-    #metric-input-modal .metric-unit-chip.is-on {
-      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
-      border-color: transparent;
-      color: #fff;
-      box-shadow: 0 3px 12px rgb(var(--harbor-primary) / 0.28);
+    #metric-input-modal .metric-quick-chip:active {
+      border-color: rgb(var(--harbor-primary) / 0.45);
+      background: rgb(var(--harbor-primary) / 0.1);
+    }
+    #metric-input-modal .metric-actions {
+      display: flex;
+      gap: 0.55rem;
     }
     #metric-input-modal .metric-save-btn {
-      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
+      flex: 1.4;
+      min-height: 2.85rem;
+      border-radius: 1rem;
+      background: rgb(var(--harbor-primary));
       color: #fff;
-      box-shadow:
-        0 4px 16px rgb(var(--harbor-primary) / 0.3),
-        0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+      font-weight: 700;
+      font-size: 0.92rem;
+      border: none;
     }
     #metric-input-modal .metric-save-btn:active {
       opacity: 0.92;
-      transform: scale(0.99);
+    }
+    #metric-input-modal .metric-skip-btn {
+      flex: 1;
+      min-height: 2.85rem;
+      border-radius: 1rem;
+      background: rgb(var(--harbor-raised));
+      border: 1px solid rgb(var(--harbor-border));
+      color: rgb(var(--harbor-muted));
+      font-weight: 650;
+      font-size: 0.88rem;
     }
     /* Inline logger on Streak Preview — match the same calm mint field */
     .proj-metric-panel {
@@ -10457,7 +10493,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 302;
+    const HARBOR_BUILD_NUMBER = 303;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -12198,32 +12234,61 @@
     }
 
     /**
-     * True when the current streak run is broken (missed a required day/period).
-     * Broken streaks leave Streaks until the user completes again and starts a new run.
+     * True when a daily streak run is broken (missed a required day).
+     * Broken daily streaks leave Streaks until completed again.
      */
     function isStreakBroken(habit) {
       if (!habit || !shouldTrackStreak(habit)) return true;
       const streak = computeCurrentStreak(habit.id);
       if (streak > 0) return false;
-      // Still "alive" if this period has any progress (e.g. 1/3 this week) or done today
-      const need = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
       const n = typeof countCompletionsInPeriod === 'function'
         ? countCompletionsInPeriod(habit, todayStr())
         : 0;
       if (n > 0) return false;
       if (typeof isCompletedToday === 'function' && isCompletedToday(habit.id)) return false;
-      // Never completed at all — not broken, just not started (also hidden until first complete)
-      const comps = getCompletions(habit.id) || [];
-      if (!comps.length) return true;
-      // Had history but current streak is 0 with no period progress → broken
       return true;
     }
 
-    /** Card belongs on Streaks only while a run is alive (or in progress this period). */
+    /**
+     * Weekly/monthly multi-session goals (Swim 3× a week) are week/month progress cards,
+     * not fragile day-streaks. Show while this period has logs, or while consecutive
+     * full periods are still alive (open period grace).
+     */
+    function isWeeklyGoalHabit(habit) {
+      return !!(habit && typeof isNonDailyRecurring === 'function' && isNonDailyRecurring(habit));
+    }
+
+    /** Card belongs on Streaks only while a run / week goal is alive. */
     function belongsOnStreaksTab(habit) {
-      if (!habit || !shouldTrackStreak(habit)) return false;
+      if (!habit) return false;
+      // Promote one-off Swim etc. so they can appear after complete
+      if (isOneOffTask(habit)
+        && habit.trackStreak !== false
+        && ((typeof isPhysicalActivity === 'function' && isPhysicalActivity(habit))
+          || (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(habit.title || '')))) {
+        habit.interval_days = null;
+        habit.trackStreak = true;
+      }
+      if (!shouldTrackStreak(habit)) return false;
       if (isOneOffTask(habit)) return false;
-      return !isStreakBroken(habit);
+
+      const n = typeof countCompletionsInPeriod === 'function'
+        ? countCompletionsInPeriod(habit, todayStr())
+        : 0;
+      // Any progress this day/week/month keeps the card up (covers Swim 1/3 this week)
+      if (n > 0) return true;
+      if (typeof isCompletedToday === 'function' && isCompletedToday(habit.id)) return true;
+
+      const streak = computeCurrentStreak(habit.id);
+      if (streak > 0) return true;
+
+      // Weekly/monthly: also show if due this period and user has ever logged (restart path)
+      if (isWeeklyGoalHabit(habit)) {
+        const comps = getCompletions(habit.id) || [];
+        if (comps.length && typeof isDueToday === 'function' && isDueToday(habit)) return true;
+      }
+
+      return false;
     }
 
     function computeCurrentStreak(habitId) {
@@ -12463,6 +12528,19 @@
      * Harbor-styled metric entry (replaces browser prompt()).
      * Resolves to { value, unit } or null if skipped/cancelled.
      */
+    function getMetricQuickPicks(meta, unit) {
+      const u = unit || meta?.distanceUnit || meta?.unitLabel || '';
+      if (meta?.isSwim || meta?.type === 'miles') {
+        if (u === 'yards') return [250, 500, 1000, 1650];
+        if (u === 'meters') return [200, 400, 800, 1500];
+        if (u === 'miles' || meta?.type === 'miles') return [0.25, 0.5, 1, 2, 3];
+      }
+      if (meta?.type === 'steps') return [2000, 5000, 8000, 10000];
+      if (meta?.type === 'pages') return [5, 10, 20, 30];
+      if (meta?.type === 'savings') return [5, 10, 25, 50];
+      return [];
+    }
+
     function showMetricInputModal(habit, options = {}) {
       return new Promise((resolve) => {
         const meta = getMetricInputMeta(habit) || options.meta;
@@ -12474,18 +12552,19 @@
 
         const todayLog = getTodaysMetricLog(habit);
         const visual = getMetricTypeVisual(meta.type, habit);
-        const fallback = options.defaultValue ?? todayLog?.displayValue ?? todayLog?.value ?? habit?.target_value ?? meta.placeholder ?? '';
+        // Don't pre-fill placeholder-looking values — empty field is cleaner
+        const fallback = options.defaultValue ?? todayLog?.displayValue ?? todayLog?.value ?? '';
         let selectedUnit = meta.distanceUnit || (meta.type === 'miles' && isSwimHabit(habit) ? getPreferredDistanceUnit(habit) : null);
         const unitLabel = () => selectedUnit || meta.unitLabel || 'units';
-        const safeTitle = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(habit?.title || 'this habit') : (habit?.title || 'this habit');
+        const safeTitle = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(habit?.title || 'Activity') : (habit?.title || 'Activity');
 
         const modal = document.createElement('div');
         modal.id = 'metric-input-modal';
-        modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end sm:items-center justify-center harbor-modal-overlay';
+        modal.className = 'fixed inset-0 bg-harbor-bg/65 modal-overlay-blur flex items-end sm:items-center justify-center harbor-modal-overlay';
         modal._metricResolve = resolve;
 
         const unitPicker = meta.allowUnitPick ? `
-          <div class="flex gap-1.5 mb-3" role="group" aria-label="Distance unit" id="metric-unit-picker">
+          <div class="metric-unit-row" role="group" aria-label="Unit" id="metric-unit-picker">
             ${['yards', 'meters', 'miles'].map(u => {
               const on = (selectedUnit || 'yards') === u;
               return `<button type="button" data-distance-unit="${u}" class="metric-unit-chip${on ? ' is-on' : ''}">${u.charAt(0).toUpperCase() + u.slice(1)}</button>`;
@@ -12493,23 +12572,32 @@
           </div>
         ` : '';
 
+        const picks = getMetricQuickPicks(meta, selectedUnit || meta.distanceUnit);
+        const quickRow = picks.length ? `
+          <div class="metric-quick-row" id="metric-quick-row" role="group" aria-label="Quick amounts">
+            ${picks.map(v => {
+              const label = meta.type === 'savings' ? `$${v}` : String(v);
+              return `<button type="button" class="metric-quick-chip" data-quick="${v}">${label}</button>`;
+            }).join('')}
+          </div>
+        ` : '';
+
         modal.innerHTML = `
           <div class="absolute inset-0" data-metric-dismiss="1"></div>
-          <div class="modal-sheet metric-sheet relative w-full sm:max-w-md bg-harbor-surface border-t sm:border border-harbor-border rounded-t-3xl sm:rounded-3xl p-5 text-sm mb-[max(0.35rem,env(keyboard-inset-height,0px))]"
+          <div class="modal-sheet metric-sheet relative w-full sm:max-w-sm bg-harbor-surface border-t sm:border border-harbor-border rounded-t-3xl sm:rounded-3xl px-5 pt-2 pb-5 text-sm mb-[max(0.25rem,env(keyboard-inset-height,0px))]"
             role="dialog" aria-modal="true" aria-labelledby="metric-input-title" onclick="event.stopPropagation()">
             <div class="modal-grab-pill" aria-hidden="true"></div>
-            <div class="flex items-start gap-3 mb-4">
-              <div class="metric-icon-badge" aria-hidden="true"><i class="fa-solid ${visual.icon}"></i></div>
-              <div class="min-w-0 flex-1">
-                <div id="metric-input-title" class="font-semibold text-base text-harbor-text leading-tight">${visual.label}</div>
-                <div class="text-[11px] text-harbor-muted mt-0.5 truncate">${safeTitle}</div>
-                <div class="text-[11px] text-harbor-muted/90 mt-1.5 leading-snug">${visual.hint}</div>
+            <div class="metric-sheet-head">
+              <div class="min-w-0">
+                <div class="metric-sheet-kicker">${safeTitle}</div>
+                <div id="metric-input-title" class="metric-sheet-title">${visual.label}</div>
+                <div class="metric-sheet-sub">${meta.allowUnitPick ? 'Pick a unit, then enter distance' : (visual.hint || 'Log today’s amount')}</div>
               </div>
-              <button type="button" class="modal-close-chip" data-metric-dismiss="1" aria-label="Close">Close</button>
+              <button type="button" class="modal-close-chip flex-shrink-0" data-metric-dismiss="1" aria-label="Close">Close</button>
             </div>
             ${unitPicker}
             <label class="sr-only" for="metric-input-field">Amount</label>
-            <div class="metric-input-wrap mb-4">
+            <div class="metric-input-wrap">
               <input id="metric-input-field" class="metric-input-field" type="number" min="0" step="${meta.step || '1'}"
                 value="${fallback !== '' && fallback != null ? String(fallback).replace(/"/g, '') : ''}"
                 placeholder="${meta.placeholder || '0'}"
@@ -12517,15 +12605,10 @@
                 autocomplete="off" enterkeyhint="done">
               <span class="metric-unit-suffix" id="metric-unit-suffix">${unitLabel()}</span>
             </div>
-            <div class="flex gap-2">
-              <button type="button" data-metric-dismiss="1"
-                class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold text-sm active:bg-harbor-border">
-                Skip
-              </button>
-              <button type="button" id="metric-save-btn"
-                class="metric-save-btn flex-[1.35] py-3 rounded-2xl font-semibold text-sm active:opacity-90">
-                Save
-              </button>
+            ${quickRow}
+            <div class="metric-actions">
+              <button type="button" data-metric-dismiss="1" class="metric-skip-btn">Skip</button>
+              <button type="button" id="metric-save-btn" class="metric-save-btn">Save</button>
             </div>
           </div>
         `;
@@ -12536,6 +12619,30 @@
         const input = modal.querySelector('#metric-input-field');
         const suffix = modal.querySelector('#metric-unit-suffix');
         const picker = modal.querySelector('#metric-unit-picker');
+        const quickEl = modal.querySelector('#metric-quick-row');
+
+        const rebuildQuick = () => {
+          if (!quickEl) return;
+          const next = getMetricQuickPicks(meta, selectedUnit || meta.distanceUnit);
+          if (!next.length) {
+            quickEl.innerHTML = '';
+            quickEl.classList.add('hidden');
+            return;
+          }
+          quickEl.classList.remove('hidden');
+          quickEl.innerHTML = next.map(v => {
+            const label = meta.type === 'savings' ? `$${v}` : String(v);
+            return `<button type="button" class="metric-quick-chip" data-quick="${v}">${label}</button>`;
+          }).join('');
+          quickEl.querySelectorAll('[data-quick]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              if (input) {
+                input.value = btn.dataset.quick;
+                input.focus();
+              }
+            });
+          });
+        };
 
         const applyUnit = (u) => {
           selectedUnit = normalizeDistanceUnit(u) || u;
@@ -12544,17 +12651,19 @@
             input.step = selectedUnit === 'miles' ? '0.1' : (selectedUnit === 'yards' || selectedUnit === 'meters' ? '25' : (meta.step || '1'));
             input.inputMode = selectedUnit === 'miles' ? 'decimal' : 'numeric';
             if (!input.value) {
-              input.placeholder = selectedUnit === 'yards' ? '500' : selectedUnit === 'meters' ? '400' : selectedUnit === 'miles' ? '0.3' : (meta.placeholder || '0');
+              input.placeholder = selectedUnit === 'yards' ? '500' : selectedUnit === 'meters' ? '400' : selectedUnit === 'miles' ? '1' : (meta.placeholder || '0');
             }
           }
           picker?.querySelectorAll('[data-distance-unit]').forEach(btn => {
             btn.classList.toggle('is-on', btn.dataset.distanceUnit === selectedUnit);
           });
+          rebuildQuick();
         };
 
         picker?.querySelectorAll('[data-distance-unit]').forEach(btn => {
           btn.addEventListener('click', () => applyUnit(btn.dataset.distanceUnit));
         });
+        rebuildQuick();
 
         const submit = () => {
           const raw = (input?.value || '').trim();
@@ -12590,7 +12699,7 @@
 
         requestAnimationFrame(() => {
           input?.focus();
-          input?.select?.();
+          if (input?.value) input.select?.();
         });
       });
     }
@@ -14699,17 +14808,18 @@
       return fromDateStr;
     }
 
-    /** Daily habits track streaks by default; chores opt out. Fitness activities always track unless stopped. */
+    /** Habits + fitness activities track streaks unless explicitly stopped. */
     function shouldTrackStreak(habit) {
       if (!habit) return false;
       // Explicit stop (Remove on Streaks) wins
       if (habit.trackStreak === false) return false;
-      // One-offs don't build streaks (repairDailyRhythm promotes Swim etc. first)
-      if (isOneOffTask(habit)) return false;
+      const fitness = (typeof isPhysicalActivity === 'function' && isPhysicalActivity(habit))
+        || (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(habit.title || ''));
+      // One-off fitness → treat as streak-eligible (promote interval elsewhere)
+      if (isOneOffTask(habit)) return !!fitness || habit.trackStreak === true;
       if (habit.trackStreak === true) return true;
-      // Swim / walk / gym / other activities — always show on Streaks when recurring
-      if (typeof isPhysicalActivity === 'function' && isPhysicalActivity(habit)) return true;
-      if (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(habit.title || '')) return true;
+      // Swim / walk / gym / other activities — always eligible when recurring
+      if (fitness) return true;
       return isDailyTask(habit);
     }
 
@@ -33115,7 +33225,29 @@
       const longest = getLongestStreak(habit.id);
       const isSelected = currentProjectionHabit === habit.id;
       const metric = dense ? '' : getStreakMetricPreview(habit);
-      const dots = dense ? [] : getStreakWeekDots(habit.id);
+      const need = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
+      const periodDone = typeof countCompletionsInPeriod === 'function'
+        ? countCompletionsInPeriod(habit, todayStr())
+        : 0;
+      const weeklyGoal = typeof isWeeklyGoalHabit === 'function' && isWeeklyGoalHabit(habit);
+      // Weekly multi-session: lead with sessions this week/month, not a day chain
+      let bigNum = streak;
+      let bigUnit = `day${streak === 1 ? '' : 's'}`;
+      let metaLine = `Longest ${longest}d${isQuantitativeHabit(habit) ? ' · measurable' : ''}`;
+      if (weeklyGoal) {
+        bigNum = need > 1 ? `${periodDone}/${need}` : periodDone;
+        bigUnit = need > 1
+          ? (habit.interval_days === 7 ? 'this week' : 'this month')
+          : (habit.interval_days === 7 ? 'this week' : 'this month');
+        metaLine = streak > 0
+          ? `${streak} week${streak === 1 ? '' : 's'} in a row hit goal`
+          : (need > 1 ? `Goal ${need}× ${habit.interval_days === 7 ? 'a week' : 'a month'}` : 'Weekly goal');
+      } else if (need > 1 && isDailyTask(habit)) {
+        metaLine = periodDone > 0 && periodDone < need
+          ? `${periodDone}/${need} today · longest ${longest}d`
+          : `Longest ${longest}d · ${need}× daily`;
+      }
+      const dots = dense || weeklyGoal ? [] : getStreakWeekDots(habit.id);
       const cardClass = [
         'streak-card',
         dense ? 'is-dense' : '',
@@ -33143,13 +33275,12 @@
               <div class="streak-card-title truncate">${escapeBriefHtml(habit.title)}</div>
               <div class="streak-dense-sub">
                 <span class="streak-status-chip ${status.cls}">${status.label}</span>
-                ${longest > streak ? `<span class="text-[10px] text-harbor-muted">Best ${longest}d</span>` : ''}
               </div>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
               <div class="text-right">
-                <div class="streak-card-days">${streak}</div>
-                <div class="streak-card-days-unit">day${streak === 1 ? '' : 's'}</div>
+                <div class="streak-card-days">${bigNum}</div>
+                <div class="streak-card-days-unit">${bigUnit}</div>
               </div>
               <button type="button" onclick="deleteStreak('${habit.id}', event)"
                 class="row-inline-actions text-harbor-muted hover:text-rose-400 text-sm px-1" title="Stop tracking streak">×</button>
@@ -33160,17 +33291,17 @@
           <div class="flex justify-between items-start gap-3 w-full">
             <div class="flex-1 min-w-0">
               <div class="streak-card-title truncate">${escapeBriefHtml(habit.title)}</div>
-              <div class="streak-card-meta">Longest ${longest}d${isQuantitativeHabit(habit) ? ' · measurable' : ''}</div>
+              <div class="streak-card-meta">${escapeBriefHtml(metaLine)}</div>
               ${metric ? `<div class="streak-card-metric">${escapeBriefHtml(metric)}</div>` : ''}
-              <div class="streak-week-dots" aria-hidden="true">
+              ${dots.length ? `<div class="streak-week-dots" aria-hidden="true">
                 ${dots.map(d => `<span class="streak-week-dot${d.done ? ' is-done' : ''}${d.pass && !d.done ? ' is-pass' : ''}${d.isToday ? ' is-today' : ''}"></span>`).join('')}
-              </div>
+              </div>` : ''}
               <span class="streak-status-chip ${status.cls}">${status.label}</span>
             </div>
             <div class="flex items-start gap-1.5 flex-shrink-0">
               <div class="text-right">
-                <div class="streak-card-days">${streak}</div>
-                <div class="streak-card-days-unit">day${streak === 1 ? '' : 's'}</div>
+                <div class="streak-card-days">${bigNum}</div>
+                <div class="streak-card-days-unit">${bigUnit}</div>
               </div>
               <button type="button" onclick="deleteStreak('${habit.id}', event)"
                 class="row-inline-actions text-harbor-muted hover:text-rose-400 text-sm px-1 pt-0.5" title="Stop tracking streak">×</button>
