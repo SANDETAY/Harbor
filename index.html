@@ -9467,7 +9467,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 246;
+    const HARBOR_BUILD_NUMBER = 247;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -16687,6 +16687,7 @@
       const blocks = [];
       const ws = state.settings.workSchedule || { mode: 'flexible' };
       const dow = new Date().getDay();
+      const today = todayStr();
 
       if (ws.mode === 'preset' || ws.mode === 'custom') {
         const days = ws.days || [1, 2, 3, 4, 5];
@@ -16700,11 +16701,22 @@
         }
       }
 
-      const events = extraEvents || state.calendarCache?.events || [];
-      const today = todayStr();
+      // Prefer live store; never invent busy time from future-month events
+      const events = extraEvents
+        || (typeof getAllCalendarEvents === 'function' ? getAllCalendarEvents() : null)
+        || state.calendarCache?.events
+        || [];
       const dayStart = typeof AWAKE_DAY_START === 'number' ? AWAKE_DAY_START : 7 * 60;
       const dayEnd = typeof AWAKE_DAY_END === 'number' ? AWAKE_DAY_END : 22 * 60;
       events.forEach(e => {
+        // Only events that actually land on today
+        if (typeof eventOccursOnDate === 'function') {
+          if (!eventOccursOnDate(e, today)) return;
+        } else {
+          const startD = getEventDate(e);
+          const endD = getEventEndDate(e);
+          if (startD > today || endD < today) return;
+        }
         const startD = getEventDate(e);
         const endD = getEventEndDate(e);
         const multiDay = endD > startD;
@@ -16716,9 +16728,12 @@
             const start = parseTimeMins(e.time || '00:00');
             blocks.push({ start: Math.min(start, dayEnd - 15), end: dayEnd, title: e.title, type: 'event' });
           } else if (multiDay && endD === today && startD < today) {
-            // Last day: busy from morning through a reasonable end (or full window)
+            // Last day: busy from morning through end of window (or event end if same day)
             blocks.push({ start: dayStart, end: dayEnd, title: e.title, type: 'event' });
-          } else {
+          } else if (multiDay && startD < today && endD > today) {
+            // Middle of multi-day trip
+            blocks.push({ start: dayStart, end: dayEnd, title: e.title, type: 'event' });
+          } else if (allDayish && startD === today) {
             blocks.push({ start: dayStart, end: dayEnd, title: e.title, type: 'event' });
           }
           return;
@@ -21962,15 +21977,43 @@
     function renderBriefPulsePanel(brief) {
       const mode = brief.mode || 'day';
       const ctx = brief.ctx || (typeof getContext === 'function' ? getContext() : {});
-      const freeMin = Math.max(0, Number(ctx.bestGap?.minutes || ctx.freeTime || 0));
-      const freeTitle = freeMin >= 20
-        ? (typeof formatFreeTimeHours === 'function' ? formatFreeTimeHours(freeMin) : `${freeMin} min`)
-        : (mode === 'day' ? 'Little open water' : 'Scan the schedule');
-      const freeMeta = freeMin >= 20
-        ? (ctx.bestGap?.beforeEvent
-          ? `before ${escapeBriefHtml(String(ctx.bestGap.beforeEvent))}`
-          : (mode === 'day' ? 'good window for a light task' : 'look for gaps between events'))
-        : (mode === 'day' ? 'calendar is packed — keep Today light' : 'open Life → Schedule for free blocks');
+      // Prefer remaining free time, then largest gap, then full-day free (not “packed” from future events)
+      const remainingFree = Math.max(0, Number(ctx.freeTime) || 0);
+      const bestGapMin = Math.max(0, Number(ctx.bestGap?.minutes) || 0);
+      const dayFree = Math.max(0, Number(ctx.dayFreeMinutes) || remainingFree);
+      const freeMin = Math.max(remainingFree, bestGapMin);
+      const lateEvening = (() => {
+        try {
+          const now = new Date();
+          return (now.getHours() * 60 + now.getMinutes()) >= 20 * 60;
+        } catch (_) { return false; }
+      })();
+
+      let freeTitle;
+      let freeMeta;
+      if (freeMin >= 20) {
+        freeTitle = typeof formatFreeTimeHours === 'function' ? formatFreeTimeHours(freeMin) : `${freeMin} min`;
+        freeMeta = ctx.bestGap?.beforeEvent
+          ? `open before ${escapeBriefHtml(String(ctx.bestGap.beforeEvent))}`
+          : (mode === 'day' ? 'open in your day · room for Today tasks' : 'open blocks between events');
+      } else if (lateEvening && dayFree >= 60) {
+        // Near bedtime the remaining window is tiny even on a light calendar
+        freeTitle = 'Day was open';
+        freeMeta = typeof formatFreeTimeHours === 'function'
+          ? `about ${formatFreeTimeHours(dayFree)} free overall · evening winding down`
+          : 'evening winding down · light calendar today';
+      } else if (dayFree >= 45 && (Number(ctx.eventBusyMinutes) || 0) < 90) {
+        freeTitle = typeof formatFreeTimeHours === 'function' ? formatFreeTimeHours(dayFree) : `${dayFree} min`;
+        freeMeta = 'light calendar · plenty of open water';
+      } else if (freeMin > 0 || dayFree > 0) {
+        freeTitle = 'A little open water';
+        freeMeta = mode === 'day' ? 'short gaps between things' : 'check Schedule for blocks';
+      } else {
+        freeTitle = mode === 'day' ? 'Little open water left' : 'Scan the schedule';
+        freeMeta = mode === 'day'
+          ? (lateEvening ? 'evening is full · rest or wrap up light tasks' : 'few gaps right now — keep Today light')
+          : 'open Life → Schedule for free blocks';
+      }
 
       const rows = [];
       rows.push(`
@@ -23049,19 +23092,24 @@
       const nextEvent = getUpcomingEvents(1)[0] || null;
       const gaps = avail.gaps;
       const bestGap = gaps[0] || null;
-      const freeTime = avail.freeMinutes;
+      // freeMinutes = total open time left today; bestGap = largest contiguous block
+      const freeTime = Math.max(0, Number(avail.freeMinutes) || 0);
+      const dayFreeMinutes = Math.max(0, Number(avail.dayFreeMinutes) || freeTime);
 
       return {
         weather,
         energy,
-        freeTime: bestGap ? bestGap.minutes : freeTime,
+        freeTime,
+        dayFreeMinutes,
         date: today,
         activeBills,
         groceryCount,
         nextEvent,
         calendarNote: cache?.note || '',
         gaps,
-        bestGap
+        bestGap,
+        eventBusyMinutes: avail.timedBusyMinutes || 0,
+        workLabel: avail.workLabel || ''
       };
     }
 
