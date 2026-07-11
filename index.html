@@ -2672,25 +2672,16 @@
 
     .qt-recurrence-row {
       display: flex;
-      gap: 0.35rem;
-      overflow-x: auto;
-      padding-bottom: 0.15rem;
-      margin: 0 -0.15rem;
-      padding-left: 0.15rem;
-      padding-right: 0.15rem;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-
-    .qt-recurrence-row::-webkit-scrollbar {
-      display: none;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding-bottom: 0.1rem;
     }
 
     .qt-recur-chip {
-      flex-shrink: 0;
-      padding: 0.38rem 0.7rem;
+      flex: 0 0 auto;
+      padding: 0.4rem 0.72rem;
       border-radius: 999px;
-      font-size: 0.68rem;
+      font-size: 0.7rem;
       font-weight: 600;
       border: 1px solid rgb(var(--harbor-border));
       background: rgb(var(--harbor-raised));
@@ -5158,18 +5149,19 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      min-width: 2.75rem;
       border: 1px solid rgb(var(--harbor-border));
       background: rgb(var(--harbor-raised));
       color: rgb(var(--harbor-muted));
       border-radius: 999px;
-      padding: 0.4rem 0.65rem;
-      font-size: 0.7rem;
-      font-weight: 650;
+      padding: 0.45rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 700;
       cursor: pointer;
     }
     .qt-times-chip.is-active {
-      border-color: rgb(var(--harbor-primary) / 0.45);
-      background: rgb(var(--harbor-primary) / 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.55);
+      background: rgb(var(--harbor-primary) / 0.16);
       color: rgb(var(--harbor-text));
     }
     .qt-energy-row {
@@ -10465,7 +10457,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 296;
+    const HARBOR_BUILD_NUMBER = 297;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -14889,14 +14881,14 @@
       let base;
       if (days === 0) base = 'One-time';
       else if (!days) base = 'Daily';
+      else if (days === 2) base = '3× a week';
+      else if (days === 3) base = '2× a week';
       else if (days === 7) base = 'Weekly';
       else if (days === 14) base = 'Every 2 weeks';
       else if (days >= 28 && days <= 31) base = 'Monthly';
       else if (days >= 85 && days <= 95) base = 'Quarterly';
       else if (days >= 175 && days <= 185) base = 'Twice a year';
       else if (days >= 360) base = 'Yearly';
-      else if (days === 2) base = '3 days a week'; // legacy
-      else if (days === 3) base = '2 days a week'; // legacy
       else base = `Every ${days} days`;
 
       const weekdays = Array.isArray(habitOrWeekdays)
@@ -14909,13 +14901,17 @@
       return base;
     }
 
-    /** Snap legacy / freeform intervals onto the simplified How often chips */
+    /** Snap freeform intervals onto How often chips (keep 2×/3× week & biweekly). */
     function snapIntervalToSimple(days) {
       if (days === 0) return 0;
       if (days == null || days === 1) return null; // Daily
-      if (days <= 14) return 7; // Weekly (2×/3× week, every 2 weeks → weekly chip)
+      if (days === 2) return 2; // 3× a week (every other day-ish)
+      if (days === 3) return 3; // 2× a week
+      if (days === 14) return 14; // Every 2 weeks
+      if (days <= 10) return 7; // Weekly
       if (days <= 45) return 30; // Monthly
       if (days <= 120) return 90; // Quarterly
+      if (days <= 200) return 180; // Twice a year (if chip present)
       return 365; // Yearly
     }
 
@@ -15232,7 +15228,9 @@
       const defaults = { difficulty: 2, est_minutes: 10, interval_days: 0, target_value: null, unit: null, kind: 'routine' };
       if (/call|text|email|floss|vitamin|water|bed|thank/i.test(lower)) defaults.difficulty = 1;
       if (/mow|lawn|fertiliz|gutter|roof|hvac|scrub|deep clean/i.test(lower)) defaults.difficulty = 3;
-      if (/for the week|per week|every week|weekly/.test(lower)) defaults.interval_days = 7;
+      if (/\b(twice|2\s*x|2\s*times).{0,12}(a\s*)?week\b|\b2\s*days?\s*a\s*week\b/.test(lower)) defaults.interval_days = 3;
+      else if (/\b(3\s*x|3\s*times|three times).{0,12}(a\s*)?week\b|\b3\s*days?\s*a\s*week\b/.test(lower)) defaults.interval_days = 2;
+      else if (/for the week|per week|every week|weekly/.test(lower)) defaults.interval_days = 7;
       else if (/biweekly|every two weeks|every 2 weeks|fortnight/.test(lower)) defaults.interval_days = 14;
       else if (/for the month|per month|monthly/.test(lower)) defaults.interval_days = 30;
       else if (/quarter|every 3 months|90 day/.test(lower)) defaults.interval_days = 90;
@@ -15295,10 +15293,14 @@
       document.getElementById('quick-task-modal')?.remove();
     }
 
-    // Shared How often chips for habits & chores (preferred days sit below)
+    // How often chips — habits & chores (times/week restored; preferred days sit below)
+    // days: 2 ≈ 3×/week, days: 3 ≈ 2×/week (legacy interval model used across due logic)
     const SIMPLE_RECURRENCE_OPTIONS = [
       { key: 'daily', label: 'Daily', days: null },
+      { key: '3', label: '2× a week', days: 3 },
+      { key: '2', label: '3× a week', days: 2 },
       { key: '7', label: 'Weekly', days: 7 },
+      { key: '14', label: 'Every 2 weeks', days: 14 },
       { key: '30', label: 'Monthly', days: 30 },
       { key: '90', label: 'Quarterly', days: 90 },
       { key: '365', label: 'Yearly', days: 365 }
@@ -15520,6 +15522,7 @@
             </div>
             <div id="qt-times-section" class="hidden">
               <label class="block text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mt-2.5 mb-1">Times per day</label>
+              <div class="text-[10px] text-harbor-muted mb-1.5 leading-snug">Same day, more than once — e.g. feed the dogs <strong class="text-harbor-text font-semibold">2×</strong>.</div>
               <div id="qt-times-row" class="qt-times-row" role="group" aria-label="Times per day"></div>
             </div>
           </div>
@@ -15587,7 +15590,24 @@
         // Infer kind from title defaults
         if (/\b(\d+\s*x|\d+\s*times|twice|2x|3x)\b/i.test(presetTitle) || /\bper week|a week|weekly\b/i.test(presetTitle)) {
           selectedKind = /\b(chore|clean|mow|laundry)\b/i.test(presetTitle) ? 'chore' : 'habit';
-          if (inferred.interval_days > 1) {
+          // “twice a day” → daily + times_per_day (feed the dogs); “twice a week” → 2× a week chip
+          const perDay = /\b(a day|per day|each day|daily)\b/i.test(presetTitle)
+            || (/\b(twice|2\s*x|2\s*times)\b/i.test(presetTitle) && !/\bweek\b/i.test(presetTitle));
+          if (perDay && /\b(twice|2\s*x|2\s*times)\b/i.test(presetTitle)) {
+            selectedInterval = null;
+            selectedTimesPerDay = 2;
+            intervalUserPicked = true;
+          } else if (perDay && /\b(3\s*x|3\s*times|three times)\b/i.test(presetTitle)) {
+            selectedInterval = null;
+            selectedTimesPerDay = 3;
+            intervalUserPicked = true;
+          } else if (/\b(twice|2\s*x|2\s*times).{0,12}week\b|\b2\s*days?\s*a\s*week\b/i.test(presetTitle)) {
+            selectedInterval = 3; // 2× a week
+            intervalUserPicked = true;
+          } else if (/\b(3\s*x|3\s*times|three times).{0,12}week\b|\b3\s*days?\s*a\s*week\b/i.test(presetTitle)) {
+            selectedInterval = 2; // 3× a week
+            intervalUserPicked = true;
+          } else if (inferred.interval_days > 1) {
             selectedInterval = snapIntervalToSimple(inferred.interval_days);
             intervalUserPicked = true;
           } else {
@@ -15734,14 +15754,20 @@
         const isDaily = (selectedInterval == null || selectedInterval === 1);
         const show = (selectedKind === 'habit' || selectedKind === 'chore') && isDaily;
         sec.classList.toggle('hidden', !show);
-        if (!show) return;
+        if (!show) {
+          // Non-daily cadence uses How often (2× a week etc.), not multi-log
+          if (selectedTimesPerDay > 1 && selectedInterval != null && selectedInterval > 1) {
+            selectedTimesPerDay = 1;
+          }
+          return;
+        }
         const options = [
-          { n: 1, label: '1' },
-          { n: 2, label: '2' },
-          { n: 3, label: '3' }
+          { n: 1, label: '1×', hint: 'Once' },
+          { n: 2, label: '2×', hint: 'Twice' },
+          { n: 3, label: '3×', hint: 'Three' }
         ];
         row.innerHTML = options.map(o =>
-          `<button type="button" class="qt-times-chip ${selectedTimesPerDay === o.n ? 'is-active' : ''}" data-times="${o.n}" aria-label="${o.n} time${o.n === 1 ? '' : 's'} per day">${o.label}</button>`
+          `<button type="button" class="qt-times-chip ${selectedTimesPerDay === o.n ? 'is-active' : ''}" data-times="${o.n}" aria-label="${o.hint} a day (${o.n} time${o.n === 1 ? '' : 's'})" title="${o.hint} a day">${o.label}</button>`
         ).join('');
         row.querySelectorAll('.qt-times-chip').forEach(btn => {
           btn.onclick = () => {
@@ -15790,11 +15816,11 @@
         });
         if (kindHint) {
           if (selectedKind === 'task') {
-            kindHint.textContent = 'A one-time to-do that leaves Today when you finish it.';
+            kindHint.textContent = 'A one-time to-do that leaves Today when you finish it. Switch to Habit or Chore for Daily, 2× a week, Weekly…';
           } else if (selectedKind === 'habit') {
-            kindHint.textContent = 'Something you return to on purpose — builds a streak. Example: walk daily, or feed the dogs twice a day.';
+            kindHint.textContent = 'Builds a streak. How often: Daily, 2×/3× a week, Weekly… On Daily, set times per day (e.g. feed dogs 2×).';
           } else {
-            kindHint.textContent = 'Housework that comes back on a schedule. Shows when due — no streak pressure.';
+            kindHint.textContent = 'Repeats on a cadence — Daily, 2× a week, Weekly, Monthly… No streak pressure.';
           }
         }
         const showRecurrence = selectedKind === 'habit' || selectedKind === 'chore';
@@ -15811,6 +15837,7 @@
           intervalUserPicked = true;
           selectedInterval = 0;
           selectedWeekdays = [];
+          selectedTimesPerDay = 1;
         } else if (kind === 'habit') {
           intervalUserPicked = true;
           // Keep a non-daily interval if user already picked one; default daily
@@ -15821,6 +15848,8 @@
         }
         updateKindButtons();
         updateIntervalButtons();
+        renderTimesPerDay();
+        renderWeekdayChips();
         refreshSummary();
       }
 
