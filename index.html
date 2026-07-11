@@ -7686,8 +7686,8 @@
     .student-pricing-toggle input.student-pricing-switch {
       appearance: none;
       -webkit-appearance: none;
-      width: 2.5rem;
-      height: 1.4rem;
+      width: 2.15rem;
+      height: 1.2rem;
       border-radius: 999px;
       background: rgb(var(--harbor-border));
       position: relative;
@@ -7700,8 +7700,8 @@
       position: absolute;
       top: 2px;
       left: 2px;
-      width: 1rem;
-      height: 1rem;
+      width: 0.85rem;
+      height: 0.85rem;
       border-radius: 999px;
       background: #fff;
       box-shadow: 0 1px 2px rgba(0,0,0,0.15);
@@ -7711,7 +7711,12 @@
       background: rgb(var(--harbor-primary));
     }
     .student-pricing-toggle input.student-pricing-switch:checked::after {
-      transform: translateX(1.1rem);
+      transform: translateX(0.9rem);
+    }
+    /* Compact Student chip on the subscriptions toolbar */
+    .student-pricing-chip {
+      max-width: 7.5rem;
+      margin: 0;
     }
     .sub-tier-student-badge {
       display: inline-block;
@@ -9201,28 +9206,24 @@
 
         <!-- Subscriptions Panel — yours first, brands on demand -->
         <div id="life-panel-subscriptions" class="life-panel hidden">
-          <div class="panel-head panel-head--toolbar-only">
-            <div class="panel-toolbar panel-toolbar-cluster">
-              <button type="button" onclick="showSubscriptionImportModal()" class="chip-tool-btn" id="subs-import-btn" aria-label="Import subscriptions CSV">
-                Import CSV
-              </button>
-              <button type="button" onclick="showAddSubscriptionModal()" class="chip-add-btn" id="subs-add-btn" aria-label="Add Subscription">
-                <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                <span>Add</span>
-              </button>
+          <div class="panel-head panel-head--toolbar-only mb-2">
+            <div class="panel-toolbar panel-toolbar-cluster schedule-toolbar" style="width:100%">
+              <label class="student-pricing-toggle student-pricing-chip flex items-center gap-1.5 px-2 py-1 rounded-xl bg-harbor-raised border border-harbor-border cursor-pointer select-none flex-shrink-0" title="Show student rates when browsing popular services">
+                <span class="text-[11px] font-semibold text-harbor-text whitespace-nowrap">Student</span>
+                <input id="student-pricing-toggle" type="checkbox" class="student-pricing-switch flex-shrink-0"
+                  onchange="toggleStudentPricing(this.checked)" aria-label="Student status pricing">
+              </label>
+              <div class="schedule-toolbar-end">
+                <button type="button" onclick="showSubscriptionImportModal()" class="chip-tool-btn" id="subs-import-btn" aria-label="Import subscriptions CSV">
+                  Import CSV
+                </button>
+                <button type="button" onclick="showAddSubscriptionModal()" class="chip-add-btn" id="subs-add-btn" aria-label="Add Subscription">
+                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                  <span>Add</span>
+                </button>
+              </div>
             </div>
           </div>
-          <div class="text-[10px] text-harbor-muted leading-snug mb-2 px-0.5">
-            Netflix, gym, software — things that <strong class="text-harbor-text">renew</strong>. One-off bills and rent go under <strong class="text-harbor-primary-light">Bills</strong>.
-          </div>
-          <label class="student-pricing-toggle flex items-center justify-between gap-3 mb-2.5 px-3 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border cursor-pointer select-none">
-            <div class="min-w-0">
-              <div class="text-xs font-semibold text-harbor-text">Student status</div>
-              <div class="text-[10px] text-harbor-muted leading-snug">When browsing popular services, show student rates where offered (e.g. Amazon Prime yearly)</div>
-            </div>
-            <input id="student-pricing-toggle" type="checkbox" class="student-pricing-switch flex-shrink-0"
-              onchange="toggleStudentPricing(this.checked)" aria-label="Student status pricing">
-          </label>
           <button type="button" id="subs-browse-btn" class="chip-tool-btn w-full mb-2" onclick="toggleSubsBrowse()"
             aria-expanded="false">Browse popular services</button>
           <div id="subs-browse-panel" class="hidden mb-3">
@@ -9373,7 +9374,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 241;
+    const HARBOR_BUILD_NUMBER = 242;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -23302,9 +23303,6 @@
 
       const current = data.current || data.items[0];
       const paneTitle = data.hasOutdoorTasks ? 'Outdoor Weather' : 'Weather Forecast';
-      const taskLine = data.hasOutdoorTasks
-        ? `<div class="text-xs text-harbor-muted mb-3 px-1">Relevant for: ${escapeBriefHtml(data.taskNames || '')}</div>`
-        : '';
 
       const modal = document.createElement('div');
       modal.id = 'weather-forecast-modal';
@@ -23337,8 +23335,6 @@
                 </div>
               </div>
             </div>
-
-            ${taskLine}
 
             <div class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-2 px-0.5">Next 24 hours</div>
             <div class="space-y-1.5 mb-3" id="weather-pane-hours"></div>
@@ -23819,7 +23815,28 @@
       candidates.sort((a, b) => scoreWithRecency(b) - scoreWithRecency(a));
       const best = candidates.find(isRelevantContextualSuggestion);
       if (!best) return buildAppTipSuggestion();
-      return best;
+      return decorateSmartSuggestionCta(best);
+    }
+
+    /**
+     * If a suggested task is not on Today, CTA is “Show Me” → Overview Tasks list.
+     * On-Today tasks keep their normal CTA (Show / Continue / Protect…).
+     */
+    function decorateSmartSuggestionCta(suggestion) {
+      if (!suggestion?.habit) return suggestion;
+      // Weather / reschedule keep their own CTAs (Forecast, View…)
+      if (suggestion.type === 'weather' || suggestion.type === 'reschedule') return suggestion;
+      let onToday = false;
+      try {
+        onToday = typeof belongsOnTodayTab === 'function' && belongsOnTodayTab(suggestion.habit);
+      } catch (_) {
+        onToday = false;
+      }
+      if (!onToday) {
+        suggestion.cta = 'Show Me';
+        suggestion.action = 'summary-task';
+      }
+      return suggestion;
     }
 
     function pickBestTaskForTags(pool, predicate) {
@@ -25881,19 +25898,46 @@
       } else if (type === 'weather') {
         showOutdoorWeatherPane();
       } else if (habitId) {
-        // Focus the task on Today — never auto-complete from a suggestion
+        // Focus the task on Today, or open Overview Tasks when it isn’t on Today
         const habit = state.habits.find(h => h.id === habitId);
-        if (habit) {
-          focusHabitOnToday(habitId);
-        } else {
+        if (!habit) {
           updateSmartBanner();
           showToast('That task is no longer on your list');
           return;
+        }
+        const openInSummary = action === 'summary-task'
+          || (typeof belongsOnTodayTab === 'function' && !belongsOnTodayTab(habit));
+        if (openInSummary) {
+          openSummaryToTask(habitId);
+        } else {
+          focusHabitOnToday(habitId);
         }
       } else {
         showQuickTaskModal({ mode: 'habit' });
       }
       banner.classList.add('hidden');
+    }
+
+    /** Open Overview and the Tasks list so a non-Today suggestion is easy to find. */
+    function openSummaryToTask(habitId) {
+      try {
+        showSummaryModal('day');
+        // Let the sheet paint, then open Tasks KPI (where parked / off-Today work lives)
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            if (typeof showSummaryKpiDetail === 'function') {
+              showSummaryKpiDetail('tasks');
+            }
+            const habit = state.habits.find(h => h.id === habitId);
+            if (habit) {
+              showToast(`In Overview: ${habit.title}`, 'info');
+            }
+          }, 120);
+        });
+      } catch (err) {
+        console.error('[Harbor] openSummaryToTask', err);
+        showSummaryModal('day');
+      }
     }
 
     function focusHabitOnToday(habitId) {
