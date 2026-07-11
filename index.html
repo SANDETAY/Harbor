@@ -1865,13 +1865,41 @@
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      position: relative;
+      z-index: 1;
+      pointer-events: auto;
     }
+    /* Budget rows must stay real boxes (not display:contents) so taps hit the card */
     #budget-tx-list .swipe-row {
+      display: block !important;
+      position: relative;
       border-radius: 1rem;
+      flex-shrink: 0;
+      width: 100%;
+      pointer-events: auto;
     }
     #budget-tx-list .swipe-row-content.budget-tx-card {
-      /* Solid surface so swipe actions stay hidden until drag */
       background: rgb(var(--harbor-surface));
+      cursor: pointer;
+      pointer-events: auto;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #budget-tx-list .budget-tx-main {
+      cursor: pointer;
+      pointer-events: auto;
+    }
+    #budget-tx-list .budget-tx-edit-btn {
+      appearance: none;
+      border: none;
+      background: rgb(var(--harbor-primary) / 0.12);
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.28rem 0.55rem;
+      border-radius: 999px;
+      cursor: pointer;
+      flex-shrink: 0;
+      font-family: var(--harbor-font);
     }
     .budget-legend-row.is-active .budget-legend-label {
       color: rgb(var(--harbor-primary-light));
@@ -10429,7 +10457,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 290;
+    const HARBOR_BUILD_NUMBER = 291;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -22104,14 +22132,22 @@
 
     function showBudgetCategoryEditor(txId) {
       const budget = ensureBudgetState();
-      const tx = (budget.transactions || []).find(t => t.id === txId);
-      if (!tx) return;
+      const id = String(txId || '');
+      const tx = (budget.transactions || []).find(t => String(t.id) === id);
+      if (!tx) {
+        showToast('Transaction not found — try refreshing Budget');
+        return;
+      }
+      // Allow moving any debit into bills / spending / subs / savings / debt / etc.
+      const isIn = !!(tx.isCredit || (typeof detectBudgetIsCredit === 'function' && detectBudgetIsCredit(tx)));
       const editable = BUDGET_CATEGORIES.filter(c => {
-        if (c.id === 'income') return !!tx.isCredit;
-        if (tx.isCredit) return c.id === 'income' || c.id === 'other';
-        return c.id !== 'income';
+        if (c.id === 'income') return isIn;
+        if (isIn) return c.id === 'income' || c.id === 'transfers' || c.id === 'savings' || c.id === 'other';
+        if (c.id === 'housing') return false; // prefer mortgage/rent
+        return c.pie !== false;
       });
-      let selectedCat = tx.category || (tx.isCredit ? 'income' : 'other');
+      let selectedCat = tx.category || (isIn ? 'income' : 'other');
+      if (selectedCat === 'housing') selectedCat = 'mortgage';
       const typeLabel = getBudgetTxTypeLabel(tx);
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[70]';
@@ -22462,15 +22498,18 @@
             : `<div class="text-[11px] text-harbor-muted px-1 py-3">No ${escapeBriefHtml(kindOpt.label.toLowerCase())} in this period. Try another type or month.</div>`;
         } else {
           shown.slice(0, 120).forEach(t => {
-            const cat = getBudgetCategory(t.isCredit ? 'income' : t.category);
+            const cat = getBudgetCategory(
+              (detectBudgetIsCredit(t) || t.isCredit) ? 'income' : (t.category || 'other')
+            );
             const dateLabel = formatBudgetPostedDate(t.date);
             const typeLabel = getBudgetTxTypeLabel(t);
-            const safeId = escapeBriefHtml(t.id);
-            const amtPrefix = t.isCredit ? '+' : '';
+            const txId = String(t.id || '');
+            const amtPrefix = (detectBudgetIsCredit(t) || t.isCredit) ? '+' : '';
             const row = document.createElement('div');
             row.className = 'swipe-row';
-            row.dataset.swipeId = t.id;
+            row.dataset.swipeId = txId;
             row.dataset.swipeType = 'budget';
+            row.dataset.budgetTxId = txId;
             row.style.setProperty('--swipe-reveal', '8.75rem');
             const actionsHtml = `
               <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit transaction"><i class="fa-solid fa-pen"></i> Edit</button>
@@ -22478,16 +22517,13 @@
             `;
             const contentHtml = `
               <div class="budget-tx-cat-dot" style="background:${cat.color}" aria-hidden="true"></div>
-              <div class="budget-tx-main min-w-0 flex-1" onclick="showBudgetCategoryEditor('${safeId}')">
+              <div class="budget-tx-main min-w-0 flex-1">
                 <div class="budget-tx-name">${escapeBriefHtml(t.description)}</div>
-                <div class="budget-tx-meta">Posted ${escapeBriefHtml(dateLabel)} · ${escapeBriefHtml(typeLabel)} · ${escapeBriefHtml(cat.label)}</div>
+                <div class="budget-tx-meta">Posted ${escapeBriefHtml(dateLabel)} · ${escapeBriefHtml(typeLabel)} · ${escapeBriefHtml(cat.label)} · tap to edit</div>
               </div>
-              <div class="flex flex-col items-end gap-0.5 flex-shrink-0">
-                <span class="budget-tx-amt${t.isCredit ? ' text-emerald-500' : ''}">${amtPrefix}${formatBudgetMoney(t.amount)}</span>
-                <div class="row-inline-actions flex gap-2 items-center">
-                  <button type="button" onclick="event.stopImmediatePropagation(); showBudgetCategoryEditor('${safeId}')" class="text-[10px] text-harbor-primary-light font-semibold">Edit</button>
-                  <button type="button" onclick="event.stopImmediatePropagation(); deleteBudgetTransaction('${safeId}')" class="text-[10px] text-harbor-muted hover:text-rose-400 font-semibold">Delete</button>
-                </div>
+              <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                <span class="budget-tx-amt${(detectBudgetIsCredit(t) || t.isCredit) ? ' text-emerald-500' : ''}">${amtPrefix}${formatBudgetMoney(t.amount)}</span>
+                <button type="button" class="budget-tx-edit-btn" data-budget-edit="1" aria-label="Edit transaction">Edit</button>
               </div>
             `;
             row.innerHTML = buildSwipeRowHtml(
@@ -22495,6 +22531,33 @@
               contentHtml,
               'budget-tx-card bg-harbor-surface border border-harbor-border rounded-2xl px-3.5 py-2.5 flex items-center gap-x-2.5'
             );
+            const openEditor = (e) => {
+              if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+              // Don't open if swipe is mid-gesture
+              if (row.classList.contains('is-swiping') || row.dataset.swipeSuppressClick === '1') return;
+              showBudgetCategoryEditor(txId);
+            };
+            const contentEl = row.querySelector('.swipe-row-content');
+            if (contentEl) {
+              contentEl.setAttribute('role', 'button');
+              contentEl.setAttribute('tabindex', '0');
+              contentEl.setAttribute('aria-label', `Edit ${t.description || 'transaction'}`);
+              contentEl.addEventListener('click', (e) => {
+                if (e.target.closest('.swipe-action')) return;
+                if (e.target.closest('[data-budget-delete]')) return;
+                openEditor(e);
+              });
+              contentEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  openEditor(e);
+                }
+              });
+            }
+            row.querySelector('[data-budget-edit]')?.addEventListener('click', openEditor);
             list.appendChild(row);
           });
           if (shown.length > 120) {
@@ -23238,7 +23301,7 @@
       if (!(t instanceof Element)) return false;
       // Don't start a swipe on real controls or the complete-tap circle (title text still swipes).
       return !!t.closest(
-        'button, a, input, textarea, select, [data-sync-health], .row-inline-actions, .swipe-action, .task-complete-hit'
+        'button, a, input, textarea, select, [data-sync-health], .row-inline-actions, .swipe-action, .task-complete-hit, .budget-tx-edit-btn, [data-budget-edit]'
       );
     }
 
