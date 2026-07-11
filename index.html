@@ -3862,14 +3862,11 @@
       font-size: 0.76rem;
     }
 
-    /* Mobile Today: no complete bubble — tap the row body to finish */
+    /* Mobile Today: keep the complete circle visible + whole-card tap */
     @media (max-width: 767px) {
-      #task-list .task-complete-hit {
-        display: none !important;
-      }
       #task-list .habit-card.habit-row {
         gap: 0.65rem !important;
-        padding-left: 0.95rem !important;
+        padding-left: 0.85rem !important;
       }
     }
 
@@ -9623,7 +9620,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 250;
+    const HARBOR_BUILD_NUMBER = 251;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20296,7 +20293,7 @@
       const isMulti = timesNeed > 1;
       const mobileTapComplete = typeof isSwipeMobile === 'function' && isSwipeMobile();
       // Minimal multi-log UI: fraction lives on the complete control (0/2 → 1/2 → done)
-      // Mobile hides the bubble (CSS) and completes via row tap instead
+      // Circle + whole-card tap both complete (title used to steal taps and only expand).
       const hitClasses = 'task-complete-hit touch-target w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-harbor-border active:border-harbor-primary flex items-center justify-center text-xl'
         + (isMulti ? ' is-multi' : '')
         + (isMulti && timesDone > 0 ? ' is-partial' : '');
@@ -20309,20 +20306,17 @@
       const freqChip = !isMulti && isRecurring ? formatIntervalLabel(habit.interval_days, habit) : '';
 
       const safeTitle = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(habit.title) : habit.title;
-      // Web: circle completes. Mobile: meta row is not a separate complete control (whole card is).
-      const metaCompleteAttr = mobileTapComplete ? '' : ` onclick="completeHabit('${habit.id}', event)"`;
+      const safeHabitId = String(habit.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
       const contentHtml = `
-        <div ${mobileTapComplete ? '' : `onclick="completeHabit('${habit.id}', event)"`} class="${hitClasses}" role="button"
-          aria-label="${isMulti ? `${safeTitle}, ${timesDone} of ${timesNeed} today` : `Complete ${safeTitle}`}"
-          ${mobileTapComplete ? 'aria-hidden="true" tabindex="-1"' : ''}>
+        <div onclick="completeHabit('${safeHabitId}', event)" class="${hitClasses}" role="button"
+          aria-label="${isMulti ? `${safeTitle}, ${timesDone} of ${timesNeed} today` : `Complete ${safeTitle}`}">
           ${hitInner}
         </div>
         <div class="flex-1 min-w-0 habit-main-tap">
           <div class="font-medium leading-tight habit-title-text${showMuted ? ' text-harbor-muted' : ''}"
             data-habit-title="1"
-            onclick="event.stopPropagation(); toggleHabitTitleExpand(this)"
-            title="Tap title to expand">${safeTitle}${weatherIcon ? ` <span class="ml-1 text-base" title="Current weather: ${state.settings.mockWeather || 'unknown'}">${weatherIcon}</span>` : ''}</div>
-          <div class="flex items-center gap-x-2 mt-0.5 flex-wrap"${metaCompleteAttr}>
+            title="Tap to complete">${safeTitle}${weatherIcon ? ` <span class="ml-1 text-base" title="Current weather: ${state.settings.mockWeather || 'unknown'}">${weatherIcon}</span>` : ''}</div>
+          <div class="flex items-center gap-x-2 mt-0.5 flex-wrap">
             ${habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))
               ? `<span class="text-sky-300 text-xs px-1.5 rounded bg-sky-900/40 font-semibold">Pro booking</span>`
               : ''}
@@ -20339,36 +20333,36 @@
           ${habit.target_value ? `<div class="text-xs text-harbor-primary-light font-semibold tabular-nums">${habit.target_value} ${habit.unit}</div>` : ''}
           ${syncedStats ? `<div class="text-[9px] text-sky-300 mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
           <div class="row-inline-actions flex items-center justify-end gap-2 mt-1">
-            ${dueToday && !isOneOffTask(habit) ? `<button type="button" onclick="skipRecurringHabit('${habit.id}', event)" class="text-[10px] text-harbor-muted hover:text-amber-300 px-1" title="Skip this cycle — resets streak">Skip</button>` : ''}
-            ${dueToday && shouldTrackStreak(habit) && (ensureRewardBank().skipToken || 0) > 0 ? `<button type="button" onclick="useSkipToken('${habit.id}', event)" class="text-[10px] text-harbor-primary-light hover:text-harbor-text px-1" title="Pass — keeps your streak (rare)">Pass</button>` : ''}
-            <button type="button" onclick="event.stopImmediatePropagation(); editHabitFromToday('${habit.id}')" class="text-[10px] text-harbor-primary-light font-medium px-1" title="Edit task">Edit</button>
-            <button type="button" onclick="event.stopImmediatePropagation(); showHabitDetail('${habit.id}')" class="text-harbor-primary-light text-xs" title="Details">
+            ${dueToday && !isOneOffTask(habit) ? `<button type="button" onclick="skipRecurringHabit('${safeHabitId}', event)" class="text-[10px] text-harbor-muted hover:text-amber-300 px-1" title="Skip this cycle — resets streak">Skip</button>` : ''}
+            ${dueToday && shouldTrackStreak(habit) && (ensureRewardBank().skipToken || 0) > 0 ? `<button type="button" onclick="useSkipToken('${safeHabitId}', event)" class="text-[10px] text-harbor-primary-light hover:text-harbor-text px-1" title="Pass — keeps your streak (rare)">Pass</button>` : ''}
+            <button type="button" onclick="event.stopImmediatePropagation(); editHabitFromToday('${safeHabitId}')" class="text-[10px] text-harbor-primary-light font-medium px-1" title="Edit task">Edit</button>
+            <button type="button" onclick="event.stopImmediatePropagation(); showHabitDetail('${safeHabitId}')" class="text-harbor-primary-light text-xs" title="Details">
               <i class="fa-solid fa-info-circle"></i>
             </button>
-            <button type="button" onclick="deleteHabitFromToday('${habit.id}', event)" class="touch-target text-harbor-muted hover:text-rose-400 text-sm" title="Remove task">×</button>
+            <button type="button" onclick="deleteHabitFromToday('${safeHabitId}', event)" class="touch-target text-harbor-muted hover:text-rose-400 text-sm" title="Remove task">×</button>
           </div>
         </div>
       `;
 
       row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
-        `habit-card harbor-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 active:bg-harbor-raised cursor-pointer${showMuted ? ' opacity-45' : ''}${mobileTapComplete ? ' is-mobile-tap-complete' : ''}`);
+        `habit-card harbor-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 active:bg-harbor-raised cursor-pointer${showMuted ? ' opacity-45' : ''} is-tap-complete${mobileTapComplete ? ' is-mobile-tap-complete' : ''}`);
       const content = row.querySelector('.swipe-row-content');
       if (content) {
         content.dataset.completeHabit = habit.id;
-        if (mobileTapComplete) content.setAttribute('role', 'button');
-        if (mobileTapComplete) {
-          content.setAttribute('aria-label', isMulti
-            ? `Complete ${habit.title}, ${timesDone} of ${timesNeed} today`
-            : `Complete ${habit.title}`);
-        }
+        content.setAttribute('role', 'button');
+        content.setAttribute('aria-label', isMulti
+          ? `Complete ${habit.title}, ${timesDone} of ${timesNeed} today`
+          : `Complete ${habit.title}`);
       }
       content?.addEventListener('contextmenu', (e) => { e.preventDefault(); showHabitDetail(habit.id); });
-      // Mobile: tap the card body to complete (circle is hidden). Swipe still owns Edit/Delete.
-      if (mobileTapComplete && content) {
+      // Whole-card tap completes (title used to only expand and blocked the handler).
+      // Circle still has its own handler; completeHabit is idempotent / toast-guards doubles.
+      // Swipe Edit/Delete + inline actions are excluded.
+      if (content) {
         content.addEventListener('click', (e) => {
           if (row.dataset.swipeSuppressClick === '1') return;
           if (row.classList.contains('is-open') || row.classList.contains('is-swiping')) return;
-          if (e.target.closest('.row-inline-actions, .swipe-action, button, a, [data-habit-title]')) return;
+          if (e.target.closest('.row-inline-actions, .swipe-action, button, a, .task-complete-hit')) return;
           completeHabit(habit.id, e);
         });
       }
