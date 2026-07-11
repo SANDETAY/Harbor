@@ -10457,7 +10457,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 300;
+    const HARBOR_BUILD_NUMBER = 301;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -12142,12 +12142,64 @@
       return all.length ? all[all.length - 1] : null;
     }
 
+    /** Whether a calendar day fully counts toward a daily streak (respects Frequency N×). */
+    function dayFullyLoggedForStreak(habit, dateStr) {
+      if (!habit) return (getCompletions(habit?.id) || []).includes(dateStr);
+      const need = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
+      if (need <= 1) return (getCompletions(habit.id) || []).includes(dateStr);
+      return countCompletionsOnDate(habit.id, dateStr) >= need;
+    }
+
+    /** Step a date back one period for weekly/monthly streak walks. */
+    function stepDateBackOnePeriod(habit, dateObj) {
+      const d = Number(habit?.interval_days);
+      if (d === 7) dateObj.setDate(dateObj.getDate() - 7);
+      else if (d >= 25 && d <= 35) dateObj.setMonth(dateObj.getMonth() - 1);
+      else if (d >= 85 && d <= 95) dateObj.setMonth(dateObj.getMonth() - 3);
+      else if (d >= 360) dateObj.setFullYear(dateObj.getFullYear() - 1);
+      else if (d > 1) dateObj.setDate(dateObj.getDate() - d);
+      else dateObj.setDate(dateObj.getDate() - 1);
+      return dateObj;
+    }
+
+    /**
+     * Weekly/monthly + Frequency: streak = consecutive periods that hit the target
+     * (e.g. Swim 3× a week → each week that reached 3 counts as +1).
+     */
+    function computePeriodStreak(habit) {
+      if (!habit) return 0;
+      const need = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
+      let streak = 0;
+      const cursor = new Date(todayStr() + 'T12:00:00');
+      for (let i = 0; i < 120; i++) {
+        const ds = dateStrLocal(cursor);
+        const n = typeof countCompletionsInPeriod === 'function'
+          ? countCompletionsInPeriod(habit, ds)
+          : 0;
+        if (n >= need) {
+          streak++;
+          stepDateBackOnePeriod(habit, cursor);
+        } else if (i === 0) {
+          // Current period still open — don't break; look at previous period
+          stepDateBackOnePeriod(habit, cursor);
+        } else {
+          break;
+        }
+      }
+      return streak;
+    }
+
     function computeCurrentStreak(habitId) {
       const habit = state.habits.find(h => h.id === habitId);
       if (habit && !shouldTrackStreak(habit)) return 0;
       if (habit && !isRecurringHabit(habit)) return 0;
 
-      // Unique calendar days only (multi-log can push the same date more than once)
+      // Weekly / monthly: count periods that met Frequency, not consecutive calendar days
+      if (habit && typeof isNonDailyRecurring === 'function' && isNonDailyRecurring(habit)) {
+        return computePeriodStreak(habit);
+      }
+
+      // Daily: unique calendar days that fully logged (multi-log needs all N×)
       const dates = [...new Set(getCompletions(habitId) || [])].sort().reverse();
       if (dates.length === 0) return 0;
 
@@ -12155,7 +12207,6 @@
       const checkDate = new Date();
       checkDate.setHours(12, 0, 0, 0);
 
-      const dateSet = new Set(dates);
       const skipSet = new Set(getHabitSkips(habitId));
       const passSet = new Set(getHabitPasses(habitId));
 
@@ -12163,7 +12214,7 @@
         const ds = dateStrLocal(checkDate);
         // Hard skip breaks the chain
         if (skipSet.has(ds)) break;
-        if (dateSet.has(ds)) {
+        if (dayFullyLoggedForStreak(habit, ds)) {
           streak++;
           checkDate.setDate(checkDate.getDate() - 1);
         } else if (passSet.has(ds) || (typeof isCheatGraceDay === 'function' && isCheatGraceDay(ds))) {
@@ -12184,8 +12235,41 @@
       if (habit && !shouldTrackStreak(habit)) return 0;
       if (habit && !isRecurringHabit(habit)) return 0;
 
-      // Unique days — multi-log same-day entries must not reset the longest run
-      const dates = [...new Set(getCompletions(habitId) || [])].sort();
+      // Weekly/monthly: consecutive periods that hit Frequency
+      if (habit && typeof isNonDailyRecurring === 'function' && isNonDailyRecurring(habit)) {
+        const comps = getCompletions(habitId) || [];
+        if (!comps.length) return 0;
+        const need = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
+        const keys = [];
+        const seen = new Set();
+        [...comps].sort().forEach(ds => {
+          const key = getHabitPeriodKey(habit, ds);
+          if (seen.has(key)) return;
+          seen.add(key);
+          if (countCompletionsInPeriod(habit, ds) >= need) keys.push(ds);
+        });
+        if (!keys.length) return 0;
+        let longest = 1;
+        let current = 1;
+        for (let i = 1; i < keys.length; i++) {
+          const prev = new Date(keys[i - 1] + 'T12:00:00');
+          const curr = new Date(keys[i] + 'T12:00:00');
+          const d = Number(habit.interval_days) || 7;
+          const gapDays = Math.round((curr - prev) / 86400000);
+          // Allow a little slack between adjacent periods
+          const expected = d >= 25 && d <= 35 ? 45 : (d === 7 ? 10 : d + 3);
+          if (gapDays > 0 && gapDays <= expected) {
+            current++;
+            longest = Math.max(longest, current);
+          } else {
+            current = 1;
+          }
+        }
+        return Math.max(longest, computePeriodStreak(habit));
+      }
+
+      // Daily: unique days that fully logged
+      const dates = [...new Set((getCompletions(habitId) || []).filter(ds => dayFullyLoggedForStreak(habit, ds)))].sort();
       if (dates.length === 0) return 0;
       
       let longest = 1;
@@ -12200,7 +12284,7 @@
           current++;
           longest = Math.max(longest, current);
         } else if (diff === 0) {
-          // same day (shouldn't happen after Set) — ignore
+          // same day — ignore
         } else {
           current = 1;
         }
@@ -14572,18 +14656,52 @@
       return fromDateStr;
     }
 
-    /** Daily habits track streaks by default; one-time + weekly+ chores do not. */
+    /** Daily habits track streaks by default; chores opt out. Fitness activities always track unless stopped. */
     function shouldTrackStreak(habit) {
-      if (!habit || isOneOffTask(habit)) return false;
-      if (habit.trackStreak === true) return true;
+      if (!habit) return false;
+      // Explicit stop (Remove on Streaks) wins
       if (habit.trackStreak === false) return false;
+      // One-offs don't build streaks (repairDailyRhythm promotes Swim etc. first)
+      if (isOneOffTask(habit)) return false;
+      if (habit.trackStreak === true) return true;
+      // Swim / walk / gym / other activities — always show on Streaks when recurring
+      if (typeof isPhysicalActivity === 'function' && isPhysicalActivity(habit)) return true;
+      if (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(habit.title || '')) return true;
       return isDailyTask(habit);
     }
 
     function defaultTrackStreakForInterval(intervalDays) {
       if (intervalDays === 0) return false;
       if (intervalDays == null || intervalDays === 1) return true;
+      // Weekly/monthly habits can still track when user picks Type = Habit (set explicitly)
       return false;
+    }
+
+    /**
+     * Make sure Swim / Walk / Gym etc. are eligible for the Streaks tab.
+     * Fixes older saves that were one-offs or chores without trackStreak.
+     */
+    function ensureActivityStreakTracking() {
+      if (!Array.isArray(state.habits)) return false;
+      let changed = false;
+      state.habits.forEach(h => {
+        if (!h || h.trackStreak === false) return;
+        const fitness = (typeof isPhysicalActivity === 'function' && isPhysicalActivity(h))
+          || (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(h.title || ''));
+        if (!fitness) return;
+        if (isOneOffTask(h)) {
+          h.interval_days = null;
+          h.trackStreak = true;
+          changed = true;
+        } else if (h.trackStreak !== true) {
+          h.trackStreak = true;
+          changed = true;
+        }
+      });
+      if (changed) {
+        try { saveState(); } catch (_) { /* ignore */ }
+      }
+      return changed;
     }
 
     function getNonDailySectionKey(habit) {
@@ -24393,6 +24511,15 @@
         showBudgetReviewTaskSheet(habitId);
         return;
       }
+
+      // Completing Swim / walk / gym etc. always enrolls them on Streaks
+      if (habit.trackStreak !== false
+        && ((typeof isPhysicalActivity === 'function' && isPhysicalActivity(habit))
+          || (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(habit.title || ''))
+          || habit.trackStreak === true)) {
+        if (isOneOffTask(habit)) habit.interval_days = null;
+        if (habit.trackStreak !== true) habit.trackStreak = true;
+      }
       
       const today = todayStr();
       if (!state.completions[habitId]) state.completions[habitId] = [];
@@ -32708,7 +32835,20 @@
 
     function getStreakCardStatus(habit) {
       const done = isCompletedToday(habit.id);
-      if (done) return { id: 'done', label: 'Done today', cls: 'is-done' };
+      const periodLabel = typeof getFrequencyPeriodLabel === 'function' ? getFrequencyPeriodLabel(habit) : 'today';
+      if (done) {
+        const label = periodLabel === 'today' ? 'Done today'
+          : periodLabel === 'this week' ? 'Done this week'
+          : periodLabel === 'this month' ? 'Done this month'
+          : `Done ${periodLabel}`;
+        return { id: 'done', label, cls: 'is-done' };
+      }
+      // Partial multi-frequency progress (e.g. Swim 1/3 this week)
+      const need = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
+      if (need > 1) {
+        const n = typeof countCompletionsInPeriod === 'function' ? countCompletionsInPeriod(habit, todayStr()) : 0;
+        if (n > 0) return { id: 'active', label: `${n}/${need} ${periodLabel}`, cls: 'is-done' };
+      }
       if (isDueToday(habit)) return { id: 'due', label: 'Due today', cls: 'is-due' };
       const streak = computeCurrentStreak(habit.id);
       if (streak <= 0) return { id: 'quiet', label: 'Start a run', cls: 'is-quiet' };
@@ -32736,6 +32876,12 @@
     }
 
     function collectStreakFleetRows() {
+      if (typeof ensureActivityStreakTracking === 'function') {
+        try { ensureActivityStreakTracking(); } catch (_) { /* ignore */ }
+      }
+      if (typeof repairDailyRhythmOneOffHabits === 'function') {
+        try { repairDailyRhythmOneOffHabits(); } catch (_) { /* ignore */ }
+      }
       return state.habits
         .filter(h => shouldTrackStreak(h))
         .map(h => {
@@ -32898,7 +33044,7 @@
 
       let soft;
       if (lit === total && total > 0) {
-        soft = 'Every fire is lit — a full-harbor kind of day.';
+        soft = 'Every streak is celebrated today — a full-harbor kind of day.';
       } else if (best && best.streak >= 7) {
         soft = bestTitle
           ? `Warmest glow: ${bestTitle} (${best.streak}d). Satisfaction over urgency.`
@@ -33038,7 +33184,7 @@
 
       if (countLabel) {
         countLabel.textContent = fleet.total
-          ? `${fleet.total} fire${fleet.total === 1 ? '' : 's'}`
+          ? `${fleet.total} streak${fleet.total === 1 ? '' : 's'}`
           : '';
       }
 
@@ -33046,8 +33192,8 @@
         currentProjectionHabit = null;
         container.innerHTML = harborEmptyHtml(
           '🔥',
-          'No streak habits yet',
-          'Add a daily habit from Today or Library — that’s what builds fire here.',
+          'No streaks yet',
+          'Add a habit from Today — Swim, walk, floss, and other activities show up here when you complete them.',
           `<div class="harbor-empty-actions">
             <button type="button" class="chip-add-btn" onclick="switchTab('today'); showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add habit</button>
             <button type="button" class="chip-tool-btn" onclick="switchTab('library')">Browse Library</button>
@@ -33057,7 +33203,7 @@
         return;
       }
 
-      // Fleet health when there’s more than a couple of fires
+      // Fleet health when there’s more than a couple of streaks
       if (fleet.total >= 3) {
         const wrap = document.createElement('div');
         wrap.innerHTML = buildStreakFleetHealthHtml(rows);
@@ -33102,8 +33248,8 @@
         toggle.setAttribute('aria-expanded', streaksMoreFiresOpen ? 'true' : 'false');
         toggle.onclick = () => toggleStreaksMoreFires();
         toggle.innerHTML = streaksMoreFiresOpen
-          ? `Hide quieter embers <span class="muted">· ${fleet.more.length}</span>`
-          : `Quieter embers <span class="muted">· ${fleet.more.length} · show</span>`;
+          ? `Hide more streaks <span class="muted">· ${fleet.more.length}</span>`
+          : `More streaks <span class="muted">· ${fleet.more.length} · show</span>`;
         moreWrap.appendChild(toggle);
 
         if (streaksMoreFiresOpen) {
