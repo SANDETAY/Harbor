@@ -9913,7 +9913,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 269;
+    const HARBOR_BUILD_NUMBER = 270;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -12762,12 +12762,12 @@
       modal.id = 'release-notes-modal';
       modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[62]';
       modal.innerHTML = `
-        <div class="absolute inset-0" onclick="this.closest('.fixed').remove()"></div>
+        <div class="absolute inset-0" onclick="closeMenuModalAndReturn(this)"></div>
         <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1 flex items-center justify-between gap-2">
             <span>What's New</span>
-            <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
+            <button type="button" onclick="closeMenuModalAndReturn(this)" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-4 leading-snug">
             Harbor <span class="tabular-nums font-semibold text-harbor-text">${getHarborVersionShort()}</span>
