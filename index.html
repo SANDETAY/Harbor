@@ -10429,7 +10429,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 282;
+    const HARBOR_BUILD_NUMBER = 283;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -11323,7 +11323,7 @@
         groceryView: { mode: 'master' },
         mealPresets: JSON.parse(JSON.stringify(BUILTIN_MEAL_PRESETS)),
         subscriptions: [],
-        budget: { transactions: [], importedAt: null },
+        budget: { transactions: [], importedAt: null, merchantRules: {} },
         metricLogs: {},
         rewardBank: { points: 0, totalEarned: 0, cheatDownsUsed: 0, lastCheatDate: null },
         challenges: [],
@@ -20769,9 +20769,106 @@
     let budgetKindFilter = 'out'; // out | wants | bills | moves | income
 
     function ensureBudgetState() {
-      if (!state.budget || typeof state.budget !== 'object') state.budget = { transactions: [], importedAt: null };
+      if (!state.budget || typeof state.budget !== 'object') {
+        state.budget = { transactions: [], importedAt: null, merchantRules: {} };
+      }
       if (!Array.isArray(state.budget.transactions)) state.budget.transactions = [];
+      if (!state.budget.merchantRules || typeof state.budget.merchantRules !== 'object') {
+        state.budget.merchantRules = {};
+      }
       return state.budget;
+    }
+
+    /** Stable merchant key so “Transfer To Savings -9982” and “-8061” share one rule */
+    function getBudgetMerchantRuleKey(description) {
+      const name = typeof normalizeBudgetMerchant === 'function'
+        ? normalizeBudgetMerchant(description)
+        : String(description || '');
+      return String(name || '').toLowerCase().trim();
+    }
+
+    function ensureBudgetMerchantRules() {
+      return ensureBudgetState().merchantRules;
+    }
+
+    /**
+     * Remember a user category/name for this merchant.
+     * Survives CSV replace imports so next month’s file keeps your edits.
+     */
+    function rememberBudgetMerchantRule(description, opts = {}) {
+      const key = getBudgetMerchantRuleKey(description);
+      if (!key || key === 'purchase') return null;
+      const rules = ensureBudgetMerchantRules();
+      const prev = rules[key] || {};
+      const next = { ...prev, updatedAt: new Date().toISOString() };
+      if (opts.category != null && opts.category !== '') next.category = opts.category;
+      if (opts.forgetCategory) delete next.category;
+      if (opts.displayName) next.displayName = String(opts.displayName).trim().slice(0, 140);
+      if (opts.clearDisplayName) delete next.displayName;
+      if (!next.category && !next.displayName) {
+        delete rules[key];
+        return null;
+      }
+      rules[key] = next;
+      return key;
+    }
+
+    function forgetBudgetMerchantRule(description) {
+      const key = getBudgetMerchantRuleKey(description);
+      if (!key) return;
+      const rules = ensureBudgetMerchantRules();
+      if (rules[key]) delete rules[key];
+    }
+
+    function getBudgetMerchantRule(description) {
+      const key = getBudgetMerchantRuleKey(description);
+      if (!key) return null;
+      const rules = ensureBudgetMerchantRules();
+      return rules[key] || null;
+    }
+
+    /** Apply learned category / display name after auto-categorize */
+    function applyBudgetMerchantRule(bankDescription, autoCategory) {
+      const rule = getBudgetMerchantRule(bankDescription);
+      if (!rule) {
+        return {
+          category: autoCategory,
+          description: bankDescription,
+          categoryAuto: autoCategory,
+          fromRule: false
+        };
+      }
+      return {
+        category: rule.category || autoCategory,
+        description: rule.displayName || bankDescription,
+        categoryAuto: autoCategory,
+        fromRule: !!(rule.category || rule.displayName)
+      };
+    }
+
+    /** One-time: seed rules from txs the user already recategorized/renamed */
+    function harvestBudgetMerchantRulesFromTransactions() {
+      const budget = ensureBudgetState();
+      if (budget._rulesHarvested) return 0;
+      budget._rulesHarvested = true;
+      let n = 0;
+      (budget.transactions || []).forEach(t => {
+        if (!t) return;
+        const bankDesc = t.bankDescription || t.description;
+        if (!bankDesc) return;
+        let learned = false;
+        if (t.category && t.categoryAuto && t.category !== t.categoryAuto) {
+          rememberBudgetMerchantRule(bankDesc, { category: t.category });
+          learned = true;
+        }
+        if (t.bankDescription && t.description && t.description !== t.bankDescription) {
+          rememberBudgetMerchantRule(bankDesc, { displayName: t.description });
+          learned = true;
+        }
+        if (learned) n++;
+      });
+      if (n) saveState();
+      return n;
     }
 
     function getBudgetCategory(id) {
@@ -20943,14 +21040,16 @@
       let changed = false;
       (budget.transactions || []).forEach(t => {
         if (!t || t.isCredit) return;
+        // Never clobber user-learned rules or manual picks
+        if (t.categoryFromRule) return;
+        if (t.category && t.categoryAuto && t.category !== t.categoryAuto && t.category !== 'other') return;
         const bankSoft = BUDGET_SOFT_BANK_CATEGORIES.has(String(t.bankCategory || '').trim().toLowerCase())
           || !t.bankCategory
           || t.category === 'other'
           || t.categoryAuto === 'other';
         if (!bankSoft) return;
-        // Respect manual category picks
-        if (t.category && t.categoryAuto && t.category !== t.categoryAuto && t.category !== 'other') return;
-        const next = categorizeBudgetDescription(t.description, t.bankCategory, {
+        const bankDesc = t.bankDescription || t.description;
+        const next = categorizeBudgetDescription(bankDesc, t.bankCategory, {
           type: t.bankType,
           typeGroup: t.bankTypeGroup
         });
@@ -20964,6 +21063,19 @@
         } else if (next && t.categoryAuto !== next) {
           t.categoryAuto = next;
           changed = true;
+        }
+        // Re-apply merchant memory after auto-score (e.g. transfer → savings)
+        const applied = applyBudgetMerchantRule(bankDesc, t.categoryAuto || t.category);
+        if (applied.fromRule) {
+          if (applied.category && applied.category !== t.category) {
+            t.category = applied.category;
+            changed = true;
+          }
+          if (applied.description && applied.description !== t.description) {
+            t.description = applied.description;
+            changed = true;
+          }
+          t.categoryFromRule = true;
         }
       });
       if (changed) saveState();
@@ -21246,29 +21358,39 @@
         return { added: 0, ok: false };
       }
       const budget = ensureBudgetState();
-      // Each successful import fully replaces the previous CSV data
+      // Keep merchantRules — user category/name edits survive CSV replace
+      ensureBudgetMerchantRules();
+      harvestBudgetMerchantRulesFromTransactions();
+
+      // Each successful import fully replaces transaction rows (not your memory)
       const next = [];
       const seen = new Set();
+      let remembered = 0;
       parsed.forEach(tx => {
         const dateStr = tx.date && !isNaN(tx.date.getTime()) ? dateStrLocal(tx.date) : null;
-        const key = `${dateStr || ''}|${(tx.description || '').toLowerCase()}|${Number(tx.amount).toFixed(2)}|${tx.isCredit ? 'C' : 'D'}`;
+        const bankDesc = String(tx.description || '').trim().slice(0, 140);
+        const key = `${dateStr || ''}|${bankDesc.toLowerCase()}|${Number(tx.amount).toFixed(2)}|${tx.isCredit ? 'C' : 'D'}`;
         if (seen.has(key)) return; // de-dupe within this file only
         seen.add(key);
-        const cat = tx.category || categorizeBudgetDescription(tx.description, tx.bankCategory, {
+        const autoCat = tx.category || categorizeBudgetDescription(bankDesc, tx.bankCategory, {
           type: tx.bankType,
           typeGroup: tx.bankTypeGroup
         });
+        const applied = applyBudgetMerchantRule(bankDesc, autoCat);
+        if (applied.fromRule) remembered++;
         next.push({
           id: 'btx-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
           date: dateStr,
-          description: String(tx.description || '').trim().slice(0, 140),
+          bankDescription: bankDesc,
+          description: String(applied.description || bankDesc).trim().slice(0, 140),
           amount: Math.round(Number(tx.amount) * 100) / 100,
           isCredit: !!tx.isCredit,
           bankCategory: tx.bankCategory || '',
           bankType: tx.bankType || '',
           bankTypeGroup: tx.bankTypeGroup || '',
-          category: cat,
-          categoryAuto: cat,
+          category: applied.category,
+          categoryAuto: applied.categoryAuto,
+          categoryFromRule: !!applied.fromRule,
           source: 'csv'
         });
       });
@@ -21279,7 +21401,7 @@
       next.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
       budget.transactions = next;
       budget.importedAt = new Date().toISOString();
-      // Fresh file: re-run auto category migrations on next render
+      // Fresh file: re-run auto category migrations on next render (won't override rules)
       delete budget._otherRecatV2;
       delete budget._fixedBillMigrated;
       // Any successful CSV import finishes the monthly budget-review task
@@ -21287,7 +21409,7 @@
         markBudgetReviewCompleteFromImport({ silent: true });
       }
       saveState();
-      return { added: next.length, ok: true, replaced: true };
+      return { added: next.length, ok: true, replaced: true, remembered };
     }
 
     // ── Monthly budget review task (auto on Today near month-end) ──
@@ -21493,14 +21615,19 @@
         showToast('Nothing to clear');
         return;
       }
-      if (!confirm('Clear all imported budget transactions from this device?')) return;
-      state.budget = { transactions: [], importedAt: null };
+      if (!confirm('Clear all imported budget transactions from this device?\n\nYour remembered categories (e.g. treating a transfer as Savings) are kept for the next import.')) return;
+      const rules = ensureBudgetMerchantRules();
+      state.budget = {
+        transactions: [],
+        importedAt: null,
+        merchantRules: rules && typeof rules === 'object' ? { ...rules } : {}
+      };
       budgetCategoryFilter = null;
       budgetMonthRange = 'current';
       budgetKindFilter = 'out';
       saveState();
       renderBudget();
-      showToast('Budget cleared');
+      showToast('Budget cleared · category memory kept');
     }
 
     function setBudgetCategoryFilter(catId) {
@@ -21604,7 +21731,8 @@
             Export transactions from your bank (CSV with posting date, amount, debit/credit, description, category).
             Harbor uses the <strong class="text-harbor-text">posting date</strong>, identifies credits vs debits vs transfers,
             and maps bank tags into clear categories.
-            <strong class="text-harbor-text">A new CSV replaces your current budget data</strong> (previous import is cleared).
+            <strong class="text-harbor-text">A new CSV replaces transactions</strong>, but categories and names you set
+            (like marking a transfer as Savings) are remembered for matching merchants next time.
           </div>
           <label class="block w-full mb-3">
             <input id="budget-csv-file" type="file" accept=".csv,text/csv" class="hidden">
@@ -21646,7 +21774,11 @@
           budgetMonthRange = 'current';
           budgetKindFilter = 'out';
           renderBudget();
-          showToast(`Budget replaced · ${added} transaction${added === 1 ? '' : 's'}`);
+          const remembered = typeof result === 'object' ? (result.remembered || 0) : 0;
+          const mem = remembered > 0
+            ? ` · ${remembered} matched your saved categories`
+            : '';
+          showToast(`Budget replaced · ${added} transaction${added === 1 ? '' : 's'}${mem}`);
           if (typeof renderTasks === 'function') renderTasks();
         }
       };
@@ -21691,6 +21823,7 @@
           <button type="button" class="w-full py-3 mt-2 rounded-2xl bg-harbor-primary text-white font-semibold" data-save="1">
             Save
           </button>
+          <p class="text-[10px] text-harbor-muted text-center mt-1.5 leading-snug">Category &amp; name stick for this merchant on future CSV imports.</p>
           <button type="button" class="w-full py-2.5 mt-2 rounded-2xl bg-harbor-raised border border-harbor-border text-[11px] text-harbor-muted font-semibold" data-reset="1">
             Reset to auto category
           </button>
@@ -21701,6 +21834,7 @@
       document.body.appendChild(modal);
       const close = () => modal.remove();
       const nameInput = modal.querySelector('#budget-edit-name');
+      const bankDesc = tx.bankDescription || tx.description || '';
       const refreshCatActive = () => {
         modal.querySelectorAll('[data-cat]').forEach(btn => {
           btn.classList.toggle('is-active', btn.getAttribute('data-cat') === selectedCat);
@@ -21720,21 +21854,50 @@
           nameInput?.focus();
           return;
         }
+        if (!tx.bankDescription) tx.bankDescription = bankDesc;
         tx.description = name;
         tx.category = selectedCat || tx.category || 'other';
         // If user marks as transfer-style category, keep as debit flow
         if (tx.category === 'income') tx.isCredit = true;
         else if (tx.isCredit && tx.category !== 'income') tx.isCredit = false;
+
+        const autoCat = tx.categoryAuto || categorizeBudgetDescription(
+          tx.bankDescription || bankDesc,
+          tx.bankCategory,
+          { type: tx.bankType, typeGroup: tx.bankTypeGroup }
+        );
+        const isAutoCat = tx.category === autoCat;
+        const isAutoName = name === (tx.bankDescription || bankDesc);
+        const ruleSrc = tx.bankDescription || bankDesc;
+        if (isAutoCat && isAutoName) {
+          forgetBudgetMerchantRule(ruleSrc);
+          tx.categoryFromRule = false;
+        } else {
+          rememberBudgetMerchantRule(ruleSrc, {
+            category: isAutoCat ? undefined : tx.category,
+            forgetCategory: isAutoCat,
+            displayName: isAutoName ? undefined : name,
+            clearDisplayName: isAutoName
+          });
+          // Ensure category is stored when only name was custom before
+          if (!isAutoCat) rememberBudgetMerchantRule(ruleSrc, { category: tx.category });
+          tx.categoryFromRule = true;
+        }
         saveState();
         close();
         renderBudget();
-        showToast('Transaction updated');
+        showToast(isAutoCat && isAutoName ? 'Reset for this merchant' : 'Saved · will apply on next import');
       });
       modal.querySelector('[data-reset]')?.addEventListener('click', () => {
-        selectedCat = tx.categoryAuto || categorizeBudgetDescription(tx.description, tx.bankCategory);
+        const src = tx.bankDescription || bankDesc || tx.description;
+        selectedCat = tx.categoryAuto || categorizeBudgetDescription(src, tx.bankCategory, {
+          type: tx.bankType,
+          typeGroup: tx.bankTypeGroup
+        });
         if (tx.isCredit) selectedCat = 'income';
+        if (nameInput && tx.bankDescription) nameInput.value = tx.bankDescription;
         refreshCatActive();
-        showToast('Category reset — tap Save to keep');
+        showToast('Category reset — tap Save to keep (and forget for next import)');
       });
       modal.querySelector('[data-delete]')?.addEventListener('click', () => {
         close();
@@ -21760,6 +21923,9 @@
       if (!state.budget._fixedBillMigrated) {
         state.budget._fixedBillMigrated = true;
         migrateBudgetFixedBillCategories();
+      }
+      if (!state.budget._rulesHarvested) {
+        harvestBudgetMerchantRulesFromTransactions();
       }
       if (!state.budget._otherRecatV2) {
         state.budget._otherRecatV2 = true;
