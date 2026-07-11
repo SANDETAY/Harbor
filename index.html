@@ -10457,7 +10457,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 294;
+    const HARBOR_BUILD_NUMBER = 295;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -21801,20 +21801,33 @@
         });
         const applied = applyBudgetMerchantRule(bankDesc, autoCat);
         if (applied.fromRule) remembered++;
+        // Never let a remembered merchant rule demote paychecks / bank income tags
+        const truePay = /salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|regular\s*income|direct\s*deposit/i.test(bankDesc)
+          || isBudgetIncomeBankCategory(tx.bankCategory)
+          || autoCat === 'income'
+          || (tx.isCredit && /paycheck|salary|deposit|interest|refund/i.test(String(tx.bankCategory || '')));
+        let finalCat = applied.category;
+        let fromRule = !!applied.fromRule;
+        let isCredit = !!tx.isCredit;
+        if (truePay || (tx.isCredit && autoCat === 'income')) {
+          finalCat = 'income';
+          isCredit = true;
+          fromRule = false;
+        }
         next.push({
           id: 'btx-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
           date: dateStr,
           bankDescription: bankDesc,
-          description: String(applied.description || bankDesc).trim().slice(0, 140),
+          description: String((truePay ? bankDesc : (applied.description || bankDesc))).trim().slice(0, 140),
           amount: Math.round(Number(tx.amount) * 100) / 100,
-          isCredit: !!tx.isCredit,
-          creditDebitIndicator: tx.creditDebitIndicator || (tx.isCredit ? 'credit' : 'debit'),
+          isCredit,
+          creditDebitIndicator: isCredit ? 'credit' : (tx.creditDebitIndicator || 'debit'),
           bankCategory: tx.bankCategory || '',
           bankType: tx.bankType || '',
           bankTypeGroup: tx.bankTypeGroup || '',
-          category: applied.category,
-          categoryAuto: applied.categoryAuto,
-          categoryFromRule: !!applied.fromRule,
+          category: finalCat,
+          categoryAuto: truePay ? 'income' : applied.categoryAuto,
+          categoryFromRule: fromRule,
           source: 'csv'
         });
       });
@@ -22079,16 +22092,47 @@
     function setBudgetMonthRange(range) {
       if (!['current', 'last', 'all'].includes(range)) range = 'current';
       budgetMonthRange = range;
-      // Month chips always show the full money-out picture; fine-tune is optional
-      budgetKindFilter = 'overview';
+      // Keep the active lens (Income, Bills, etc.) when changing months —
+      // resetting to overview made paychecks "disappear" after tapping Last/All.
       budgetCategoryFilter = null;
       renderBudget();
+    }
+
+    /** Real paychecks / benefits (not ATM rebate / tiny refunds alone). */
+    function isBudgetPaycheckLikeTransaction(t) {
+      if (!t) return false;
+      const bank = String(t.bankCategory || '');
+      const d = `${t.bankDescription || ''} ${t.description || ''} ${bank}`;
+      if (/paycheck|salary/i.test(bank)) return true;
+      if (/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|regular\s*income|direct\s*deposit|ssa\s*treas|social\s*security/i.test(d)) {
+        return true;
+      }
+      // Large ACH credit deposits that aren't clearly transfers
+      if (/ach\s*credit/i.test(String(t.bankType || '')) && (Number(t.amount) || 0) >= 200
+        && !/transfer|zelle|venmo|rebate|interest/i.test(d)) {
+        return true;
+      }
+      return false;
     }
 
     function setBudgetKindFilter(kind) {
       const ok = BUDGET_KIND_OPTIONS.some(k => k.id === kind);
       budgetKindFilter = ok ? kind : 'overview';
       budgetCategoryFilter = null;
+      // Income + This month with no pay yet: jump to Last month when it has paychecks
+      // (mid-month is usually empty; users thought Income was broken).
+      if (budgetKindFilter === 'income' && budgetMonthRange === 'current') {
+        const curPay = getBudgetViewTransactions('current', 'income').filter(isBudgetPaycheckLikeTransaction);
+        if (!curPay.length) {
+          const lastPay = getBudgetViewTransactions('last', 'income').filter(isBudgetPaycheckLikeTransaction);
+          if (lastPay.length) {
+            budgetMonthRange = 'last';
+          } else {
+            const allPay = getBudgetViewTransactions('all', 'income').filter(isBudgetPaycheckLikeTransaction);
+            if (allPay.length) budgetMonthRange = 'all';
+          }
+        }
+      }
       closeBudgetLensMenu();
       renderBudget();
     }
@@ -22472,6 +22516,12 @@
           countEl.textContent = hint;
         } else if (budgetKindFilter === 'overview') {
           countEl.textContent = `${txs.length} transaction${txs.length === 1 ? '' : 's'} · full picture · by posting date`;
+        } else if (budgetKindFilter === 'income') {
+          const payN = txs.filter(isBudgetPaycheckLikeTransaction).length;
+          const extra = payN
+            ? ` · ${payN} paycheck${payN === 1 ? '' : 's'}/deposit${payN === 1 ? '' : 's'}`
+            : ' · refunds & credits (no paycheck in this period yet)';
+          countEl.textContent = `${txs.length} transaction${txs.length === 1 ? '' : 's'}${extra} · by posting date`;
         } else {
           countEl.textContent = `${txs.length} transaction${txs.length === 1 ? '' : 's'} · ${kindOpt.short || kindOpt.label} · by posting date`;
         }
@@ -22513,9 +22563,8 @@
         }).join('') || '<div class="text-[11px] text-harbor-muted">Nothing in this filter for the selected period</div>';
       }
 
-      // Habit insights — purchases only (skip pure money-moves / income)
+      // Habit insights (spending) OR income period notice (pay is often last month mid-cycle)
       if (insightsEl) {
-        // Insights on full picture or everyday spending (wants that compound)
         const insightSource = (budgetKindFilter === 'overview' || budgetKindFilter === 'spending' || budgetKindFilter === 'out' || budgetKindFilter === 'wants')
           ? txs
           : [];
@@ -22542,6 +22591,32 @@
                 </div>`).join('')}
               ${hook}
             </div>`;
+        } else if (budgetKindFilter === 'income' && !txs.some(isBudgetPaycheckLikeTransaction)) {
+          // Mid-month: only ATM rebate etc. — point at Last month / All where DFAS & VA live
+          const lastPay = getBudgetViewTransactions('last', 'income').filter(isBudgetPaycheckLikeTransaction);
+          const allPay = getBudgetViewTransactions('all', 'income').filter(isBudgetPaycheckLikeTransaction);
+          const lastSum = lastPay.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+          const allSum = allPay.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+          if (lastPay.length || allPay.length) {
+            insightsEl.classList.remove('hidden');
+            const lastBtn = lastPay.length
+              ? `<button type="button" class="chip-tool-btn text-[11px]" onclick="setBudgetMonthRange('last')">Last month · ${lastPay.length} · ${formatBudgetMoney(lastSum)}</button>`
+              : '';
+            const allBtn = allPay.length
+              ? `<button type="button" class="chip-tool-btn text-[11px]" onclick="setBudgetMonthRange('all')">All · ${allPay.length} · ${formatBudgetMoney(allSum)}</button>`
+              : '';
+            insightsEl.innerHTML = `
+              <div class="budget-insight-card">
+                <div class="budget-insight-title">No paycheck in this period yet</div>
+                <div class="text-[11px] text-harbor-muted mb-2 leading-snug">
+                  Money-in that already posted (like ATM rebates) shows here. DFAS / VA / salary deposits are under Last month or All.
+                </div>
+                <div class="flex flex-wrap gap-2">${lastBtn}${allBtn}</div>
+              </div>`;
+          } else {
+            insightsEl.classList.add('hidden');
+            insightsEl.innerHTML = '';
+          }
         } else {
           insightsEl.classList.add('hidden');
           insightsEl.innerHTML = '';
