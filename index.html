@@ -10457,7 +10457,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 297;
+    const HARBOR_BUILD_NUMBER = 298;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -14789,16 +14789,24 @@
     /**
      * Swim / Walk / Gym etc. saved as one-off “Task” never return the next day.
      * Promote those titles to daily habits so they repopulate after midnight.
+     * Also un-park daily fitness so they aren’t stuck in Summary only.
      */
     function repairDailyRhythmOneOffHabits() {
       if (!Array.isArray(state.habits)) return false;
       let changed = false;
       state.habits.forEach(h => {
-        if (!h || h.interval_days !== 0) return;
+        if (!h) return;
         if (typeof isSchedulingTaskTitle === 'function' && isSchedulingTaskTitle(h.title)) return;
-        if (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(h.title || '')) {
-          h.interval_days = null; // daily
+        if (typeof isDailyRhythmTitle !== 'function' || !isDailyRhythmTitle(h.title || '')) return;
+        // Promote one-offs → daily
+        if (h.interval_days === 0) {
+          h.interval_days = null;
           h.trackStreak = true;
+          changed = true;
+        }
+        // Daily fitness should never stay forced into Summary
+        if (h.parkOnSummary === true && (h.interval_days == null || h.interval_days === 1)) {
+          h.parkOnSummary = false;
           changed = true;
         }
       });
@@ -14806,6 +14814,58 @@
         try { saveState(); } catch (_) { /* ignore */ }
       }
       return changed;
+    }
+
+    /**
+     * Re-adding “Swim” when it already exists used to toast “Already in your list”
+     * and leave a hidden one-off / parked / skipped copy — feels like add did nothing.
+     * Revive the existing row onto Today instead.
+     */
+    function reviveExistingHabitOntoToday(existing, opts = {}) {
+      if (!existing) return { ok: false, reason: 'missing' };
+      const title = String(existing.title || opts.title || 'Task');
+      const today = todayStr();
+      const isRhythm = typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(title);
+
+      if (isRhythm) {
+        if (existing.interval_days === 0 || existing.interval_days === undefined) {
+          existing.interval_days = null;
+        }
+        existing.trackStreak = true;
+        existing.parkOnSummary = false;
+        // Preferred-day-only habits can miss Today — clear stale blocks when user re-adds
+        if (opts.clearWeekdays && existing.weekdays) {
+          delete existing.weekdays;
+          delete existing.preferred_weekdays;
+        }
+      }
+
+      // Undo skip for today so it can reappear
+      if (state.habitSkips && state.habitSkips[existing.id]) {
+        const next = (state.habitSkips[existing.id] || []).filter(d => d !== today);
+        if (next.length) state.habitSkips[existing.id] = next;
+        else delete state.habitSkips[existing.id];
+      }
+      if (state.habitPasses && state.habitPasses[existing.id]) {
+        const next = (state.habitPasses[existing.id] || []).filter(d => d !== today);
+        if (next.length) state.habitPasses[existing.id] = next;
+        else delete state.habitPasses[existing.id];
+      }
+
+      existing.pullToToday = today;
+      if (typeof stampHabitMeta === 'function') stampHabitMeta(existing);
+
+      try { saveState(); } catch (_) { /* ignore */ }
+
+      const doneToday = typeof isCompletedToday === 'function' && isCompletedToday(existing.id);
+      return {
+        ok: true,
+        habit: existing,
+        doneToday,
+        onToday: !doneToday && (typeof belongsOnTodayTab === 'function'
+          ? belongsOnTodayTab(existing) || isPulledToToday(existing)
+          : true)
+      };
     }
 
     function formatUpcomingLabel(habit, daysUntil) {
@@ -16037,12 +16097,15 @@
           }
         }
         const trackStreak = selectedKind === 'habit';
-        const isRecurring = interval != null && interval !== 0;
+        // Daily habits use interval_days null — still “recurring” for library/personal
+        const isDailyInterval = interval == null || interval === 1;
+        const isRecurring = (interval != null && interval !== 0) || (selectedKind === 'habit' && isDailyInterval);
         const editId = options.editHabitId || options.editTaskId;
+        const isRhythmTitle = typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(title);
         // New heavy freeform work: nudge park scoring so Today stays light.
-        // On edit, keep the user's explicit minutes / energy (don't re-inflate).
+        // Never inflate Swim/Walk/Gym etc. — that parked them in Summary after add.
         let difficulty = selectedDiff;
-        if (!isEdit) {
+        if (!isEdit && !isRhythmTitle) {
           const parkProbe = {
             title,
             note: '',
@@ -16068,6 +16131,11 @@
           librarySection: (mode === 'library' || isRecurring) ? 'Personal' : undefined,
           trackStreak
         };
+        // Daily fitness always lands on Today (not Summary-only)
+        if (isRhythmTitle && selectedKind === 'habit') {
+          task.parkOnSummary = false;
+          task.pullToToday = todayStr();
+        }
         const keepTimesPerDay = (selectedKind === 'habit' || selectedKind === 'chore')
             && (interval == null || interval === 1)
             && selectedTimesPerDay > 1;
@@ -16146,29 +16214,52 @@
           renderLibrary();
           showToast(`"${title}" saved to Personal`);
         } else {
-          if (state.habits.some(h => h.title.toLowerCase() === title.toLowerCase())) {
-            showToast('Already in your list');
+          const existing = (state.habits || []).find(h =>
+            String(h.title || '').toLowerCase() === title.toLowerCase()
+          );
+          if (existing) {
+            // Re-add of Swim etc.: revive onto Today instead of silent “already in list”
+            const revived = typeof reviveExistingHabitOntoToday === 'function'
+              ? reviveExistingHabitOntoToday(existing, {
+                  title,
+                  clearWeekdays: isRhythmTitle
+                })
+              : { ok: false };
             closeQuickTaskModal();
+            if (typeof switchTab === 'function') switchTab('today', { force: true });
+            renderTasks();
+            if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
+            if (revived.ok && revived.doneToday) {
+              showToast(`“${title}” is already done today — see Completed below`);
+            } else if (revived.ok) {
+              showToast(`“${title}” is on Today`);
+            } else {
+              showToast('Already in your list');
+            }
             return;
           }
           if (isRecurring) syncTaskToPersonalLibrary(task);
           state.habits.push(stampHabitMeta(task));
           state.customUsage[task.id] = 1;
           saveState();
+          closeQuickTaskModal();
+          // Always show Today so new Swim/habits “pop up” where the user looks
+          if (typeof switchTab === 'function') switchTab('today', { force: true });
           renderTasks();
           renderLibrary();
           renderStreaks();
           if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
           const kindLabel = selectedKind === 'habit' ? 'habit' : selectedKind === 'chore' ? 'chore' : 'task';
           let where = '';
-          if (typeof isParkedForSummary === 'function' && isParkedForSummary(task)) {
+          if (typeof isParkedForSummary === 'function' && isParkedForSummary(task) && !isPulledToToday(task)) {
             where = ' · in Summary until you Add to Task';
           } else if (selectedKind === 'chore' && !isDueToday(task)) {
             where = ' · due later in Summary';
-          } else if (selectedKind === 'habit') {
-            where = ' · streaks on';
+          } else if (selectedKind === 'habit' || isRhythmTitle) {
+            where = ' · on Today';
           }
           showToast(`Added ${kindLabel}: ${title}${where}`);
+          return;
         }
         closeQuickTaskModal();
       };
@@ -23325,14 +23416,21 @@
       if (habit.parkOnSummary === false) return false;
       if (habit.parkOnSummary === true) return true;
 
+      // Swim / walk / gym / floss etc. always stay on Today — never bury in Summary
+      // (long pool sessions used to score as long-block and disappear after add).
+      const titleBlob = `${habit.title || ''} ${habit.note || ''}`;
+      if (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(titleBlob)) {
+        return false;
+      }
+
       const signals = getTaskParkSignals(habit);
       const score = signals.reduce((sum, s) => sum + (s.weight || 0), 0);
       if (score <= 0) return false;
 
-      // Daily fitness / tiny habits stay on Today unless travel/project weight is strong
+      // Other daily rhythm tasks stay on Today unless travel/project weight is strong
       if (isDailyRhythmTask(habit)) {
         const heavy = signals
-          .filter(s => /travel|project|life-event|long-block|destination|errand|diy/i.test(s.reason))
+          .filter(s => /travel|project|life-event|destination|errand/i.test(s.reason))
           .reduce((sum, s) => sum + s.weight, 0);
         return heavy >= 3;
       }
