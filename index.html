@@ -1723,10 +1723,139 @@
       }
     }
 
+    /* ── Budget (Life) ── */
+    .budget-pie {
+      width: 5.5rem;
+      height: 5.5rem;
+      border-radius: 50%;
+      background: conic-gradient(rgb(var(--harbor-border)) 0 100%);
+      box-shadow:
+        0 0 0 4px rgb(var(--harbor-surface)),
+        0 0 0 5px rgb(var(--harbor-border) / 0.5);
+      position: relative;
+    }
+    .budget-pie::after {
+      content: '';
+      position: absolute;
+      inset: 28%;
+      border-radius: 50%;
+      background: rgb(var(--harbor-surface));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+    }
+    .budget-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .budget-legend-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 0.2rem 0;
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--harbor-font);
+      border-radius: 0.5rem;
+    }
+    .budget-legend-row:hover { background: rgb(var(--harbor-raised) / 0.6); }
+    .budget-legend-row.is-active {
+      background: rgb(var(--harbor-primary) / 0.1);
+    }
+    .budget-legend-swatch {
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .budget-legend-label {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: rgb(var(--harbor-text));
+    }
+    .budget-legend-amt {
+      font-size: 0.72rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-muted));
+      font-variant-numeric: tabular-nums;
+    }
+    .budget-tx-card {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: 1rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-surface));
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      font-family: var(--harbor-font);
+      transition: background 0.12s ease, border-color 0.12s ease;
+    }
+    .budget-tx-card:active { background: rgb(var(--harbor-raised)); }
+    .budget-tx-cat-dot {
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .budget-tx-main { flex: 1; min-width: 0; }
+    .budget-tx-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: rgb(var(--harbor-text));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .budget-tx-meta {
+      font-size: 0.65rem;
+      color: rgb(var(--harbor-muted));
+      margin-top: 0.1rem;
+    }
+    .budget-tx-amt {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: rgb(var(--harbor-text));
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+    .budget-cat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.4rem;
+    }
+    .budget-cat-pick {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.55rem 0.65rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: rgb(var(--harbor-text));
+      cursor: pointer;
+      font-family: var(--harbor-font);
+      text-align: left;
+    }
+    .budget-cat-pick.is-active {
+      border-color: rgb(var(--harbor-primary));
+      background: rgb(var(--harbor-primary) / 0.12);
+      box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.2);
+    }
+
     /* Life list rows share Today density */
     #life-panel-schedule .space-y-2,
     #life-panel-grocery .space-y-2,
     #life-panel-bills .space-y-2,
+    #life-panel-budget .space-y-2,
     #life-panel-subscriptions .space-y-2,
     #subscriptions-list {
       display: flex;
@@ -9442,6 +9571,7 @@
       }
 
       #tab-content-life:not(.hidden) #life-panel-bills:not(.hidden),
+      #tab-content-life:not(.hidden) #life-panel-budget:not(.hidden),
       #tab-content-life:not(.hidden) #life-panel-grocery:not(.hidden),
       #tab-content-life:not(.hidden) #life-panel-schedule:not(.hidden),
       #tab-content-life:not(.hidden) #life-panel-subscriptions:not(.hidden) {
@@ -9722,13 +9852,10 @@
           <div id="grocery-list" class="space-y-2 mb-2"></div>
         </div>
 
-        <!-- Bills Panel -->
+        <!-- Bills Panel — manual entries only -->
         <div id="life-panel-bills" class="life-panel hidden" role="tabpanel" aria-labelledby="life-flyout-bills">
           <div class="panel-head panel-head--toolbar-only">
             <div class="panel-toolbar panel-toolbar-cluster">
-              <button type="button" onclick="showBillImportModal()" class="chip-tool-btn" id="bills-import-btn" aria-label="Import bills CSV">
-                Import CSV
-              </button>
               <button type="button" onclick="addBillFromPrompt()" class="chip-add-btn" id="bills-add-btn" aria-label="Add Bill">
                 <i class="fa-solid fa-plus" aria-hidden="true"></i>
                 <span>Add</span>
@@ -9737,6 +9864,54 @@
           </div>
           <div id="bills-monthly-total" class="hidden bills-spend-card mb-3" aria-live="polite"></div>
           <div id="bills-list" class="space-y-2"></div>
+        </div>
+
+        <!-- Budget Panel — bank CSV → categories + pie -->
+        <div id="life-panel-budget" class="life-panel hidden" role="tabpanel" aria-labelledby="life-flyout-budget">
+          <div class="panel-head panel-head--toolbar-only mb-2">
+            <div class="panel-toolbar panel-toolbar-cluster schedule-toolbar" style="width:100%">
+              <span class="chip-tool-btn chip-tool-static text-[11px] font-semibold text-harbor-muted" id="budget-range-label" role="status">Spending</span>
+              <div class="schedule-toolbar-end">
+                <button type="button" onclick="showBudgetImportModal()" class="chip-tool-btn" id="budget-import-btn" aria-label="Import bank CSV">
+                  Import CSV
+                </button>
+                <button type="button" onclick="clearBudgetData()" class="chip-tool-btn" id="budget-clear-btn" aria-label="Clear budget data">
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="budget-empty" class="harbor-empty py-6">
+            <div class="harbor-empty-icon" aria-hidden="true">📊</div>
+            <div class="text-sm font-medium text-harbor-text">See where your money goes</div>
+            <div class="text-xs text-harbor-muted mt-1.5 leading-relaxed max-w-xs mx-auto">
+              Import a bank CSV. Harbor sorts purchases into categories and shows a simple pie chart.
+              You can fix any category with a tap.
+            </div>
+            <div class="harbor-empty-actions mt-3">
+              <button type="button" class="chip-add-btn" onclick="showBudgetImportModal()">
+                <i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i>Import CSV
+              </button>
+            </div>
+          </div>
+          <div id="budget-content" class="hidden">
+            <div class="budget-summary-card harbor-card bg-harbor-surface border border-harbor-border rounded-3xl p-4 mb-3">
+              <div class="flex items-center gap-4">
+                <div id="budget-pie" class="budget-pie flex-shrink-0" aria-hidden="true"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted mb-0.5">Total spending</div>
+                  <div id="budget-total" class="text-xl font-semibold text-harbor-text tabular-nums">$0</div>
+                  <div id="budget-tx-count" class="text-[11px] text-harbor-muted mt-0.5"></div>
+                </div>
+              </div>
+              <div id="budget-legend" class="budget-legend mt-3"></div>
+            </div>
+            <div class="flex items-center justify-between gap-2 mb-1.5 px-0.5">
+              <div class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted">Transactions</div>
+              <button type="button" id="budget-filter-all" class="text-[10px] font-semibold text-harbor-primary-light" onclick="setBudgetCategoryFilter(null)">Show all</button>
+            </div>
+            <div id="budget-tx-list" class="space-y-2 mb-3"></div>
+          </div>
         </div>
 
         <!-- Subscriptions Panel — yours first, brands on demand -->
@@ -9896,6 +10071,11 @@
         <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
         <span>Bills</span>
       </button>
+      <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-budget"
+        data-life-panel="budget" onclick="selectLifeSection('budget')">
+        <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+        <span>Budget</span>
+      </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-subscriptions"
         data-life-panel="subscriptions" onclick="selectLifeSection('subscriptions')">
         <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
@@ -9946,7 +10126,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 272;
+    const HARBOR_BUILD_NUMBER = 273;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -10217,7 +10397,7 @@
     let currentTab = 'today';
     let currentLifePanel = 'schedule';
     const MAIN_TAB_ORDER = ['today', 'life', 'streaks', 'library'];
-    const LIFE_PANEL_ORDER = ['schedule', 'grocery', 'bills', 'subscriptions'];
+    const LIFE_PANEL_ORDER = ['schedule', 'grocery', 'bills', 'budget', 'subscriptions'];
     let currentLibraryFilter = 'all';
     let librarySearchQuery = '';
     let subscriptionSearchQuery = '';
@@ -10840,6 +11020,7 @@
         groceryView: { mode: 'master' },
         mealPresets: JSON.parse(JSON.stringify(BUILTIN_MEAL_PRESETS)),
         subscriptions: [],
+        budget: { transactions: [], importedAt: null },
         metricLogs: {},
         rewardBank: { points: 0, totalEarned: 0, cheatDownsUsed: 0, lastCheatDate: null },
         challenges: [],
@@ -10973,6 +11154,8 @@
       if (!state.completions) state.completions = {};
       if (!state.habitSkips) state.habitSkips = {};
       if (!Array.isArray(state.challenges)) state.challenges = [];
+      if (!state.budget || typeof state.budget !== 'object') state.budget = { transactions: [], importedAt: null };
+      if (!Array.isArray(state.budget.transactions)) state.budget.transactions = [];
 
       currentEnergy = state.settings.energyToday || 2;
       if (!state.settings.maintenancePreference) {
@@ -16281,169 +16464,6 @@
       showAddBillModal();
     }
 
-    /** Bills CSV: columns name/amount/day or bank export → recurring utilities-like charges */
-    function parseBillsCsv(text) {
-      const raw = String(text || '').replace(/^\uFEFF/, '').replace(/\t/g, ',');
-      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-      if (lines.length < 2) return { bills: [], fromBank: false };
-
-      let headerIdx = 0;
-      let headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().replace(/[_]+/g, ' ').trim());
-      for (let i = 0; i < Math.min(8, lines.length); i++) {
-        const cols = parseCsvLine(lines[i]).map(h => h.toLowerCase().replace(/[_]+/g, ' ').trim());
-        if (cols.some(c => /bill|name|payee|vendor|description|memo/.test(c)) &&
-            cols.some(c => /amount|due|day|date|debit|recurrence|cycle/.test(c))) {
-          headerIdx = i;
-          headers = cols;
-          break;
-        }
-      }
-
-      const findCol = (patterns) => headers.findIndex(h => patterns.some(p => p.test(h)));
-      const nameCol = findCol([/^name$/, /bill name/, /payee/, /vendor/, /merchant/, /description/, /memo/]);
-      const amountCol = findCol([/^amount$/, /payment/, /total/, /value/]);
-      const dayCol = findCol([/due day/, /day of month/, /^day$/, /due date/]);
-      const cycleCol = findCol([/recurrence/, /cycle/, /frequency/, /period/]);
-
-      // Structured bills sheet (name + amount + optional day)
-      const structured = [];
-      if (nameCol >= 0 && amountCol >= 0) {
-        for (let i = headerIdx + 1; i < lines.length; i++) {
-          const cols = parseCsvLine(lines[i]);
-          const name = (cols[nameCol] || '').trim();
-          if (!name || name.length < 2) continue;
-          const amount = parseMoneyValue(cols[amountCol]);
-          if (!(amount > 0)) continue;
-          let dueDay = 1;
-          if (dayCol >= 0) {
-            const rawDay = cols[dayCol];
-            const d = parseFlexibleDate(rawDay);
-            if (d) dueDay = d.getDate();
-            else {
-              const n = parseInt(String(rawDay).replace(/\D/g, ''), 10);
-              if (n >= 1 && n <= 31) dueDay = n;
-            }
-          }
-          let recurrence = 'monthly';
-          if (cycleCol >= 0) {
-            const c = String(cols[cycleCol] || '').toLowerCase();
-            if (/year|annual/.test(c)) recurrence = 'yearly';
-            else if (/quarter/.test(c)) recurrence = 'quarterly';
-            else if (/bi.?week|fortnight/.test(c)) recurrence = 'biweekly';
-            else if (/week/.test(c)) recurrence = 'weekly';
-          }
-          structured.push({ name, amount, dueDays: [dueDay], recurrence });
-        }
-        if (structured.length) return { bills: structured, fromBank: false };
-      }
-
-      // Fall back: bank-style CSV → treat recurring non-entertainment charges as bill candidates
-      const txs = parseBankCsv(text);
-      if (!txs.length) return { bills: [], fromBank: true };
-      const groups = {};
-      txs.forEach(tx => {
-        const key = normalizeMerchantKey(tx.description);
-        if (!key) return;
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(tx);
-      });
-      const bills = [];
-      Object.entries(groups).forEach(([key, pool]) => {
-        if (pool.length < 2) return;
-        // Skip known streaming/subs — those belong in Subscriptions
-        if (matchSubscriptionPreset(pool[0].description)) return;
-        const avg = pool.reduce((s, t) => s + t.amount, 0) / pool.length;
-        const similar = pool.filter(t => Math.abs(t.amount - avg) <= Math.max(2, avg * 0.15));
-        if (similar.length < 2) return;
-        const sorted = similar.filter(t => t.date).sort((a, b) => a.date - b.date);
-        if (sorted.length >= 2) {
-          const gaps = [];
-          for (let i = 1; i < sorted.length; i++) gaps.push((sorted[i].date - sorted[i - 1].date) / 86400000);
-          const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-          if (avgGap < 20 || avgGap > 45) return; // monthly-ish only for bills auto-detect
-        }
-        const last = sorted[sorted.length - 1] || similar[similar.length - 1];
-        bills.push({
-          name: prettifyMerchantName(key, last.description),
-          amount: Math.round(avg * 100) / 100,
-          dueDays: [last.date ? last.date.getDate() : 1],
-          recurrence: 'monthly'
-        });
-      });
-      return { bills, fromBank: true };
-    }
-
-    function showBillImportModal() {
-      const modal = document.createElement('div');
-      modal.id = 'bill-import-modal';
-      modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
-      modal.innerHTML = `
-        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="relative w-full max-h-[82vh] bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm overflow-y-auto">
-          <div class="font-semibold text-lg mb-1">Import bills CSV</div>
-          <div class="text-xs text-harbor-muted mb-3 leading-relaxed">
-            Use a simple sheet with columns like <strong class="text-harbor-text">Name, Amount, Due day</strong>
-            — or a bank export. Harbor looks for monthly recurring charges (utilities, rent, insurance).
-            Streaming services are left for Subscriptions.
-          </div>
-          <label class="block w-full mb-3">
-            <input id="bill-csv-file" type="file" accept=".csv,text/csv" class="hidden">
-            <span class="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-harbor-raised border border-dashed border-harbor-border text-harbor-primary-light font-medium cursor-pointer">
-              <i class="fa-solid fa-file-arrow-up"></i> Choose CSV file
-            </span>
-          </label>
-          <textarea id="bill-csv-paste" rows="6" placeholder="Name,Amount,Due day&#10;Electric,120,15&#10;Rent,1800,1"
-            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-3 mb-3 outline-none text-harbor-text text-xs font-mono"></textarea>
-          <div class="flex gap-2">
-            <button type="button" onclick="this.closest('#bill-import-modal').remove()"
-              class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold">Cancel</button>
-            <button type="button" id="bill-csv-scan-btn"
-              class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Scan &amp; add</button>
-          </div>
-        </div>`;
-      document.body.appendChild(modal);
-      const fileInput = modal.querySelector('#bill-csv-file');
-      const pasteEl = modal.querySelector('#bill-csv-paste');
-      fileInput.onchange = () => {
-        const file = fileInput.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => { pasteEl.value = String(reader.result || ''); };
-        reader.readAsText(file);
-      };
-      modal.querySelector('#bill-csv-scan-btn').onclick = () => {
-        const text = pasteEl.value.trim();
-        if (!text) {
-          showToast('Upload or paste a CSV first');
-          return;
-        }
-        const { bills, fromBank } = parseBillsCsv(text);
-        if (!bills.length) {
-          showToast(fromBank
-            ? 'No recurring bills found — try a Name, Amount, Due day sheet'
-            : 'Could not read bills — check columns (Name, Amount, Due day)');
-          return;
-        }
-        let added = 0;
-        bills.forEach(b => {
-          const exists = (state.bills || []).some(x =>
-            (x.name || '').toLowerCase().replace(/[^a-z0-9]/g, '') ===
-            (b.name || '').toLowerCase().replace(/[^a-z0-9]/g, '')
-          );
-          if (exists) return;
-          if (typeof addBill === 'function') {
-            addBill(b.name, b.dueDays || [1], b.amount, false, b.recurrence || 'monthly');
-            added++;
-          }
-        });
-        modal.remove();
-        if (typeof renderBills === 'function') renderBills();
-        showToast(added
-          ? `Added ${added} bill${added === 1 ? '' : 's'}`
-          : 'Those bills are already on your list');
-      };
-    }
-
     function markBillPaid(billId) {
       const bill = state.bills.find(b => b.id === billId);
       if (!bill) return;
@@ -20286,6 +20306,7 @@
       schedule: { label: 'Plan', icon: 'fa-regular fa-calendar' },
       grocery: { label: 'Shop', icon: 'fa-solid fa-basket-shopping' },
       bills: { label: 'Bills', icon: 'fa-solid fa-file-invoice-dollar' },
+      budget: { label: 'Budget', icon: 'fa-solid fa-chart-pie' },
       subscriptions: { label: 'Subs', icon: 'fa-solid fa-arrows-rotate' }
     };
 
@@ -20333,7 +20354,324 @@
       if (panel === 'bills') renderBills();
       if (panel === 'grocery') renderGrocery();
       if (panel === 'schedule') renderSchedule();
+      if (panel === 'budget') renderBudget();
       if (panel === 'subscriptions') renderSubscriptions();
+    }
+
+    // ==================== BUDGET (Life) ====================
+    const BUDGET_CATEGORIES = [
+      { id: 'housing', label: 'Housing', color: '#5B8DEF', match: /\b(rent|mortgage|landlord|apartment|hoa|property\s*tax|real\s*estate)\b/i },
+      { id: 'utilities', label: 'Utilities', color: '#7C6CB4', match: /\b(electric|utility|utilities|water\s*bill|gas\s*bill|pg&e|duke\s*energy|internet|comcast|xfinity|spectrum|verizon|at&?t|t-?mobile|phone\s*bill|waste|sewer|trash)\b/i },
+      { id: 'groceries', label: 'Groceries', color: '#3D9A8B', match: /\b(grocery|groceries|whole\s*foods|trader\s*joe|kroger|safeway|aldi|costco|sam'?s\s*club|walmart|target|supermarket|food\s*lion|publix|heb|meijer|sprouts|market)\b/i },
+      { id: 'dining', label: 'Dining out', color: '#E08A6E', match: /\b(restaurant|cafe|coffee|starbucks|mcdonald|chipotle|doordash|uber\s*eats|grubhub|pizza|dining|taco\s*bell|wendy|burger|dunkin|panera|subway|chipotle|bar\s|pub\s|brewery|doordash|postmates)\b/i },
+      { id: 'transport', label: 'Transport', color: '#D4AE2E', match: /\b(uber|lyft|shell|exxon|chevron|gas\s*station|parking|metro|transit|fuel|bp\s|mobil|valero|toll|dmv|car\s*wash|auto\s*loan|toyota|honda|ford)\b/i },
+      { id: 'shopping', label: 'Shopping', color: '#C48A9A', match: /\b(amazon|amzn|ebay|etsy|best\s*buy|ikea|nike|adidas|clothing|apparel|mall|retail|home\s*depot|lowe'?s|wayfair|shopify)\b/i },
+      { id: 'health', label: 'Health', color: '#48B2A2', match: /\b(pharmacy|cvs|walgreens|rite\s*aid|doctor|dental|dentist|medical|hospital|clinic|insurance|gym|fitness|planet\s*fitness|optum|unitedhealth|cigna|aetna)\b/i },
+      { id: 'entertainment', label: 'Entertainment', color: '#8B6CB4', match: /\b(netflix|spotify|hulu|disney|hbo|peacock|paramount|steam|playstation|xbox|nintendo|movie|cinema|amc|ticket|concert|spotify|apple\s*tv|youtube\s*premium|crunchyroll)\b/i },
+      { id: 'personal', label: 'Personal care', color: '#E0A0B0', match: /\b(salon|barber|spa|sephora|ulta|hair|nails|cosmetic)\b/i },
+      { id: 'other', label: 'Other', color: '#8A9A96', match: null }
+    ];
+    let budgetCategoryFilter = null;
+
+    function ensureBudgetState() {
+      if (!state.budget || typeof state.budget !== 'object') state.budget = { transactions: [], importedAt: null };
+      if (!Array.isArray(state.budget.transactions)) state.budget.transactions = [];
+      return state.budget;
+    }
+
+    function getBudgetCategory(id) {
+      return BUDGET_CATEGORIES.find(c => c.id === id) || BUDGET_CATEGORIES[BUDGET_CATEGORIES.length - 1];
+    }
+
+    function categorizeBudgetDescription(description) {
+      const text = String(description || '');
+      for (const cat of BUDGET_CATEGORIES) {
+        if (cat.id === 'other') continue;
+        if (cat.match && cat.match.test(text)) return cat.id;
+      }
+      // Known streaming brands via subscription presets
+      if (typeof matchSubscriptionPreset === 'function' && matchSubscriptionPreset(text)) {
+        return 'entertainment';
+      }
+      return 'other';
+    }
+
+    function formatBudgetMoney(n) {
+      const v = Math.abs(Number(n) || 0);
+      return (Number(n) < 0 ? '-' : '') + '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0, minimumFractionDigits: 0 });
+    }
+
+    function getBudgetSpendTransactions() {
+      const budget = ensureBudgetState();
+      // Expenses only (positive amounts from parseBankCsv = money out)
+      return (budget.transactions || []).filter(t => t && (Number(t.amount) || 0) > 0);
+    }
+
+    function importBudgetFromBankCsv(text) {
+      if (typeof parseBankCsv !== 'function') {
+        showToast('CSV parser unavailable', 'warn');
+        return 0;
+      }
+      const txs = parseBankCsv(text);
+      if (!txs.length) {
+        showToast('Could not read transactions — check your CSV format', 'warn');
+        return 0;
+      }
+      const budget = ensureBudgetState();
+      const existingKeys = new Set(
+        (budget.transactions || []).map(t => `${t.date || ''}|${(t.description || '').toLowerCase()}|${t.amount}`)
+      );
+      let added = 0;
+      txs.forEach(tx => {
+        const dateStr = tx.date && !isNaN(tx.date.getTime())
+          ? dateStrLocal(tx.date)
+          : null;
+        const key = `${dateStr || ''}|${(tx.description || '').toLowerCase()}|${tx.amount}`;
+        if (existingKeys.has(key)) return;
+        existingKeys.add(key);
+        const cat = categorizeBudgetDescription(tx.description);
+        budget.transactions.push({
+          id: 'btx-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+          date: dateStr,
+          description: String(tx.description || '').trim().slice(0, 120),
+          amount: Math.round(Number(tx.amount) * 100) / 100,
+          category: cat,
+          categoryAuto: cat,
+          source: 'csv'
+        });
+        added++;
+      });
+      // Newest first
+      budget.transactions.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      budget.importedAt = new Date().toISOString();
+      saveState();
+      return added;
+    }
+
+    function clearBudgetData() {
+      const budget = ensureBudgetState();
+      if (!(budget.transactions || []).length) {
+        showToast('Nothing to clear');
+        return;
+      }
+      if (!confirm('Clear all imported budget transactions from this device?')) return;
+      state.budget = { transactions: [], importedAt: null };
+      budgetCategoryFilter = null;
+      saveState();
+      renderBudget();
+      showToast('Budget cleared');
+    }
+
+    function setBudgetCategoryFilter(catId) {
+      budgetCategoryFilter = catId || null;
+      renderBudget();
+    }
+
+    function showBudgetImportModal() {
+      const modal = document.createElement('div');
+      modal.id = 'budget-import-modal';
+      modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full max-h-[82vh] bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-lg mb-1">Import bank CSV</div>
+          <div class="text-xs text-harbor-muted mb-3 leading-relaxed">
+            Export transactions from your bank or credit card as CSV, then upload or paste below.
+            Harbor auto-sorts spending into categories for a simple pie chart. You can fix any category later.
+          </div>
+          <label class="block w-full mb-3">
+            <input id="budget-csv-file" type="file" accept=".csv,text/csv" class="hidden">
+            <span class="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-harbor-raised border border-dashed border-harbor-border text-harbor-primary-light font-medium cursor-pointer">
+              <i class="fa-solid fa-file-arrow-up"></i> Choose CSV file
+            </span>
+          </label>
+          <textarea id="budget-csv-paste" rows="6" placeholder="Or paste CSV contents here..."
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-3 mb-3 outline-none text-harbor-text text-xs font-mono"></textarea>
+          <div class="flex gap-2">
+            <button type="button" onclick="this.closest('#budget-import-modal').remove()"
+              class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold">Cancel</button>
+            <button type="button" id="budget-csv-scan-btn"
+              class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Import</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+      const fileInput = modal.querySelector('#budget-csv-file');
+      const pasteEl = modal.querySelector('#budget-csv-paste');
+      fileInput.onchange = () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => { pasteEl.value = String(reader.result || ''); };
+        reader.readAsText(file);
+      };
+      modal.querySelector('#budget-csv-scan-btn').onclick = () => {
+        const text = pasteEl.value.trim();
+        if (!text) {
+          showToast('Upload or paste a CSV first');
+          return;
+        }
+        const added = importBudgetFromBankCsv(text);
+        modal.remove();
+        if (added > 0) {
+          budgetCategoryFilter = null;
+          renderBudget();
+          showToast(`Imported ${added} transaction${added === 1 ? '' : 's'}`);
+        }
+      };
+    }
+
+    function showBudgetCategoryEditor(txId) {
+      const budget = ensureBudgetState();
+      const tx = (budget.transactions || []).find(t => t.id === txId);
+      if (!tx) return;
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[70]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" data-close="1"></div>
+        <div class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm" onclick="event.stopPropagation()">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-base mb-0.5 flex items-center justify-between gap-2">
+            <span>Edit category</span>
+            <button type="button" class="modal-close-chip" data-close="1" aria-label="Close">Close</button>
+          </div>
+          <div class="text-[11px] text-harbor-muted mb-1 truncate">${escapeBriefHtml(tx.description)}</div>
+          <div class="text-sm font-semibold tabular-nums text-harbor-text mb-3">${formatBudgetMoney(tx.amount)}</div>
+          <div class="budget-cat-grid mb-2">
+            ${BUDGET_CATEGORIES.map(c => `
+              <button type="button" class="budget-cat-pick${tx.category === c.id ? ' is-active' : ''}" data-cat="${c.id}">
+                <span class="budget-tx-cat-dot" style="background:${c.color}"></span>
+                ${escapeBriefHtml(c.label)}
+              </button>`).join('')}
+          </div>
+          <button type="button" class="w-full py-2.5 mt-1 rounded-2xl bg-harbor-raised border border-harbor-border text-[11px] text-harbor-muted font-semibold" data-reset="1">
+            Reset to auto category
+          </button>
+        </div>`;
+      document.body.appendChild(modal);
+      const close = () => modal.remove();
+      modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
+      modal.querySelectorAll('[data-cat]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          tx.category = btn.getAttribute('data-cat');
+          saveState();
+          close();
+          renderBudget();
+          showToast('Category updated');
+        });
+      });
+      modal.querySelector('[data-reset]')?.addEventListener('click', () => {
+        tx.category = tx.categoryAuto || categorizeBudgetDescription(tx.description);
+        saveState();
+        close();
+        renderBudget();
+        showToast('Reset to auto category');
+      });
+    }
+
+    function renderBudget() {
+      const empty = document.getElementById('budget-empty');
+      const content = document.getElementById('budget-content');
+      const pie = document.getElementById('budget-pie');
+      const totalEl = document.getElementById('budget-total');
+      const countEl = document.getElementById('budget-tx-count');
+      const legend = document.getElementById('budget-legend');
+      const list = document.getElementById('budget-tx-list');
+      const rangeLabel = document.getElementById('budget-range-label');
+      if (!empty || !content) return;
+
+      ensureBudgetState();
+      let txs = getBudgetSpendTransactions();
+      if (!txs.length) {
+        empty.classList.remove('hidden');
+        content.classList.add('hidden');
+        if (rangeLabel) rangeLabel.textContent = 'Spending';
+        return;
+      }
+      empty.classList.add('hidden');
+      content.classList.remove('hidden');
+
+      // Totals by category
+      const totals = {};
+      BUDGET_CATEGORIES.forEach(c => { totals[c.id] = 0; });
+      txs.forEach(t => {
+        const cat = t.category || 'other';
+        totals[cat] = (totals[cat] || 0) + (Number(t.amount) || 0);
+      });
+      const grand = Object.values(totals).reduce((a, b) => a + b, 0);
+      if (totalEl) totalEl.textContent = formatBudgetMoney(grand);
+      if (countEl) countEl.textContent = `${txs.length} transaction${txs.length === 1 ? '' : 's'}`;
+      if (rangeLabel) {
+        const dates = txs.map(t => t.date).filter(Boolean).sort();
+        if (dates.length) {
+          const a = dates[0];
+          const b = dates[dates.length - 1];
+          rangeLabel.textContent = a === b ? a : `${a.slice(5)} – ${b.slice(5)}`;
+        } else rangeLabel.textContent = 'Spending';
+      }
+
+      // Pie via conic-gradient
+      const sortedCats = BUDGET_CATEGORIES
+        .map(c => ({ ...c, total: totals[c.id] || 0 }))
+        .filter(c => c.total > 0.005)
+        .sort((a, b) => b.total - a.total);
+      if (pie) {
+        if (!sortedCats.length || grand <= 0) {
+          pie.style.background = 'conic-gradient(rgb(var(--harbor-border)) 0 100%)';
+        } else {
+          let cursor = 0;
+          const stops = sortedCats.map(c => {
+            const pct = (c.total / grand) * 100;
+            const start = cursor;
+            cursor += pct;
+            return `${c.color} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
+          });
+          pie.style.background = `conic-gradient(${stops.join(', ')})`;
+        }
+      }
+
+      if (legend) {
+        legend.innerHTML = sortedCats.map(c => {
+          const pct = grand > 0 ? Math.round((c.total / grand) * 100) : 0;
+          const active = budgetCategoryFilter === c.id ? ' is-active' : '';
+          return `
+            <button type="button" class="budget-legend-row${active}" onclick="setBudgetCategoryFilter('${c.id}')">
+              <span class="budget-legend-swatch" style="background:${c.color}"></span>
+              <span class="budget-legend-label">${escapeBriefHtml(c.label)} · ${pct}%</span>
+              <span class="budget-legend-amt">${formatBudgetMoney(c.total)}</span>
+            </button>`;
+        }).join('') || '<div class="text-[11px] text-harbor-muted">No spending yet</div>';
+      }
+
+      // Transaction list
+      let shown = txs;
+      if (budgetCategoryFilter) {
+        shown = txs.filter(t => (t.category || 'other') === budgetCategoryFilter);
+      }
+      if (list) {
+        if (!shown.length) {
+          list.innerHTML = '<div class="text-[11px] text-harbor-muted px-1 py-3">No transactions in this category.</div>';
+        } else {
+          list.innerHTML = shown.slice(0, 80).map(t => {
+            const cat = getBudgetCategory(t.category);
+            const dateLabel = t.date
+              ? (typeof formatDateShort === 'function' ? formatDateShort(t.date) : t.date)
+              : '—';
+            return `
+              <button type="button" class="budget-tx-card" onclick="showBudgetCategoryEditor('${t.id}')">
+                <span class="budget-tx-cat-dot" style="background:${cat.color}"></span>
+                <span class="budget-tx-main">
+                  <span class="budget-tx-name">${escapeBriefHtml(t.description)}</span>
+                  <span class="budget-tx-meta">${escapeBriefHtml(dateLabel)} · ${escapeBriefHtml(cat.label)} · tap to edit</span>
+                </span>
+                <span class="budget-tx-amt">${formatBudgetMoney(t.amount)}</span>
+              </button>`;
+          }).join('');
+          if (shown.length > 80) {
+            list.innerHTML += `<div class="text-[10px] text-harbor-muted text-center py-2">Showing 80 of ${shown.length}</div>`;
+          }
+        }
+      }
     }
 
     function updateLifeFlyoutActive() {
@@ -31018,8 +31356,8 @@
               <p>Day and week events. Connect Google or Apple, or import a private .ics file. Family colors live under Household.</p>
             </div>
             <div class="privacy-block">
-              <h4><i class="fa-solid fa-cart-shopping text-emerald-400 mr-1.5"></i>Life → Shop, Bills, Subs</h4>
-              <p><strong class="text-harbor-text">Shop:</strong> shopping list and meals. <strong class="text-harbor-text">Bills:</strong> due dates. <strong class="text-harbor-text">Subs:</strong> what renews and when.</p>
+              <h4><i class="fa-solid fa-cart-shopping text-emerald-400 mr-1.5"></i>Life → Shop, Bills, Budget, Subs</h4>
+              <p><strong class="text-harbor-text">Shop:</strong> shopping list. <strong class="text-harbor-text">Bills:</strong> due dates. <strong class="text-harbor-text">Budget:</strong> bank CSV spending pie. <strong class="text-harbor-text">Subs:</strong> renewals.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-fire text-orange-400 mr-1.5"></i>Streaks</h4>
