@@ -9374,7 +9374,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 242;
+    const HARBOR_BUILD_NUMBER = 243;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -24446,9 +24446,10 @@
       {
         id: 'today-intro',
         title: 'Your day starts here',
-        body: 'This is <strong>Today</strong> — the tasks for right now. Longer chores show up in <strong>Overview</strong> so this list stays light.',
+        body: 'This is <strong>Today</strong> — the tasks for right now. Longer chores show up in <strong>Overview</strong> so this list stays light. You’ll find <strong>Today</strong> on the bottom dock (far right).',
         target: () => document.getElementById('tab-today'),
-        cardPlacement: 'below',
+        // Dock is at the bottom on mobile — keep coachmark above the ring
+        cardPlacement: 'above',
         prepare: () => switchTab('today')
       },
       {
@@ -24489,9 +24490,9 @@
       {
         id: 'life-intro',
         title: 'Life holds the rest',
-        body: 'Open <strong>Life</strong> for your schedule, grocery list, bills, and subscriptions — all in one place.',
+        body: 'Open <strong>Life</strong> on the bottom dock (next to Today) for your schedule, grocery list, bills, and subscriptions — all in one place.',
         target: () => document.getElementById('tab-life'),
-        cardPlacement: 'below',
+        cardPlacement: 'above',
         prepare: () => {
           hideTutorialSmartBanner();
           switchTab('life');
@@ -24500,15 +24501,17 @@
       {
         id: 'library-intro',
         title: 'Add tasks from Library',
-        body: 'The <strong>Library</strong> has ready-made tasks. Tap any card to add it, or make your own.',
+        body: 'The <strong>Library</strong> tab on the dock has ready-made tasks. Tap any card to add it, or make your own.',
         target: () => document.getElementById('tab-library'),
-        cardPlacement: 'below',
+        cardPlacement: 'above',
         prepare: () => switchTab('library')
       },
       {
         id: 'summary',
         title: 'See the big picture',
-        body: 'Tap the glowing <strong>Overview</strong> button (bottom right) for day, week, and month. Look around, then tap <strong>Next</strong>.',
+        body: () => (typeof isSwipeMobile === 'function' && isSwipeMobile())
+          ? 'Tap the glowing <strong>Overview</strong> anchor in the <strong>center of the dock</strong> for day, week, and month. Look around, then tap <strong>Next</strong>.'
+          : 'Tap the glowing <strong>Overview</strong> button (bottom right) for day, week, and month. Look around, then tap <strong>Next</strong>.',
         target: () => document.getElementById('summary-launcher'),
         waitFor: 'summary-open',
         unlockNextOnly: true,
@@ -24973,12 +24976,13 @@
       const fitsBelow = spaceBelow >= cardH + gap;
       const fitsAbove = spaceAbove >= cardH + gap;
 
-      // Main tab bar lives mid-chrome on mobile — prefer placing the coachmark
-      // into the content area (below) so it never collides with Today/Streaks tabs.
-      const targetIsMainTab = !!(step?.id && /^(today|streaks|life|library)-intro$/.test(step.id));
+      // Mobile dock tabs sit at the bottom — place coachmark above into the content area.
+      // Desktop top tabs still prefer below when space allows (handled via cardPlacement).
+      const targetIsDockTab = !!(step?.id && /^(today|streaks|life|library)-intro$/.test(step.id));
+      const mobileDock = isMobile && targetIsDockTab;
 
       let placeBelow;
-      if (targetIsMainTab) placeBelow = true;
+      if (mobileDock) placeBelow = false;
       else if (step?.cardPlacement === 'above') placeBelow = false;
       else if (step?.cardPlacement === 'below') placeBelow = true;
       else if (fitsBelow && fitsAbove) {
