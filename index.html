@@ -1743,9 +1743,9 @@
         align-items: center;
         justify-content: center;
         gap: 0.4rem;
-        padding: 0.55rem 0.45rem;
+        padding: 0.55rem 0.55rem;
         border: none;
-        border-radius: 0.75rem;
+        border-radius: 999px;
         background: transparent;
         color: rgb(var(--harbor-muted));
         font-family: var(--harbor-font);
@@ -2369,7 +2369,7 @@
       font-size: 0.84rem;
       font-weight: 700;
       letter-spacing: -0.015em;
-      border-radius: var(--harbor-radius-md);
+      border-radius: 999px;
       position: relative;
       overflow: hidden;
       transition:
@@ -7345,31 +7345,138 @@
       box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.25);
     }
 
-    .cal-format-chip {
-      padding: 0.38rem 0.8rem;
-      border-radius: var(--harbor-radius-pill);
+    /* Shared filter / toggle pills — fully rounded across the app */
+    .harbor-pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .cal-format-chip,
+    .library-filter-chip,
+    .meal-grocery-chip {
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.42rem 0.95rem;
+      min-height: 2rem;
+      border-radius: 999px !important;
       border: 1px solid rgb(var(--harbor-border) / 0.95);
-      background: rgb(var(--harbor-raised) / 0.85);
+      background: rgb(var(--harbor-raised) / 0.9);
       color: rgb(var(--harbor-muted));
       font-family: var(--harbor-font);
-      font-size: 0.68rem;
+      font-size: 0.7rem;
       font-weight: 650;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
       cursor: pointer;
+      white-space: nowrap;
       transition:
         border-color var(--harbor-duration-fast) ease,
         background var(--harbor-duration-fast) ease,
         color var(--harbor-duration-fast) ease,
-        transform var(--harbor-duration-fast) var(--harbor-ease-out);
+        transform var(--harbor-duration-fast) var(--harbor-ease-out),
+        box-shadow var(--harbor-duration-fast) ease;
     }
 
-    .cal-format-chip:active {
-      transform: scale(0.98);
+    .cal-format-chip:active,
+    .library-filter-chip:active,
+    .meal-grocery-chip:active {
+      transform: scale(0.97);
     }
 
-    .cal-format-chip.is-active {
+    .cal-format-chip.is-active,
+    .library-filter-chip.is-active,
+    .library-filter-chip[aria-selected="true"],
+    .meal-grocery-chip.is-active {
       border-color: rgb(var(--harbor-primary));
-      background: rgb(var(--harbor-primary) / 0.15);
+      background: rgb(var(--harbor-primary) / 0.16);
+      color: rgb(var(--harbor-primary-light));
+      box-shadow: 0 1px 0 rgb(255 255 255 / 0.35) inset;
+      font-weight: 700;
+    }
+
+    /* Budget: month pills + one sleek “lens” dropdown */
+    .budget-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem 0.65rem;
+      justify-content: space-between;
+    }
+    .budget-lens {
+      position: relative;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+    .budget-lens-chip {
+      gap: 0.4rem;
+      padding-left: 0.8rem;
+      padding-right: 0.75rem;
+      color: rgb(var(--harbor-text));
+      background: rgb(var(--harbor-surface));
+      border-color: rgb(var(--harbor-primary) / 0.28);
+      box-shadow: var(--harbor-shadow-sm);
+    }
+    .budget-lens-chip i.fa-sliders {
+      font-size: 0.65rem;
+      opacity: 0.85;
+      color: rgb(var(--harbor-primary-light));
+    }
+    .budget-lens-caret {
+      font-size: 0.55rem;
+      opacity: 0.55;
+      transition: transform 0.15s ease;
+    }
+    .budget-lens.is-open .budget-lens-caret {
+      transform: rotate(180deg);
+    }
+    .budget-lens-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.35rem);
+      z-index: 40;
+      min-width: 11.5rem;
+      padding: 0.35rem;
+      border-radius: 1rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-surface));
+      box-shadow: var(--harbor-shadow-md);
+    }
+    .budget-lens-option {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.1rem;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      border-radius: 0.75rem;
+      padding: 0.55rem 0.7rem;
+      cursor: pointer;
+      font-family: var(--harbor-font);
+      color: rgb(var(--harbor-text));
+    }
+    .budget-lens-option:hover,
+    .budget-lens-option.is-active {
+      background: rgb(var(--harbor-primary) / 0.1);
+    }
+    .budget-lens-option-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .budget-lens-option-hint {
+      font-size: 0.62rem;
+      font-weight: 500;
+      color: rgb(var(--harbor-muted));
+      line-height: 1.25;
+    }
+    .budget-lens-option.is-active .budget-lens-option-label {
       color: rgb(var(--harbor-primary-light));
     }
 
@@ -10074,19 +10181,20 @@
             </div>
           </div>
           <div id="budget-content" class="hidden">
-            <div class="flex gap-1.5 mb-2 flex-wrap" id="budget-range-filters" role="tablist" aria-label="Budget month">
-              <button type="button" class="cal-format-chip is-active" data-budget-range="current" onclick="setBudgetMonthRange('current')">This month</button>
-              <button type="button" class="cal-format-chip" data-budget-range="last" onclick="setBudgetMonthRange('last')">Last month</button>
-              <button type="button" class="cal-format-chip" data-budget-range="all" onclick="setBudgetMonthRange('all')">All</button>
-            </div>
-            <div class="flex gap-1.5 mb-2.5 flex-wrap" id="budget-kind-filters" role="tablist" aria-label="Transaction type">
-              <button type="button" class="cal-format-chip is-active" data-budget-kind="out" onclick="setBudgetKindFilter('out')">Money out</button>
-              <button type="button" class="cal-format-chip" data-budget-kind="purchases" onclick="setBudgetKindFilter('purchases')">Purchases</button>
-              <button type="button" class="cal-format-chip" data-budget-kind="bills" onclick="setBudgetKindFilter('bills')">Fixed bills</button>
-              <button type="button" class="cal-format-chip" data-budget-kind="transfers" onclick="setBudgetKindFilter('transfers')">Transfers</button>
-              <button type="button" class="cal-format-chip" data-budget-kind="cards" onclick="setBudgetKindFilter('cards')">Card payments</button>
-              <button type="button" class="cal-format-chip" data-budget-kind="savings" onclick="setBudgetKindFilter('savings')">Savings</button>
-              <button type="button" class="cal-format-chip" data-budget-kind="income" onclick="setBudgetKindFilter('income')">Income</button>
+            <div class="budget-filter-bar mb-2.5" id="budget-filter-bar">
+              <div class="harbor-pill-row" id="budget-range-filters" role="tablist" aria-label="Budget month">
+                <button type="button" class="cal-format-chip is-active" data-budget-range="current" onclick="setBudgetMonthRange('current')">This month</button>
+                <button type="button" class="cal-format-chip" data-budget-range="last" onclick="setBudgetMonthRange('last')">Last month</button>
+                <button type="button" class="cal-format-chip" data-budget-range="all" onclick="setBudgetMonthRange('all')">All</button>
+              </div>
+              <div class="budget-lens" id="budget-lens">
+                <button type="button" id="budget-lens-btn" class="cal-format-chip budget-lens-chip" aria-haspopup="listbox" aria-expanded="false" onclick="toggleBudgetLensMenu(event)">
+                  <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+                  <span id="budget-lens-label">Spending</span>
+                  <i class="fa-solid fa-chevron-down budget-lens-caret" aria-hidden="true"></i>
+                </button>
+                <div id="budget-lens-menu" class="budget-lens-menu hidden" role="listbox" aria-label="Spending lens"></div>
+              </div>
             </div>
             <div class="budget-summary-card harbor-card bg-harbor-surface border border-harbor-border rounded-3xl p-4 mb-3">
               <div class="flex items-center gap-4">
@@ -10321,7 +10429,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 281;
+    const HARBOR_BUILD_NUMBER = 282;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20585,14 +20693,13 @@
       { id: 'income', label: 'Income', color: '#3D9A6A', pie: true, income: true }
     ];
 
+    // Compact “lens” filters (dropdown) — month chips stay primary
     const BUDGET_KIND_OPTIONS = [
-      { id: 'out', label: 'Money out', totalLabel: 'Total money out' },
-      { id: 'purchases', label: 'Purchases', totalLabel: 'Total purchases' },
-      { id: 'bills', label: 'Fixed bills', totalLabel: 'Total fixed bills' },
-      { id: 'transfers', label: 'Transfers', totalLabel: 'Total transfers' },
-      { id: 'cards', label: 'Card payments', totalLabel: 'Total card payments' },
-      { id: 'savings', label: 'Savings', totalLabel: 'Total to savings' },
-      { id: 'income', label: 'Income', totalLabel: 'Total income' }
+      { id: 'out', label: 'Spending', short: 'Spending', hint: 'Everything leaving the account', totalLabel: 'Total money out' },
+      { id: 'wants', label: 'Wants', short: 'Wants', hint: 'Coffee, dining, shopping & fun', totalLabel: 'Total wants' },
+      { id: 'bills', label: 'Fixed bills', short: 'Bills', hint: 'Mortgage, utilities, insurance, loans', totalLabel: 'Total fixed bills' },
+      { id: 'moves', label: 'Account moves', short: 'Moves', hint: 'Transfers, card payments, savings', totalLabel: 'Total account moves' },
+      { id: 'income', label: 'Income', short: 'Income', hint: 'Credits & deposits', totalLabel: 'Total income' }
     ];
 
     // Bank “Category” column → Harbor ids (Navy Fed / similar exports)
@@ -20659,7 +20766,7 @@
 
     let budgetCategoryFilter = null;
     let budgetMonthRange = 'current'; // current | last | all
-    let budgetKindFilter = 'out'; // out | purchases | transfers | cards | savings | income
+    let budgetKindFilter = 'out'; // out | wants | bills | moves | income
 
     function ensureBudgetState() {
       if (!state.budget || typeof state.budget !== 'object') state.budget = { transactions: [], importedAt: null };
@@ -21003,15 +21110,23 @@
       switch (k) {
         case 'income':
           return txs.filter(t => t.isCredit);
+        case 'bills':
+          // Mortgage, phone/utilities, insurance, car/loans — the “keep the lights on” stack
+          return txs.filter(t => !t.isCredit && isBudgetFixedBillCategory(t.category));
+        case 'wants':
+          // Discretionary only — coffee, dining, shopping, fun
+          return txs.filter(t => !t.isCredit && (
+            isBudgetDiscretionaryCategory(t.category) || isBudgetWantMerchant(t.description)
+          ));
+        case 'moves':
+          return txs.filter(t => !t.isCredit && isBudgetMoneyMoveCategory(t.category));
+        // Legacy kinds from older builds
         case 'transfers':
           return txs.filter(t => !t.isCredit && (t.category || '') === 'transfers');
         case 'cards':
           return txs.filter(t => !t.isCredit && (t.category || '') === 'credit_cards');
         case 'savings':
           return txs.filter(t => !t.isCredit && (t.category || '') === 'savings');
-        case 'bills':
-          // Mortgage, phone/utilities, insurance, car/loans — the “keep the lights on” stack
-          return txs.filter(t => !t.isCredit && isBudgetFixedBillCategory(t.category));
         case 'purchases':
           return txs.filter(t => !t.isCredit && isBudgetPurchaseCategory(t.category));
         case 'out':
@@ -21412,7 +21527,55 @@
       const ok = BUDGET_KIND_OPTIONS.some(k => k.id === kind);
       budgetKindFilter = ok ? kind : 'out';
       budgetCategoryFilter = null;
+      closeBudgetLensMenu();
       renderBudget();
+    }
+
+    function closeBudgetLensMenu() {
+      const lens = document.getElementById('budget-lens');
+      const menu = document.getElementById('budget-lens-menu');
+      const btn = document.getElementById('budget-lens-btn');
+      if (menu) menu.classList.add('hidden');
+      if (lens) lens.classList.remove('is-open');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleBudgetLensMenu(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      const lens = document.getElementById('budget-lens');
+      const menu = document.getElementById('budget-lens-menu');
+      const btn = document.getElementById('budget-lens-btn');
+      if (!menu || !btn) return;
+      const open = menu.classList.contains('hidden');
+      if (open) {
+        // Rebuild options each open so active state is fresh
+        menu.innerHTML = BUDGET_KIND_OPTIONS.map(k => `
+          <button type="button" role="option" class="budget-lens-option${budgetKindFilter === k.id ? ' is-active' : ''}"
+            data-budget-kind="${k.id}" aria-selected="${budgetKindFilter === k.id ? 'true' : 'false'}"
+            onclick="setBudgetKindFilter('${k.id}')">
+            <span class="budget-lens-option-label">${escapeBriefHtml(k.label)}</span>
+            <span class="budget-lens-option-hint">${escapeBriefHtml(k.hint || '')}</span>
+          </button>`).join('');
+        menu.classList.remove('hidden');
+        lens?.classList.add('is-open');
+        btn.setAttribute('aria-expanded', 'true');
+      } else {
+        closeBudgetLensMenu();
+      }
+    }
+
+    // Close lens menu on outside tap (once)
+    if (typeof window !== 'undefined' && !window.__harborBudgetLensDocBound) {
+      window.__harborBudgetLensDocBound = true;
+      document.addEventListener('click', (ev) => {
+        const lens = document.getElementById('budget-lens');
+        if (!lens || lens.classList.contains('is-open') === false) return;
+        if (ev.target instanceof Element && lens.contains(ev.target)) return;
+        closeBudgetLensMenu();
+      }, true);
     }
 
     function deleteBudgetTransaction(txId) {
@@ -21612,15 +21775,20 @@
       empty.classList.add('hidden');
       content.classList.remove('hidden');
 
-      // Month + kind chips
+      // Month chips + lens label
       document.querySelectorAll('[data-budget-range]').forEach(btn => {
         btn.classList.toggle('is-active', btn.getAttribute('data-budget-range') === budgetMonthRange);
       });
-      document.querySelectorAll('[data-budget-kind]').forEach(btn => {
-        btn.classList.toggle('is-active', btn.getAttribute('data-budget-kind') === budgetKindFilter);
-      });
-
+      // Migrate legacy kind ids from older sessions
+      if (['purchases', 'transfers', 'cards', 'savings'].includes(budgetKindFilter)) {
+        if (budgetKindFilter === 'purchases') budgetKindFilter = 'wants';
+        else if (budgetKindFilter === 'transfers' || budgetKindFilter === 'cards' || budgetKindFilter === 'savings') {
+          budgetKindFilter = 'moves';
+        }
+      }
       const kindOpt = getBudgetKindOption(budgetKindFilter);
+      const lensLabel = document.getElementById('budget-lens-label');
+      if (lensLabel) lensLabel.textContent = kindOpt.short || kindOpt.label;
       let txs = getBudgetViewTransactions(budgetMonthRange, budgetKindFilter);
       const bounds = (budgetMonthRange === 'current' || budgetMonthRange === 'last')
         ? getBudgetMonthBounds(budgetMonthRange)
@@ -21695,10 +21863,10 @@
 
       // Habit insights — purchases only (skip pure money-moves / income)
       if (insightsEl) {
-        const insightSource = budgetKindFilter === 'income' || budgetKindFilter === 'transfers'
-          || budgetKindFilter === 'cards' || budgetKindFilter === 'savings' || budgetKindFilter === 'bills'
-          ? []
-          : txs;
+        // Insights only when looking at spending or wants (never bills / moves / income)
+        const insightSource = (budgetKindFilter === 'out' || budgetKindFilter === 'wants' || budgetKindFilter === 'purchases')
+          ? txs
+          : [];
         const insights = getBudgetMerchantInsights(insightSource, 6);
         if (insights.length) {
           insightsEl.classList.remove('hidden');
