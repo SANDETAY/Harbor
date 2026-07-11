@@ -1861,6 +1861,38 @@
       transition: background 0.12s ease, border-color 0.12s ease;
     }
     .budget-tx-card:active { background: rgb(var(--harbor-raised)); }
+    #budget-tx-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    #budget-tx-list .swipe-row {
+      border-radius: 1rem;
+    }
+    #budget-tx-list .swipe-row-content.budget-tx-card {
+      /* Solid surface so swipe actions stay hidden until drag */
+      background: rgb(var(--harbor-surface));
+    }
+    .budget-legend-row.is-active .budget-legend-label {
+      color: rgb(var(--harbor-primary-light));
+    }
+    .budget-filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      max-width: 100%;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-primary-light));
+    }
+    .budget-filter-chip-dot {
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
     .budget-tx-cat-dot {
       width: 0.55rem;
       height: 0.55rem;
@@ -10061,10 +10093,11 @@
             </div>
             <div id="budget-insights" class="mb-3 hidden"></div>
             <div class="flex items-center justify-between gap-2 mb-1.5 px-0.5">
-              <div class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted">Transactions</div>
-              <button type="button" id="budget-filter-all" class="text-[10px] font-semibold text-harbor-primary-light" onclick="setBudgetCategoryFilter(null)">Show all</button>
+              <div id="budget-tx-heading" class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted min-w-0">Transactions</div>
+              <button type="button" id="budget-filter-all" class="text-[10px] font-semibold text-harbor-primary-light hidden flex-shrink-0" onclick="setBudgetCategoryFilter(null)">Show all</button>
             </div>
-            <div id="budget-tx-list" class="space-y-2 mb-3"></div>
+            <div id="budget-tx-swipe-hint" class="swipe-row-hint text-[10px] text-harbor-muted mb-1.5 px-0.5 hidden">Swipe left to change category or delete</div>
+            <div id="budget-tx-list" class="mb-3"></div>
           </div>
         </div>
 
@@ -10280,7 +10313,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 275;
+    const HARBOR_BUILD_NUMBER = 276;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20908,8 +20941,16 @@
     }
 
     function setBudgetCategoryFilter(catId) {
-      budgetCategoryFilter = catId || null;
+      // Tap same legend row again to clear
+      if (catId && budgetCategoryFilter === catId) budgetCategoryFilter = null;
+      else budgetCategoryFilter = catId || null;
       renderBudget();
+      if (budgetCategoryFilter) {
+        const list = document.getElementById('budget-tx-list');
+        if (list) {
+          try { list.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
+        }
+      }
     }
 
     function setBudgetMonthRange(range) {
@@ -20917,6 +20958,19 @@
       budgetMonthRange = range;
       budgetCategoryFilter = null;
       renderBudget();
+    }
+
+    function deleteBudgetTransaction(txId) {
+      const budget = ensureBudgetState();
+      const idx = (budget.transactions || []).findIndex(t => t.id === txId);
+      if (idx < 0) return;
+      const tx = budget.transactions[idx];
+      const label = (tx.description || 'Transaction').slice(0, 40);
+      if (!confirm(`Remove “${label}” from this budget?`)) return;
+      budget.transactions.splice(idx, 1);
+      saveState();
+      renderBudget();
+      showToast('Transaction removed');
     }
 
     function showBudgetImportModal() {
@@ -21004,6 +21058,9 @@
           <button type="button" class="w-full py-2.5 mt-1 rounded-2xl bg-harbor-raised border border-harbor-border text-[11px] text-harbor-muted font-semibold" data-reset="1">
             Reset to auto category
           </button>
+          <button type="button" class="w-full py-2.5 mt-2 rounded-2xl border border-rose-400/40 text-[11px] text-rose-400 font-semibold" data-delete="1">
+            Delete transaction
+          </button>
         </div>`;
       document.body.appendChild(modal);
       const close = () => modal.remove();
@@ -21023,6 +21080,10 @@
         close();
         renderBudget();
         showToast('Reset to auto category');
+      });
+      modal.querySelector('[data-delete]')?.addEventListener('click', () => {
+        close();
+        deleteBudgetTransaction(txId);
       });
     }
 
@@ -21128,7 +21189,7 @@
           const pct = grand > 0 ? Math.round((c.total / grand) * 100) : 0;
           const active = budgetCategoryFilter === c.id ? ' is-active' : '';
           return `
-            <button type="button" class="budget-legend-row${active}" onclick="setBudgetCategoryFilter('${c.id}')">
+            <button type="button" class="budget-legend-row${active}" onclick="setBudgetCategoryFilter('${c.id}')" aria-pressed="${budgetCategoryFilter === c.id ? 'true' : 'false'}" title="Show ${escapeBriefHtml(c.label)} only">
               <span class="budget-legend-swatch" style="background:${c.color}"></span>
               <span class="budget-legend-label">${escapeBriefHtml(c.label)} · ${pct}%</span>
               <span class="budget-legend-amt">${formatBudgetMoney(c.total)}</span>
@@ -21171,26 +21232,80 @@
       if (budgetCategoryFilter) {
         shown = txs.filter(t => (t.category || 'other') === budgetCategoryFilter);
       }
-      if (list) {
-        if (!shown.length) {
-          list.innerHTML = '<div class="text-[11px] text-harbor-muted px-1 py-3">No transactions in this view.</div>';
+
+      const headingEl = document.getElementById('budget-tx-heading');
+      const filterAllBtn = document.getElementById('budget-filter-all');
+      const swipeHint = document.getElementById('budget-tx-swipe-hint');
+      if (headingEl) {
+        headingEl.className = 'text-[10px] uppercase tracking-wider font-bold text-harbor-muted min-w-0';
+        if (budgetCategoryFilter) {
+          const cat = getBudgetCategory(budgetCategoryFilter);
+          const filterSum = shown.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+          headingEl.innerHTML = `
+            <span class="budget-filter-chip">
+              <span class="budget-filter-chip-dot" style="background:${cat.color}"></span>
+              ${escapeBriefHtml(cat.label)} · ${shown.length} · ${formatBudgetMoney(filterSum)}
+            </span>`;
         } else {
-          list.innerHTML = shown.slice(0, 120).map(t => {
+          headingEl.textContent = 'Transactions';
+        }
+      }
+      if (filterAllBtn) {
+        filterAllBtn.classList.toggle('hidden', !budgetCategoryFilter);
+      }
+      if (swipeHint) {
+        const showHint = shown.length > 0 && typeof isSwipeMobile === 'function' && isSwipeMobile();
+        swipeHint.classList.toggle('hidden', !showHint);
+      }
+
+      if (list) {
+        list.innerHTML = '';
+        if (!shown.length) {
+          list.innerHTML = budgetCategoryFilter
+            ? '<div class="text-[11px] text-harbor-muted px-1 py-3">No transactions in this category for this period. <button type="button" class="text-harbor-primary-light font-semibold" onclick="setBudgetCategoryFilter(null)">Show all</button></div>'
+            : '<div class="text-[11px] text-harbor-muted px-1 py-3">No transactions in this view.</div>';
+        } else {
+          shown.slice(0, 120).forEach(t => {
             const cat = getBudgetCategory(t.category);
             const dateLabel = formatBudgetPostedDate(t.date);
-            return `
-              <button type="button" class="budget-tx-card" onclick="showBudgetCategoryEditor('${t.id}')">
-                <span class="budget-tx-cat-dot" style="background:${cat.color}"></span>
-                <span class="budget-tx-main">
-                  <span class="budget-tx-name">${escapeBriefHtml(t.description)}</span>
-                  <span class="budget-tx-meta">Posted ${escapeBriefHtml(dateLabel)} · ${escapeBriefHtml(cat.label)} · tap to edit</span>
-                </span>
+            const safeId = escapeBriefHtml(t.id);
+            const row = document.createElement('div');
+            row.className = 'swipe-row';
+            row.dataset.swipeId = t.id;
+            row.dataset.swipeType = 'budget';
+            row.style.setProperty('--swipe-reveal', '8.75rem');
+            const actionsHtml = `
+              <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Change category"><i class="fa-solid fa-pen"></i> Edit</button>
+              <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete transaction"><i class="fa-solid fa-trash-can"></i> Delete</button>
+            `;
+            const contentHtml = `
+              <div class="budget-tx-cat-dot" style="background:${cat.color}" aria-hidden="true"></div>
+              <div class="budget-tx-main min-w-0 flex-1" onclick="showBudgetCategoryEditor('${safeId}')">
+                <div class="budget-tx-name">${escapeBriefHtml(t.description)}</div>
+                <div class="budget-tx-meta">Posted ${escapeBriefHtml(dateLabel)} · ${escapeBriefHtml(cat.label)}</div>
+              </div>
+              <div class="flex flex-col items-end gap-0.5 flex-shrink-0">
                 <span class="budget-tx-amt">${formatBudgetMoney(t.amount)}</span>
-              </button>`;
-          }).join('');
+                <div class="row-inline-actions flex gap-2 items-center">
+                  <button type="button" onclick="event.stopImmediatePropagation(); showBudgetCategoryEditor('${safeId}')" class="text-[10px] text-harbor-primary-light font-semibold">Edit</button>
+                  <button type="button" onclick="event.stopImmediatePropagation(); deleteBudgetTransaction('${safeId}')" class="text-[10px] text-harbor-muted hover:text-rose-400 font-semibold">Delete</button>
+                </div>
+              </div>
+            `;
+            row.innerHTML = buildSwipeRowHtml(
+              actionsHtml,
+              contentHtml,
+              'budget-tx-card bg-harbor-surface border border-harbor-border rounded-2xl px-3.5 py-2.5 flex items-center gap-x-2.5'
+            );
+            list.appendChild(row);
+          });
           if (shown.length > 120) {
-            list.innerHTML += `<div class="text-[10px] text-harbor-muted text-center py-2">Showing 120 of ${shown.length}</div>`;
+            const more = document.createElement('div');
+            more.className = 'text-[10px] text-harbor-muted text-center py-2';
+            more.textContent = `Showing 120 of ${shown.length}`;
+            list.appendChild(more);
           }
+          if (typeof bindSwipeRows === 'function') bindSwipeRows(list);
         }
       }
     }
@@ -21905,6 +22020,9 @@
           deleteCalendarEvent(id);
           if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('events');
         }
+      } else if (type === 'budget') {
+        if (action === 'edit') showBudgetCategoryEditor(id);
+        else if (action === 'delete') deleteBudgetTransaction(id);
       }
     }
 
