@@ -10429,7 +10429,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 284;
+    const HARBOR_BUILD_NUMBER = 285;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20990,9 +20990,9 @@
         [/publix|instacart|kroger|safeway|aldi|whole\s*foods|trader\s*joe|food\s*lion|heb|meijer|sprouts|winn[\s-]?dixie|daybreak\s*mark|grocery/i, 'groceries'],
         [/starbucks|mcdonald|chipotle|doordash|uber\s*eats|grubhub|subway|dunkin|wendy|burger|taco\s*bell|panera|chick[\s-]?fil|popeyes|pizza|restaurant|dining|cafe|coffee|smoothie|community\s*loav|sq\s*\*community/i, 'dining'],
         [/exxon|shell|chevron|mobil|valero|gas\s*station|sunpass|uber\b|lyft|parking|toll|fuel/i, 'transport'],
-        [/amazon|amzn|costco|walmart|target|best\s*buy|ikea|nike|ebay|etsy|home\s*depot|lowe'?s?|everbank\s*concessio/i, 'shopping'],
+        [/amazon|amzn|costco|walmart|target|best\s*buy|ikea|nike|ebay|etsy|home\s*depot|lowe'?s?|everbank\s*concessio|concession/i, 'shopping'],
         [/cvs|walgreens|pharmacy|dental|hospital|doctor|gym|fitness|petco|petsmart|vet\b|veterinary/i, 'health'],
-        [/netflix|spotify|hulu|disney|hbo|peacock|microsoft|openai|chatgpt|epic\s*theatres|cinema|movie|steam|xbox|playstation|youtube|apple\.com\/bill|certus\s*fusion/i, 'entertainment'],
+        [/netflix|spotify|hulu|disney|hbo|peacock|microsoft|redmond\s*us|openai|chatgpt|epic\s*theatres|cinema|movie|steam|xbox|playstation|youtube|apple\.com\/bill|certus\s*fusion|wm2tm/i, 'entertainment'],
         [/sephora|ulta|salon|barber|spa/i, 'personal'],
         [/tuition|university|college|school|coursera|udemy/i, 'education'],
         [/church|charit|donation|tithe|elevate\s*life/i, 'charity'],
@@ -21051,25 +21051,48 @@
       return false;
     }
 
+    /** Infer credit/debit when indicator was never stored or import was wrong */
+    function detectBudgetIsCredit(t) {
+      if (!t) return false;
+      const ind = String(t.creditDebitIndicator || t.indicator || '').trim().toLowerCase();
+      if (ind === 'credit' || ind === 'cr' || ind === 'c') return true;
+      if (ind === 'debit' || ind === 'dr' || ind === 'd') return false;
+      const typeStr = String(t.bankType || '');
+      const typeGroup = String(t.bankTypeGroup || '');
+      const bank = String(t.bankCategory || '');
+      const desc = `${t.bankDescription || ''} ${t.description || ''}`;
+      // Explicit credit types from bank CSV
+      if (/ach\s*credit/i.test(typeStr) || /^credit$/i.test(typeStr.trim())) return true;
+      if (/^credit$/i.test(typeGroup.trim()) && !/debit/i.test(typeStr)) return true;
+      // Paychecks / benefits / deposits
+      if (isBudgetIncomeBankCategory(bank)) return true;
+      if (/salary\s*\/\s*regular|salary\/regular|from\s*dfas|dfas-|department\s*of\s*veteran|vacp\s*treas|paycheck|payroll|direct\s*deposit/i.test(desc)) {
+        return true;
+      }
+      if (/dividend|atm\s*rebate|interest\s*paid|deposit\b/i.test(desc) && !/debit/i.test(typeStr)) {
+        // inbound money language
+        if (!/ach\s*debit|pos|debit-?dc/i.test(desc + ' ' + typeStr)) return true;
+      }
+      if (t.isCredit === true) return true;
+      if (t.category === 'income' || t.categoryAuto === 'income') return true;
+      return false;
+    }
+
     /**
-     * Income lens: money that landed in the account as a credit.
-     * Prefer true income; also include other credits (so the filter is never “broken empty”
-     * when the bank marks rows Credit).
+     * Income lens: paychecks, deposits, and other money-in credits.
      */
     function isBudgetIncomeTransaction(t) {
       if (!t) return false;
+      if (detectBudgetIsCredit(t)) return true;
       if (t.isCredit) return true;
       if (t.category === 'income') return true;
-      // Repair path: bank clearly marks income but isCredit was lost on an older import
       if (isBudgetTrueIncomeSignal(t)) return true;
-      const type = `${t.bankType || ''} ${t.bankTypeGroup || ''}`.toLowerCase();
-      if (/\bcredit\b/.test(type) && !/\bdebit\b/.test(type)) return true;
       return false;
     }
 
     /** Wants lens: lifestyle spending — dining, shopping, entertainment, fun */
     function isBudgetWantTransaction(t) {
-      if (!t || t.isCredit) return false;
+      if (!t || t.isCredit || detectBudgetIsCredit(t)) return false;
       const cat = t.category || 'other';
       if (isBudgetMoneyMoveCategory(cat)) return false;
       if (isBudgetFixedBillCategory(cat)) return false;
@@ -21097,45 +21120,88 @@
       return true;
     }
 
-    /** Fix older imports where salary credits weren’t flagged isCredit / income */
-    function repairBudgetIncomeFlags() {
+    /**
+     * Full reclassify of stored rows (fixes stale Other % and missing Income).
+     * Respects user merchant memory / manual categoryFromRule picks.
+     */
+    function reclassifyAllBudgetTransactions(force = false) {
       const budget = ensureBudgetState();
-      if (budget._incomeRepairedV1) return false;
-      budget._incomeRepairedV1 = true;
-      let changed = false;
+      if (!force && budget._fullRecatV6) return false;
+      budget._fullRecatV6 = true;
+      let changed = 0;
       (budget.transactions || []).forEach(t => {
         if (!t) return;
-        const typeStr = String(t.bankType || '');
-        const type = `${typeStr} ${t.bankTypeGroup || ''}`.toLowerCase();
-        const desc = `${t.bankDescription || ''} ${t.description || ''}`;
-        const bank = String(t.bankCategory || '');
-        let shouldCredit = !!t.isCredit;
-        if (isBudgetIncomeBankCategory(bank)) shouldCredit = true;
-        if (/ach\s*credit/i.test(typeStr) || /^credit$/i.test(typeStr.trim())) shouldCredit = true;
-        if (/salary|paycheck|dfas|veteran\s*affairs|vacp|payroll/i.test(desc)
-          && !/debit/i.test(typeStr)
-          && (isBudgetIncomeBankCategory(bank) || /salary|paycheck|dfas|veteran|deposit|income/i.test(desc + ' ' + bank))) {
-          shouldCredit = true;
+        const bankDesc = String(t.bankDescription || t.description || '').trim();
+        if (!bankDesc && !t.description) return;
+        const bankCategory = t.bankCategory || '';
+        const typeStr = t.bankType || '';
+        const typeGroupStr = t.bankTypeGroup || '';
+        const userLocked = !!(t.categoryFromRule && t.category && t.categoryAuto && t.category !== t.categoryAuto);
+
+        // 1) Fix credit/debit
+        const shouldCredit = detectBudgetIsCredit(t);
+        if (!!t.isCredit !== shouldCredit) {
+          t.isCredit = shouldCredit;
+          changed++;
         }
-        if (shouldCredit && !t.isCredit) {
-          t.isCredit = true;
-          changed = true;
-        }
+
+        // 2) Re-score category from bank + description (unless user locked a custom pick)
+        let autoCat = categorizeBudgetDescription(bankDesc || t.description, bankCategory, {
+          type: typeStr,
+          typeGroup: typeGroupStr
+        });
         if (shouldCredit) {
-          const trueInc = isBudgetTrueIncomeSignal(t) || isBudgetIncomeBankCategory(bank);
-          const userLocked = t.categoryFromRule && t.category !== t.categoryAuto;
-          if (!userLocked && trueInc) {
-            if (t.category !== 'income') { t.category = 'income'; changed = true; }
-            if (t.categoryAuto !== 'income') { t.categoryAuto = 'income'; changed = true; }
-          } else if (!userLocked && t.isCredit && (!t.category || t.category === 'other')) {
-            t.category = 'income';
-            t.categoryAuto = t.categoryAuto || 'income';
-            changed = true;
+          const fromBank = mapBankCategoryToHarbor(bankCategory);
+          if (isBudgetIncomeBankCategory(bankCategory) || fromBank === 'income') {
+            autoCat = 'income';
+          } else if (fromBank === 'transfers' || fromBank === 'savings') {
+            autoCat = fromBank;
+          } else if (/transfer\s+from|from\s+savings|from\s+checking|zelle|venmo|cash\s*app/i.test(bankDesc)) {
+            autoCat = 'transfers';
+          } else {
+            autoCat = 'income';
           }
+        } else if (autoCat === 'income') {
+          autoCat = 'other';
+        }
+
+        // 3) Apply merchant memory on top of auto
+        const applied = applyBudgetMerchantRule(bankDesc || t.description, autoCat);
+        const nextCat = userLocked ? t.category : (applied.category || autoCat);
+        const nextAuto = applied.categoryAuto || autoCat;
+        const nextDesc = (applied.fromRule && applied.description && !userLocked)
+          ? applied.description
+          : (t.description || bankDesc);
+
+        if (t.categoryAuto !== nextAuto) {
+          t.categoryAuto = nextAuto;
+          changed++;
+        }
+        if (!userLocked && t.category !== nextCat) {
+          t.category = nextCat;
+          changed++;
+        }
+        if (applied.fromRule) t.categoryFromRule = true;
+        if (!t.bankDescription && bankDesc) {
+          t.bankDescription = bankDesc;
+          changed++;
+        }
+        // Keep display name from rule when present
+        if (!userLocked && applied.fromRule && applied.description && t.description !== applied.description) {
+          t.description = String(applied.description).slice(0, 140);
+          changed++;
+        } else if (!t.description && nextDesc) {
+          t.description = String(nextDesc).slice(0, 140);
+          changed++;
         }
       });
       if (changed) saveState();
-      return changed;
+      return changed > 0;
+    }
+
+    /** @deprecated use reclassifyAllBudgetTransactions */
+    function repairBudgetIncomeFlags() {
+      return reclassifyAllBudgetTransactions(false);
     }
 
     /** Re-score bank “Other Expenses” / stale other rows that were never user-edited */
@@ -21281,6 +21347,7 @@
           description: desc.slice(0, 140),
           amount,
           isCredit,
+          creditDebitIndicator: indicator || (isCredit ? 'credit' : 'debit'),
           bankCategory,
           bankType: typeStr,
           bankTypeGroup: typeGroupStr,
@@ -21348,24 +21415,25 @@
           return txs.filter(t => isBudgetIncomeTransaction(t));
         case 'bills':
           // Mortgage, phone/utilities, insurance, car/loans — the “keep the lights on” stack
-          return txs.filter(t => !t.isCredit && isBudgetFixedBillCategory(t.category));
+          return txs.filter(t => !detectBudgetIsCredit(t) && isBudgetFixedBillCategory(t.category));
         case 'wants':
           // Lifestyle wants — dining, shopping, entertainment, clothing, fun
           return txs.filter(t => isBudgetWantTransaction(t));
         case 'moves':
-          return txs.filter(t => !t.isCredit && isBudgetMoneyMoveCategory(t.category));
+          return txs.filter(t => !detectBudgetIsCredit(t) && isBudgetMoneyMoveCategory(t.category));
         // Legacy kinds from older builds
         case 'transfers':
-          return txs.filter(t => !t.isCredit && (t.category || '') === 'transfers');
+          return txs.filter(t => !detectBudgetIsCredit(t) && (t.category || '') === 'transfers');
         case 'cards':
-          return txs.filter(t => !t.isCredit && (t.category || '') === 'credit_cards');
+          return txs.filter(t => !detectBudgetIsCredit(t) && (t.category || '') === 'credit_cards');
         case 'savings':
-          return txs.filter(t => !t.isCredit && (t.category || '') === 'savings');
+          return txs.filter(t => !detectBudgetIsCredit(t) && (t.category || '') === 'savings');
         case 'purchases':
-          return txs.filter(t => !t.isCredit && isBudgetPurchaseCategory(t.category));
+          return txs.filter(t => !detectBudgetIsCredit(t) && isBudgetPurchaseCategory(t.category));
         case 'out':
         default:
-          return txs.filter(t => !t.isCredit);
+          // Money out only — never mix paychecks into the spending pie
+          return txs.filter(t => !detectBudgetIsCredit(t));
       }
     }
 
@@ -21505,6 +21573,7 @@
           description: String(applied.description || bankDesc).trim().slice(0, 140),
           amount: Math.round(Number(tx.amount) * 100) / 100,
           isCredit: !!tx.isCredit,
+          creditDebitIndicator: tx.creditDebitIndicator || (tx.isCredit ? 'credit' : 'debit'),
           bankCategory: tx.bankCategory || '',
           bankType: tx.bankType || '',
           bankTypeGroup: tx.bankTypeGroup || '',
@@ -21524,6 +21593,8 @@
       // Fresh file: re-run auto category migrations on next render (won't override rules)
       delete budget._otherRecatV2;
       delete budget._fixedBillMigrated;
+      delete budget._incomeRepairedV1;
+      delete budget._fullRecatV6;
       // Any successful CSV import finishes the monthly budget-review task
       if (typeof markBudgetReviewCompleteFromImport === 'function') {
         markBudgetReviewCompleteFromImport({ silent: true });
@@ -22047,12 +22118,12 @@
       if (!state.budget._rulesHarvested) {
         harvestBudgetMerchantRulesFromTransactions();
       }
-      if (!state.budget._otherRecatV2) {
+      // Always reclassify once on this build — fixes empty Income + bloated Other from older imports
+      if (!state.budget._fullRecatV6) {
+        reclassifyAllBudgetTransactions(true);
+      } else if (!state.budget._otherRecatV2) {
         state.budget._otherRecatV2 = true;
         recategorizeBudgetOtherTransactions();
-      }
-      if (!state.budget._incomeRepairedV1) {
-        repairBudgetIncomeFlags();
       }
       const anyTx = (ensureBudgetState().transactions || []).some(t => t && (Number(t.amount) || 0) > 0);
       if (!anyTx) {
@@ -22117,7 +22188,15 @@
       if (totalEl) totalEl.textContent = formatBudgetMoney(grand);
       if (countEl) {
         if (!txs.length) {
-          countEl.textContent = `No ${kindOpt.label.toLowerCase()} in this period`;
+          // Helpful hint when month filter hides income that exists in other months
+          let hint = `No ${kindOpt.label.toLowerCase()} in this period`;
+          if (budgetKindFilter === 'income' || budgetKindFilter === 'wants') {
+            const allKind = getBudgetViewTransactions('all', budgetKindFilter);
+            if (allKind.length) {
+              hint += ` · ${allKind.length} in All`;
+            }
+          }
+          countEl.textContent = hint;
         } else {
           countEl.textContent = `${txs.length} transaction${txs.length === 1 ? '' : 's'} · by posting date`;
         }
