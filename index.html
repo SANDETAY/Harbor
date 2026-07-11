@@ -10074,19 +10074,26 @@
             </div>
           </div>
           <div id="budget-content" class="hidden">
-            <div class="flex gap-1.5 mb-2.5 flex-wrap" id="budget-range-filters" role="tablist" aria-label="Budget month">
+            <div class="flex gap-1.5 mb-2 flex-wrap" id="budget-range-filters" role="tablist" aria-label="Budget month">
               <button type="button" class="cal-format-chip is-active" data-budget-range="current" onclick="setBudgetMonthRange('current')">This month</button>
               <button type="button" class="cal-format-chip" data-budget-range="last" onclick="setBudgetMonthRange('last')">Last month</button>
               <button type="button" class="cal-format-chip" data-budget-range="all" onclick="setBudgetMonthRange('all')">All</button>
+            </div>
+            <div class="flex gap-1.5 mb-2.5 flex-wrap" id="budget-kind-filters" role="tablist" aria-label="Transaction type">
+              <button type="button" class="cal-format-chip is-active" data-budget-kind="out" onclick="setBudgetKindFilter('out')">Money out</button>
+              <button type="button" class="cal-format-chip" data-budget-kind="purchases" onclick="setBudgetKindFilter('purchases')">Purchases</button>
+              <button type="button" class="cal-format-chip" data-budget-kind="transfers" onclick="setBudgetKindFilter('transfers')">Transfers</button>
+              <button type="button" class="cal-format-chip" data-budget-kind="cards" onclick="setBudgetKindFilter('cards')">Card payments</button>
+              <button type="button" class="cal-format-chip" data-budget-kind="savings" onclick="setBudgetKindFilter('savings')">Savings</button>
+              <button type="button" class="cal-format-chip" data-budget-kind="income" onclick="setBudgetKindFilter('income')">Income</button>
             </div>
             <div class="budget-summary-card harbor-card bg-harbor-surface border border-harbor-border rounded-3xl p-4 mb-3">
               <div class="flex items-center gap-4">
                 <div id="budget-pie" class="budget-pie flex-shrink-0" role="img" aria-label="Spending by category"></div>
                 <div class="flex-1 min-w-0">
-                  <div class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted mb-0.5">Total spending</div>
+                  <div id="budget-total-label" class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted mb-0.5">Total money out</div>
                   <div id="budget-total" class="text-xl font-semibold text-harbor-text tabular-nums">$0</div>
                   <div id="budget-tx-count" class="text-[11px] text-harbor-muted mt-0.5"></div>
-                  <div id="budget-moves-note" class="text-[10px] text-harbor-muted mt-1 leading-snug hidden"></div>
                 </div>
               </div>
               <div id="budget-legend" class="budget-legend mt-3"></div>
@@ -10313,7 +10320,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 276;
+    const HARBOR_BUILD_NUMBER = 277;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20546,10 +20553,9 @@
     }
 
     // ==================== BUDGET (Life) ====================
-    // Tuned for bank exports (Posting Date, Credit Debit Indicator, bank Category)
-    // and generic CSVs. Spending pie excludes income; transfers shown so users see money leaving.
-    // pie:true = lifestyle / bills pie. Money-moves (transfers, card payments, savings) stay
-    // in the list but do not inflate the spending pie so habits stay readable.
+    // Tuned for bank exports (Posting Date, Credit Debit Indicator, bank Category).
+    // All money-out categories appear in the pie and legend (filterable).
+    // moneyMove = transfers / card payments / savings — also filterable via type chips.
     const BUDGET_CATEGORIES = [
       { id: 'housing', label: 'Housing', color: '#4F7CFF', pie: true },
       { id: 'utilities', label: 'Utilities', color: '#7B6CF0', pie: true },
@@ -20566,11 +20572,19 @@
       { id: 'fees', label: 'Fees', color: '#A07070', pie: true },
       { id: 'cash', label: 'Cash & ATM', color: '#8A9A96', pie: true },
       { id: 'other', label: 'Other', color: '#9AA3A0', pie: true },
-      // Account moves — list + footnote only (not pie)
-      { id: 'transfers', label: 'Transfers', color: '#6B8A99', pie: false, moneyMove: true },
-      { id: 'credit_cards', label: 'Card payments', color: '#8A7A6A', pie: false, moneyMove: true },
-      { id: 'savings', label: 'Savings moves', color: '#5A9E8E', pie: false, moneyMove: true },
-      { id: 'income', label: 'Income', color: '#3D9A6A', pie: false }
+      { id: 'transfers', label: 'Transfers', color: '#6B8A99', pie: true, moneyMove: true },
+      { id: 'credit_cards', label: 'Card payments', color: '#8A7A6A', pie: true, moneyMove: true },
+      { id: 'savings', label: 'Savings moves', color: '#5A9E8E', pie: true, moneyMove: true },
+      { id: 'income', label: 'Income', color: '#3D9A6A', pie: true, income: true }
+    ];
+
+    const BUDGET_KIND_OPTIONS = [
+      { id: 'out', label: 'Money out', totalLabel: 'Total money out' },
+      { id: 'purchases', label: 'Purchases', totalLabel: 'Total purchases' },
+      { id: 'transfers', label: 'Transfers', totalLabel: 'Total transfers' },
+      { id: 'cards', label: 'Card payments', totalLabel: 'Total card payments' },
+      { id: 'savings', label: 'Savings', totalLabel: 'Total to savings' },
+      { id: 'income', label: 'Income', totalLabel: 'Total income' }
     ];
 
     // Bank “Category” column → Harbor ids (Navy Fed / similar exports)
@@ -20621,6 +20635,7 @@
 
     let budgetCategoryFilter = null;
     let budgetMonthRange = 'current'; // current | last | all
+    let budgetKindFilter = 'out'; // out | purchases | transfers | cards | savings | income
 
     function ensureBudgetState() {
       if (!state.budget || typeof state.budget !== 'object') state.budget = { transactions: [], importedAt: null };
@@ -20630,6 +20645,23 @@
 
     function getBudgetCategory(id) {
       return BUDGET_CATEGORIES.find(c => c.id === id) || BUDGET_CATEGORIES.find(c => c.id === 'other');
+    }
+
+    function getBudgetKindOption(id) {
+      return BUDGET_KIND_OPTIONS.find(k => k.id === id) || BUDGET_KIND_OPTIONS[0];
+    }
+
+    /** Human label for debit/credit/transfer-style identification on each row */
+    function getBudgetTxTypeLabel(t) {
+      if (!t) return 'Debit';
+      if (t.isCredit) return 'Income';
+      const cat = t.category || 'other';
+      if (cat === 'transfers') return 'Transfer';
+      if (cat === 'credit_cards') return 'Card payment';
+      if (cat === 'savings') return 'Savings';
+      if (cat === 'loans') return 'Loan payment';
+      if (cat === 'cash') return 'Cash / ATM';
+      return 'Debit';
     }
 
     function parseBudgetDate(raw) {
@@ -20753,7 +20785,13 @@
 
         const dateObj = dateCol >= 0 ? parseBudgetDate(cols[dateCol]) : null;
         const bankCategory = bankCatCol >= 0 ? String(cols[bankCatCol] || '').trim() : '';
-        const category = categorizeBudgetDescription(desc, bankCategory);
+        let category = categorizeBudgetDescription(desc, bankCategory);
+        if (isCredit && category !== 'income') {
+          // Credits are income unless already tagged as such from bank map
+          const fromBank = mapBankCategoryToHarbor(bankCategory);
+          if (fromBank === 'income' || !fromBank) category = 'income';
+        }
+        if (!isCredit && category === 'income') category = 'other';
 
         out.push({
           date: dateObj,
@@ -20805,15 +20843,41 @@
       };
     }
 
-    function getBudgetSpendTransactions(range) {
+    function getBudgetTransactionsInMonth(range) {
       const budget = ensureBudgetState();
       const r = range || budgetMonthRange || 'current';
-      let txs = (budget.transactions || []).filter(t => t && !t.isCredit && (Number(t.amount) || 0) > 0);
+      let txs = (budget.transactions || []).filter(t => t && (Number(t.amount) || 0) > 0);
       if (r === 'current' || r === 'last') {
         const bounds = getBudgetMonthBounds(r);
         txs = txs.filter(t => t.date && t.date >= bounds.start && t.date <= bounds.end);
       }
       return txs;
+    }
+
+    /** Month + kind (debit/credit/transfer/etc.) filtered set for pie + list */
+    function getBudgetViewTransactions(range, kind) {
+      const k = kind || budgetKindFilter || 'out';
+      let txs = getBudgetTransactionsInMonth(range);
+      switch (k) {
+        case 'income':
+          return txs.filter(t => t.isCredit);
+        case 'transfers':
+          return txs.filter(t => !t.isCredit && (t.category || '') === 'transfers');
+        case 'cards':
+          return txs.filter(t => !t.isCredit && (t.category || '') === 'credit_cards');
+        case 'savings':
+          return txs.filter(t => !t.isCredit && (t.category || '') === 'savings');
+        case 'purchases':
+          return txs.filter(t => !t.isCredit && !isBudgetMoneyMoveCategory(t.category));
+        case 'out':
+        default:
+          return txs.filter(t => !t.isCredit);
+      }
+    }
+
+    // Back-compat alias
+    function getBudgetSpendTransactions(range) {
+      return getBudgetViewTransactions(range, 'out');
     }
 
     function normalizeBudgetMerchant(description) {
@@ -20935,6 +20999,7 @@
       state.budget = { transactions: [], importedAt: null };
       budgetCategoryFilter = null;
       budgetMonthRange = 'current';
+      budgetKindFilter = 'out';
       saveState();
       renderBudget();
       showToast('Budget cleared');
@@ -20956,6 +21021,13 @@
     function setBudgetMonthRange(range) {
       if (!['current', 'last', 'all'].includes(range)) range = 'current';
       budgetMonthRange = range;
+      budgetCategoryFilter = null;
+      renderBudget();
+    }
+
+    function setBudgetKindFilter(kind) {
+      const ok = BUDGET_KIND_OPTIONS.some(k => k.id === kind);
+      budgetKindFilter = ok ? kind : 'out';
       budgetCategoryFilter = null;
       renderBudget();
     }
@@ -20983,10 +21055,9 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-1">Import bank CSV</div>
           <div class="text-xs text-harbor-muted mb-3 leading-relaxed">
-            Export transactions from your bank (CSV with posting date, amount, description, category).
-            Harbor uses the <strong class="text-harbor-text">posting date</strong>, maps bank tags into clear categories
-            (utilities, dining, shopping…), builds a color pie for <strong class="text-harbor-text">this month / last month</strong>,
-            and surfaces habits that stack up. Transfers and card payments stay out of the pie so real spending stays visible.
+            Export transactions from your bank (CSV with posting date, amount, debit/credit, description, category).
+            Harbor uses the <strong class="text-harbor-text">posting date</strong>, identifies credits vs debits vs transfers,
+            maps bank tags into clear categories, and builds a color pie you can filter by type and category.
           </div>
           <label class="block w-full mb-3">
             <input id="budget-csv-file" type="file" accept=".csv,text/csv" class="hidden">
@@ -21034,28 +21105,42 @@
       const budget = ensureBudgetState();
       const tx = (budget.transactions || []).find(t => t.id === txId);
       if (!tx) return;
-      const editable = BUDGET_CATEGORIES.filter(c => c.id !== 'income' || tx.isCredit);
+      const editable = BUDGET_CATEGORIES.filter(c => {
+        if (c.id === 'income') return !!tx.isCredit;
+        if (tx.isCredit) return c.id === 'income' || c.id === 'other';
+        return c.id !== 'income';
+      });
+      let selectedCat = tx.category || (tx.isCredit ? 'income' : 'other');
+      const typeLabel = getBudgetTxTypeLabel(tx);
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[70]';
       modal.innerHTML = `
         <div class="absolute inset-0" data-close="1"></div>
-        <div class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm" onclick="event.stopPropagation()">
+        <div class="modal-sheet relative w-full max-h-[88vh] overflow-y-auto bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm" onclick="event.stopPropagation()">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-base mb-0.5 flex items-center justify-between gap-2">
-            <span>Edit category</span>
+            <span>Edit transaction</span>
             <button type="button" class="modal-close-chip" data-close="1" aria-label="Close">Close</button>
           </div>
-          <div class="text-[11px] text-harbor-muted mb-0.5 truncate">${escapeBriefHtml(tx.description)}</div>
-          <div class="text-[10px] text-harbor-muted mb-1">Posted ${escapeBriefHtml(formatBudgetPostedDate(tx.date))}</div>
-          <div class="text-sm font-semibold tabular-nums text-harbor-text mb-3">${formatBudgetMoney(tx.amount)}</div>
-          <div class="budget-cat-grid mb-2">
+          <div class="text-[10px] text-harbor-muted mb-1">Posted ${escapeBriefHtml(formatBudgetPostedDate(tx.date))} · ${escapeBriefHtml(typeLabel)}</div>
+          <div class="text-sm font-semibold tabular-nums text-harbor-text mb-3">${formatBudgetMoney(tx.amount)}${tx.isCredit ? ' in' : ' out'}</div>
+          <label class="block mb-3">
+            <span class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted">Name</span>
+            <input id="budget-edit-name" type="text" maxlength="140" value="${escapeBriefHtml(tx.description || '')}"
+              class="mt-1 w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3.5 py-2.5 text-sm text-harbor-text outline-none focus:border-harbor-primary" />
+          </label>
+          <div class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted mb-1.5">Category</div>
+          <div class="budget-cat-grid mb-2" id="budget-edit-cat-grid">
             ${editable.map(c => `
-              <button type="button" class="budget-cat-pick${tx.category === c.id ? ' is-active' : ''}" data-cat="${c.id}">
+              <button type="button" class="budget-cat-pick${selectedCat === c.id ? ' is-active' : ''}" data-cat="${c.id}">
                 <span class="budget-tx-cat-dot" style="background:${c.color}"></span>
                 ${escapeBriefHtml(c.label)}
               </button>`).join('')}
           </div>
-          <button type="button" class="w-full py-2.5 mt-1 rounded-2xl bg-harbor-raised border border-harbor-border text-[11px] text-harbor-muted font-semibold" data-reset="1">
+          <button type="button" class="w-full py-3 mt-2 rounded-2xl bg-harbor-primary text-white font-semibold" data-save="1">
+            Save
+          </button>
+          <button type="button" class="w-full py-2.5 mt-2 rounded-2xl bg-harbor-raised border border-harbor-border text-[11px] text-harbor-muted font-semibold" data-reset="1">
             Reset to auto category
           </button>
           <button type="button" class="w-full py-2.5 mt-2 rounded-2xl border border-rose-400/40 text-[11px] text-rose-400 font-semibold" data-delete="1">
@@ -21064,27 +21149,47 @@
         </div>`;
       document.body.appendChild(modal);
       const close = () => modal.remove();
+      const nameInput = modal.querySelector('#budget-edit-name');
+      const refreshCatActive = () => {
+        modal.querySelectorAll('[data-cat]').forEach(btn => {
+          btn.classList.toggle('is-active', btn.getAttribute('data-cat') === selectedCat);
+        });
+      };
       modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
       modal.querySelectorAll('[data-cat]').forEach(btn => {
         btn.addEventListener('click', () => {
-          tx.category = btn.getAttribute('data-cat');
-          saveState();
-          close();
-          renderBudget();
-          showToast('Category updated');
+          selectedCat = btn.getAttribute('data-cat');
+          refreshCatActive();
         });
       });
-      modal.querySelector('[data-reset]')?.addEventListener('click', () => {
-        tx.category = tx.categoryAuto || categorizeBudgetDescription(tx.description, tx.bankCategory);
+      modal.querySelector('[data-save]')?.addEventListener('click', () => {
+        const name = String(nameInput?.value || '').trim().slice(0, 140);
+        if (!name) {
+          showToast('Name can’t be empty');
+          nameInput?.focus();
+          return;
+        }
+        tx.description = name;
+        tx.category = selectedCat || tx.category || 'other';
+        // If user marks as transfer-style category, keep as debit flow
+        if (tx.category === 'income') tx.isCredit = true;
+        else if (tx.isCredit && tx.category !== 'income') tx.isCredit = false;
         saveState();
         close();
         renderBudget();
-        showToast('Reset to auto category');
+        showToast('Transaction updated');
+      });
+      modal.querySelector('[data-reset]')?.addEventListener('click', () => {
+        selectedCat = tx.categoryAuto || categorizeBudgetDescription(tx.description, tx.bankCategory);
+        if (tx.isCredit) selectedCat = 'income';
+        refreshCatActive();
+        showToast('Category reset — tap Save to keep');
       });
       modal.querySelector('[data-delete]')?.addEventListener('click', () => {
         close();
         deleteBudgetTransaction(txId);
       });
+      setTimeout(() => nameInput?.focus(), 50);
     }
 
     function renderBudget() {
@@ -21092,8 +21197,8 @@
       const content = document.getElementById('budget-content');
       const pie = document.getElementById('budget-pie');
       const totalEl = document.getElementById('budget-total');
+      const totalLabelEl = document.getElementById('budget-total-label');
       const countEl = document.getElementById('budget-tx-count');
-      const movesEl = document.getElementById('budget-moves-note');
       const legend = document.getElementById('budget-legend');
       const list = document.getElementById('budget-tx-list');
       const rangeLabel = document.getElementById('budget-range-label');
@@ -21101,63 +21206,58 @@
       if (!empty || !content) return;
 
       ensureBudgetState();
-      const allSpend = (ensureBudgetState().transactions || []).filter(t => t && !t.isCredit && (Number(t.amount) || 0) > 0);
-      if (!allSpend.length) {
+      const anyTx = (ensureBudgetState().transactions || []).some(t => t && (Number(t.amount) || 0) > 0);
+      if (!anyTx) {
         empty.classList.remove('hidden');
         content.classList.add('hidden');
-        if (rangeLabel) rangeLabel.textContent = 'Spending';
+        if (rangeLabel) rangeLabel.textContent = 'Budget';
         return;
       }
       empty.classList.add('hidden');
       content.classList.remove('hidden');
 
-      // Month range chips
+      // Month + kind chips
       document.querySelectorAll('[data-budget-range]').forEach(btn => {
         btn.classList.toggle('is-active', btn.getAttribute('data-budget-range') === budgetMonthRange);
       });
+      document.querySelectorAll('[data-budget-kind]').forEach(btn => {
+        btn.classList.toggle('is-active', btn.getAttribute('data-budget-kind') === budgetKindFilter);
+      });
 
-      let txs = getBudgetSpendTransactions(budgetMonthRange);
+      const kindOpt = getBudgetKindOption(budgetKindFilter);
+      let txs = getBudgetViewTransactions(budgetMonthRange, budgetKindFilter);
       const bounds = (budgetMonthRange === 'current' || budgetMonthRange === 'last')
         ? getBudgetMonthBounds(budgetMonthRange)
         : null;
       if (rangeLabel) {
         if (bounds) rangeLabel.textContent = bounds.label;
-        else rangeLabel.textContent = 'All spending';
+        else rangeLabel.textContent = 'All time';
       }
 
-      // Totals by category
+      // Totals by category for current view
       const totals = {};
       BUDGET_CATEGORIES.forEach(c => { totals[c.id] = 0; });
       txs.forEach(t => {
-        const cat = t.category || 'other';
+        let cat = t.category || 'other';
+        if (t.isCredit) cat = 'income';
         totals[cat] = (totals[cat] || 0) + (Number(t.amount) || 0);
       });
-      // Pie + headline total = real spending (excludes transfers / card payments / savings moves)
-      const pieCats = BUDGET_CATEGORIES.filter(c => c.pie !== false);
-      const grand = pieCats.reduce((s, c) => s + (totals[c.id] || 0), 0);
-      const moveTotal = BUDGET_CATEGORIES
-        .filter(c => c.moneyMove)
-        .reduce((s, c) => s + (totals[c.id] || 0), 0);
-      const spendTxCount = txs.filter(t => !isBudgetMoneyMoveCategory(t.category)).length;
+
+      // Pie = every category with amount in this view (all money-out types included)
+      const pieCats = BUDGET_CATEGORIES.filter(c => {
+        if (budgetKindFilter === 'income') return c.id === 'income';
+        if (c.id === 'income') return false;
+        return c.pie !== false;
+      });
+      const grand = pieCats.reduce((s, c) => s + (totals[c.id] || 0), 0)
+        || txs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      if (totalLabelEl) totalLabelEl.textContent = kindOpt.totalLabel;
       if (totalEl) totalEl.textContent = formatBudgetMoney(grand);
       if (countEl) {
         if (!txs.length) {
-          countEl.textContent = budgetMonthRange === 'current'
-            ? 'No spending this month yet'
-            : budgetMonthRange === 'last'
-              ? 'No spending last month'
-              : 'No transactions';
+          countEl.textContent = `No ${kindOpt.label.toLowerCase()} in this period`;
         } else {
-          countEl.textContent = `${spendTxCount} purchase${spendTxCount === 1 ? '' : 's'} · by posting date`;
-        }
-      }
-      if (movesEl) {
-        if (moveTotal > 0.005) {
-          movesEl.classList.remove('hidden');
-          movesEl.textContent = `Also moved ${formatBudgetMoney(moveTotal)} between accounts (transfers, card payments, savings) — not in the pie.`;
-        } else {
-          movesEl.classList.add('hidden');
-          movesEl.textContent = '';
+          countEl.textContent = `${txs.length} transaction${txs.length === 1 ? '' : 's'} · by posting date`;
         }
       }
 
@@ -21170,7 +21270,7 @@
       if (pie) {
         if (!sortedCats.length || grand <= 0) {
           pie.style.background = 'conic-gradient(rgb(var(--harbor-border)) 0 100%)';
-          pie.setAttribute('aria-label', 'No spending in this period');
+          pie.setAttribute('aria-label', 'No transactions in this view');
         } else {
           let cursor = 0;
           const stops = sortedCats.map(c => {
@@ -21180,7 +21280,7 @@
             return `${c.color} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
           });
           pie.style.background = `conic-gradient(${stops.join(', ')})`;
-          pie.setAttribute('aria-label', `Spending by category: ${sortedCats.map(c => c.label).join(', ')}`);
+          pie.setAttribute('aria-label', `By category: ${sortedCats.map(c => c.label).join(', ')}`);
         }
       }
 
@@ -21194,12 +21294,16 @@
               <span class="budget-legend-label">${escapeBriefHtml(c.label)} · ${pct}%</span>
               <span class="budget-legend-amt">${formatBudgetMoney(c.total)}</span>
             </button>`;
-        }).join('') || '<div class="text-[11px] text-harbor-muted">No lifestyle spending in this period</div>';
+        }).join('') || '<div class="text-[11px] text-harbor-muted">Nothing in this filter for the selected period</div>';
       }
 
-      // Habit insights — “Starbucks 12× this month”
+      // Habit insights — purchases only (skip pure money-moves / income)
       if (insightsEl) {
-        const insights = getBudgetMerchantInsights(txs, 6);
+        const insightSource = budgetKindFilter === 'income' || budgetKindFilter === 'transfers'
+          || budgetKindFilter === 'cards' || budgetKindFilter === 'savings'
+          ? []
+          : txs;
+        const insights = getBudgetMerchantInsights(insightSource, 6);
         if (insights.length) {
           insightsEl.classList.remove('hidden');
           const top = insights[0];
@@ -21210,7 +21314,7 @@
               : '';
           const hook = dailyish
             ? `<div class="budget-insight-hook"><strong>${escapeBriefHtml(top.name)}</strong> keeps showing up.${dailyish}</div>`
-            : `<div class="budget-insight-hook">Repeats add up. Tap any transaction below to fix a category.</div>`;
+            : `<div class="budget-insight-hook">Repeats add up. Tap a row to rename or recategorize.</div>`;
           insightsEl.innerHTML = `
             <div class="budget-insight-card">
               <div class="budget-insight-title">Where it compounds</div>
@@ -21227,10 +21331,13 @@
         }
       }
 
-      // Transaction list (includes money-moves so the full picture is still there)
+      // Transaction list
       let shown = txs;
       if (budgetCategoryFilter) {
-        shown = txs.filter(t => (t.category || 'other') === budgetCategoryFilter);
+        shown = txs.filter(t => {
+          const cat = t.isCredit ? 'income' : (t.category || 'other');
+          return cat === budgetCategoryFilter;
+        });
       }
 
       const headingEl = document.getElementById('budget-tx-heading');
@@ -21247,7 +21354,7 @@
               ${escapeBriefHtml(cat.label)} · ${shown.length} · ${formatBudgetMoney(filterSum)}
             </span>`;
         } else {
-          headingEl.textContent = 'Transactions';
+          headingEl.textContent = kindOpt.label;
         }
       }
       if (filterAllBtn) {
@@ -21262,30 +21369,32 @@
         list.innerHTML = '';
         if (!shown.length) {
           list.innerHTML = budgetCategoryFilter
-            ? '<div class="text-[11px] text-harbor-muted px-1 py-3">No transactions in this category for this period. <button type="button" class="text-harbor-primary-light font-semibold" onclick="setBudgetCategoryFilter(null)">Show all</button></div>'
-            : '<div class="text-[11px] text-harbor-muted px-1 py-3">No transactions in this view.</div>';
+            ? '<div class="text-[11px] text-harbor-muted px-1 py-3">No transactions in this category. <button type="button" class="text-harbor-primary-light font-semibold" onclick="setBudgetCategoryFilter(null)">Show all</button></div>'
+            : `<div class="text-[11px] text-harbor-muted px-1 py-3">No ${escapeBriefHtml(kindOpt.label.toLowerCase())} in this period. Try another type or month.</div>`;
         } else {
           shown.slice(0, 120).forEach(t => {
-            const cat = getBudgetCategory(t.category);
+            const cat = getBudgetCategory(t.isCredit ? 'income' : t.category);
             const dateLabel = formatBudgetPostedDate(t.date);
+            const typeLabel = getBudgetTxTypeLabel(t);
             const safeId = escapeBriefHtml(t.id);
+            const amtPrefix = t.isCredit ? '+' : '';
             const row = document.createElement('div');
             row.className = 'swipe-row';
             row.dataset.swipeId = t.id;
             row.dataset.swipeType = 'budget';
             row.style.setProperty('--swipe-reveal', '8.75rem');
             const actionsHtml = `
-              <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Change category"><i class="fa-solid fa-pen"></i> Edit</button>
+              <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit transaction"><i class="fa-solid fa-pen"></i> Edit</button>
               <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete transaction"><i class="fa-solid fa-trash-can"></i> Delete</button>
             `;
             const contentHtml = `
               <div class="budget-tx-cat-dot" style="background:${cat.color}" aria-hidden="true"></div>
               <div class="budget-tx-main min-w-0 flex-1" onclick="showBudgetCategoryEditor('${safeId}')">
                 <div class="budget-tx-name">${escapeBriefHtml(t.description)}</div>
-                <div class="budget-tx-meta">Posted ${escapeBriefHtml(dateLabel)} · ${escapeBriefHtml(cat.label)}</div>
+                <div class="budget-tx-meta">Posted ${escapeBriefHtml(dateLabel)} · ${escapeBriefHtml(typeLabel)} · ${escapeBriefHtml(cat.label)}</div>
               </div>
               <div class="flex flex-col items-end gap-0.5 flex-shrink-0">
-                <span class="budget-tx-amt">${formatBudgetMoney(t.amount)}</span>
+                <span class="budget-tx-amt${t.isCredit ? ' text-emerald-500' : ''}">${amtPrefix}${formatBudgetMoney(t.amount)}</span>
                 <div class="row-inline-actions flex gap-2 items-center">
                   <button type="button" onclick="event.stopImmediatePropagation(); showBudgetCategoryEditor('${safeId}')" class="text-[10px] text-harbor-primary-light font-semibold">Edit</button>
                   <button type="button" onclick="event.stopImmediatePropagation(); deleteBudgetTransaction('${safeId}')" class="text-[10px] text-harbor-muted hover:text-rose-400 font-semibold">Delete</button>
