@@ -1530,8 +1530,8 @@
     .life-flyout-backdrop {
       position: fixed;
       inset: 0;
-      /* Above page content, below cradle (peer) and flyout */
-      z-index: 58;
+      /* Above page content + tutorial coachmark so Life menu stays readable/tappable */
+      z-index: 220;
       background: rgb(var(--harbor-text) / 0.14);
       backdrop-filter: blur(3px) saturate(1.05);
       -webkit-backdrop-filter: blur(3px) saturate(1.05);
@@ -1546,8 +1546,8 @@
 
     .life-flyout {
       position: fixed;
-      /* Must sit ABOVE main cradle + FAB (peer is z 64) so menu never clips behind */
-      z-index: 80;
+      /* Above cradle (64) and tutorial card (~193) so Life subtabs aren’t covered */
+      z-index: 225;
       width: 10.75rem;
       max-height: min(70dvh, calc(100dvh - 7.5rem - env(safe-area-inset-bottom, 0px)));
       opacity: 0;
@@ -1695,7 +1695,16 @@
      * Flyout is z-index 80 so the menu still paints above the FAB notch.
      */
     #main-nav-bar.life-flyout-peer {
-      z-index: 64 !important;
+      z-index: 230 !important;
+    }
+    /* During Life menu, tuck the tutorial coachmark up so it doesn’t cover Plan/Shop/Bills/Subs */
+    body.life-flyout-open #tutorial-card {
+      bottom: auto !important;
+      top: max(0.75rem, env(safe-area-inset-top, 0px)) !important;
+      transform: none;
+    }
+    body.life-flyout-open #tutorial-highlight {
+      opacity: 0.35;
     }
 
     @media (min-width: 768px) {
@@ -9937,7 +9946,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 271;
+    const HARBOR_BUILD_NUMBER = 272;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20445,6 +20454,7 @@
         active?.focus({ preventScroll: true });
       });
       lifeFlyoutOpen = true;
+      document.body.classList.add('life-flyout-open');
       if (lifeBtn) lifeBtn.setAttribute('aria-expanded', 'true');
     }
 
@@ -20453,6 +20463,7 @@
       const backdrop = document.getElementById('life-flyout-backdrop');
       const lifeBtn = document.getElementById('tab-life');
       const mainNav = document.getElementById('main-nav-bar');
+      document.body.classList.remove('life-flyout-open');
       if (!fly) {
         lifeFlyoutOpen = false;
         mainNav?.classList.remove('life-flyout-peer');
@@ -20968,6 +20979,14 @@
         } else if (action === 'delete') {
           deleteHabitFromToday(id, null);
           if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('tasks');
+        } else if (action === 'undo') {
+          undoCompleteHabit(id);
+        }
+      } else if (type === 'habit-done') {
+        if (action === 'undo') undoCompleteHabit(id);
+        else if (action === 'delete') {
+          deleteHabitFromToday(id, null);
+          if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('tasks');
         }
       } else if (type === 'grocery') {
         if (action === 'edit') renameGroceryItem(id);
@@ -21269,9 +21288,14 @@
       row.dataset.habitId = habit.id;
       row.dataset.swipeId = habit.id;
       row.dataset.feedType = 'habit';
-      row.dataset.swipeType = 'habit';
+      row.dataset.swipeType = completed ? 'habit-done' : 'habit';
 
-      const actionsHtml = `
+      const actionsHtml = completed
+        ? `
+        <button type="button" class="swipe-action swipe-action-edit" data-action="undo" aria-label="Undo complete"><i class="fa-solid fa-rotate-left"></i> Undo</button>
+        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove task"><i class="fa-solid fa-trash-can"></i> Delete</button>
+      `
+        : `
         <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit task"><i class="fa-solid fa-pen"></i> Edit</button>
         <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove task"><i class="fa-solid fa-trash-can"></i> Delete</button>
       `;
@@ -21672,6 +21696,43 @@
       updateSmartBanner();
       if (currentProjectionHabit === habitId) showProjections(habitId);
       showToast(`Skipped — streak reset for ${habit.title}`);
+    }
+
+    /** Undo today's completion(s) — returns task to the active list */
+    function undoCompleteHabit(habitId) {
+      const habit = state.habits.find(h => h.id === habitId);
+      if (!habit) return;
+      const today = todayStr();
+      const comps = state.completions?.[habitId];
+      if (!comps || !comps.includes(today)) {
+        showToast('Nothing to undo for today');
+        return;
+      }
+      state.completions[habitId] = comps.filter(d => d !== today);
+      // Drop care/metric log for today so Streak Preview stays honest
+      if (state.metricLogs?.[habitId]) {
+        state.metricLogs[habitId] = state.metricLogs[habitId].filter(e => e.date !== today);
+      }
+      // Soft reverse of Harbor Day points from a mistaken complete (best-effort)
+      if (typeof ensureRewardBank === 'function' && typeof getStreakPointsForCompletion === 'function') {
+        try {
+          const bank = ensureRewardBank();
+          if (bank.lastEarnedAt && Date.now() - bank.lastEarnedAt < 120000 && bank.lastEarned > 0) {
+            const claw = Math.min(bank.points, bank.lastEarned);
+            bank.points = Math.max(0, bank.points - claw);
+            bank.totalEarned = Math.max(0, (bank.totalEarned || 0) - claw);
+            bank.lastEarned = 0;
+          }
+        } catch (_) { /* ignore */ }
+      }
+      saveState();
+      closeAllSwipeRows();
+      renderTasks();
+      renderStreaks();
+      updateSmartBanner();
+      updateHeaderContext();
+      if (currentProjectionHabit === habitId) showProjections(habitId);
+      showToast(`Restored · ${habit.title}`);
     }
 
     function completeHabit(habitId, e) {
@@ -22390,16 +22451,33 @@
       return false;
     }
 
+    /**
+     * Week-scoped rhythm (daily / weekly / preferred weekdays) belongs in
+     * Day & This Week — never “Do first this month.”
+     */
+    function isWeekRhythmTask(habit) {
+      if (!habit) return true;
+      if (typeof isDailyTask === 'function' && isDailyTask(habit)) return true;
+      const interval = habit.interval_days;
+      // null/undefined/0/1 = daily; 2–7 = weekly-ish
+      if (interval == null || interval <= 1) return true;
+      if (interval > 1 && interval <= 7) return true;
+      if (typeof getHabitWeekdays === 'function' && getHabitWeekdays(habit)) return true;
+      return false;
+    }
+
     function isSignificantBriefTask(habit, mode) {
       if (mode === 'day') return true;
       if (isTrivialBriefTask(habit)) return false;
-      // Month brief leans harder into bigger / less frequent work
+      // Month: only longer-horizon chores so you can get ahead — not this week’s list
       if (mode === 'month') {
+        if (isWeekRhythmTask(habit)) return false;
         if ((habit.interval_days || 0) >= 14) return true;
         if ((habit.est_minutes || 0) >= 40) return true;
-        if ((habit.difficulty || 2) >= 3) return true;
+        if ((habit.difficulty || 2) >= 3 && (habit.interval_days || 0) > 7) return true;
         if (habit.is_pro_reminder) return true;
-        if (/maintenance|mow|lawn|yard|gutter|hvac|filter|service|deep clean|organize|declutter|annual|quarterly|semi/i.test(habit.title || '')) return true;
+        if (typeof isOneOffTask === 'function' && isOneOffTask(habit) && (habit.est_minutes || 0) >= 25) return true;
+        if (/maintenance|mow|lawn|yard|gutter|hvac|filter|service|deep clean|organize|declutter|annual|quarterly|semi|monthly|season/i.test(habit.title || '')) return true;
         return false;
       }
       if ((habit.interval_days || 0) >= 7) return true;
@@ -22419,10 +22497,17 @@
       );
 
       if (brief.mode === 'week' || brief.mode === 'month') {
+        const weekIds = brief.mode === 'month'
+          ? new Set((typeof collectBriefTasks === 'function' ? collectBriefTasks('week') : []).map(t => t.habit?.id).filter(Boolean))
+          : null;
         const seen = new Set();
         pool = pool.filter(t => {
           if (seen.has(t.habit.id)) return false;
           seen.add(t.habit.id);
+          if (brief.mode === 'month') {
+            if (weekIds?.has(t.habit.id)) return false;
+            if (isWeekRhythmTask(t.habit)) return false;
+          }
           return isSignificantBriefTask(t.habit, brief.mode);
         });
         return pool.slice(0, brief.mode === 'month' ? 10 : 8);
@@ -22442,7 +22527,7 @@
         });
       } else if (mode === 'month') {
         // Month brief: looking ahead through month-end.
-        // Due today / overdue belong on Today & This Week — they need action now, not a month glance.
+        // Due today / overdue / week rhythm belong on Day & This Week — not “Do first this month.”
         const bounds = getRemainingMonthBounds(today);
         if (!bounds.empty) {
           const todayDate = new Date(today + 'T12:00:00');
@@ -22454,10 +22539,12 @@
             const ds = dateStrLocal(cursor);
             state.habits.forEach(h => {
               if (!isHabitScheduledOn(h, ds) || seen.has(h.id)) return;
+              if (isWeekRhythmTask(h)) return;
               // Skip pure daily habits on month view — too noisy; keep significant ones only
               if (isDailyTask(h) && !isSignificantBriefTask(h, 'month') && !isOneOffTask(h) && !h.is_pro_reminder) return;
               // Safety: never surface due-now work on the month board
               if (isDueToday(h) || isHabitOverdue(h)) return;
+              if (!isSignificantBriefTask(h, 'month') && !(typeof isParkedForSummary === 'function' && isParkedForSummary(h))) return;
               const daysUntil = Math.round((cursor - todayDate) / 86400000);
               if (daysUntil <= 0) return;
               seen.add(h.id);
@@ -22467,8 +22554,10 @@
           }
           state.habits.forEach(h => {
             if (seen.has(h.id) || !isNonDailyRecurring(h)) return;
+            if (isWeekRhythmTask(h)) return;
             // Active this period / overdue → Today or This Week, not month
             if (isDueToday(h) || isHabitOverdue(h)) return;
+            if (!isSignificantBriefTask(h, 'month') && !(typeof isParkedForSummary === 'function' && isParkedForSummary(h))) return;
             const daysUntil = getDaysUntilHabitDue(h);
             if (daysUntil <= 0) return;
             const d = new Date(today + 'T12:00:00');
@@ -22773,17 +22862,32 @@
       const events = collectBriefEvents(mode);
       // Focus card prefers daily rhythm items; parked maintenance lives in “When you can”
       let focusPool = tasks.filter(t => !isParkedForSummary(t.habit) || isPulledToToday(t.habit));
-      // Month “Do first” should not repeat items already featured for this week
+      // Month “Do first” = get ahead of month chores — never week rhythm or This Week list
       if (mode === 'month') {
         const weekIds = new Set(
           (typeof collectBriefTasks === 'function' ? collectBriefTasks('week') : [])
             .map(t => t.habit?.id)
             .filter(Boolean)
         );
-        const withoutWeek = focusPool.filter(t => !weekIds.has(t.habit.id));
-        if (withoutWeek.length) focusPool = withoutWeek;
+        // Include parked month-scale chores in the ahead pool (they’re the whole point)
+        const monthPool = tasks.filter(t => {
+          const h = t.habit;
+          if (!h) return false;
+          if (weekIds.has(h.id)) return false;
+          if (isWeekRhythmTask(h)) return false;
+          return isSignificantBriefTask(h, 'month') || (isParkedForSummary(h) && !isWeekRhythmTask(h));
+        });
+        // Prefer not-yet-pulled parked / longer interval first
+        monthPool.sort((a, b) => {
+          const parkA = isParkedForSummary(a.habit) && !isPulledToToday(a.habit) ? 0 : 1;
+          const parkB = isParkedForSummary(b.habit) && !isPulledToToday(b.habit) ? 0 : 1;
+          if (parkA !== parkB) return parkA - parkB;
+          return (b.habit.interval_days || 0) - (a.habit.interval_days || 0);
+        });
+        focusPool = monthPool;
+        // Never fall back to week tasks — empty do-first is better than wrong advice
       }
-      const doFirst = (focusPool.length ? focusPool : tasks).slice(0, 3);
+      const doFirst = focusPool.slice(0, 3);
       const parked = tasks.filter(t => isParkedForSummary(t.habit) && !isPulledToToday(t.habit));
       const week = getWeekBounds(todayStr());
       const month = getRemainingMonthBounds(todayStr());
@@ -26012,9 +26116,10 @@
       {
         id: 'life-intro',
         title: 'Life menu',
-        body: 'Tap <strong>Life</strong> for <strong>Plan</strong>, <strong>Shop</strong>, <strong>Bills</strong>, or <strong>Subs</strong>.',
+        body: 'Tap <strong>Life</strong> on the dock. The menu opens above the dock — pick <strong>Plan</strong>, <strong>Shop</strong>, <strong>Bills</strong>, or <strong>Subs</strong>.',
         target: () => document.getElementById('tab-life'),
-        cardPlacement: 'above',
+        // Keep coachmark high so the Life flyout stays fully visible
+        cardPlacement: 'top',
         prepare: () => {
           hideTutorialSmartBanner();
           if (typeof closeLifeFlyout === 'function') closeLifeFlyout();
@@ -26032,14 +26137,12 @@
       {
         id: 'summary',
         title: 'Overview',
-        body: () => (typeof isSwipeMobile === 'function' && isSwipeMobile())
-          ? 'Tap the center <strong>Overview</strong> anchor for day, week, and month. Then tap <strong>Next</strong>.'
-          : 'Tap <strong>Overview</strong> for day, week, and month. Then tap <strong>Next</strong>.',
+        body: 'Tap the <strong>Overview Anchor</strong> for a snapshot of your Harbor. Sort it by <strong>Day</strong>, <strong>Week</strong>, or <strong>Month</strong>.<br><br>You’ll see tasks to focus on, calendar events, bills, and grocery — a calm map of what matters without hunting across tabs. Look around, then tap <strong>Next</strong>.',
         target: () => document.getElementById('summary-launcher'),
         waitFor: 'summary-open',
         unlockNextOnly: true,
         interactive: true,
-        cardPlacement: 'above',
+        cardPlacement: 'bottom',
         aboveSummaryOnWait: true,
         prepare: () => {
           switchTab('today');
@@ -26500,6 +26603,31 @@
       const targetIsDockTab = !!(step?.id && /^(today|streaks|life|library)-intro$/.test(step.id));
       const mobileDock = isMobile && targetIsDockTab;
 
+      const minTop = vv.top + margin;
+      const maxTop = vv.top + vv.height - cardH - margin;
+      // Explicit viewport anchors (don't cover Life flyout / Overview content)
+      if (step?.cardPlacement === 'top') {
+        card.classList.remove('tutorial-card-top', 'tutorial-card-bottom', 'tutorial-card-interactive');
+        card.classList.add('tutorial-card-top');
+        card.classList.toggle('tutorial-card-interactive', isTutorialInteractiveStep(step));
+        card.style.top = `${minTop}px`;
+        card.style.bottom = 'auto';
+        tutorialLastCardPlacement = 'above';
+        return;
+      }
+      if (step?.cardPlacement === 'bottom') {
+        // Sit above the floating dock so Overview content stays readable
+        const dockClear = Math.max(margin, 5.75 * 16);
+        const bottomTop = vv.top + vv.height - cardH - dockClear;
+        card.classList.remove('tutorial-card-top', 'tutorial-card-bottom', 'tutorial-card-interactive');
+        card.classList.add('tutorial-card-bottom');
+        card.classList.toggle('tutorial-card-interactive', isTutorialInteractiveStep(step));
+        card.style.top = `${Math.max(minTop, Math.min(bottomTop, maxTop))}px`;
+        card.style.bottom = 'auto';
+        tutorialLastCardPlacement = 'below';
+        return;
+      }
+
       let placeBelow;
       if (mobileDock) placeBelow = false;
       else if (step?.cardPlacement === 'above') placeBelow = false;
@@ -26521,8 +26649,6 @@
         : targetRect.top - gap - cardH;
 
       // Keep fully inside viewport
-      const minTop = vv.top + margin;
-      const maxTop = vv.top + vv.height - cardH - margin;
       top = Math.max(minTop, Math.min(top, maxTop));
 
       // Hard no-overlap: if we still intersect the highlight, push clear of it
@@ -26931,7 +27057,7 @@
         unlockTutorialNextButton('Next');
         const bodyEl = document.getElementById('tutorial-body');
         if (bodyEl && step.id === 'summary') {
-          bodyEl.innerHTML = 'Nice — Overview is open. Peek at day, week, or month, then tap <strong>Next</strong>.';
+          bodyEl.innerHTML = 'Overview is open — switch <strong>Day / Week / Month</strong> for tasks, events, bills, and grocery at a glance. When you’re ready, tap <strong>Next</strong>.';
         }
         if (bodyEl && step.id === 'summary-tasks') {
           bodyEl.innerHTML = 'Great — that’s the full <strong>Tasks</strong> list. Scroll it, then tap <strong>Next</strong> (or Done) when you’re ready.';
@@ -29866,23 +29992,34 @@
       showToast(`No longer tracking streak: ${habit.title}`);
     }
 
+    /**
+     * Seven bubbles filled left → right by current streak length.
+     * Day 1 of the streak = furthest left; current day is outlined.
+     */
     function getStreakWeekDots(habitId) {
-      const comps = new Set(getCompletions(habitId) || []);
-      const passes = new Set(getHabitPasses(habitId) || []);
-      const skips = new Set(getHabitSkips(habitId) || []);
-      const today = todayStr();
+      const streak = Math.max(0, Math.min(7, Number(computeCurrentStreak(habitId)) || 0));
+      const doneToday = typeof isCompletedToday === 'function'
+        ? isCompletedToday(habitId)
+        : (getCompletions(habitId) || []).includes(todayStr());
       const dots = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setHours(12, 0, 0, 0);
-        d.setDate(d.getDate() - i);
-        const ds = dateStrLocal(d);
+      for (let i = 0; i < 7; i++) {
+        const filled = i < streak;
+        // Outline the active streak day (rightmost filled), or the next empty if not done today
+        let isCurrent = false;
+        if (streak <= 0) {
+          isCurrent = i === 0;
+        } else if (doneToday) {
+          isCurrent = i === streak - 1;
+        } else {
+          // Streak holds from prior days — highlight the next bubble to fill (or last if maxed)
+          isCurrent = i === Math.min(streak, 6);
+        }
         dots.push({
-          date: ds,
-          done: comps.has(ds),
-          pass: passes.has(ds),
-          skip: skips.has(ds),
-          isToday: ds === today
+          date: null,
+          done: filled,
+          pass: false,
+          skip: false,
+          isToday: isCurrent
         });
       }
       return dots;
@@ -31907,6 +32044,58 @@
     // ==================== INIT & HELPERS ====================
     function updateDate() {
       updateHeaderContext();
+    }
+
+    /** When the device date rolls past midnight, refresh Task list (completed strip clears). */
+    let harborDayKey = null;
+    function refreshIfDayChanged(reason) {
+      try {
+        const key = typeof todayStr === 'function' ? todayStr() : new Date().toDateString();
+        if (harborDayKey == null) {
+          harborDayKey = key;
+          return false;
+        }
+        if (key === harborDayKey) return false;
+        harborDayKey = key;
+        if (typeof clearExpiredPullToTodayFlags === 'function') clearExpiredPullToTodayFlags();
+        if (typeof renderTasks === 'function') renderTasks();
+        if (typeof renderStreaks === 'function') renderStreaks();
+        if (typeof renderSchedule === 'function') renderSchedule();
+        if (typeof updateHeaderContext === 'function') updateHeaderContext();
+        if (typeof updateSmartBanner === 'function') updateSmartBanner();
+        if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
+        if (typeof renderHeaderWeather === 'function') renderHeaderWeather();
+        // If Overview is open, rebuild for the new day
+        if (document.getElementById('summary-modal') && typeof refreshSummaryModal === 'function') {
+          try { refreshSummaryModal(typeof summaryMode !== 'undefined' ? summaryMode : 'day'); } catch (_) { /* ignore */ }
+        }
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function scheduleDayRolloverRefresh() {
+      const now = new Date();
+      const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 2, 0);
+      const ms = Math.max(1500, next.getTime() - now.getTime());
+      setTimeout(() => {
+        refreshIfDayChanged('midnight');
+        scheduleDayRolloverRefresh();
+      }, ms);
+    }
+
+    function initDayRolloverWatch() {
+      if (window.__harborDayRolloverInit) return;
+      window.__harborDayRolloverInit = true;
+      harborDayKey = typeof todayStr === 'function' ? todayStr() : new Date().toDateString();
+      scheduleDayRolloverRefresh();
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refreshIfDayChanged('visible');
+      });
+      window.addEventListener('focus', () => refreshIfDayChanged('focus'));
+      // Safety net: poll every 60s while app is open (covers sleep without visibility events)
+      setInterval(() => refreshIfDayChanged('poll'), 60000);
     }
 
     function harborEmptyHtml(icon, title, subtitle = '', extraHtml = '') {
@@ -33991,6 +34180,7 @@
         renderHeaderWeather();
         initHorizontalScrollRows();
         initTabSwipeNav();
+        if (typeof initDayRolloverWatch === 'function') initDayRolloverWatch();
         if (typeof refreshFunTheme === 'function') refreshFunTheme();
         if (typeof markLocalChallengeCheckIns === 'function') markLocalChallengeCheckIns();
         if (typeof consumePendingChallengeLink === 'function') consumePendingChallengeLink();
@@ -34000,7 +34190,10 @@
         // Re-check after orientation changes / returning from Share sheet on iOS
         window.addEventListener('visibilitychange', () => {
           if (!document.hidden) {
-            try { updateInstallHomeBanner(); } catch (_) { /* ignore */ }
+            try {
+              updateInstallHomeBanner();
+              refreshIfDayChanged('visible');
+            } catch (_) { /* ignore */ }
           }
         });
         try {
