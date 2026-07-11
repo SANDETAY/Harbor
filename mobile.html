@@ -18,6 +18,7 @@
     body {
       margin: 0;
       min-height: 100vh;
+      min-height: 100dvh;
       background:
         radial-gradient(ellipse 70% 50% at 50% 0%, rgba(61, 154, 139, 0.12), transparent 55%),
         var(--bg);
@@ -29,6 +30,17 @@
       justify-content: center;
       gap: 1rem;
       padding: 1.25rem;
+    }
+    #file-protocol-banner {
+      display: none;
+      width: min(390px, 100%);
+      padding: 0.75rem 0.9rem;
+      background: rgba(224, 122, 106, 0.12);
+      border: 1px solid rgba(224, 122, 106, 0.35);
+      border-radius: 0.85rem;
+      color: #F0C4BC;
+      font-size: 0.75rem;
+      line-height: 1.45;
     }
     .bar {
       width: min(390px, 100%);
@@ -54,7 +66,8 @@
       gap: 0.45rem;
       flex-shrink: 0;
     }
-    .links a {
+    .links a, .links button {
+      font: inherit;
       font-size: 0.68rem;
       font-weight: 600;
       color: var(--accent);
@@ -63,11 +76,13 @@
       background: rgba(61, 154, 139, 0.1);
       padding: 0.4rem 0.65rem;
       border-radius: 999px;
+      cursor: pointer;
     }
-    .links a:hover { background: rgba(61, 154, 139, 0.18); }
+    .links a:hover, .links button:hover { background: rgba(61, 154, 139, 0.18); }
     .phone {
       width: min(390px, 100%);
-      height: min(844px, calc(100vh - 6.5rem));
+      height: min(844px, calc(100dvh - 6.5rem));
+      min-height: 640px;
       border-radius: 2rem;
       padding: 0.55rem;
       background: linear-gradient(160deg, #2a3440, var(--bezel));
@@ -95,7 +110,7 @@
       height: 100%;
       border: 0;
       border-radius: 1.55rem;
-      background: #0f1419;
+      background: #D6E8E2;
       display: block;
     }
     .note {
@@ -115,28 +130,45 @@
   </style>
 </head>
 <body>
+  <div id="file-protocol-banner" role="alert">
+    <strong>Don’t open this as a file.</strong> Use
+    <code>http://localhost:3000/mobile.html</code>
+    after <code>npm start</code> (or <code>py -m http.server 3000</code>).
+  </div>
+
   <div class="bar">
     <div>
       <h1>Mobile preview</h1>
-      <p>Same app as <code>index.html</code> — forced phone frame for side‑by‑side checks.</p>
+      <p>Same app as <code>index.html</code> — forced phone frame.</p>
     </div>
     <div class="links">
+      <button type="button" id="reload-btn">Reload</button>
       <a href="./index.html" target="_blank" rel="noopener">Web</a>
-      <a href="./dual-preview.html" target="_blank" rel="noopener">Both</a>
+      <a href="./dual-preview.html" rel="noopener">Both</a>
     </div>
   </div>
 
   <div class="phone" aria-label="iPhone-sized Harbor preview">
-    <iframe
-      src="./index.html?preview=mobile"
-      title="Harbor mobile"
-      allow="geolocation; microphone"
-    ></iframe>
+    <iframe id="mobile-frame" title="Harbor mobile" allow="geolocation *; microphone *"></iframe>
   </div>
 
   <p class="note">
-    Edit only <code>index.html</code> (one codebase). Refresh this page to re-check mobile.
-    Full device testing still works best on a real phone via GitHub Pages or localhost.
+    Edit only <code>index.html</code>. Prefer
+    <code>http://localhost:3000/dual-preview.html</code> for side-by-side checks.
   </p>
+
+  <script>
+    (function () {
+      if (location.protocol === 'file:') {
+        document.getElementById('file-protocol-banner').style.display = 'block';
+      }
+      var frame = document.getElementById('mobile-frame');
+      function load() {
+        frame.src = './index.html?preview=mobile&t=' + Date.now();
+      }
+      document.getElementById('reload-btn').addEventListener('click', load);
+      load();
+    })();
+  </script>
 </body>
 </html>

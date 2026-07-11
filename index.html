@@ -10,9 +10,21 @@
   <meta name="format-detection" content="telephone=no">
   <meta name="theme-color" content="#D6E8E2" id="meta-theme-color">
   <script>
-    // Apply saved theme before paint to avoid flash
+    // Apply saved theme before paint to avoid flash + dual-preview iframe helpers
     (function () {
       try {
+        var params = new URLSearchParams(location.search || '');
+        var preview = params.get('preview') || '';
+        var inFrame = false;
+        try { inFrame = window.self !== window.top; } catch (e1) { inFrame = true; }
+        if (preview || inFrame) {
+          document.documentElement.classList.add('is-preview-frame');
+          document.documentElement.classList.add('preview-skip-splash');
+        }
+        if (preview === 'mobile') {
+          document.documentElement.classList.add('preview-mobile');
+        }
+
         var raw = localStorage.getItem('harbor_state_v1');
         if (!raw) return;
         var parsed = JSON.parse(raw);
@@ -319,21 +331,10 @@
       box-shadow: var(--harbor-shadow-sm);
     }
 
-    html[data-theme="dark"] .life-nav-tab.life-panel-active {
-      color: rgb(var(--harbor-primary-light)) !important;
-      background: transparent !important;
-      box-shadow: none;
-      font-weight: 600;
-    }
     html[data-theme="dark"] .main-nav-tab.nav-active {
       color: rgb(var(--harbor-primary-light)) !important;
       background: transparent !important;
       font-weight: 650;
-    }
-
-    html[data-theme="dark"] .life-chip-indicator {
-      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
-      box-shadow: 0 2px 12px rgb(var(--harbor-primary) / 0.35), inset 0 1px 0 rgb(var(--harbor-primary-light) / 0.22);
     }
 
     html[data-theme="dark"] .main-nav-indicator {
@@ -398,22 +399,11 @@
       box-shadow: var(--harbor-shadow-sm);
     }
 
-    html:not([data-theme="dark"]) .life-nav-tab.life-panel-active {
-      color: #FFFFFF !important;
-      font-weight: 750;
-      text-shadow: none;
-    }
-
     html:not([data-theme="dark"]) .main-nav-tab.nav-active {
       color: rgb(var(--harbor-primary-light)) !important;
       font-weight: 650;
       text-shadow: none;
       background: transparent !important;
-    }
-
-    html:not([data-theme="dark"]) .life-chip-indicator {
-      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
-      box-shadow: 0 2px 10px rgb(var(--harbor-primary) / 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35);
     }
 
     html:not([data-theme="dark"]) .summary-toggle-btn.is-active {
@@ -1459,88 +1449,213 @@
       box-shadow: inset 0 1px 0 rgb(var(--harbor-primary-light) / 0.1);
     }
 
-    .life-subnav {
+    /*
+     * Tab visibility — critical.
+     * High-specificity shell rules can beat Tailwind .hidden and leave inactive
+     * Life painted under transparent Task. Force inactive tabs fully off.
+     */
+    .tab-content.hidden,
+    #tab-content-today.hidden,
+    #tab-content-life.hidden,
+    #tab-content-life.life-tab-shell.hidden,
+    #tab-content-streaks.hidden,
+    #tab-content-library.hidden {
+      display: none !important;
+    }
+
+    /* ── Life: full-screen panel content (same chrome as primary tabs) ── */
+    #tab-content-life.life-tab-shell:not(.hidden) {
+      display: block;
+      min-height: 0;
+      /* Match Task/Streaks horizontal rhythm; bottom room for main cradle */
+      padding: 0.65rem 1.15rem calc(5.75rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    .life-panels-scroll {
+      /* Content lives in the normal tab scroll (no nested dock) */
+      min-height: 0;
+    }
+
+    /* Life section panels inside the Life tab */
+    .life-panel.hidden {
+      display: none !important;
+    }
+
+    /* ── Life flyout — vertical menu anchored to the Life dock button ── */
+    .life-flyout-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 58;
+      background: rgb(var(--harbor-text) / 0.14);
+      backdrop-filter: blur(3px) saturate(1.05);
+      -webkit-backdrop-filter: blur(3px) saturate(1.05);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s var(--harbor-ease-out);
+    }
+    .life-flyout-backdrop.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .life-flyout {
+      position: fixed;
+      z-index: 62;
+      width: 10.75rem;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px) scale(0.96);
+      transform-origin: bottom center;
+      transition:
+        opacity 0.2s var(--harbor-ease-out),
+        transform 0.22s var(--harbor-ease-out);
+      filter: drop-shadow(0 12px 28px rgb(var(--harbor-text) / 0.14));
+    }
+    .life-flyout.is-open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+    .life-flyout.life-flyout--down {
+      transform-origin: top center;
+      transform: translateY(-8px) scale(0.96);
+    }
+    .life-flyout.life-flyout--down.is-open {
+      transform: translateY(0) scale(1);
+    }
+
+    .life-flyout-card {
       position: relative;
       display: flex;
-      gap: 0.25rem;
-      padding: 0.28rem;
-      margin-bottom: 0.85rem;
-      border-radius: var(--harbor-radius-md);
-      border: 1px solid rgb(var(--harbor-primary) / 0.16);
-      background: rgb(var(--harbor-surface) / 0.86);
-      box-shadow: var(--harbor-shadow-sm);
-      backdrop-filter: blur(12px) saturate(1.08);
-      -webkit-backdrop-filter: blur(12px) saturate(1.08);
+      flex-direction: column;
+      gap: 0.12rem;
+      padding: 0.32rem;
+      border-radius: 1.1rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-surface) / 0.97);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.65) inset,
+        0 1px 2px rgb(var(--harbor-text) / 0.04);
+      backdrop-filter: blur(18px) saturate(1.12);
+      -webkit-backdrop-filter: blur(18px) saturate(1.12);
     }
-
-    html[data-theme="dark"] .life-subnav {
+    html[data-theme="dark"] .life-flyout-card {
+      background: rgb(var(--harbor-surface) / 0.96);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 1px 2px rgba(0, 0, 0, 0.2);
       border-color: rgb(var(--harbor-border));
-      background: rgb(var(--harbor-surface) / 0.9);
     }
 
-    /* Sliding pill behind active Life chip */
-    .life-chip-indicator {
+    /* Stem / caret pointing at the Life button */
+    .life-flyout-caret {
       position: absolute;
-      top: 0.28rem;
-      bottom: 0.28rem;
-      left: 0;
-      width: 25%;
-      border-radius: calc(var(--harbor-radius-md) - 0.15rem);
-      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
-      box-shadow: 0 2px 10px rgb(var(--harbor-primary) / 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      left: 50%;
+      bottom: -5px;
+      width: 11px;
+      height: 11px;
+      margin-left: -5.5px;
+      background: rgb(var(--harbor-surface) / 0.97);
+      border-right: 1px solid rgb(var(--harbor-border));
+      border-bottom: 1px solid rgb(var(--harbor-border));
+      transform: rotate(45deg);
       pointer-events: none;
       z-index: 0;
-      opacity: 1;
-      transition:
-        transform var(--harbor-duration-slow) var(--harbor-ease-out),
-        width var(--harbor-duration-slow) var(--harbor-ease-out);
-      will-change: transform, width;
     }
-    html[data-theme="dark"] .life-chip-indicator {
-      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
-      box-shadow: 0 2px 12px rgb(var(--harbor-primary) / 0.35), inset 0 1px 0 rgb(var(--harbor-primary-light) / 0.2);
+    .life-flyout.life-flyout--down .life-flyout-caret {
+      bottom: auto;
+      top: -5px;
+      border-right: none;
+      border-bottom: none;
+      border-left: 1px solid rgb(var(--harbor-border));
+      border-top: 1px solid rgb(var(--harbor-border));
+    }
+    html[data-theme="dark"] .life-flyout-caret {
+      background: rgb(var(--harbor-surface) / 0.96);
     }
 
-    .life-nav-tab {
+    .life-flyout-item {
       position: relative;
       z-index: 1;
-      flex: 1;
-      min-width: 0;
-      padding: 0.52rem 0.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.62rem;
+      width: 100%;
+      padding: 0.68rem 0.72rem;
       border: none;
-      border-radius: calc(var(--harbor-radius-md) - 0.15rem);
+      border-radius: 0.82rem;
       background: transparent;
-      color: rgb(var(--harbor-muted) / 0.92);
-      font-family: var(--harbor-font);
-      font-size: clamp(0.62rem, 2.7vw, 0.76rem);
-      font-weight: 650;
-      letter-spacing: -0.02em;
-      cursor: pointer;
-      border-bottom: none;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      transition: color var(--harbor-duration) ease, transform var(--harbor-duration-fast) var(--harbor-ease-out);
-    }
-
-    .life-nav-tab:hover {
       color: rgb(var(--harbor-text));
+      font-family: var(--harbor-font);
+      font-size: 0.84rem;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      line-height: 1.1;
+      text-align: left;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        transform 0.12s var(--harbor-ease-out);
     }
-
-    .life-nav-tab:active {
+    .life-flyout-item i {
+      width: 1.05rem;
+      text-align: center;
+      font-size: 0.92rem;
+      color: rgb(var(--harbor-muted));
+      pointer-events: none;
+    }
+    .life-flyout-item:hover {
+      background: rgb(var(--harbor-raised));
+    }
+    .life-flyout-item:active {
       transform: scale(0.98);
     }
-
-    .life-nav-tab.life-panel-active {
+    .life-flyout-item.is-active {
+      background: linear-gradient(165deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #FFFFFF;
-      background: transparent;
-      box-shadow: none;
-      font-weight: 750;
-      border-bottom: none;
+      box-shadow: 0 2px 10px rgb(var(--harbor-primary) / 0.22);
+    }
+    .life-flyout-item.is-active i {
+      color: #FFFFFF;
+      opacity: 0.95;
     }
 
-    html[data-theme="dark"] .life-nav-tab.life-panel-active {
-      color: #FFFFFF;
+    .life-flyout-kicker {
+      padding: 0.35rem 0.72rem 0.2rem;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+      pointer-events: none;
+    }
+
+    /* Life button on main dock shows open state */
+    #tab-life[aria-expanded="true"] {
+      color: rgb(var(--harbor-primary-light)) !important;
+    }
+
+    /* Cradle stays tappable above Life scrim (toggle Life / switch tabs) */
+    #main-nav-bar.life-flyout-peer {
+      z-index: 64 !important;
+    }
+
+    @media (min-width: 768px) {
+      #tab-content-life.life-tab-shell:not(.hidden) {
+        padding: 0.7rem 1.25rem 1.25rem !important;
+      }
+      .life-flyout {
+        width: 11.5rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .life-flyout,
+      .life-flyout-backdrop {
+        transition: none !important;
+      }
     }
 
     /* Life list rows share Today density */
@@ -1591,8 +1706,7 @@
       .life-panel.panel-enter-prev {
         animation-duration: 0.01ms !important;
       }
-      .main-nav-indicator,
-      .life-chip-indicator {
+      .main-nav-indicator {
         transition: none !important;
       }
     }
@@ -2741,7 +2855,8 @@
     }
 
     .weather-hour-chip {
-      min-width: 52px;
+      flex: 0 0 auto;
+      min-width: 3.15rem;
     }
 
     #header-weather {
@@ -2820,18 +2935,28 @@
 
     #header-weather-hours {
       display: flex;
+      flex-wrap: nowrap;
       gap: 0.4rem;
       overflow-x: auto;
       overflow-y: hidden;
-      scrollbar-width: none;
+      overscroll-behavior-x: contain;
+      touch-action: pan-x;
+      scrollbar-width: thin;
       -webkit-overflow-scrolling: touch;
-      padding-bottom: 0.05rem;
+      padding-bottom: 0.15rem;
+      /* Keep horizontal drag on the strip (don’t open the detail pane while sliding) */
+      cursor: grab;
     }
     #header-weather-hours::-webkit-scrollbar {
-      display: none;
+      height: 3px;
+    }
+    #header-weather-hours::-webkit-scrollbar-thumb {
+      background: rgb(var(--harbor-border));
+      border-radius: 99px;
     }
     .header-weather-chip {
-      flex: 1 0 auto;
+      /* Must NOT flex-grow — equal growth fills the row and kills horizontal scroll */
+      flex: 0 0 auto;
       min-width: 3.15rem;
       min-height: 3.35rem;
       border-radius: 0.85rem !important;
@@ -8397,14 +8522,6 @@
       text-overflow: unset;
       word-break: break-word;
     }
-    .life-nav-tab {
-      white-space: normal;
-      line-height: 1.15;
-      text-overflow: unset;
-      overflow: visible;
-      padding-left: 0.15rem;
-      padding-right: 0.15rem;
-    }
     .schedule-free-pill,
     .schedule-free-pill--hero {
       white-space: normal;
@@ -8655,10 +8772,14 @@
 
       #header-weather-hours {
         display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        touch-action: pan-x !important;
         margin-top: 0.35rem;
       }
 
       .header-weather-chip {
+        flex: 0 0 auto !important;
         min-width: 2.9rem;
         min-height: 3.15rem;
         padding: 0.3rem 0.2rem !important;
@@ -8943,7 +9064,7 @@
         box-shadow: inset 0 -2px 0 rgb(var(--harbor-primary-light));
       }
 
-      /* Desktop tab order: Today · Life · Streaks · Library (classic) */
+      /* Desktop tab order: Task · Life · Streaks · Library (classic) */
       #tab-today { order: 1; }
       #tab-life { order: 2; }
       #tab-streaks { order: 3; }
@@ -9417,7 +9538,7 @@
       </div><!-- /app-chrome -->
 
       <div id="app-scroll">
-      <!-- TODAY TAB -->
+      <!-- TASK TAB (internal id: today) -->
       <div id="tab-content-today" class="tab-content px-5 bg-transparent">
         <div class="today-toolbar panel-toolbar">
           <button type="button" onclick="showQuickTaskModal({ mode: 'habit' })" class="chip-add-btn today-add-btn" id="today-add-btn" aria-label="Add task">
@@ -9438,21 +9559,11 @@
         </div>
       </div>
 
-      <!-- LIFE TAB -->
-      <div id="tab-content-life" class="tab-content px-5 pb-6 bg-transparent hidden">
-        <div class="life-subnav" role="tablist" aria-label="Life sections">
-          <button type="button" role="tab" aria-selected="true" onclick="switchLifePanel('schedule')" id="life-panel-tab-schedule"
-            class="life-nav-tab life-panel-active">Schedule</button>
-          <button type="button" role="tab" aria-selected="false" onclick="switchLifePanel('grocery')" id="life-panel-tab-grocery"
-            class="life-nav-tab">Groceries</button>
-          <button type="button" role="tab" aria-selected="false" onclick="switchLifePanel('bills')" id="life-panel-tab-bills"
-            class="life-nav-tab">Bills</button>
-          <button type="button" role="tab" aria-selected="false" onclick="switchLifePanel('subscriptions')" id="life-panel-tab-subscriptions"
-            class="life-nav-tab">Subscriptions</button>
-        </div>
-
+      <!-- LIFE TAB — full-screen sections; pick via Life flyout on main dock -->
+      <div id="tab-content-life" class="tab-content life-tab-shell bg-transparent hidden">
+        <div class="life-panels-scroll">
         <!-- Schedule Panel -->
-        <div id="life-panel-schedule" class="life-panel">
+        <div id="life-panel-schedule" class="life-panel" role="tabpanel" aria-labelledby="life-flyout-schedule">
           <div class="panel-head panel-head--toolbar-only">
             <div class="panel-toolbar panel-toolbar-cluster schedule-toolbar" role="toolbar" aria-label="Schedule tools">
               <span id="schedule-free-time" class="chip-tool-btn chip-tool-static" role="status" aria-live="polite" title="Free time today"></span>
@@ -9482,11 +9593,11 @@
         </div>
 
         <!-- Grocery Panel -->
-        <div id="life-panel-grocery" class="life-panel hidden">
+        <div id="life-panel-grocery" class="life-panel hidden" role="tabpanel" aria-labelledby="life-flyout-grocery">
           <div class="panel-head panel-head--toolbar-only">
             <div class="panel-toolbar panel-toolbar-cluster">
               <button type="button" id="grocery-dinners-btn" class="chip-tool-btn" onclick="toggleGroceryDinners()"
-                aria-expanded="false">Dinner lists</button>
+                aria-expanded="false" aria-label="Show dinners">Show dinners</button>
               <button type="button" id="grocery-edit-dinner-btn" class="chip-tool-btn hidden"
                 onclick="editActiveDinnerList()" aria-label="Edit this dinner list">Edit dinner</button>
               <button type="button" class="chip-tool-btn" onclick="tryShowAddMealPresetModal()" aria-label="Add recipe">
@@ -9520,7 +9631,7 @@
         </div>
 
         <!-- Bills Panel -->
-        <div id="life-panel-bills" class="life-panel hidden">
+        <div id="life-panel-bills" class="life-panel hidden" role="tabpanel" aria-labelledby="life-flyout-bills">
           <div class="panel-head panel-head--toolbar-only">
             <div class="panel-toolbar panel-toolbar-cluster">
               <button type="button" onclick="addBillFromPrompt()" class="chip-add-btn" id="bills-add-btn" aria-label="Add Bill">
@@ -9534,7 +9645,7 @@
         </div>
 
         <!-- Subscriptions Panel — yours first, brands on demand -->
-        <div id="life-panel-subscriptions" class="life-panel hidden">
+        <div id="life-panel-subscriptions" class="life-panel hidden" role="tabpanel" aria-labelledby="life-flyout-subscriptions">
           <div class="panel-head panel-head--toolbar-only mb-2">
             <div class="panel-toolbar panel-toolbar-cluster schedule-toolbar" style="width:100%">
               <label class="student-pricing-toggle student-pricing-chip flex items-center gap-1.5 px-2 py-1 rounded-xl bg-harbor-raised border border-harbor-border cursor-pointer select-none flex-shrink-0" title="Show student rates when browsing popular services">
@@ -9567,6 +9678,7 @@
           <div id="subs-monthly-total" class="hidden mb-2"></div>
           <div id="subscriptions-list" class="space-y-2.5 mb-3"></div>
         </div>
+        </div><!-- /.life-panels-scroll -->
       </div>
 
       <!-- STREAKS TAB: fires → pace → Harbor Day (reward last) -->
@@ -9596,7 +9708,7 @@
             </button>
           </div>
           <div id="harbor-day-info-tip" class="harbor-info-tip hidden mb-2" role="note">
-            Finish <strong>tasks</strong>, <strong>habits</strong>, and <strong>chores</strong> on Today to fill the meter. When it’s full, claim a <strong>Harbor Day</strong> — rest without breaking your streaks.
+            Finish <strong>tasks</strong>, <strong>habits</strong>, and <strong>chores</strong> on the Task tab to fill the meter. When it’s full, claim a <strong>Harbor Day</strong> — rest without breaking your streaks.
           </div>
           <div id="reward-bank-panel"></div>
         </div>
@@ -9628,7 +9740,7 @@
       </div>
       </div><!-- /app-scroll -->
 
-      <!-- Main tabs: mobile floating cradle Library·Streaks·FAB·Life·Today · desktop top tabs (CSS order) -->
+      <!-- Main tabs: mobile floating cradle Library·Streaks·FAB·Life·Task · desktop top tabs (CSS order) -->
       <div id="main-nav-bar" class="main-nav flex" role="tablist" aria-label="Main navigation">
         <div class="main-nav-surface" aria-hidden="true"></div>
         <button type="button" role="tab" aria-selected="false" onclick="switchTab('library')" id="tab-library"
@@ -9654,15 +9766,15 @@
             <span class="summary-orb-label" aria-hidden="true">Overview</span>
           </button>
         </div>
-        <button type="button" role="tab" aria-selected="false" onclick="switchTab('life')" id="tab-life"
-          class="main-nav-tab">
+        <button type="button" role="tab" aria-selected="false" onclick="onLifeNavClick(event)" id="tab-life"
+          class="main-nav-tab" aria-haspopup="menu" aria-expanded="false" aria-controls="life-flyout">
           <i class="fa-regular fa-compass nav-tab-icon" aria-hidden="true"></i>
-          <span class="nav-tab-label">Life</span>
+          <span class="nav-tab-label" id="tab-life-label">Life</span>
         </button>
         <button type="button" role="tab" aria-selected="true" onclick="switchTab('today')" id="tab-today"
-          class="main-nav-tab nav-active">
-          <i class="fa-regular fa-calendar nav-tab-icon" aria-hidden="true"></i>
-          <span class="nav-tab-label">Today</span>
+          class="main-nav-tab nav-active" aria-label="Task">
+          <i class="fa-solid fa-list-check nav-tab-icon" aria-hidden="true"></i>
+          <span class="nav-tab-label">Task</span>
         </button>
       </div>
       </div><!-- /app-shell -->
@@ -9670,11 +9782,40 @@
     </div><!-- /app-frame -->
   </div><!-- /site-root -->
 
+  <!-- Life sections flyout — rises from the Life dock button -->
+  <div id="life-flyout-backdrop" class="life-flyout-backdrop" hidden aria-hidden="true"></div>
+  <div id="life-flyout" class="life-flyout" role="menu" aria-label="Life sections" hidden>
+    <div class="life-flyout-card">
+      <div class="life-flyout-kicker">Life</div>
+      <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-schedule"
+        data-life-panel="schedule" onclick="selectLifeSection('schedule')">
+        <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+        <span>Plan</span>
+      </button>
+      <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-grocery"
+        data-life-panel="grocery" onclick="selectLifeSection('grocery')">
+        <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
+        <span>Shop</span>
+      </button>
+      <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-bills"
+        data-life-panel="bills" onclick="selectLifeSection('bills')">
+        <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
+        <span>Bills</span>
+      </button>
+      <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-subscriptions"
+        data-life-panel="subscriptions" onclick="selectLifeSection('subscriptions')">
+        <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+        <span>Subs</span>
+      </button>
+      <span class="life-flyout-caret" aria-hidden="true"></span>
+    </div>
+  </div>
+
   <!-- Post-onboarding welcome spotlight -->
   <div id="welcome-spotlight-overlay" class="welcome-spotlight-overlay" aria-hidden="true">
     <div id="welcome-spotlight-highlight" class="hidden"></div>
     <div id="welcome-spotlight-card" class="welcome-spotlight-card hidden" role="dialog" aria-modal="true">
-      <div class="text-xs text-harbor-muted leading-relaxed mb-2.5">Your starter tasks are ready in <strong class="text-harbor-text">Today</strong>. Tap <strong class="text-harbor-primary-light">Quick tour</strong> below for a short walkthrough whenever you’re ready.</div>
+      <div class="text-xs text-harbor-muted leading-relaxed mb-2.5">Your starter tasks are ready in <strong class="text-harbor-text">Task</strong>. Tap <strong class="text-harbor-primary-light">Quick tour</strong> below for a short walkthrough whenever you’re ready.</div>
       <button type="button" onclick="skipWelcomeSpotlight()" class="w-full py-2 rounded-xl bg-harbor-raised border border-harbor-border text-[11px] font-medium text-harbor-muted">Skip for Now</button>
     </div>
   </div>
@@ -9711,7 +9852,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 261;
+    const HARBOR_BUILD_NUMBER = 267;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -9785,7 +9926,7 @@
         intro: 'Quick pass list for this train. Walk each section and check the bullets — that’s the test plan.',
         sections: [
           {
-            heading: 'Today · mobile',
+            heading: 'Task · mobile',
             items: [
               'Tap the task row (not a circle) to complete',
               'Swipe left still opens Edit / Delete',
@@ -9794,7 +9935,7 @@
             ]
           },
           {
-            heading: 'Today · web (wide screen)',
+            heading: 'Task · web (wide screen)',
             items: [
               'Complete circle still shows and works'
             ]
@@ -9804,7 +9945,7 @@
             items: [
               'Bottom Done closes Overview (thumb zone)',
               'Tasks list is near full-screen with Done',
-              'Tasks list keeps scroll after Add to Today'
+              'Tasks list keeps scroll after Add to Task'
             ]
           },
           {
@@ -9825,7 +9966,7 @@
           }
         ],
         highlights: [
-          'Starters include Make the bed; tour always has a Today task',
+          'Starters include Make the bed; tour always has a Task tab item',
           'Summary Done + full-screen task list',
           'Tour coachmark over Summary without dim',
           'Mobile tap-to-complete; web circle kept'
@@ -9859,14 +10000,14 @@
           {
             heading: 'Core',
             items: [
-              'Energy-aware Today + Smart Suggestions',
+              'Energy-aware Task list + Smart Suggestions',
               'Life tab: grocery, bills, schedule',
               'Streaks + Harbor Day; data stays on device'
             ]
           }
         ],
         highlights: [
-          'Energy-aware Today list and Smart Suggestions',
+          'Energy-aware Task list and Smart Suggestions',
           'Groceries, bills, and schedule in one Life tab',
           'Streaks, passes, and Harbor Day reward bank'
         ]
@@ -15245,7 +15386,7 @@
           const kindLabel = selectedKind === 'habit' ? 'habit' : selectedKind === 'chore' ? 'chore' : 'task';
           let where = '';
           if (typeof isParkedForSummary === 'function' && isParkedForSummary(task)) {
-            where = ' · in Summary until you Add to Today';
+            where = ' · in Summary until you Add to Task';
           } else if (selectedKind === 'chore' && !isDueToday(task)) {
             where = ' · due later in Summary';
           } else if (selectedKind === 'habit') {
@@ -15319,36 +15460,34 @@
       }
     }
 
+    function updateGroceryDinnersButton() {
+      const btn = document.getElementById('grocery-dinners-btn');
+      if (!btn) return;
+      btn.setAttribute('aria-expanded', groceryDinnersOpen ? 'true' : 'false');
+      btn.setAttribute('aria-label', groceryDinnersOpen ? 'Hide dinners' : 'Show dinners');
+      btn.classList.toggle('is-active', groceryDinnersOpen);
+      // Closed → “Show dinners”; open → “Hide dinners”
+      btn.textContent = groceryDinnersOpen ? 'Hide dinners' : 'Show dinners';
+    }
+
     function toggleGroceryDinners() {
       groceryDinnersOpen = !groceryDinnersOpen;
-      // Keep open if a dinner list is active so the chip stays visible
-      if (state.groceryView?.mode === 'meal') groceryDinnersOpen = true;
-      const btn = document.getElementById('grocery-dinners-btn');
-      if (btn) {
-        btn.setAttribute('aria-expanded', groceryDinnersOpen ? 'true' : 'false');
-        btn.classList.toggle('is-active', groceryDinnersOpen);
-      }
       const filters = document.getElementById('meal-grocery-filters');
       if (filters) filters.classList.toggle('hidden', !groceryDinnersOpen);
       if (groceryDinnersOpen) renderMealGroceryFilters();
+      updateGroceryDinnersButton();
     }
 
     function syncGroceryDinnersUI() {
-      const mealActive = state.groceryView?.mode === 'meal';
-      if (mealActive) groceryDinnersOpen = true;
+      // Don’t force the dinner chip tray open just because a dinner list is selected —
+      // user can still show/hide the themed dinner pills freely.
       const btn = document.getElementById('grocery-dinners-btn');
-      if (btn) {
-        btn.setAttribute('aria-expanded', groceryDinnersOpen ? 'true' : 'false');
-        btn.classList.toggle('is-active', groceryDinnersOpen || mealActive);
-        if (mealActive) {
-          const preset = getMealPresetById(state.groceryView.mealId);
-          btn.textContent = preset ? `Dinner · ${preset.label}` : 'Dinner lists';
-        } else {
-          btn.textContent = groceryDinnersOpen ? 'Hide dinners' : 'Dinner lists';
-        }
-      }
+      if (btn) updateGroceryDinnersButton();
       const filters = document.getElementById('meal-grocery-filters');
-      if (filters) filters.classList.toggle('hidden', !groceryDinnersOpen && !mealActive);
+      if (filters) filters.classList.toggle('hidden', !groceryDinnersOpen);
+      if (groceryDinnersOpen && typeof renderMealGroceryFilters === 'function') {
+        renderMealGroceryFilters();
+      }
     }
 
     function toggleSubsBrowse() {
@@ -16585,8 +16724,9 @@
         state.groceryTripItems = [];
       }
 
-      syncGroceryDinnersUI();
-      if (!groceryDinnersOpen && !activeMeal) {
+      if (typeof updateGroceryDinnersButton === 'function') updateGroceryDinnersButton();
+      // Always honor Show/Hide dinners — hide the themed dinner pills when closed
+      if (!groceryDinnersOpen) {
         container.innerHTML = '';
         container.classList.add('hidden');
         return;
@@ -19674,12 +19814,23 @@
       });
     }
 
+    const LIFE_PANEL_META = {
+      schedule: { label: 'Plan', icon: 'fa-regular fa-calendar' },
+      grocery: { label: 'Shop', icon: 'fa-solid fa-basket-shopping' },
+      bills: { label: 'Bills', icon: 'fa-solid fa-file-invoice-dollar' },
+      subscriptions: { label: 'Subs', icon: 'fa-solid fa-arrows-rotate' }
+    };
+
+    let lifeFlyoutOpen = false;
+
     function switchLifePanel(panel, options = {}) {
+      if (!LIFE_PANEL_ORDER.includes(panel)) return;
       const prev = currentLifePanel;
+      const same = prev === panel && !options.force;
       const prevIdx = LIFE_PANEL_ORDER.indexOf(prev);
       const nextIdx = LIFE_PANEL_ORDER.indexOf(panel);
       let dir = options.dir || null;
-      if (!dir && prevIdx >= 0 && nextIdx >= 0 && prevIdx !== nextIdx) {
+      if (!same && !dir && prevIdx >= 0 && nextIdx >= 0 && prevIdx !== nextIdx) {
         dir = nextIdx > prevIdx ? 'next' : 'prev';
       }
 
@@ -19689,31 +19840,220 @@
         saveState();
       }
       if (typeof closeLifeManageMenus === 'function') closeLifeManageMenus();
+
       LIFE_PANEL_ORDER.forEach(name => {
         const el = document.getElementById(`life-panel-${name}`);
         const isActive = name === panel;
         if (el) {
           el.classList.toggle('hidden', !isActive);
           el.classList.remove('panel-enter', 'panel-enter-next', 'panel-enter-prev');
-          if (isActive) {
+          if (isActive && !same) {
             void el.offsetWidth;
             if (dir === 'next') el.classList.add('panel-enter-next');
             else if (dir === 'prev') el.classList.add('panel-enter-prev');
             else el.classList.add('panel-enter');
           }
         }
-        const tab = document.getElementById(`life-panel-tab-${name}`);
-        if (tab) {
-          tab.classList.toggle('life-panel-active', isActive);
-          tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
-        }
       });
-      if (typeof scheduleNavIndicators === 'function') scheduleNavIndicators();
-      else updateLifeNavIndicator();
+
+      updateLifeFlyoutActive();
+      updateLifeNavLabel();
+
+      const lifeScroll = document.getElementById('tab-content-life');
+      if (lifeScroll && !same) lifeScroll.scrollTop = 0;
+
       if (panel === 'bills') renderBills();
       if (panel === 'grocery') renderGrocery();
       if (panel === 'schedule') renderSchedule();
       if (panel === 'subscriptions') renderSubscriptions();
+    }
+
+    function updateLifeFlyoutActive() {
+      document.querySelectorAll('.life-flyout-item[data-life-panel]').forEach(btn => {
+        const on = btn.getAttribute('data-life-panel') === currentLifePanel;
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-current', on ? 'true' : 'false');
+      });
+    }
+
+    function updateLifeNavLabel() {
+      const label = document.getElementById('tab-life-label');
+      if (!label) return;
+      // Keep dock word as Life; section lives in the flyout / full-screen panel
+      label.textContent = 'Life';
+    }
+
+    function isLifeFlyoutOpen() {
+      return lifeFlyoutOpen;
+    }
+
+    function positionLifeFlyout() {
+      const btn = document.getElementById('tab-life');
+      const fly = document.getElementById('life-flyout');
+      if (!btn || !fly) return;
+      const r = btn.getBoundingClientRect();
+      const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+      // Temporarily show for measurement if needed
+      const wasHidden = fly.hasAttribute('hidden');
+      if (wasHidden) {
+        fly.hidden = false;
+        fly.style.visibility = 'hidden';
+        fly.style.pointerEvents = 'none';
+      }
+      const flyW = fly.offsetWidth || 172;
+      const flyH = fly.offsetHeight || 220;
+      let left = r.left + r.width / 2 - flyW / 2;
+      left = Math.max(10, Math.min(left, window.innerWidth - flyW - 10));
+
+      if (isDesktop) {
+        // Top nav — open downward
+        fly.classList.add('life-flyout--down');
+        let top = r.bottom + 10;
+        if (top + flyH > window.innerHeight - 12) {
+          top = Math.max(12, r.top - flyH - 10);
+          fly.classList.remove('life-flyout--down');
+        }
+        fly.style.top = `${Math.round(top)}px`;
+        fly.style.bottom = 'auto';
+      } else {
+        // Bottom cradle — open upward, caret points at Life
+        fly.classList.remove('life-flyout--down');
+        const gap = 12;
+        const bottom = Math.max(12, window.innerHeight - r.top + gap);
+        fly.style.bottom = `${Math.round(bottom)}px`;
+        fly.style.top = 'auto';
+      }
+      fly.style.left = `${Math.round(left)}px`;
+
+      // Align caret under Life button center
+      const caret = fly.querySelector('.life-flyout-caret');
+      if (caret) {
+        const caretX = r.left + r.width / 2 - left;
+        caret.style.left = `${Math.round(caretX)}px`;
+        caret.style.marginLeft = '-5.5px';
+      }
+
+      if (wasHidden) {
+        fly.style.visibility = '';
+        fly.hidden = true;
+      }
+    }
+
+    function openLifeFlyout() {
+      const fly = document.getElementById('life-flyout');
+      const backdrop = document.getElementById('life-flyout-backdrop');
+      const lifeBtn = document.getElementById('tab-life');
+      const mainNav = document.getElementById('main-nav-bar');
+      if (!fly) return;
+      updateLifeFlyoutActive();
+      fly.hidden = false;
+      if (backdrop) {
+        backdrop.hidden = false;
+        backdrop.setAttribute('aria-hidden', 'false');
+      }
+      // Keep cradle above the scrim so Life can toggle closed and other tabs stay reachable
+      mainNav?.classList.add('life-flyout-peer');
+      positionLifeFlyout();
+      requestAnimationFrame(() => {
+        fly.classList.add('is-open');
+        backdrop?.classList.add('is-open');
+        // Focus first/active item for keyboard users
+        const active = fly.querySelector('.life-flyout-item.is-active') || fly.querySelector('.life-flyout-item');
+        active?.focus();
+      });
+      lifeFlyoutOpen = true;
+      if (lifeBtn) lifeBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeLifeFlyout() {
+      const fly = document.getElementById('life-flyout');
+      const backdrop = document.getElementById('life-flyout-backdrop');
+      const lifeBtn = document.getElementById('tab-life');
+      const mainNav = document.getElementById('main-nav-bar');
+      if (!fly) {
+        lifeFlyoutOpen = false;
+        mainNav?.classList.remove('life-flyout-peer');
+        return;
+      }
+      fly.classList.remove('is-open');
+      backdrop?.classList.remove('is-open');
+      lifeFlyoutOpen = false;
+      if (lifeBtn) lifeBtn.setAttribute('aria-expanded', 'false');
+      const finish = () => {
+        if (lifeFlyoutOpen) return;
+        fly.hidden = true;
+        if (backdrop) {
+          backdrop.hidden = true;
+          backdrop.setAttribute('aria-hidden', 'true');
+        }
+        mainNav?.classList.remove('life-flyout-peer');
+      };
+      setTimeout(finish, 220);
+    }
+
+    /** Life dock button — opens vertical section menu (does not jump tabs until pick) */
+    function onLifeNavClick(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      if (lifeFlyoutOpen) {
+        closeLifeFlyout();
+        return;
+      }
+      openLifeFlyout();
+    }
+
+    /** Pick a Life section → full-screen panel under shared chrome */
+    function selectLifeSection(panel, options = {}) {
+      if (!LIFE_PANEL_ORDER.includes(panel)) return;
+      closeLifeFlyout();
+      const needTab = currentTab !== 'life';
+      if (needTab) {
+        switchTab('life', { dir: options.dir || null, skipLifePanel: true });
+      }
+      switchLifePanel(panel, { force: needTab || options.force, persist: options.persist !== false });
+    }
+
+    function initLifeFlyout() {
+      if (window.__harborLifeFlyoutInit) return;
+      window.__harborLifeFlyoutInit = true;
+
+      const backdrop = document.getElementById('life-flyout-backdrop');
+      backdrop?.addEventListener('click', () => closeLifeFlyout());
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && lifeFlyoutOpen) {
+          e.preventDefault();
+          closeLifeFlyout();
+          document.getElementById('tab-life')?.focus();
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        if (lifeFlyoutOpen) positionLifeFlyout();
+      });
+      window.addEventListener('scroll', () => {
+        if (lifeFlyoutOpen) closeLifeFlyout();
+      }, true);
+
+      // Arrow keys while menu open
+      document.getElementById('life-flyout')?.addEventListener('keydown', (e) => {
+        if (!lifeFlyoutOpen) return;
+        const items = [...document.querySelectorAll('.life-flyout-item[data-life-panel]')];
+        if (!items.length) return;
+        const i = items.findIndex(el => el === document.activeElement);
+        let next = i;
+        if (e.key === 'ArrowDown') next = i < 0 ? 0 : Math.min(items.length - 1, i + 1);
+        else if (e.key === 'ArrowUp') next = i < 0 ? items.length - 1 : Math.max(0, i - 1);
+        else if (e.key === 'Home') next = 0;
+        else if (e.key === 'End') next = items.length - 1;
+        else return;
+        e.preventDefault();
+        items[next]?.focus();
+      });
+
+      updateLifeFlyoutActive();
     }
 
     function getActiveBills() {
@@ -21549,7 +21889,7 @@
 
     function getBriefAlsoOnDeck(brief) {
       const doFirstIds = new Set(brief.doFirst.map(t => t.habit.id));
-      // Parked maintenance is shown in “When You Can” with Add to Today — don’t double-list
+      // Parked maintenance is shown in “When You Can” with Add to Task — don’t double-list
       let pool = brief.tasks.filter(t =>
         !doFirstIds.has(t.habit.id) &&
         !(isParkedForSummary(t.habit) && !isPulledToToday(t.habit))
@@ -22520,7 +22860,7 @@
             const actionHtml = canPull
               ? `<button type="button" class="summary-pull-today-btn" data-pull-habit="${escapeBriefHtml(h.id)}"
                   onclick="event.preventDefault(); event.stopPropagation(); pullHabitToToday('${escapeBriefHtml(h.id)}')">
-                  Add to Today
+                  Add to Task
                 </button>`
               : `<span class="summary-kpi-detail-side text-harbor-muted text-[10px] whitespace-nowrap">${escapeBriefHtml(due)}</span>`;
             return `
@@ -22542,7 +22882,7 @@
 
     /**
      * Refresh Summary → Tasks (or other KPI) list in place.
-     * preserveScroll keeps the user's place after Add to Today / Undo.
+     * preserveScroll keeps the user's place after Add to Task / Undo.
      */
     function refreshSummaryKpiDetail(kind, options = {}) {
       const { preserveScroll = true } = options;
@@ -22594,7 +22934,7 @@
 
       if (preserveScroll && list) {
         const restore = () => {
-          // Clamp if the list got shorter after Add to Today
+          // Clamp if the list got shorter after Add to Task
           const max = Math.max(0, list.scrollHeight - list.clientHeight);
           list.scrollTop = Math.min(savedScroll, max);
         };
@@ -22660,7 +23000,7 @@
           let sideHtml = '';
           if (parked && !pulled && isDueToday(h)) {
             sideHtml = `<button type="button" class="summary-pull-today-btn" data-pull-habit="${escapeBriefHtml(h.id)}"
-              onclick="event.preventDefault(); event.stopPropagation(); pullHabitToToday('${escapeBriefHtml(h.id)}')">Add to Today</button>`;
+              onclick="event.preventDefault(); event.stopPropagation(); pullHabitToToday('${escapeBriefHtml(h.id)}')">Add to Task</button>`;
           } else if (pulled) {
             sideHtml = `<button type="button" class="summary-pull-today-btn is-on" data-release-habit="${escapeBriefHtml(h.id)}"
               onclick="event.preventDefault(); event.stopPropagation(); releaseHabitFromToday('${escapeBriefHtml(h.id)}')">On Today · Undo</button>`;
@@ -22809,7 +23149,7 @@
       };
       const title = titles[kind] || 'Details';
       const jumpDefs = {
-        tasks: { label: 'Open Today', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('today'); } },
+        tasks: { label: 'Open Task', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('today'); } },
         events: { label: 'Full schedule', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('life'); switchLifePanel('schedule'); } },
         bills: { label: 'Open Bills', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('life'); switchLifePanel('bills'); } },
         grocery: { label: 'Open Grocery', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('life'); switchLifePanel('grocery'); } }
@@ -23449,7 +23789,7 @@
       return "clear";
     }
 
-    const HEADER_WEATHER_HOURS = 5;
+    const HEADER_WEATHER_HOURS = 24; // scrollable strip — enough hours to swipe through
     const PANE_WEATHER_HOURS = 24;
     const WEATHER_TEMP_IDEAL_MIN_F = 60;
     const WEATHER_TEMP_IDEAL_MAX_F = 82;
@@ -23679,8 +24019,7 @@
 
       ensureHourlyForecastSpan();
       hourlyForecastCache = buildHourlyForecastPaneData();
-      const hourCount = window.innerWidth < 768 ? 8 : HEADER_WEATHER_HOURS;
-      const items = (hourlyForecastCache?.items || []).slice(0, hourCount);
+      const items = (hourlyForecastCache?.items || []).slice(0, HEADER_WEATHER_HOURS);
 
       if (!items.length) {
         if (isLiveWeatherConnected()) {
@@ -23709,6 +24048,36 @@
           ${it.precip >= 15 ? `<div class="text-[8px] opacity-80 leading-tight">${it.precip}%</div>` : ''}
         </div>
       `).join('');
+
+      // Horizontal slide on the hour strip; don't open the weather sheet while dragging
+      if (hoursEl.dataset.scrollWired !== '1') {
+        hoursEl.dataset.scrollWired = '1';
+        hoursEl.addEventListener('click', (e) => e.stopPropagation());
+        hoursEl.addEventListener('pointerdown', (e) => e.stopPropagation());
+        let dragX = 0;
+        let dragScroll = 0;
+        let dragging = false;
+        hoursEl.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          dragging = true;
+          dragX = e.clientX;
+          dragScroll = hoursEl.scrollLeft;
+          hoursEl.setPointerCapture?.(e.pointerId);
+          hoursEl.style.cursor = 'grabbing';
+        });
+        hoursEl.addEventListener('pointermove', (e) => {
+          if (!dragging) return;
+          hoursEl.scrollLeft = dragScroll - (e.clientX - dragX);
+        });
+        const endDrag = (e) => {
+          if (!dragging) return;
+          dragging = false;
+          hoursEl.style.cursor = 'grab';
+          try { hoursEl.releasePointerCapture?.(e.pointerId); } catch (_) { /* ignore */ }
+        };
+        hoursEl.addEventListener('pointerup', endDrag);
+        hoursEl.addEventListener('pointercancel', endDrag);
+      }
     }
 
     let weatherModalCloseGuardUntil = 0;
@@ -24264,7 +24633,7 @@
     const SMART_SUGGESTION_RELEVANCE_MIN = 70;
 
     const APP_TIPS = [
-      { id: 'energy-levels', reason: '<strong>Energy levels</strong> reshape your Today list — <strong>Low</strong> surfaces quick wins, <strong>Medium</strong> balances the day, and <strong>High</strong> pushes bigger tasks to the top. Try switching before you start.', cta: 'Set energy', action: 'energy' },
+      { id: 'energy-levels', reason: '<strong>Energy levels</strong> reshape your Task list — <strong>Low</strong> surfaces quick wins, <strong>Medium</strong> balances the day, and <strong>High</strong> pushes bigger tasks to the top. Try switching before you start.', cta: 'Set energy', action: 'energy' },
       { id: 'library-browse', reason: 'The <strong>Library</strong> is a catalog of chores and habits — tap any card to add it to your Harbor without typing from scratch.', cta: 'Open Library', action: 'library' },
       { id: 'library-custom', reason: 'Built something unique? Use <strong>Add</strong> in the Library to save custom tasks you can re-add anytime.', cta: 'Add custom task', action: 'library-custom' },
       { id: 'library-columns', reason: 'The <strong>Library</strong> is organized in columns — Daily Habits, Weekly Chores, Monthly Maintenance, and more. Use the search bar to narrow down fast.', cta: 'Browse Library', action: 'library' },
@@ -24293,7 +24662,7 @@
       { id: 'health-sync', reason: 'Step and distance goals on Streaks use what you log in the app for now — wearable sync will return in a later update.', cta: 'View streaks', action: 'streaks' },
       { id: 'dismiss-vs-mute', reason: '<strong>Dismiss</strong> hides one suggestion; <strong>Mute</strong> removes the panel entirely for more room. Re-enable anytime in Settings.', cta: 'Open settings', action: 'settings' },
       { id: 'tabs-overview', reason: '<strong>Today</strong> is your action list, <strong>Life</strong> holds schedule & bills, <strong>Streaks</strong> tracks progress, and <strong>Library</strong> is where tasks are sourced.', cta: 'Explore tabs', action: 'library' },
-      { id: 'onboarding-routine', reason: 'Want a fuller Today list? Pull tasks from the <strong>Library</strong>, set intervals, and Harbor will surface them when energy and free time line up.', cta: 'Browse Library', action: 'library' }
+      { id: 'onboarding-routine', reason: 'Want a fuller Task list? Pull tasks from the <strong>Library</strong>, set intervals, and Harbor will surface them when energy and free time line up.', cta: 'Browse Library', action: 'library' }
     ];
 
     function isRelevantContextualSuggestion(suggestion) {
@@ -25055,11 +25424,13 @@
       {
         id: 'life-intro',
         title: 'Life holds the rest',
-        body: 'Open <strong>Life</strong> on the bottom dock (next to Today) for your schedule, grocery list, bills, and subscriptions — all in one place.',
+        body: 'Tap <strong>Life</strong> on the dock to open a short menu — <strong>Plan</strong>, <strong>Shop</strong>, <strong>Bills</strong>, or <strong>Subs</strong>. Each opens full-screen under the same weather and energy bar.',
         target: () => document.getElementById('tab-life'),
         cardPlacement: 'above',
         prepare: () => {
           hideTutorialSmartBanner();
+          if (typeof closeLifeFlyout === 'function') closeLifeFlyout();
+          // Show last Life section so the full-screen layout is visible behind the tour
           switchTab('life');
         }
       },
@@ -26522,7 +26893,7 @@
         const habit = state.habits.find(h => h.id === habitId);
         showToast(habit ? `Next up: ${habit.title}` : 'Task found', 'info');
       } else {
-        showToast('Open Today to see that task', 'info');
+        showToast('Open Task to see that task', 'info');
       }
     }
 
@@ -27094,7 +27465,7 @@
       const kindNote = shouldTrackStreak(taskToAdd)
         ? ' · daily habit (streaks)'
         : isParkedForSummary(taskToAdd)
-          ? ' · lives in Summary until you Add to Today'
+          ? ' · lives in Summary until you Add to Task'
           : isNonDailyRecurring(taskToAdd)
             ? ' · chore when due'
             : '';
@@ -30573,8 +30944,13 @@
       const navRect = navEl.getBoundingClientRect();
       const activeRect = active.getBoundingClientRect();
       if (navRect.width < 4 || activeRect.width < 4) return;
-      const left = activeRect.left - navRect.left;
-      const width = activeRect.width;
+      // Use offsetLeft/Width when available — stable vs subpixel getBoundingClientRect drift
+      let left = active.offsetLeft;
+      let width = active.offsetWidth;
+      if (!(width > 2)) {
+        left = activeRect.left - navRect.left;
+        width = activeRect.width;
+      }
       ind.style.width = `${Math.round(width * 100) / 100}px`;
       ind.style.transform = `translate3d(${Math.round(left * 100) / 100}px, 0, 0)`;
       ind.style.opacity = '1';
@@ -30588,27 +30964,21 @@
       );
     }
 
-    function updateLifeNavIndicator() {
-      slideNavIndicator(
-        document.querySelector('.life-subnav'),
-        '.life-nav-tab.life-panel-active',
-        'life-chip-indicator'
-      );
-    }
-
     function scheduleNavIndicators() {
       requestAnimationFrame(() => {
         updateMainNavIndicator();
-        updateLifeNavIndicator();
         requestAnimationFrame(() => {
           updateMainNavIndicator();
-          updateLifeNavIndicator();
         });
       });
     }
 
     function switchTab(tab, options = {}) {
       if (!MAIN_TAB_ORDER.includes(tab)) return;
+      // Close Life flyout when leaving / switching main tabs
+      if (typeof closeLifeFlyout === 'function' && lifeFlyoutOpen && !options.keepLifeFlyout) {
+        closeLifeFlyout();
+      }
       if (tab === currentTab && !options.force) {
         scheduleNavIndicators();
         return;
@@ -30622,11 +30992,15 @@
         dir = nextIdx > prevIdx ? 'next' : 'prev';
       }
 
+      // Hide every main tab pane (only one visible — shells are transparent)
       document.querySelectorAll('.tab-content').forEach(el => {
         el.classList.add('hidden');
         el.classList.remove('tab-enter', 'tab-enter-next', 'tab-enter-prev');
+        el.style.removeProperty('animation');
       });
       MAIN_TAB_ORDER.forEach(name => {
+        const pane = document.getElementById(`tab-content-${name}`);
+        if (pane && name !== tab) pane.classList.add('hidden');
         const el = document.getElementById(`tab-${name}`);
         if (el) {
           el.classList.remove('nav-active');
@@ -30662,8 +31036,9 @@
         if (scroll) scroll.scrollTop = 0;
       }
 
-      if (tab === 'life') {
-        switchLifePanel(currentLifePanel, { dir: null });
+      // Life: restore last section full-screen (weather + energy stay in app-chrome)
+      if (tab === 'life' && !options.skipLifePanel) {
+        switchLifePanel(currentLifePanel, { dir: null, force: true });
       }
       if (tab === 'today') {
         updateSmartBanner();
@@ -30685,6 +31060,7 @@
 
     function isOverlayBlockingTabSwipe() {
       return !!(
+        lifeFlyoutOpen ||
         document.getElementById('summary-modal') ||
         document.getElementById('app-menu-sheet') ||
         document.querySelector('.modal-overlay-blur') ||
@@ -30701,14 +31077,16 @@
         '[contenteditable="true"]',
         '.library-filters-scroll',
         '#header-weather-hours',
+        '#header-weather',
         '.weather-hour-chip',
+        '.header-weather-chip',
         '.summary-orb',
         '#summary-modal',
         '#app-menu-sheet',
         '.modal-sheet',
         '.app-menu-dropdown',
         '.swipe-action',
-        '.life-subnav', // Life chips are tap-only
+        '.life-flyout, #life-flyout, #life-flyout-backdrop', // Life section menu is tap-only
         '#main-nav-bar', // Bottom dock is tap-only (don't steal tab button clicks)
         '.main-nav-tab',
         '[role="dialog"]',
@@ -30756,7 +31134,7 @@
       root.dataset.tabSwipeInit = '1';
 
       ensureNavIndicator(document.getElementById('main-nav-bar'), 'main-nav-indicator');
-      ensureNavIndicator(document.querySelector('.life-subnav'), 'life-chip-indicator');
+      initLifeFlyout();
 
       let tracking = false;
       let startX = 0;
@@ -30857,11 +31235,15 @@
         cancel();
       });
 
-      // After a successful tab swipe, kill ghost clicks on whatever was under the thumb
+      // After a successful tab swipe, kill ghost clicks on content under the thumb —
+      // never block the main cradle or Life dock (those are intentional chrome taps).
       if (!window.__harborTabSwipeClickGuard) {
         window.__harborTabSwipeClickGuard = true;
         document.addEventListener('click', (e) => {
           if (Date.now() >= tabSwipeClickSuppressUntil) return;
+          if (e.target instanceof Element && e.target.closest(
+            '#main-nav-bar, .main-nav-tab, .life-flyout, .life-flyout-item, .summary-orb'
+          )) return;
           e.preventDefault();
           e.stopPropagation();
           e.stopImmediatePropagation();
@@ -33006,6 +33388,31 @@
       const appWrap = document.querySelector('.app-content-wrap');
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+      // Dual-preview / iframe: skip splash so both panes boot instantly
+      let skipSplash = document.documentElement.classList.contains('preview-skip-splash');
+      try {
+        skipSplash = skipSplash
+          || window.self !== window.top
+          || /(?:\?|&)preview=/.test(location.search || '');
+      } catch (_) {
+        skipSplash = true;
+      }
+      if (skipSplash) {
+        if (splash) {
+          splash.classList.add('is-hidden');
+          splash.style.display = 'none';
+          splash.setAttribute('aria-hidden', 'true');
+        }
+        document.body.classList.remove('is-splash-active');
+        document.documentElement.classList.remove('is-splash-active');
+        if (appWrap) {
+          appWrap.style.opacity = '';
+          appWrap.classList.add('splash-app-reveal');
+        }
+        onComplete?.();
+        return;
+      }
+
       // Mark draws in → wordmark → letter-stagger slogan → soft exit
       const MARK_MS = 80;
       const WORD_MS = 520;
@@ -33139,10 +33546,18 @@
     // Boot
     window.onload = init;
 
-    // PWA service worker — skip inside Capacitor native (App Store / Play WebView)
+    // PWA service worker — skip inside Capacitor native, dual-preview iframes, and ?preview=
     const isNativeCapacitor = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function'
       && window.Capacitor.isNativePlatform());
-    if ('serviceWorker' in navigator && !isNativeCapacitor) {
+    let isPreviewOrFrame = false;
+    try {
+      isPreviewOrFrame = window.self !== window.top
+        || /(?:\?|&)preview=/.test(location.search || '')
+        || document.documentElement.classList.contains('is-preview-frame');
+    } catch (_) {
+      isPreviewOrFrame = true;
+    }
+    if ('serviceWorker' in navigator && !isNativeCapacitor && !isPreviewOrFrame) {
       window.addEventListener('load', () => {
         // One-time hard refresh when build number changes (kills stuck Mint shell / old CSS)
         try {
