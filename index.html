@@ -10457,7 +10457,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 292;
+    const HARBOR_BUILD_NUMBER = 293;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -21208,15 +21208,29 @@
 
     /**
      * Income lens: paychecks, deposits, benefits, and other money-in.
+     * Intentionally broad so corrupted isCredit / indicator flags still surface pay.
      */
     function isBudgetIncomeTransaction(t) {
       if (!t) return false;
-      if (isBudgetTrueIncomeSignal(t)) return true;
-      if (detectBudgetIsCredit(t)) return true;
-      if (t.isCredit) return true;
+      // Explicit income category
       if (t.category === 'income' || t.categoryAuto === 'income') return true;
-      // ACH Credit type even if description is sparse
-      if (/ach\s*credit/i.test(String(t.bankType || ''))) return true;
+      // Paychecks / VA / DFAS / bank income tags (do not require isCredit)
+      if (isBudgetTrueIncomeSignal(t)) return true;
+      if (isBudgetIncomeBankCategory(t.bankCategory)) return true;
+      // Any stored credit flag
+      if (t.isCredit === true) return true;
+      if (detectBudgetIsCredit(t)) return true;
+      const ind = String(t.creditDebitIndicator || t.indicator || '').trim().toLowerCase();
+      if (ind === 'credit' || ind === 'cr' || ind === 'c') return true;
+      // ACH Credit / Credit type from bank CSV
+      const typeStr = String(t.bankType || '');
+      if (/ach\s*credit/i.test(typeStr)) return true;
+      if (/^credit$/i.test(typeStr.trim()) && !/debit/i.test(typeStr)) return true;
+      // Description fallbacks (even if bank fields were stripped on an old import)
+      const desc = `${t.bankDescription || ''} ${t.description || ''}`;
+      if (/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|regular\s*income|direct\s*deposit|ssa\s*treas|social\s*security/i.test(desc)) {
+        return true;
+      }
       return false;
     }
 
@@ -21295,8 +21309,8 @@
      */
     function reclassifyAllBudgetTransactions(force = false) {
       const budget = ensureBudgetState();
-      if (!force && budget._fullRecatV10) return false;
-      budget._fullRecatV10 = true;
+      if (!force && budget._fullRecatV11) return false;
+      budget._fullRecatV11 = true;
       let changed = 0;
       (budget.transactions || []).forEach(t => {
         if (!t) return;
@@ -21325,38 +21339,41 @@
           type: typeStr,
           typeGroup: typeGroupStr
         });
-        if (shouldCredit || isBudgetTrueIncomeSignal(t)) {
+        // Force paychecks / benefits into Income (never leave as other/spending)
+        const trueIncome = isBudgetTrueIncomeSignal(t)
+          || isBudgetIncomeBankCategory(bankCategory)
+          || /salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|regular\s*income/i.test(bankDesc + ' ' + bankCategory);
+
+        if (shouldCredit || trueIncome) {
           const fromBank = mapBankCategoryToHarbor(bankCategory);
-          if (isBudgetIncomeBankCategory(bankCategory) || fromBank === 'income' || isBudgetTrueIncomeSignal(t)) {
-            // Paychecks / VA / deposits — always Income (not demoted to other)
-            if (/transfer\s+from|from\s+savings|from\s+checking/i.test(bankDesc) && !isBudgetIncomeBankCategory(bankCategory)
-              && !/salary|paycheck|dfas|veteran|payroll|regular\s*income/i.test(bankDesc)) {
-              autoCat = fromBank === 'savings' ? 'savings' : 'transfers';
-            } else if (fromBank === 'transfers' || fromBank === 'savings') {
-              // Zelle-in / transfer-from-savings stay as moves; paychecks never have those bank cats
-              if (isBudgetIncomeBankCategory(bankCategory) || /salary|paycheck|dfas|veteran|payroll|regular\s*income/i.test(bankDesc + bankCategory)) {
-                autoCat = 'income';
-              } else {
-                autoCat = fromBank;
-              }
-            } else {
-              autoCat = 'income';
-            }
+          const isTransferIn = /transfer\s+from|from\s+savings|from\s+checking/i.test(bankDesc)
+            && !trueIncome
+            && !isBudgetIncomeBankCategory(bankCategory);
+          if (trueIncome || isBudgetIncomeBankCategory(bankCategory) || fromBank === 'income') {
+            autoCat = isTransferIn
+              ? (fromBank === 'savings' ? 'savings' : 'transfers')
+              : 'income';
           } else if (fromBank === 'transfers' || fromBank === 'savings') {
             autoCat = fromBank;
-          } else if (/transfer\s+from|from\s+savings|from\s+checking|zelle|venmo|cash\s*app/i.test(bankDesc)) {
+          } else if (/transfer\s+from|from\s+savings|from\s+checking|zelle|venmo|cash\s*app/i.test(bankDesc) && !trueIncome) {
             autoCat = 'transfers';
           } else {
             autoCat = 'income';
           }
           t.isCredit = true;
+          shouldCredit = true;
+          if (autoCat === 'income') {
+            t.creditDebitIndicator = 'credit';
+          }
         } else if (autoCat === 'income') {
-          // Only demote if it truly is not income
-          if (!isBudgetTrueIncomeSignal({ ...t, category: autoCat, categoryAuto: autoCat })) {
+          // Demote only if it is clearly not income
+          if (!trueIncome && !isBudgetTrueIncomeSignal({ ...t, category: 'income', categoryAuto: 'income' })) {
             autoCat = 'other';
           } else {
             t.isCredit = true;
             shouldCredit = true;
+            autoCat = 'income';
+            t.creditDebitIndicator = 'credit';
           }
         }
 
@@ -21617,7 +21634,11 @@
       const bucket = legacy[k] || k;
       // Full picture: everything leaving the account (all money-out categories on the pie)
       if (bucket === 'overview' || bucket === 'all' || bucket === 'full') {
-        return txs.filter(t => !detectBudgetIsCredit(t) && getBudgetBucket(t) !== 'income');
+        return txs.filter(t => !isBudgetIncomeTransaction(t) && getBudgetBucket(t) !== 'income');
+      }
+      // Income: cast a wide net — paychecks/VA/deposits even if flags were corrupted
+      if (bucket === 'income') {
+        return txs.filter(t => isBudgetIncomeTransaction(t));
       }
       return txs.filter(t => getBudgetBucket(t) === bucket);
     }
@@ -21795,6 +21816,7 @@
       delete budget._fullRecatV8;
       delete budget._fullRecatV9;
       delete budget._fullRecatV10;
+      delete budget._fullRecatV11;
       // Any successful CSV import finishes the monthly budget-review task
       if (typeof markBudgetReviewCompleteFromImport === 'function') {
         markBudgetReviewCompleteFromImport({ silent: true });
@@ -22328,8 +22350,8 @@
       if (!state.budget._rulesHarvested) {
         harvestBudgetMerchantRulesFromTransactions();
       }
-      // Always reclassify once on this build — fix Income (paychecks vs ATM rebate only)
-      if (!state.budget._fullRecatV10) {
+      // Always reclassify once on this build — restore paychecks to Income lens
+      if (!state.budget._fullRecatV11) {
         reclassifyAllBudgetTransactions(true);
       } else if (!state.budget._otherRecatV2) {
         state.budget._otherRecatV2 = true;
