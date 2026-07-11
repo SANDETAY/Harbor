@@ -3850,6 +3850,26 @@
       color: rgb(var(--harbor-muted));
       border: 1px solid rgb(var(--harbor-border) / 0.8);
     }
+    /* Passed events — shared across Schedule, Overview, Today, KPI lists */
+    .event-time-past,
+    .summary-timeline-row.is-past .summary-time,
+    .summary-kpi-detail-side.is-past-time,
+    .cal-event-time.is-past-time {
+      color: rgb(var(--harbor-muted)) !important;
+      text-decoration: line-through;
+      text-decoration-thickness: 1px;
+      text-decoration-color: rgb(var(--harbor-muted) / 0.55);
+      font-weight: 600;
+    }
+    .summary-timeline-row.is-past,
+    .summary-kpi-detail-row.is-event-past,
+    .habit-row.is-event-past {
+      opacity: 0.55;
+    }
+    .summary-timeline-row.is-now {
+      border-left: 2px solid rgba(47, 155, 140, 0.45);
+      padding-left: 0.35rem;
+    }
     .schedule-earlier-hdr {
       display: flex;
       align-items: center;
@@ -9374,7 +9394,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 243;
+    const HARBOR_BUILD_NUMBER = 244;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -16498,6 +16518,32 @@
       return getCalendarEventPhase(ev, dateStr) === 'past';
     }
 
+    /** Shared Now / Passed pill used in Schedule, Overview, Today feed, KPI lists */
+    function calendarEventPhasePillHtml(phase) {
+      if (phase === 'now') {
+        return `<span class="cal-event-phase-pill is-now" title="Happening now">Now</span>`;
+      }
+      if (phase === 'past') {
+        return `<span class="cal-event-phase-pill is-past" title="This time has passed">Passed</span>`;
+      }
+      return '';
+    }
+
+    /** Resolve phase + display time for any event surface */
+    function resolveCalendarEventDisplay(ev, options = {}) {
+      const phaseDate = options.onDate || getEventDate(ev) || todayStr();
+      const phase = options.phase || getCalendarEventPhase(ev, phaseDate);
+      const timeLabel = ev?.time ? formatScheduleEventTime(ev.time) : '—';
+      return {
+        phase,
+        phaseDate,
+        timeLabel,
+        phasePill: calendarEventPhasePillHtml(phase),
+        isPast: phase === 'past',
+        isNow: phase === 'now'
+      };
+    }
+
     function sortEventsByTime(events) {
       return [...(events || [])].sort((a, b) => {
         const da = getEventDate(a).localeCompare(getEventDate(b));
@@ -17969,19 +18015,15 @@
       const person = getHouseholdPerson(ev.personId);
       const personColor = person?.color || '';
       const personChip = person ? renderPersonChipHtml(person.id) : '';
-      const phasePill = phase === 'now'
-        ? `<span class="cal-event-phase-pill is-now" title="Happening now">Now</span>`
-        : phase === 'past'
-          ? `<span class="cal-event-phase-pill is-past" title="This time has passed">Passed</span>`
-          : '';
+      const disp = resolveCalendarEventDisplay(ev, { onDate: phaseDate, phase });
       const contentHtml = `
         <div class="cal-event-body flex items-center gap-x-3 flex-1 min-w-0 cursor-pointer">
-          <div class="cal-event-time text-sm font-semibold text-harbor-primary-light tabular-nums w-16 flex-shrink-0">${formatScheduleEventTime(ev.time)}</div>
+          <div class="cal-event-time text-sm font-semibold text-harbor-primary-light tabular-nums w-16 flex-shrink-0${disp.isPast ? ' is-past-time' : ''}">${escapeBriefHtml(disp.timeLabel)}</div>
           <div class="flex-1 min-w-0">
             <div class="font-medium flex items-center gap-1.5 flex-wrap">
               ${person ? `<span class="person-swatch person-swatch--lg" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
               <span>${escapeBriefHtml(ev.title)}</span>
-              ${phasePill}
+              ${disp.phasePill}
             </div>
             <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
               ${personChip}
@@ -20193,16 +20235,21 @@
     function renderScheduleFeedCard(ev, container) {
       const card = document.createElement('div');
       const person = getHouseholdPerson(ev.personId);
+      const disp = resolveCalendarEventDisplay(ev, { onDate: todayStr() });
       card.className = 'habit-row bg-harbor-surface border border-harbor-border rounded-2xl px-4 py-2.5 flex items-center gap-x-3'
-        + (person ? ' cal-event-row--person' : '');
+        + (person ? ' cal-event-row--person' : '')
+        + (disp.isPast ? ' is-event-past cal-event-row--past' : '')
+        + (disp.isNow ? ' cal-event-row--now' : '');
       if (person) card.style.setProperty('--person-color', person.color);
       card.dataset.feedType = 'schedule';
+      card.dataset.eventPhase = disp.phase;
       card.innerHTML = `
-        <div class="text-sm font-semibold text-harbor-primary-light tabular-nums w-12">${escapeBriefHtml(ev.time)}</div>
+        <div class="cal-event-time text-sm font-semibold text-harbor-primary-light tabular-nums w-14${disp.isPast ? ' is-past-time' : ''}">${escapeBriefHtml(disp.timeLabel)}</div>
         <div class="flex-1 min-w-0">
-          <div class="font-medium text-sm flex items-center gap-1.5">
+          <div class="font-medium text-sm flex items-center gap-1.5 flex-wrap">
             ${person ? `<span class="person-swatch" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
             <span>${escapeBriefHtml(ev.title)}</span>
+            ${disp.phasePill}
           </div>
           <div class="flex items-center gap-1.5 mt-0.5">
             ${person ? renderPersonChipHtml(person.id) : ''}
@@ -21764,14 +21811,21 @@
           ? evs.slice(0, 5).map(e => {
               const person = getHouseholdPerson(e.personId);
               const style = person ? ` style="--person-color:${escapeBriefHtml(person.color)}"` : '';
-              const cls = person ? 'summary-timeline-row summary-timeline-row--person' : 'summary-timeline-row';
+              const disp = resolveCalendarEventDisplay(e, { onDate: getEventDate(e) || todayStr() });
+              const cls = [
+                'summary-timeline-row',
+                person ? 'summary-timeline-row--person' : '',
+                disp.isPast ? 'is-past' : '',
+                disp.isNow ? 'is-now' : ''
+              ].filter(Boolean).join(' ');
               return `
               <div class="${cls}"${style}>
-                <div class="summary-time">${escapeBriefHtml(e.time || '—')}</div>
+                <div class="summary-time">${escapeBriefHtml(disp.timeLabel)}</div>
                 <div class="min-w-0">
-                  <div class="summary-time-title flex items-center gap-1.5">
+                  <div class="summary-time-title flex items-center gap-1.5 flex-wrap">
                     ${person ? `<span class="person-swatch" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
                     <span>${escapeBriefHtml(e.title)}</span>
+                    ${disp.phasePill}
                   </div>
                   <div class="summary-time-meta flex items-center gap-1.5 flex-wrap">
                     ${person ? renderPersonChipHtml(person.id) : ''}
@@ -21791,13 +21845,21 @@
                 ${(day.events || []).slice(0, 3).map(e => {
                   const person = getHouseholdPerson(e.personId);
                   const style = person ? ` style="--person-color:${escapeBriefHtml(person.color)}"` : '';
-                  const cls = person ? 'summary-timeline-row summary-timeline-row--person' : 'summary-timeline-row';
+                  const onDate = e.date || day.date || getEventDate(e) || todayStr();
+                  const disp = resolveCalendarEventDisplay(e, { onDate });
+                  const cls = [
+                    'summary-timeline-row',
+                    person ? 'summary-timeline-row--person' : '',
+                    disp.isPast ? 'is-past' : '',
+                    disp.isNow ? 'is-now' : ''
+                  ].filter(Boolean).join(' ');
                   return `
                   <div class="${cls}"${style}>
-                    <div class="summary-time">${escapeBriefHtml(e.time || '—')}</div>
-                    <div class="summary-time-title flex items-center gap-1.5 min-w-0">
+                    <div class="summary-time">${escapeBriefHtml(disp.timeLabel)}</div>
+                    <div class="summary-time-title flex items-center gap-1.5 min-w-0 flex-wrap">
                       ${person ? `<span class="person-swatch" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
                       <span class="truncate">${escapeBriefHtml(e.title)}</span>
+                      ${disp.phasePill}
                     </div>
                   </div>`;
                 }).join('')}
@@ -22202,13 +22264,15 @@
           const eventId = e.id || getStableCalendarEventId(e);
           const person = getHouseholdPerson(e.personId);
           const style = person ? ` style="--person-color:${escapeBriefHtml(person.color)}"` : '';
-          const time = e.time ? formatScheduleEventTime(e.time) : '—';
+          const onDate = e.date || getEventDate(e) || todayStr();
+          const disp = resolveCalendarEventDisplay(e, { onDate });
           const contentHtml = `
-            <div class="summary-kpi-detail-side flex-shrink-0">${escapeBriefHtml(time)}</div>
+            <div class="summary-kpi-detail-side flex-shrink-0${disp.isPast ? ' is-past-time' : ''}">${escapeBriefHtml(disp.timeLabel)}</div>
             <div class="summary-kpi-detail-main flex-1 min-w-0">
-              <div class="summary-kpi-detail-title flex items-center gap-1.5">
+              <div class="summary-kpi-detail-title flex items-center gap-1.5 flex-wrap">
                 ${person ? `<span class="person-swatch" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
                 <span>${escapeBriefHtml(e.title)}</span>
+                ${disp.phasePill}
               </div>
               <div class="summary-kpi-detail-meta">
                 ${e.dayLabel ? `<span>${escapeBriefHtml(e.dayLabel)}</span>` : ''}
@@ -22221,10 +22285,10 @@
               <button type="button" class="text-[10px] text-harbor-muted hover:text-rose-400" onclick="event.stopImmediatePropagation(); deleteCalendarEvent('${escapeBriefHtml(eventId)}'); refreshSummaryKpiDetail('events')">Delete</button>
             </div>
           `;
-          return `<div class="swipe-row" data-swipe-type="event" data-swipe-id="${escapeBriefHtml(eventId)}"${style} style="--swipe-reveal:8.75rem">${buildSwipeRowHtml(
+          return `<div class="swipe-row" data-swipe-type="event" data-swipe-id="${escapeBriefHtml(eventId)}" data-event-phase="${disp.phase}"${style} style="--swipe-reveal:8.75rem">${buildSwipeRowHtml(
             swipeActions('Edit event', 'Delete'),
             contentHtml,
-            `summary-kpi-detail-row flex items-center gap-x-2${person ? ' summary-kpi-detail-row--person' : ''}`
+            `summary-kpi-detail-row flex items-center gap-x-2${person ? ' summary-kpi-detail-row--person' : ''}${disp.isPast ? ' is-event-past' : ''}`
           )}</div>`;
         }).join('');
       }
