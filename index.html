@@ -51,20 +51,20 @@
   </script>
   <meta name="description" content="Harbor — a gentle daily life organizer. Energy-based tasks, bills, grocery, streaks, and Smart Suggestions in one calm place.">
   <meta name="robots" content="noindex, nofollow">
-  <meta property="og:title" content="Harbor — One App For the Whole Day">
+  <meta property="og:title" content="Harbor — One App For The Whole Day">
   <meta property="og:description" content="Harbor — energy-based tasks, bills, grocery, streaks, and Smart Suggestions in one calm app.">
   <meta property="og:site_name" content="Harbor">
   <meta property="og:image" content="https://sandetay.github.io/Harbor/harbor-icon-512.png">
   <meta property="og:image:alt" content="Harbor app logo">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Harbor — One App For the Whole Day">
+  <meta name="twitter:title" content="Harbor — One App For The Whole Day">
   <meta name="twitter:image" content="https://sandetay.github.io/Harbor/harbor-icon-512.png">
   <link rel="icon" type="image/png" sizes="32x32" href="harbor-favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="harbor-apple-touch.png">
 
   <link rel="manifest" href="manifest.webmanifest">
-  <title>Harbor · One App For the Whole Day</title>
+  <title>Harbor · One App For The Whole Day</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -8853,14 +8853,22 @@
       flex-wrap: wrap;
       justify-content: center;
       align-items: baseline;
-      gap: 0.38em;
+      gap: 0.28em 0.42em;
+      max-width: min(22rem, 92vw);
       font-family: 'Outfit', 'Space Grotesk', 'Inter', system-ui, sans-serif;
-      font-size: clamp(0.95rem, 3.2vw, 1.15rem);
+      font-size: clamp(0.88rem, 2.9vw, 1.08rem);
       font-weight: 500;
-      letter-spacing: 0.16em;
+      letter-spacing: 0.08em;
+      line-height: 1.45;
       text-transform: none;
+      text-align: center;
       color: rgba(236, 242, 238, 0.92);
       opacity: 1;
+    }
+
+    .splash-slogan-word {
+      display: inline-flex;
+      white-space: nowrap;
     }
 
     .splash-slogan-letter {
@@ -8875,12 +8883,12 @@
     }
 
     .splash-slogan-space {
-      display: inline-block;
-      width: 0.28em;
+      display: none; /* gap handles word spacing; keep nodes for a11y structure */
+      width: 0;
     }
 
     .splash-slogan-rule {
-      width: min(11rem, 42vw);
+      width: min(14rem, 52vw);
       height: 1px;
       margin-top: 0.95rem;
       border-radius: 999px;
@@ -9957,7 +9965,7 @@
             </div>
             <div id="splash-wordmark" class="splash-wordmark">Harbor</div>
           </div>
-          <p id="splash-slogan" class="splash-slogan" aria-label="Build Your Harbor"></p>
+          <p id="splash-slogan" class="splash-slogan" aria-label="One App For The Whole Day"></p>
           <div id="splash-slogan-rule" class="splash-slogan-rule" aria-hidden="true"></div>
         </div>
       </div>
@@ -10457,7 +10465,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 295;
+    const HARBOR_BUILD_NUMBER = 296;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -36388,7 +36396,7 @@
       );
     }
 
-    function prepareSplashSlogan(sloganEl, text = 'Build Your Harbor') {
+    function prepareSplashSlogan(sloganEl, text = 'One App For The Whole Day') {
       if (!sloganEl) return 0;
       sloganEl.innerHTML = '';
       let letterIndex = 0;
@@ -36720,11 +36728,12 @@
       }
 
       // Mark draws in → wordmark → letter-stagger slogan → soft exit
+      // Longer slogan needs a beat more time before reveal so the last letters settle.
       const MARK_MS = 80;
       const WORD_MS = 520;
       const SLOGAN_MS = 980;
-      const RULE_MS = 1180;
-      const EXIT_AT = 3200;
+      const RULE_MS = 1280;
+      const EXIT_AT = 3600;
       const REVEAL_MS = 560;
 
       document.body.classList.add('is-splash-active');
@@ -36747,7 +36756,7 @@
       wordEl?.classList.remove('is-in');
       sloganEl?.classList.remove('is-in');
       ruleEl?.classList.remove('is-in');
-      prepareSplashSlogan(sloganEl, 'Build Your Harbor');
+      prepareSplashSlogan(sloganEl, 'One App For The Whole Day');
       appWrap?.classList.remove('splash-app-reveal');
       if (appWrap) appWrap.style.opacity = '0';
 

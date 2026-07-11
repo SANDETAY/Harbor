@@ -1,7 +1,7 @@
 {
-  "name": "Harbor — Life Management",
+  "name": "Harbor — One App For The Whole Day",
   "short_name": "Harbor",
-  "description": "Energy-based task prioritization, bills, grocery, streaks, and smart suggestions.",
+  "description": "One app for the whole day — energy-based tasks, bills, grocery, budget, streaks, and smart suggestions.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
