@@ -1074,8 +1074,8 @@
     /* ── Mobile dock: floating Harbor cradle (molds around Overview FAB) ── */
     .main-nav,
     #main-nav-bar {
-      --dock-height: 3.6rem;
-      --cradle-r: 2.05rem;
+      --dock-height: 4.15rem;
+      --cradle-r: 2.2rem;
       position: relative;
       flex-shrink: 0;
       display: flex;
@@ -1084,9 +1084,9 @@
       z-index: 50;
       overflow: visible;
       /* Float above home indicator — mint wash shows under; no full-bleed Apple bar */
-      margin: 0 0.7rem max(0.45rem, env(safe-area-inset-bottom, 0px));
-      padding: 1.05rem 0.28rem 0.38rem;
-      min-height: calc(var(--dock-height) + 1.05rem);
+      margin: 0 0.65rem max(0.45rem, env(safe-area-inset-bottom, 0px));
+      padding: 1.15rem 0.3rem 0.42rem;
+      min-height: calc(var(--dock-height) + 1.15rem);
       border: none !important;
       background: transparent !important;
       box-shadow: none !important;
@@ -1146,15 +1146,15 @@
 
     /* Center slot: FAB sits in the cradle notch */
     .main-nav-fab-slot {
-      flex: 0 0 4.35rem;
-      width: 4.35rem;
+      flex: 0 0 4.6rem;
+      width: 4.6rem;
       display: flex;
       align-items: flex-end;
       justify-content: center;
       position: relative;
       z-index: 3;
       margin: 0;
-      padding-bottom: 0.55rem;
+      padding-bottom: 0.62rem;
       pointer-events: none;
       align-self: flex-end;
     }
@@ -1188,18 +1188,18 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.18rem;
-      padding: 0.35rem 0.08rem 0.32rem;
-      min-height: 2.7rem;
+      gap: 0.22rem;
+      padding: 0.42rem 0.1rem 0.38rem;
+      min-height: 3.15rem;
       border: none;
       background: transparent !important;
       color: rgba(86, 110, 104, 0.78);
       font-family: var(--harbor-font);
-      font-size: 0.6rem;
+      font-size: 0.64rem;
       font-weight: 500;
       letter-spacing: -0.01em;
       cursor: pointer;
-      border-radius: 0.9rem;
+      border-radius: 0.95rem;
       border-bottom: none;
       line-height: 1;
       -webkit-tap-highlight-color: transparent;
@@ -1210,10 +1210,10 @@
     }
 
     .main-nav-tab .nav-tab-icon {
-      font-size: 1.08rem;
+      font-size: 1.2rem;
       line-height: 1;
-      width: 1.4rem;
-      height: 1.2rem;
+      width: 1.5rem;
+      height: 1.3rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1229,7 +1229,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 0.6rem;
+      font-size: 0.64rem;
       font-weight: 550;
       letter-spacing: 0.01em;
       opacity: 0.95;
@@ -4005,6 +4005,19 @@
       gap: 0.4rem;
       max-width: 100%;
     }
+    /* Schedule: Free time left · Hours + Add right */
+    .schedule-toolbar {
+      justify-content: space-between;
+      flex-wrap: nowrap;
+      gap: 0.45rem;
+    }
+    .schedule-toolbar-end {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
     .panel-head--toolbar-only {
       justify-content: flex-end;
       margin-bottom: 0.55rem;
@@ -4520,13 +4533,13 @@
     /* ── Overview FAB — special cradle orb (dock center / desktop corner) ── */
     button.summary-orb,
     .summary-orb {
-      --orb-size: 3.45rem;
+      --orb-size: 3.6rem;
       position: relative !important;
       left: auto !important;
       right: auto !important;
       bottom: auto !important;
       /* Seat lower half in the cradle notch — top half peeks above dock */
-      transform: translateY(-1.2rem);
+      transform: translateY(-1.3rem);
       z-index: 55 !important;
       width: var(--orb-size) !important;
       height: var(--orb-size) !important;
@@ -5148,6 +5161,21 @@
       margin: 0 -0.15rem;
       padding: 0 0.15rem 0.35rem;
       overscroll-behavior: contain;
+    }
+    .summary-kpi-detail-list .swipe-row {
+      margin-bottom: 0.4rem;
+    }
+    .summary-kpi-detail-list .swipe-row:last-child {
+      margin-bottom: 0;
+    }
+    .summary-kpi-detail-list .swipe-row-content {
+      min-height: 3.1rem;
+    }
+    .summary-kpi-detail-swipe-hint {
+      font-size: 0.62rem;
+      color: rgb(var(--harbor-muted));
+      margin: 0 0 0.45rem;
+      line-height: 1.3;
     }
 
     .summary-kpi-detail-foot {
@@ -8212,8 +8240,8 @@
       /* FAB stays cradled in dock on mobile */
       button.summary-orb,
       .summary-orb {
-        --orb-size: 3.35rem;
-        transform: translateY(-1.2rem);
+        --orb-size: 3.55rem;
+        transform: translateY(-1.3rem);
       }
 
       .app-menu-wrap--mobile {
@@ -8473,25 +8501,27 @@
 
     @media (max-width: 380px) {
       .main-nav-tab {
-        font-size: 0.52rem;
+        font-size: 0.56rem;
         letter-spacing: 0;
-        padding-left: 0.02rem;
-        padding-right: 0.02rem;
+        padding-left: 0.04rem;
+        padding-right: 0.04rem;
+        min-height: 2.95rem;
       }
       .main-nav-tab .nav-tab-icon {
-        font-size: 0.98rem;
+        font-size: 1.08rem;
       }
       .main-nav-fab-slot {
-        flex-basis: 3.9rem;
-        width: 3.9rem;
+        flex-basis: 4.15rem;
+        width: 4.15rem;
       }
       .main-nav,
       #main-nav-bar {
-        --cradle-r: 1.9rem;
+        --dock-height: 3.9rem;
+        --cradle-r: 2.05rem;
       }
       button.summary-orb,
       .summary-orb {
-        --orb-size: 3.2rem;
+        --orb-size: 3.35rem;
       }
 
       .section-header {
@@ -9062,25 +9092,19 @@
         <!-- Schedule Panel -->
         <div id="life-panel-schedule" class="life-panel">
           <div class="panel-head panel-head--toolbar-only">
-            <div class="panel-toolbar panel-toolbar-cluster" role="toolbar" aria-label="Schedule tools">
+            <div class="panel-toolbar panel-toolbar-cluster schedule-toolbar" role="toolbar" aria-label="Schedule tools">
               <span id="schedule-free-time" class="chip-tool-btn chip-tool-static" role="status" aria-live="polite" title="Free time today"></span>
-              <button type="button" class="chip-tool-btn" id="work-schedule-chip" onclick="showWorkScheduleModal()"
-                aria-label="Set work hours" title="Work hours for free-time estimates">
-                <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                <span id="work-schedule-chip-label">Hours</span>
-              </button>
-              <button type="button" class="chip-tool-btn" onclick="showScheduleImportModal()" aria-label="Import calendar file">
-                <i class="fa-solid fa-file-import" aria-hidden="true"></i>
-                <span>File</span>
-              </button>
-              <button type="button" class="chip-tool-btn" onclick="showCalendarFeedModal()" aria-label="Connect calendar URL">
-                <i class="fa-solid fa-link" aria-hidden="true"></i>
-                <span>URL</span>
-              </button>
-              <button type="button" onclick="showAddCalendarEventModal()" class="chip-add-btn" id="schedule-add-btn" aria-label="Add event">
-                <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                <span>Add</span>
-              </button>
+              <div class="schedule-toolbar-end">
+                <button type="button" class="chip-tool-btn" id="work-schedule-chip" onclick="showWorkScheduleModal()"
+                  aria-label="Set work hours" title="Work hours for free-time estimates">
+                  <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                  <span id="work-schedule-chip-label">Hours</span>
+                </button>
+                <button type="button" onclick="showAddCalendarEventModal()" class="chip-add-btn" id="schedule-add-btn" aria-label="Add event">
+                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                  <span>Add</span>
+                </button>
+              </div>
             </div>
           </div>
           <div class="flex gap-1.5 mb-2" id="schedule-view-toggle" role="tablist" aria-label="Schedule range">
@@ -9089,7 +9113,6 @@
             <button type="button" role="tab" data-schedule-view="week" onclick="setScheduleView('week')"
               class="cal-format-chip">This Week</button>
           </div>
-          <div class="text-[10px] text-harbor-muted mb-2 px-0.5 leading-snug">Full month is in <strong class="text-harbor-primary-light font-semibold">Overview</strong>.</div>
           <div id="schedule-section-title" class="hidden" aria-hidden="true"></div>
           <div id="schedule-availability" class="hidden" aria-hidden="true"></div>
           <div id="schedule-sync-badge" class="schedule-sync-quiet text-[10px] text-harbor-muted/80 mb-1.5"></div>
@@ -9242,7 +9265,7 @@
       </div>
       </div><!-- /app-scroll -->
 
-      <!-- Main tabs: mobile floating cradle Library·Life·FAB·Streaks·Today · desktop top tabs (CSS order) -->
+      <!-- Main tabs: mobile floating cradle Library·Streaks·FAB·Life·Today · desktop top tabs (CSS order) -->
       <div id="main-nav-bar" class="main-nav flex" role="tablist" aria-label="Main navigation">
         <div class="main-nav-surface" aria-hidden="true"></div>
         <button type="button" role="tab" aria-selected="false" onclick="switchTab('library')" id="tab-library"
@@ -9250,10 +9273,10 @@
           <i class="fa-regular fa-bookmark nav-tab-icon" aria-hidden="true"></i>
           <span class="nav-tab-label">Library</span>
         </button>
-        <button type="button" role="tab" aria-selected="false" onclick="switchTab('life')" id="tab-life"
+        <button type="button" role="tab" aria-selected="false" onclick="switchTab('streaks')" id="tab-streaks"
           class="main-nav-tab">
-          <i class="fa-regular fa-compass nav-tab-icon" aria-hidden="true"></i>
-          <span class="nav-tab-label">Life</span>
+          <i class="fa-solid fa-fire nav-tab-icon" aria-hidden="true"></i>
+          <span class="nav-tab-label">Streaks</span>
         </button>
         <!-- Center Overview FAB (in-dock on mobile; floats corner on desktop) -->
         <div class="main-nav-fab-slot" id="main-nav-fab-slot">
@@ -9266,13 +9289,12 @@
               <img class="summary-orb-icon" src="harbor-fab-anchor.png" width="128" height="128" alt="" decoding="async">
             </span>
             <span class="summary-orb-label" aria-hidden="true">Overview</span>
-            <span id="summary-fab-badge" class="summary-orb-badge hidden" aria-hidden="true"></span>
           </button>
         </div>
-        <button type="button" role="tab" aria-selected="false" onclick="switchTab('streaks')" id="tab-streaks"
+        <button type="button" role="tab" aria-selected="false" onclick="switchTab('life')" id="tab-life"
           class="main-nav-tab">
-          <i class="fa-solid fa-fire nav-tab-icon" aria-hidden="true"></i>
-          <span class="nav-tab-label">Streaks</span>
+          <i class="fa-regular fa-compass nav-tab-icon" aria-hidden="true"></i>
+          <span class="nav-tab-label">Life</span>
         </button>
         <button type="button" role="tab" aria-selected="true" onclick="switchTab('today')" id="tab-today"
           class="main-nav-tab nav-active">
@@ -9326,7 +9348,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 237;
+    const HARBOR_BUILD_NUMBER = 238;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -15370,6 +15392,7 @@
       renderBills();
       renderTodayFeed();
       updateSmartBanner();
+      if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('bills');
       const dueLabel = formatBillDueDaysList(days);
       const recLabel = formatBillRecurrenceLabel(rec);
       const amtNote = bill.amount != null
@@ -15379,14 +15402,45 @@
       return bill;
     }
 
+    function updateBill(billId, name, dueDays, amount, autopay, recurrence) {
+      const bill = state.bills.find(b => b.id === billId);
+      if (!bill) return null;
+      name = normalizeUserText(name);
+      const days = (Array.isArray(dueDays) ? dueDays : [dueDays || 1])
+        .map(d => Math.min(31, Math.max(1, parseInt(d, 10) || 1)))
+        .filter((d, i, arr) => arr.indexOf(d) === i)
+        .sort((a, b) => a - b);
+      const rec = BILL_RECURRENCE_OPTIONS.some(o => o.id === recurrence) ? recurrence : 'monthly';
+      const resolved = (amount != null && typeof amount === 'object' && 'amount' in amount)
+        ? amount
+        : resolveBillAmountForPayDates(amount, days);
+      bill.name = name.trim();
+      bill.amount = resolved.amount;
+      bill.amountPerPayment = resolved.amountPerPayment;
+      bill.dueDays = days;
+      bill.dueDay = days[0];
+      bill.recurrence = rec;
+      bill.autopay = !!autopay;
+      saveState();
+      renderBills();
+      renderTodayFeed();
+      updateSmartBanner();
+      if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('bills');
+      showToast(`Updated ${bill.name}`);
+      return bill;
+    }
+
     function closeAddBillModal() {
       document.getElementById('add-bill-modal')?.remove();
     }
 
-    function showAddBillModal() {
+    function showAddBillModal(existingBill = null) {
       closeAddBillModal();
-      const selectedDays = new Set();
-      let selectedRecurrence = 'monthly';
+      const editing = existingBill && existingBill.id
+        ? (state.bills.find(b => b.id === existingBill.id) || existingBill)
+        : null;
+      const selectedDays = new Set(editing ? getBillDueDays(editing) : []);
+      let selectedRecurrence = editing?.recurrence || 'monthly';
 
       const modal = document.createElement('div');
       modal.id = 'add-bill-modal';
@@ -15460,23 +15514,29 @@
         hint.textContent = `${formatBillAmount(resolved.amount)}${formatBillRecurrenceShort(selectedRecurrence)} total`;
       }
 
+      const prefillName = editing ? (editing.name || '') : '';
+      const prefillAmount = editing && editing.amountPerPayment != null
+        ? editing.amountPerPayment
+        : (editing && editing.amount != null ? editing.amount : '');
+      const prefillAutopay = !!(editing && editing.autopay);
+
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="closeAddBillModal()"></div>
         <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
           <div class="flex items-center justify-between mb-4">
             <div>
-              <div class="font-semibold text-lg text-harbor-text">Add Bill</div>
+              <div class="font-semibold text-lg text-harbor-text">${editing ? 'Edit Bill' : 'Add Bill'}</div>
               <div class="text-[10px] text-harbor-muted mt-0.5">Track due dates and how often you pay</div>
             </div>
             <button type="button" onclick="closeAddBillModal()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
 
           <label class="block text-xs text-harbor-muted mb-1">Bill name</label>
-          <input id="bill-name-input" type="text" placeholder="e.g. Rent, Electric"
+          <input id="bill-name-input" type="text" placeholder="e.g. Rent, Electric" value="${escapeBriefHtml(prefillName)}"
             class="w-full bg-harbor-raised border border-harbor-border focus:border-harbor-primary rounded-2xl px-4 py-3 mb-3 outline-none text-harbor-text placeholder:text-harbor-muted">
 
           <label class="block text-xs text-harbor-muted mb-1">Amount <span class="text-harbor-muted/70">(per pay date, optional)</span></label>
-          <input id="bill-amount-input" type="number" min="0" step="0.01" placeholder="0.00"
+          <input id="bill-amount-input" type="number" min="0" step="0.01" placeholder="0.00" value="${prefillAmount !== '' && prefillAmount != null ? escapeBriefHtml(String(prefillAmount)) : ''}"
             class="w-full bg-harbor-raised border border-harbor-border focus:border-harbor-primary rounded-2xl px-4 py-3 outline-none text-harbor-text placeholder:text-harbor-muted">
           <div id="bill-amount-hint" class="text-[10px] text-harbor-muted mt-1 mb-3">Optional · amount charged on each pay date</div>
 
@@ -15488,7 +15548,7 @@
           <div id="bill-selected-days" class="text-[10px] text-harbor-primary-light mb-4">Tap day(s) due each month</div>
 
           <label class="flex items-center gap-2 mb-5 cursor-pointer">
-            <input id="bill-autopay-input" type="checkbox" class="w-4 h-4 rounded border-harbor-border accent-harbor-primary">
+            <input id="bill-autopay-input" type="checkbox" class="w-4 h-4 rounded border-harbor-border accent-harbor-primary"${prefillAutopay ? ' checked' : ''}>
             <span class="text-xs text-harbor-text">Autopay enabled</span>
           </label>
 
@@ -15499,7 +15559,7 @@
             </button>
             <button type="button" id="bill-save-btn"
               class="flex-1 py-3 rounded-2xl bg-harbor-primary hover:bg-harbor-primary-light text-white font-semibold active:opacity-90">
-              Add Bill
+              ${editing ? 'Save changes' : 'Add Bill'}
             </button>
           </div>
         </div>
@@ -15528,11 +15588,24 @@
         const days = [...selectedDays];
         const resolved = resolveBillAmountForPayDates(rawAmount, days);
         const autopay = modal.querySelector('#bill-autopay-input').checked;
-        addBill(name, days, resolved, autopay, selectedRecurrence);
+        if (editing) {
+          updateBill(editing.id, name, days, resolved, autopay, selectedRecurrence);
+        } else {
+          addBill(name, days, resolved, autopay, selectedRecurrence);
+        }
         closeAddBillModal();
       };
 
       setTimeout(() => modal.querySelector('#bill-name-input')?.focus(), 80);
+    }
+
+    function editBillFromList(billId) {
+      const bill = state.bills.find(b => b.id === billId);
+      if (!bill) {
+        showToast('Bill not found');
+        return;
+      }
+      showAddBillModal(bill);
     }
 
     function addBillFromPrompt() {
@@ -15557,6 +15630,7 @@
       renderBills();
       renderTodayFeed();
       updateSmartBanner();
+      if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('bills');
     }
 
     function renderBillsSpendSummary(totalEl) {
@@ -15654,37 +15728,51 @@
           : status === 'overdue' ? `Overdue (${dueDates})`
           : days === 1 ? `Due tomorrow (${dueDates})` : `Due in ${days} days (${dueDates})`;
         const recLabel = formatBillRecurrenceLabel(bill.recurrence || 'monthly');
-        const payDays = getBillDueDays(bill);
         normalizeBillAmountFields(bill);
-        const perPay = getBillPerPaymentAmount(bill);
         const periodTotal = getBillPeriodTotal(bill);
         const amountLabel = periodTotal > 0
           ? `${formatBillAmountPrecise(periodTotal)}${formatBillRecurrenceShort(bill.recurrence)}`
           : '';
+        const safeId = escapeBriefHtml(bill.id);
+        const safeName = escapeBriefHtml(bill.name);
 
-        const card = document.createElement('div');
-        card.className = 'bg-harbor-surface border border-harbor-border rounded-3xl px-4 py-3 flex items-center gap-x-3';
-        card.dataset.billId = bill.id;
-        card.innerHTML = `
-          <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-harbor-border flex items-center justify-center text-lg">
+        const row = document.createElement('div');
+        row.className = 'swipe-row';
+        row.dataset.billId = bill.id;
+        row.dataset.swipeId = bill.id;
+        row.dataset.swipeType = 'bill';
+        row.style.setProperty('--swipe-reveal', '8.75rem');
+        const actionsHtml = `
+          <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit bill"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete bill"><i class="fa-solid fa-trash-can"></i> Delete</button>
+        `;
+        const contentHtml = `
+          <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-harbor-border flex items-center justify-center text-lg" onclick="editBillFromList('${safeId}')">
             <i class="fa-solid fa-file-invoice-dollar text-harbor-primary-light"></i>
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="font-medium leading-tight">${bill.name}</div>
+          <div class="flex-1 min-w-0" onclick="editBillFromList('${safeId}')">
+            <div class="font-medium leading-tight">${safeName}</div>
             <div class="flex items-center gap-x-2 mt-0.5 flex-wrap">
               <span class="text-[10px] px-1.5 py-px rounded-full ${style.badge}">${style.label}</span>
-              <span class="text-[10px] px-1.5 py-px rounded-full bg-harbor-border/50 text-harbor-muted">${recLabel}</span>
-              <span class="text-xs text-harbor-muted">${dueLabel}</span>
-              ${amountLabel ? `<span class="text-xs text-harbor-text font-medium">${amountLabel}</span>` : ''}
+              <span class="text-[10px] px-1.5 py-px rounded-full bg-harbor-border/50 text-harbor-muted">${escapeBriefHtml(recLabel)}</span>
+              <span class="text-xs text-harbor-muted">${escapeBriefHtml(dueLabel)}</span>
+              ${amountLabel ? `<span class="text-xs text-harbor-text font-medium">${escapeBriefHtml(amountLabel)}</span>` : ''}
             </div>
           </div>
-          <div class="flex flex-col gap-y-1 items-end">
-            ${status !== 'paid' && status !== 'autopay' ? `<button onclick="markBillPaid('${bill.id}')" class="text-[10px] px-2 py-1 bg-harbor-primary hover:bg-harbor-primary-light text-white rounded-xl font-medium">Paid</button>` : ''}
-            <button onclick="removeBill('${bill.id}')" class="text-[10px] text-harbor-muted hover:text-rose-400">remove</button>
+          <div class="row-inline-actions flex flex-col gap-y-1 items-end flex-shrink-0">
+            ${status !== 'paid' && status !== 'autopay' ? `<button type="button" onclick="event.stopImmediatePropagation(); markBillPaid('${safeId}')" class="text-[10px] px-2 py-1 bg-harbor-primary hover:bg-harbor-primary-light text-white rounded-xl font-medium">Paid</button>` : ''}
+            <button type="button" onclick="event.stopImmediatePropagation(); editBillFromList('${safeId}')" class="text-[10px] text-harbor-primary-light font-medium">Edit</button>
+            <button type="button" onclick="event.stopImmediatePropagation(); removeBill('${safeId}')" class="text-[10px] text-harbor-muted hover:text-rose-400">Delete</button>
           </div>
         `;
-        container.appendChild(card);
+        row.innerHTML = buildSwipeRowHtml(
+          actionsHtml,
+          contentHtml,
+          'bg-harbor-surface border border-harbor-border rounded-3xl px-4 py-3 flex items-center gap-x-3'
+        );
+        container.appendChild(row);
       });
+      bindSwipeRows(container);
     }
 
     function migrateMealPresetsIfNeeded() {
@@ -19639,16 +19727,31 @@
       if (!type || !id) return;
 
       if (type === 'habit') {
-        if (action === 'edit') editHabitFromToday(id);
-        else if (action === 'delete') deleteHabitFromToday(id, null);
+        if (action === 'edit') {
+          if (row.closest('#summary-kpi-detail-modal')) closeSummaryKpiDetail();
+          editHabitFromToday(id);
+        } else if (action === 'delete') {
+          deleteHabitFromToday(id, null);
+          if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('tasks');
+        }
       } else if (type === 'grocery') {
         if (action === 'edit') renameGroceryItem(id);
-        else if (action === 'delete') removeGroceryItem(id);
+        else if (action === 'delete') {
+          removeGroceryItem(id);
+          if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('grocery');
+        }
       } else if (type === 'streak') {
         if (action === 'view') showProjections(id);
         else if (action === 'delete') deleteStreak(id, null);
       } else if (type === 'sync') {
         if (action === 'sync') showDeviceSyncModal(id);
+      } else if (type === 'bill') {
+        if (action === 'edit') {
+          if (row.closest('#summary-kpi-detail-modal')) closeSummaryKpiDetail();
+          editBillFromList(id);
+        } else if (action === 'delete') {
+          removeBill(id);
+        }
       } else if (type === 'event') {
         if (action === 'edit') {
           const ev = getCalendarEventById(id);
@@ -19658,10 +19761,12 @@
               window.__harborSummaryDayReturn = fromDay;
               closeSummaryDayEventsModal();
             }
+            if (row.closest('#summary-kpi-detail-modal')) closeSummaryKpiDetail();
             showAddCalendarEventModal(ev);
           } else showToast('Event not found');
         } else if (action === 'delete') {
           deleteCalendarEvent(id);
+          if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('events');
         }
       }
     }
@@ -22015,13 +22120,20 @@
         rowsHtml = `<div class="summary-empty py-4 text-center">Couldn’t refresh this list.</div>`;
       }
 
-      if (list) list.innerHTML = rowsHtml;
+      if (list) {
+        list.innerHTML = rowsHtml;
+        bindSwipeRows(list);
+      }
 
       // Update “N items · This week” under the title without rebuilding the sheet
       const metaLine = modal.querySelector('#summary-kpi-detail-meta')
         || modal.querySelector('[data-kpi-detail-meta="1"]');
       if (metaLine) {
         metaLine.textContent = `${count} item${count === 1 ? '' : 's'} · ${rangeLabel}`;
+      }
+      const hint = modal.querySelector('#summary-kpi-detail-swipe-hint');
+      if (hint) {
+        hint.classList.toggle('hidden', count === 0 || !isSwipeMobile());
       }
 
       if (preserveScroll && list) {
@@ -22053,6 +22165,11 @@
     }
 
     function renderSummaryKpiDetailRows(kind, brief) {
+      const swipeActions = (editLabel = 'Edit', deleteLabel = 'Delete') => `
+        <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="${editLabel}"><i class="fa-solid fa-pen"></i> Edit</button>
+        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="${deleteLabel}"><i class="fa-solid fa-trash-can"></i> ${deleteLabel}</button>
+      `;
+
       if (kind === 'tasks') {
         const tasks = brief.tasks || [];
         if (!tasks.length) {
@@ -22075,33 +22192,41 @@
           const parked = isParkedForSummary(h);
           const pulled = isPulledToToday(h);
           const onToday = belongsOnTodayTab(h);
-          let actionHtml = '';
+          let sideHtml = '';
           if (parked && !pulled && isDueToday(h)) {
-            actionHtml = `<button type="button" class="summary-pull-today-btn" data-pull-habit="${escapeBriefHtml(h.id)}"
+            sideHtml = `<button type="button" class="summary-pull-today-btn" data-pull-habit="${escapeBriefHtml(h.id)}"
               onclick="event.preventDefault(); event.stopPropagation(); pullHabitToToday('${escapeBriefHtml(h.id)}')">Add to Today</button>`;
           } else if (pulled) {
-            actionHtml = `<button type="button" class="summary-pull-today-btn is-on" data-release-habit="${escapeBriefHtml(h.id)}"
+            sideHtml = `<button type="button" class="summary-pull-today-btn is-on" data-release-habit="${escapeBriefHtml(h.id)}"
               onclick="event.preventDefault(); event.stopPropagation(); releaseHabitFromToday('${escapeBriefHtml(h.id)}')">On Today · Undo</button>`;
           } else if (onToday) {
-            actionHtml = `<span class="summary-kpi-detail-side text-harbor-muted">On Today</span>`;
+            sideHtml = `<span class="summary-kpi-detail-side text-harbor-muted">On Today</span>`;
           }
           const why = parked ? getTaskParkReasonLabel(h) : '';
           const badge = parked && !pulled
             ? `<span class="summary-park-badge">${escapeBriefHtml(why || 'Summary')}</span>`
             : '';
-          return `
-            <div class="summary-kpi-detail-row">
-              <div class="summary-kpi-detail-main">
-                <div class="summary-kpi-detail-title">${escapeBriefHtml(h.title || 'Untitled')}${badge}</div>
-                <div class="summary-kpi-detail-meta">
-                  <span>${escapeBriefHtml(due)}</span>
-                  <span>·</span>
-                  <span>${escapeBriefHtml(freq)}</span>
-                  ${mins ? `<span>·</span><span>${escapeBriefHtml(mins)}</span>` : ''}
-                </div>
+          const contentHtml = `
+            <div class="summary-kpi-detail-main flex-1 min-w-0">
+              <div class="summary-kpi-detail-title">${escapeBriefHtml(h.title || 'Untitled')}${badge}</div>
+              <div class="summary-kpi-detail-meta">
+                <span>${escapeBriefHtml(due)}</span>
+                <span>·</span>
+                <span>${escapeBriefHtml(freq)}</span>
+                ${mins ? `<span>·</span><span>${escapeBriefHtml(mins)}</span>` : ''}
               </div>
-              ${actionHtml}
-            </div>`;
+            </div>
+            ${sideHtml}
+            <div class="row-inline-actions flex flex-col gap-0.5 items-end flex-shrink-0">
+              <button type="button" class="text-[10px] text-harbor-primary-light font-medium" onclick="event.stopImmediatePropagation(); closeSummaryKpiDetail(); editHabitFromToday('${escapeBriefHtml(h.id)}')">Edit</button>
+              <button type="button" class="text-[10px] text-harbor-muted hover:text-rose-400" onclick="event.stopImmediatePropagation(); deleteHabitFromToday('${escapeBriefHtml(h.id)}', null); refreshSummaryKpiDetail('tasks')">Delete</button>
+            </div>
+          `;
+          return `<div class="swipe-row" data-swipe-type="habit" data-swipe-id="${escapeBriefHtml(h.id)}" style="--swipe-reveal:8.75rem">${buildSwipeRowHtml(
+            swipeActions('Edit task', 'Delete'),
+            contentHtml,
+            'summary-kpi-detail-row flex items-center gap-x-2'
+          )}</div>`;
         }).filter(Boolean).join('');
       }
 
@@ -22111,25 +22236,33 @@
           return `<div class="summary-empty py-4 text-center">No events in this range. Add one from Life → Schedule.</div>`;
         }
         return events.map(e => {
+          const eventId = e.id || getStableCalendarEventId(e);
           const person = getHouseholdPerson(e.personId);
           const style = person ? ` style="--person-color:${escapeBriefHtml(person.color)}"` : '';
-          const cls = person ? 'summary-kpi-detail-row summary-kpi-detail-row--person' : 'summary-kpi-detail-row';
           const time = e.time ? formatScheduleEventTime(e.time) : '—';
-          return `
-            <div class="${cls}"${style}>
-              <div class="summary-kpi-detail-side">${escapeBriefHtml(time)}</div>
-              <div class="summary-kpi-detail-main">
-                <div class="summary-kpi-detail-title flex items-center gap-1.5">
-                  ${person ? `<span class="person-swatch" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
-                  <span>${escapeBriefHtml(e.title)}</span>
-                </div>
-                <div class="summary-kpi-detail-meta">
-                  ${e.dayLabel ? `<span>${escapeBriefHtml(e.dayLabel)}</span>` : ''}
-                  ${person ? renderPersonChipHtml(person.id) : ''}
-                  ${e.durationMin ? `<span>${e.durationMin} min</span>` : ''}
-                </div>
+          const contentHtml = `
+            <div class="summary-kpi-detail-side flex-shrink-0">${escapeBriefHtml(time)}</div>
+            <div class="summary-kpi-detail-main flex-1 min-w-0">
+              <div class="summary-kpi-detail-title flex items-center gap-1.5">
+                ${person ? `<span class="person-swatch" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
+                <span>${escapeBriefHtml(e.title)}</span>
               </div>
-            </div>`;
+              <div class="summary-kpi-detail-meta">
+                ${e.dayLabel ? `<span>${escapeBriefHtml(e.dayLabel)}</span>` : ''}
+                ${person ? renderPersonChipHtml(person.id) : ''}
+                ${e.durationMin ? `<span>${e.durationMin} min</span>` : ''}
+              </div>
+            </div>
+            <div class="row-inline-actions flex flex-col gap-0.5 items-end flex-shrink-0">
+              <button type="button" class="text-[10px] text-harbor-primary-light font-medium" onclick="event.stopImmediatePropagation(); closeSummaryKpiDetail(); showAddCalendarEventModal(getCalendarEventById('${escapeBriefHtml(eventId)}') || null)">Edit</button>
+              <button type="button" class="text-[10px] text-harbor-muted hover:text-rose-400" onclick="event.stopImmediatePropagation(); deleteCalendarEvent('${escapeBriefHtml(eventId)}'); refreshSummaryKpiDetail('events')">Delete</button>
+            </div>
+          `;
+          return `<div class="swipe-row" data-swipe-type="event" data-swipe-id="${escapeBriefHtml(eventId)}"${style} style="--swipe-reveal:8.75rem">${buildSwipeRowHtml(
+            swipeActions('Edit event', 'Delete'),
+            contentHtml,
+            `summary-kpi-detail-row flex items-center gap-x-2${person ? ' summary-kpi-detail-row--person' : ''}`
+          )}</div>`;
         }).join('');
       }
 
@@ -22148,17 +22281,25 @@
               : days === 1
                 ? 'Due tomorrow'
                 : `Due in ${days}d`;
-          return `
-            <div class="summary-kpi-detail-row">
-              <div class="summary-kpi-detail-main">
-                <div class="summary-kpi-detail-title">${escapeBriefHtml(b.name)}</div>
-                <div class="summary-kpi-detail-meta">
-                  <span>${escapeBriefHtml(due)}</span>
-                  ${b.autopay ? `<span>·</span><span>Autopay</span>` : ''}
-                </div>
+          const contentHtml = `
+            <div class="summary-kpi-detail-main flex-1 min-w-0">
+              <div class="summary-kpi-detail-title">${escapeBriefHtml(b.name)}</div>
+              <div class="summary-kpi-detail-meta">
+                <span>${escapeBriefHtml(due)}</span>
+                ${b.autopay ? `<span>·</span><span>Autopay</span>` : ''}
               </div>
-              <div class="summary-kpi-detail-side">${escapeBriefHtml(formatBillAmount(b.amount))}</div>
-            </div>`;
+            </div>
+            <div class="summary-kpi-detail-side flex-shrink-0">${escapeBriefHtml(formatBillAmount(b.amount))}</div>
+            <div class="row-inline-actions flex flex-col gap-0.5 items-end flex-shrink-0">
+              <button type="button" class="text-[10px] text-harbor-primary-light font-medium" onclick="event.stopImmediatePropagation(); closeSummaryKpiDetail(); editBillFromList('${escapeBriefHtml(b.id)}')">Edit</button>
+              <button type="button" class="text-[10px] text-harbor-muted hover:text-rose-400" onclick="event.stopImmediatePropagation(); removeBill('${escapeBriefHtml(b.id)}')">Delete</button>
+            </div>
+          `;
+          return `<div class="swipe-row" data-swipe-type="bill" data-swipe-id="${escapeBriefHtml(b.id)}" style="--swipe-reveal:8.75rem">${buildSwipeRowHtml(
+            swipeActions('Edit bill', 'Delete'),
+            contentHtml,
+            'summary-kpi-detail-row flex items-center gap-x-2'
+          )}</div>`;
         }).join('');
       }
 
@@ -22167,13 +22308,23 @@
         if (!items.length) {
           return `<div class="summary-empty py-4 text-center">Grocery list is clear. Add items in Life → Grocery.</div>`;
         }
-        return items.map(g => `
-          <div class="summary-kpi-detail-row">
-            <div class="summary-kpi-detail-main">
+        return items.map(g => {
+          const contentHtml = `
+            <div class="summary-kpi-detail-main flex-1 min-w-0">
               <div class="summary-kpi-detail-title">${escapeBriefHtml(g.name)}</div>
               ${g.qty || g.note ? `<div class="summary-kpi-detail-meta">${escapeBriefHtml([g.qty, g.note].filter(Boolean).join(' · '))}</div>` : ''}
             </div>
-          </div>`).join('');
+            <div class="row-inline-actions flex flex-col gap-0.5 items-end flex-shrink-0">
+              <button type="button" class="text-[10px] text-harbor-primary-light font-medium" onclick="event.stopImmediatePropagation(); renameGroceryItem('${escapeBriefHtml(g.id)}'); refreshSummaryKpiDetail('grocery')">Edit</button>
+              <button type="button" class="text-[10px] text-harbor-muted hover:text-rose-400" onclick="event.stopImmediatePropagation(); removeGroceryItem('${escapeBriefHtml(g.id)}'); refreshSummaryKpiDetail('grocery')">Delete</button>
+            </div>
+          `;
+          return `<div class="swipe-row" data-swipe-type="grocery" data-swipe-id="${escapeBriefHtml(g.id)}" style="--swipe-reveal:8.75rem">${buildSwipeRowHtml(
+            swipeActions('Rename', 'Remove'),
+            contentHtml,
+            'summary-kpi-detail-row flex items-center gap-x-2'
+          )}</div>`;
+        }).join('');
       }
 
       return `<div class="summary-empty py-4 text-center">Nothing to show.</div>`;
@@ -22235,6 +22386,9 @@
           <div class="text-[11px] text-harbor-muted mb-2 flex-shrink-0" id="summary-kpi-detail-meta" data-kpi-detail-meta="1">
             ${count} item${count === 1 ? '' : 's'} · ${escapeBriefHtml(rangeLabel)}
           </div>
+          <p id="summary-kpi-detail-swipe-hint" class="summary-kpi-detail-swipe-hint ${count && isSwipeMobile() ? '' : 'hidden'}">
+            Swipe left to Edit or Delete
+          </p>
           <div class="summary-kpi-detail-list" id="summary-kpi-detail-list" data-sheet-scroll="1">
             ${rowsHtml}
           </div>
@@ -22249,6 +22403,9 @@
           </div>
         </div>`;
       document.body.appendChild(modal);
+
+      const listEl = modal.querySelector('#summary-kpi-detail-list');
+      if (listEl) bindSwipeRows(listEl);
 
       const ignoreBackdropUntil = Date.now() + 350;
       modal.querySelector('[data-kpi-detail-backdrop]')?.addEventListener('click', (e) => {
@@ -22265,6 +22422,8 @@
         });
       });
       modal.querySelector('.summary-kpi-detail-sheet')?.addEventListener('click', (e) => {
+        // Allow swipe action buttons; still stop backdrop dismiss
+        if (e.target.closest('.swipe-action')) return;
         e.stopPropagation();
       });
       modal.querySelector('#summary-kpi-detail-jump')?.addEventListener('click', (e) => {
@@ -22719,7 +22878,6 @@
 
     function updateSummaryLauncher() {
       const el = document.getElementById('summary-launcher');
-      const badge = document.getElementById('summary-fab-badge');
       if (!el) return;
 
       // Bottom-center FAB on all main tabs (Today, Life, Streaks, Library)
@@ -22733,27 +22891,15 @@
       const allowBrief = !hideDuringEarlyTutorial && (state.settings.tutorialCompleted || onBriefTutorialStep || onboarded);
       el.classList.toggle('hidden', !showOnMainTabs || !allowBrief);
 
-      // Badge = due today only (matches the "must do" load, not week chores)
-      const brief = buildSummary('day');
-      const dueTodayN = brief.tasks.length;
-      const billN = (brief.bills || []).length;
-      const badgeCount = dueTodayN + billN;
-
+      // No numeric badge on the FAB — keep the orb clean
+      const badge = document.getElementById('summary-fab-badge');
       if (badge) {
-        if (badgeCount > 0) {
-          badge.textContent = badgeCount > 9 ? '9+' : String(badgeCount);
-          badge.classList.remove('hidden');
-          badge.setAttribute('title', `${dueTodayN} task${dueTodayN === 1 ? '' : 's'}${billN ? ` · ${billN} bill${billN === 1 ? '' : 's'}` : ''} due today`);
-        } else {
-          badge.textContent = '';
-          badge.classList.add('hidden');
-          badge.removeAttribute('title');
-        }
+        badge.textContent = '';
+        badge.classList.add('hidden');
+        badge.setAttribute('aria-hidden', 'true');
       }
 
-      el.setAttribute('aria-label', badgeCount
-        ? `Open Overview · ${badgeCount} due today`
-        : 'Open Overview — day, week, and month');
+      el.setAttribute('aria-label', 'Open Overview — day, week, and month at a glance');
     }
 
     // ==================== SMART BANNER / CONTEXT ====================
