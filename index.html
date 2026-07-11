@@ -10457,7 +10457,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 301;
+    const HARBOR_BUILD_NUMBER = 302;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -12189,6 +12189,43 @@
       return streak;
     }
 
+    /** Preferred-day habits (Mon/Wed/Fri) only require those days for the streak chain. */
+    function dayRequiredForDailyStreak(habit, dateStr) {
+      if (!habit || typeof getHabitWeekdays !== 'function') return true;
+      const preferred = getHabitWeekdays(habit);
+      if (!preferred?.length) return true;
+      return preferred.includes(dateWeekday(dateStr));
+    }
+
+    /**
+     * True when the current streak run is broken (missed a required day/period).
+     * Broken streaks leave Streaks until the user completes again and starts a new run.
+     */
+    function isStreakBroken(habit) {
+      if (!habit || !shouldTrackStreak(habit)) return true;
+      const streak = computeCurrentStreak(habit.id);
+      if (streak > 0) return false;
+      // Still "alive" if this period has any progress (e.g. 1/3 this week) or done today
+      const need = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
+      const n = typeof countCompletionsInPeriod === 'function'
+        ? countCompletionsInPeriod(habit, todayStr())
+        : 0;
+      if (n > 0) return false;
+      if (typeof isCompletedToday === 'function' && isCompletedToday(habit.id)) return false;
+      // Never completed at all — not broken, just not started (also hidden until first complete)
+      const comps = getCompletions(habit.id) || [];
+      if (!comps.length) return true;
+      // Had history but current streak is 0 with no period progress → broken
+      return true;
+    }
+
+    /** Card belongs on Streaks only while a run is alive (or in progress this period). */
+    function belongsOnStreaksTab(habit) {
+      if (!habit || !shouldTrackStreak(habit)) return false;
+      if (isOneOffTask(habit)) return false;
+      return !isStreakBroken(habit);
+    }
+
     function computeCurrentStreak(habitId) {
       const habit = state.habits.find(h => h.id === habitId);
       if (habit && !shouldTrackStreak(habit)) return 0;
@@ -12199,7 +12236,7 @@
         return computePeriodStreak(habit);
       }
 
-      // Daily: unique calendar days that fully logged (multi-log needs all N×)
+      // Daily: consecutive required days fully logged (multi-log needs all N×)
       const dates = [...new Set(getCompletions(habitId) || [])].sort().reverse();
       if (dates.length === 0) return 0;
 
@@ -12212,6 +12249,11 @@
 
       for (let i = 0; i < 365; i++) {
         const ds = dateStrLocal(checkDate);
+        // Preferred-day habits: days off the schedule don't break the run
+        if (!dayRequiredForDailyStreak(habit, ds)) {
+          checkDate.setDate(checkDate.getDate() - 1);
+          continue;
+        }
         // Hard skip breaks the chain
         if (skipSet.has(ds)) break;
         if (dayFullyLoggedForStreak(habit, ds)) {
@@ -12224,6 +12266,7 @@
           // Today not done yet — still during the day; count the run ending yesterday
           checkDate.setDate(checkDate.getDate() - 1);
         } else {
+          // Missed a required day → streak resets to 0
           break;
         }
       }
@@ -32883,7 +32926,8 @@
         try { repairDailyRhythmOneOffHabits(); } catch (_) { /* ignore */ }
       }
       return state.habits
-        .filter(h => shouldTrackStreak(h))
+        // Only live / in-progress streaks — broken runs leave until completed again
+        .filter(h => typeof belongsOnStreaksTab === 'function' ? belongsOnStreaksTab(h) : shouldTrackStreak(h))
         .map(h => {
           const streak = computeCurrentStreak(h.id);
           const longest = typeof getLongestStreak === 'function' ? getLongestStreak(h.id) : streak;
@@ -33192,8 +33236,8 @@
         currentProjectionHabit = null;
         container.innerHTML = harborEmptyHtml(
           '🔥',
-          'No streaks yet',
-          'Add a habit from Today — Swim, walk, floss, and other activities show up here when you complete them.',
+          'No active streaks',
+          'Complete a habit on Today to start a streak. Miss a required day and it leaves this tab until you complete it again.',
           `<div class="harbor-empty-actions">
             <button type="button" class="chip-add-btn" onclick="switchTab('today'); showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add habit</button>
             <button type="button" class="chip-tool-btn" onclick="switchTab('library')">Browse Library</button>
