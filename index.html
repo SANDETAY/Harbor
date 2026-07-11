@@ -10321,7 +10321,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 280;
+    const HARBOR_BUILD_NUMBER = 281;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -21131,20 +21131,19 @@
         return { added: 0, ok: false };
       }
       const budget = ensureBudgetState();
-      const existingKeys = new Set(
-        (budget.transactions || []).map(t => `${t.date || ''}|${(t.description || '').toLowerCase()}|${Number(t.amount).toFixed(2)}|${t.isCredit ? 'C' : 'D'}`)
-      );
-      let added = 0;
+      // Each successful import fully replaces the previous CSV data
+      const next = [];
+      const seen = new Set();
       parsed.forEach(tx => {
         const dateStr = tx.date && !isNaN(tx.date.getTime()) ? dateStrLocal(tx.date) : null;
         const key = `${dateStr || ''}|${(tx.description || '').toLowerCase()}|${Number(tx.amount).toFixed(2)}|${tx.isCredit ? 'C' : 'D'}`;
-        if (existingKeys.has(key)) return;
-        existingKeys.add(key);
+        if (seen.has(key)) return; // de-dupe within this file only
+        seen.add(key);
         const cat = tx.category || categorizeBudgetDescription(tx.description, tx.bankCategory, {
           type: tx.bankType,
           typeGroup: tx.bankTypeGroup
         });
-        budget.transactions.push({
+        next.push({
           id: 'btx-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
           date: dateStr,
           description: String(tx.description || '').trim().slice(0, 140),
@@ -21157,16 +21156,23 @@
           categoryAuto: cat,
           source: 'csv'
         });
-        added++;
       });
-      budget.transactions.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      if (!next.length) {
+        showToast('Could not read transactions — check your CSV format', 'warn');
+        return { added: 0, ok: false };
+      }
+      next.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      budget.transactions = next;
       budget.importedAt = new Date().toISOString();
+      // Fresh file: re-run auto category migrations on next render
+      delete budget._otherRecatV2;
+      delete budget._fixedBillMigrated;
       // Any successful CSV import finishes the monthly budget-review task
       if (typeof markBudgetReviewCompleteFromImport === 'function') {
         markBudgetReviewCompleteFromImport({ silent: true });
       }
       saveState();
-      return { added, ok: true };
+      return { added: next.length, ok: true, replaced: true };
     }
 
     // ── Monthly budget review task (auto on Today near month-end) ──
@@ -21434,7 +21440,8 @@
           <div class="text-xs text-harbor-muted mb-3 leading-relaxed">
             Export transactions from your bank (CSV with posting date, amount, debit/credit, description, category).
             Harbor uses the <strong class="text-harbor-text">posting date</strong>, identifies credits vs debits vs transfers,
-            maps bank tags into clear categories, and builds a color pie you can filter by type and category.
+            and maps bank tags into clear categories.
+            <strong class="text-harbor-text">A new CSV replaces your current budget data</strong> (previous import is cleared).
           </div>
           <label class="block w-full mb-3">
             <input id="budget-csv-file" type="file" accept=".csv,text/csv" class="hidden">
@@ -21474,9 +21481,9 @@
         if (ok) {
           budgetCategoryFilter = null;
           budgetMonthRange = 'current';
+          budgetKindFilter = 'out';
           renderBudget();
-          if (added > 0) showToast(`Imported ${added} transaction${added === 1 ? '' : 's'}`);
-          else showToast('CSV read — no new transactions (already imported)');
+          showToast(`Budget replaced · ${added} transaction${added === 1 ? '' : 's'}`);
           if (typeof renderTasks === 'function') renderTasks();
         }
       };
