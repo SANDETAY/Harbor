@@ -21316,13 +21316,14 @@
         .sort((a, b) => getBillUrgency(a) - getBillUrgency(b));
     }
 
-    function mapBriefEventLite(e) {
+    function mapBriefEventLite(e, onDate = null) {
       return {
         time: e.time || '—',
         title: e.title,
         durationMin: e.durationMin || 30,
         personId: e.personId || null,
-        id: e.id || null
+        id: e.id || null,
+        date: onDate || getEventDate(e) || null
       };
     }
 
@@ -21351,7 +21352,7 @@
         return byDate.map(({ date, events }) => ({
           date,
           label: formatBriefDateLabel(date),
-          events: events.map(mapBriefEventLite)
+          events: events.map(e => mapBriefEventLite(e, date))
         }));
       }
 
@@ -21363,7 +21364,7 @@
         .map(({ date, events }) => ({
           date,
           label: formatBriefDateLabel(date),
-          events: events.map(mapBriefEventLite)
+          events: events.map(e => mapBriefEventLite(e, date))
         }));
     }
 
@@ -22178,12 +22179,20 @@
     function flattenBriefEvents(brief) {
       if (!brief) return [];
       if (brief.mode === 'day') {
-        return (brief.events || []).map(e => ({ ...e, dayLabel: 'Today' }));
+        return (brief.events || []).map(e => ({
+          ...e,
+          dayLabel: 'Today',
+          date: e.date || getEventDate(e) || todayStr()
+        }));
       }
       const out = [];
       (brief.events || []).forEach(day => {
         (day.events || []).forEach(e => {
-          out.push({ ...e, dayLabel: day.label || formatBriefDateLabel(day.date || e.date) });
+          out.push({
+            ...e,
+            dayLabel: day.label || formatBriefDateLabel(day.date || e.date),
+            date: e.date || day.date || getEventDate(e) || null
+          });
         });
       });
       return out;
