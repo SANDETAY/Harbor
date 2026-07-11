@@ -10457,7 +10457,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 299;
+    const HARBOR_BUILD_NUMBER = 300;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -13438,20 +13438,63 @@
       return /run|swim|jog|hike|workout|bike|cycle|cardio|exercise|row|elliptical|lift|weights?|yoga|pilates|dance|climb|ski|skate|tennis|basketball|soccer|football|boxing|martial/i.test(title);
     }
 
-    function getTimesPerDay(habit) {
-      const n = Number(habit?.times_per_day);
+    /**
+     * How many times this habit/chore must be logged in its period.
+     * Stored as times_per_day for back-compat; applies to day / week / month.
+     */
+    function getTimesPerPeriod(habit) {
+      const n = Number(habit?.times_per_day ?? habit?.times_per_period);
       if (!Number.isFinite(n) || n < 1) return 1;
       return Math.min(5, Math.round(n));
+    }
+
+    /** @deprecated use getTimesPerPeriod — kept for older call sites */
+    function getTimesPerDay(habit) {
+      return getTimesPerPeriod(habit);
     }
 
     function countCompletionsOnDate(habitId, dateStr) {
       return (getCompletions(habitId) || []).filter(d => d === dateStr).length;
     }
 
+    /** Completions that count toward the current day / week / month window. */
+    function countCompletionsInPeriod(habit, dateStr = todayStr()) {
+      if (!habit) return 0;
+      const comps = getCompletions(habit.id) || [];
+      if (!comps.length) return 0;
+      // Daily / one-off: all logs on that calendar day
+      if (isOneOffTask(habit) || isDailyTask(habit)) {
+        return comps.filter(d => d === dateStr).length;
+      }
+      // Weekly / monthly: every log whose period key matches
+      const key = getHabitPeriodKey(habit, dateStr);
+      return comps.filter(d => getHabitPeriodKey(habit, d) === key).length;
+    }
+
+    function getFrequencyPeriodLabel(habit) {
+      if (!habit || isOneOffTask(habit) || isDailyTask(habit)) return 'today';
+      const d = Number(habit.interval_days);
+      if (d === 7) return 'this week';
+      if (d >= 25 && d <= 35) return 'this month';
+      if (d >= 85 && d <= 95) return 'this quarter';
+      if (d >= 360) return 'this year';
+      return 'this cycle';
+    }
+
+    /** Fully done for the current period (day for daily, week for weekly, …). */
+    function isPeriodFullyComplete(habit, dateStr = todayStr()) {
+      if (!habit) return false;
+      const need = getTimesPerPeriod(habit);
+      return countCompletionsInPeriod(habit, dateStr) >= need;
+    }
+
     function isCompletedToday(habitId) {
       const habit = state.habits?.find(h => h.id === habitId);
-      const need = getTimesPerDay(habit);
-      return countCompletionsOnDate(habitId, todayStr()) >= need;
+      if (!habit) {
+        // Fallback: at least one completion today
+        return countCompletionsOnDate(habitId, todayStr()) >= 1;
+      }
+      return isPeriodFullyComplete(habit, todayStr());
     }
 
     function hasSyncedToday(habitId) {
@@ -14584,8 +14627,8 @@
     }
 
     function habitCompletedInCurrentPeriod(habit) {
-      const key = getHabitPeriodKey(habit);
-      return (getCompletions(habit.id) || []).some(d => getHabitPeriodKey(habit, d) === key);
+      // Frequency N×: need N completions in the period (not just one)
+      return isPeriodFullyComplete(habit, todayStr());
     }
 
     function isFirstDayOfPeriod(habit, dateStr) {
@@ -15572,9 +15615,9 @@
               <div id="qt-weekday-hint" class="qt-weekday-hint">Pick which day(s) it should land on · leave empty for any day</div>
             </div>
             <div id="qt-times-section" class="hidden">
-              <label class="block text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mt-2.5 mb-1">Times per day</label>
-              <div class="text-[10px] text-harbor-muted mb-1.5 leading-snug">Same day, more than once — e.g. feed the dogs <strong class="text-harbor-text font-semibold">2×</strong>.</div>
-              <div id="qt-times-row" class="qt-times-row" role="group" aria-label="Times per day"></div>
+              <label class="block text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mt-2.5 mb-1">Frequency</label>
+              <div id="qt-freq-hint" class="text-[10px] text-harbor-muted mb-1.5 leading-snug">How many times each day, week, or month.</div>
+              <div id="qt-times-row" class="qt-times-row" role="group" aria-label="Frequency"></div>
             </div>
           </div>
 
@@ -15707,11 +15750,18 @@
         if (!opt) return;
         intervalUserPicked = true;
         selectedInterval = opt.days;
-        if (opt.days != null && opt.days > 1) selectedTimesPerDay = 1;
+        // Frequency stays (2× applies to day, week, or month depending on How often)
         updateIntervalButtons();
         renderTimesPerDay();
         renderWeekdayChips();
         refreshSummary();
+      }
+
+      function frequencyPeriodWord() {
+        if (selectedInterval == null || selectedInterval === 1) return 'day';
+        if (selectedInterval === 7) return 'week';
+        if (selectedInterval === 30) return 'month';
+        return 'cycle';
       }
 
       function preferredDaysHint() {
@@ -15789,16 +15839,27 @@
       function renderTimesPerDay() {
         const sec = modal.querySelector('#qt-times-section');
         const row = modal.querySelector('#qt-times-row');
+        const hint = modal.querySelector('#qt-freq-hint');
         if (!sec || !row) return;
-        const isDaily = (selectedInterval == null || selectedInterval === 1);
-        const show = (selectedKind === 'habit' || selectedKind === 'chore') && isDaily;
+        // Frequency applies to Daily, Weekly, and Monthly (not one-off Task)
+        const hasCadence = selectedInterval == null || selectedInterval === 1
+          || selectedInterval === 7 || selectedInterval === 30
+          || (selectedInterval > 1 && selectedKind === 'chore');
+        const show = (selectedKind === 'habit' || selectedKind === 'chore') && hasCadence
+          && selectedInterval !== 0;
         sec.classList.toggle('hidden', !show);
-        if (!show) {
-          // Non-daily cadence uses How often (2× a week etc.), not multi-log
-          if (selectedTimesPerDay > 1 && selectedInterval != null && selectedInterval > 1) {
-            selectedTimesPerDay = 1;
+        if (!show) return;
+        const period = frequencyPeriodWord();
+        if (hint) {
+          if (period === 'day') {
+            hint.innerHTML = `How many times <strong class="text-harbor-text font-semibold">each day</strong> — e.g. feed the dogs <strong class="text-harbor-text font-semibold">2×</strong>.`;
+          } else if (period === 'week') {
+            hint.innerHTML = `How many times <strong class="text-harbor-text font-semibold">each week</strong> — e.g. swim <strong class="text-harbor-text font-semibold">3×</strong> a week.`;
+          } else if (period === 'month') {
+            hint.innerHTML = `How many times <strong class="text-harbor-text font-semibold">each month</strong> — e.g. deep clean <strong class="text-harbor-text font-semibold">2×</strong> a month.`;
+          } else {
+            hint.textContent = `How many times each ${period}.`;
           }
-          return;
         }
         const options = [
           { n: 1, label: '1×', hint: 'Once' },
@@ -15806,7 +15867,7 @@
           { n: 3, label: '3×', hint: 'Three' }
         ];
         row.innerHTML = options.map(o =>
-          `<button type="button" class="qt-times-chip ${selectedTimesPerDay === o.n ? 'is-active' : ''}" data-times="${o.n}" aria-label="${o.hint} a day (${o.n} time${o.n === 1 ? '' : 's'})" title="${o.hint} a day">${o.label}</button>`
+          `<button type="button" class="qt-times-chip ${selectedTimesPerDay === o.n ? 'is-active' : ''}" data-times="${o.n}" aria-label="${o.hint} a ${period}" title="${o.hint} per ${period}">${o.label}</button>`
         ).join('');
         row.querySelectorAll('.qt-times-chip').forEach(btn => {
           btn.onclick = () => {
@@ -15857,9 +15918,9 @@
           if (selectedKind === 'task') {
             kindHint.textContent = 'A one-time to-do that leaves Today when you finish it. Switch to Habit or Chore for Daily, Weekly, or Monthly.';
           } else if (selectedKind === 'habit') {
-            kindHint.textContent = 'Builds a streak. How often: Daily, Weekly, or Monthly. On Daily, set times per day (e.g. feed dogs 2×). Use preferred days for Mon/Wed/Fri.';
+            kindHint.textContent = 'Builds a streak. Pick Daily / Weekly / Monthly, then Frequency (e.g. swim 3× a week, feed dogs 2× a day).';
           } else {
-            kindHint.textContent = 'Repeats on a cadence — Daily, Weekly, or Monthly. Preferred days pick trash day, etc. No streak pressure.';
+            kindHint.textContent = 'Repeats on a cadence — Daily, Weekly, or Monthly, plus Frequency. Preferred days optional. No streak pressure.';
           }
         }
         const showRecurrence = selectedKind === 'habit' || selectedKind === 'chore';
@@ -15937,14 +15998,33 @@
         });
       }
 
-      function formatHabitFreqLabel(interval) {
+      function formatFrequencyPhrase(interval, times, kindWord) {
+        const n = Math.max(1, Number(times) || 1);
+        const days = formatWeekdayShortList(selectedWeekdays);
         if (interval == null || interval === 1) {
-          if (selectedTimesPerDay >= 3) return '3 times a day habit';
-          if (selectedTimesPerDay === 2) return 'Twice a day habit';
-          const days = formatWeekdayShortList(selectedWeekdays);
-          return days ? `Daily habit · ${days}` : 'Daily habit';
+          let base = n >= 3 ? `3 times a day ${kindWord}`
+            : n === 2 ? `Twice a day ${kindWord}`
+            : `Daily ${kindWord}`;
+          if (days) base += ` · ${days}`;
+          return base;
         }
-        return formatIntervalLabel(interval, selectedWeekdays) + ' habit';
+        if (interval === 7) {
+          let base = n >= 2
+            ? `${n}× a week ${kindWord}`
+            : `Weekly ${kindWord}`;
+          if (days) base += ` · ${days}`;
+          return base;
+        }
+        if (interval === 30) {
+          return n >= 2
+            ? `${n}× a month ${kindWord}`
+            : `Monthly ${kindWord}`;
+        }
+        return formatIntervalLabel(interval, selectedWeekdays) + ` ${kindWord}`;
+      }
+
+      function formatHabitFreqLabel(interval) {
+        return formatFrequencyPhrase(interval, selectedTimesPerDay, 'habit');
       }
 
       function refreshSummary() {
@@ -15955,15 +16035,7 @@
         let freq = 'One-time task';
         if (selectedKind === 'habit') freq = formatHabitFreqLabel(selectedInterval);
         else if (selectedKind === 'chore') {
-          if (selectedInterval == null || selectedInterval === 1) {
-            freq = selectedTimesPerDay >= 2
-              ? `${selectedTimesPerDay === 2 ? 'Twice' : selectedTimesPerDay + ' times'} a day chore`
-              : 'Daily chore';
-            const days = formatWeekdayShortList(selectedWeekdays);
-            if (days) freq += ` · ${days}`;
-          } else {
-            freq = formatIntervalLabel(selectedInterval || 7, selectedWeekdays) + ' chore';
-          }
+          freq = formatFrequencyPhrase(selectedInterval == null ? null : (selectedInterval || 7), selectedTimesPerDay, 'chore');
         } else if (isSchedulingTaskTitle(title)) freq = 'One-time';
         const tag = isLibrary ? ' · tagged Personal' : '';
         const streakNote = selectedKind === 'habit' ? ' · tracks streak' : ' · no streak';
@@ -16115,10 +16187,11 @@
           task.parkOnSummary = false;
           task.pullToToday = todayStr();
         }
-        const keepTimesPerDay = (selectedKind === 'habit' || selectedKind === 'chore')
-            && (interval == null || interval === 1)
+        // Frequency (stored as times_per_day) for Daily / Weekly / Monthly
+        const keepFrequency = (selectedKind === 'habit' || selectedKind === 'chore')
+            && (interval == null || interval === 1 || interval === 7 || interval === 30 || (interval > 1 && selectedKind === 'chore'))
             && selectedTimesPerDay > 1;
-        if (keepTimesPerDay) {
+        if (keepFrequency) {
           task.times_per_day = selectedTimesPerDay;
         } else {
           delete task.times_per_day;
@@ -16147,7 +16220,7 @@
         /** Spread-merge keeps old keys when the draft omitted them — strip intentionally cleared fields. */
         function applyClearedEditFields(target) {
           if (!target) return target;
-          if (!keepTimesPerDay) delete target.times_per_day;
+          if (!keepFrequency) delete target.times_per_day;
           if (!task.weekdays) {
             delete target.weekdays;
             delete target.preferred_weekdays;
@@ -23191,7 +23264,7 @@
       const today = todayStr();
       const comps = getCompletions(habit.id);
 
-      // Fully done for today (respects times_per_day, e.g. Feed Dogs 2×)
+      // Fully done for period (Frequency N× day/week/month — e.g. Swim 3× this week)
       if (isCompletedToday(habit.id)) return false;
       if (getHabitSkips(habit.id).includes(today)) return false;
       if (getHabitPasses(habit.id).includes(today)) return false;
@@ -23845,9 +23918,12 @@
         <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove task"><i class="fa-solid fa-trash-can"></i> Delete</button>
       `;
 
-      const timesNeed = typeof getTimesPerDay === 'function' ? getTimesPerDay(habit) : 1;
-      const timesDone = typeof countCompletionsOnDate === 'function' ? countCompletionsOnDate(habit.id, todayStr()) : 0;
+      const timesNeed = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
+      const timesDone = typeof countCompletionsInPeriod === 'function'
+        ? countCompletionsInPeriod(habit, todayStr())
+        : (typeof countCompletionsOnDate === 'function' ? countCompletionsOnDate(habit.id, todayStr()) : 0);
       const isMulti = timesNeed > 1;
+      const periodWord = typeof getFrequencyPeriodLabel === 'function' ? getFrequencyPeriodLabel(habit) : 'today';
       const mobileTapComplete = !completed && typeof isSwipeMobile === 'function' && isSwipeMobile();
       // Minimal multi-log UI: fraction lives on the complete control (0/2 → 1/2 → done)
       // Circle + whole-card tap both complete (title used to steal taps and only expand).
@@ -23861,9 +23937,10 @@
           ? `<span class="habit-hit-frac" aria-hidden="true">${timesDone}/${timesNeed}</span>`
           : `<i class="fa-regular fa-circle text-harbor-muted"></i>`);
       const multiPill = isMulti && !completed
-        ? `<span class="habit-multi-pill" title="${timesDone} of ${timesNeed} today">${timesDone}/${timesNeed}</span>`
+        ? `<span class="habit-multi-pill" title="${timesDone} of ${timesNeed} ${periodWord}">${timesDone}/${timesNeed}</span>`
         : '';
-      const freqChip = !isMulti && isRecurring ? formatIntervalLabel(habit.interval_days, habit) : '';
+      // Show cadence chip for weekly/monthly even when multi-frequency (e.g. 2/3 this week)
+      const freqChip = isRecurring ? formatIntervalLabel(habit.interval_days, habit) : '';
       const completedPill = completed
         ? `<span class="text-[10px] font-bold uppercase tracking-wide text-harbor-primary-light px-1.5 py-0.5 rounded-full bg-harbor-primary/12 border border-harbor-primary/20">Completed</span>`
         : '';
@@ -24321,10 +24398,11 @@
       if (!state.completions[habitId]) state.completions[habitId] = [];
       
       const comps = state.completions[habitId];
-      const need = getTimesPerDay(habit);
-      const doneCount = comps.filter(d => d === today).length;
+      const need = getTimesPerPeriod(habit);
+      const doneCount = countCompletionsInPeriod(habit, today);
+      const periodLabel = getFrequencyPeriodLabel(habit);
       if (doneCount >= need) {
-        showToast(need > 1 ? `All ${need} done for today` : "Already done today");
+        showToast(need > 1 ? `All ${need} done for ${periodLabel}` : (periodLabel === 'today' ? 'Already done today' : `Already done ${periodLabel}`));
         return;
       }
       if (getHabitSkips(habitId).includes(today)) {
@@ -24388,9 +24466,9 @@
       const ptsMsg = fullyDone && pointsEarned ? ` · +${pointsEarned} fills Harbor Day` : '';
       const passMsg = passAwarded ? ' · 🌊 Pass earned' : '';
       if (need > 1 && !fullyDone) {
-        showToast(`${habit.title} · ${afterCount}/${need}`);
+        showToast(`${habit.title} · ${afterCount}/${need} ${periodLabel}`);
       } else {
-        showToast(`🔥 ${habit.title}${need > 1 ? ` · ${afterCount}/${need}` : ''}${ptsMsg}${passMsg}`);
+        showToast(`🔥 ${habit.title}${need > 1 ? ` · ${afterCount}/${need} ${periodLabel}` : ''}${ptsMsg}${passMsg}`);
       }
       maybeAdvanceTutorial('habit-complete');
       
@@ -24991,12 +25069,10 @@
 
     function isHabitScheduledOn(habit, dateStr) {
       const comps = getCompletions(habit.id) || [];
-      // Multi-log: still scheduled until all times_per_day are logged for that date
-      const need = typeof getTimesPerDay === 'function' ? getTimesPerDay(habit) : 1;
-      const doneOnDate = typeof countCompletionsOnDate === 'function'
-        ? countCompletionsOnDate(habit.id, dateStr)
-        : comps.filter(d => d === dateStr).length;
-      if (doneOnDate >= need) return false;
+      // Frequency multi-log: still scheduled until N completions in the day/week/month
+      if (typeof isPeriodFullyComplete === 'function' && isPeriodFullyComplete(habit, dateStr)) {
+        return false;
+      }
       if (!isHabitInSeason(habit, dateStr)) return false;
       // Align with isDueToday preferred-day + catch-up rules
       const preferred = getHabitWeekdays(habit);
@@ -25007,8 +25083,8 @@
       }
       if (isOneOffTask(habit)) return comps.length === 0 && dateStr === todayStr();
       if (isDailyTask(habit)) return true;
-      // Weekly+ with preferred days: open period (and preferred/catch-up already gated)
-      if (preferred && isHabitActiveThisPeriod(habit)) {
+      // Weekly/monthly: open for the whole period until frequency is met
+      if (isHabitActiveThisPeriod(habit)) {
         return true;
       }
       return getNextDueDate(habit) === dateStr;
