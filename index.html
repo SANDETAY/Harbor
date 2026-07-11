@@ -1071,38 +1071,49 @@
     #app-scroll { order: 2; }
     #main-nav-bar { order: 3; }
 
-    /* ── Mobile dock: floating Harbor cradle (molds around Overview FAB) ── */
+    /* ── Mobile dock: free-floating cradle only (no full-width color strip) ── */
     .main-nav,
     #main-nav-bar {
       --dock-height: 4.15rem;
       --cradle-r: 2.2rem;
-      position: relative;
+      /* Fixed over the page so no layout “box” paints to the screen edge */
+      position: fixed;
+      left: 0.55rem;
+      right: 0.55rem;
+      /* Sit a bit lower; keep a little room for the home indicator */
+      bottom: max(0.18rem, calc(env(safe-area-inset-bottom, 0px) * 0.45));
+      width: auto;
+      margin: 0;
       flex-shrink: 0;
       display: flex;
       align-items: flex-end;
       gap: 0;
       z-index: 50;
       overflow: visible;
-      /* Float above home indicator — mint wash shows under; no full-bleed Apple bar */
-      margin: 0 0.65rem max(0.45rem, env(safe-area-inset-bottom, 0px));
-      padding: 1.15rem 0.3rem 0.42rem;
-      min-height: calc(var(--dock-height) + 1.15rem);
+      /* Room above the pill so the FAB can sit in the cradle */
+      padding: 1.15rem 0.22rem 0.28rem;
+      min-height: 0;
+      height: auto;
       border: none !important;
       background: transparent !important;
+      background-image: none !important;
       box-shadow: none !important;
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
+      /* Empty space around the pill must not block taps */
+      pointer-events: none;
     }
     html[data-theme="dark"] .main-nav,
     html[data-theme="dark"] #main-nav-bar,
     html[data-theme="harbor"] .main-nav,
     html[data-theme="harbor"] #main-nav-bar {
       background: transparent !important;
+      background-image: none !important;
       box-shadow: none !important;
       border: none !important;
     }
 
-    /* Soft mint card pill with circular cradle cutout at top-center for the FAB */
+    /* Soft mint pill only — this is the visible dock, nothing else */
     .main-nav-surface {
       position: absolute;
       left: 0;
@@ -1112,14 +1123,13 @@
       border-radius: 1.5rem;
       pointer-events: none;
       z-index: 0;
-      /* Slightly lifted vs page wash so the floating dock reads clearly */
       background:
         linear-gradient(168deg, #F7FBF9 0%, #ECF5F1 48%, #E2EFE9 100%);
       border: 1px solid rgba(47, 155, 140, 0.18);
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.9) inset,
-        0 12px 30px rgba(18, 48, 44, 0.12),
-        0 3px 10px rgba(18, 48, 44, 0.06);
+        0 10px 26px rgba(18, 48, 44, 0.12),
+        0 2px 8px rgba(18, 48, 44, 0.06);
       /* Bite a circle from the top center so the bar molds around the FAB */
       -webkit-mask-image: radial-gradient(
         circle var(--cradle-r) at 50% 0,
@@ -1131,7 +1141,7 @@
         transparent calc(var(--cradle-r) - 0.5px),
         #000 calc(var(--cradle-r) + 0.6px)
       );
-      filter: drop-shadow(0 6px 16px rgba(18, 48, 44, 0.1));
+      /* Avoid filter:drop-shadow — it can paint a rectangular envelope behind the pill */
     }
     html[data-theme="dark"] .main-nav-surface {
       background:
@@ -1139,9 +1149,8 @@
       border-color: rgba(72, 178, 162, 0.22);
       box-shadow:
         0 1px 0 rgba(154, 214, 202, 0.1) inset,
-        0 14px 34px rgba(0, 0, 0, 0.5),
-        0 3px 10px rgba(0, 0, 0, 0.28);
-      filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.4));
+        0 12px 30px rgba(0, 0, 0, 0.48),
+        0 2px 8px rgba(0, 0, 0, 0.28);
     }
 
     /* Center slot: FAB sits in the cradle notch */
@@ -1154,9 +1163,12 @@
       position: relative;
       z-index: 3;
       margin: 0;
-      padding-bottom: 0.62rem;
+      padding-bottom: 0.55rem;
       pointer-events: none;
       align-self: flex-end;
+    }
+    .main-nav-fab-slot .summary-orb {
+      pointer-events: auto !important;
     }
 
     /* Sliding pill — desktop only */
@@ -1204,6 +1216,7 @@
       line-height: 1;
       -webkit-tap-highlight-color: transparent;
       transition: color 0.2s ease, transform 0.15s var(--harbor-ease-out);
+      pointer-events: auto;
     }
     html[data-theme="dark"] .main-nav-tab {
       color: rgba(180, 200, 194, 0.58);
@@ -1563,8 +1576,8 @@
       -webkit-overflow-scrolling: touch;
       /* Prefer vertical scroll; horizontal pans free for tab swipe */
       touch-action: pan-y;
-      /* Room for floating cradle dock (outside scroll) + breathing room */
-      padding-bottom: calc(1.5rem + var(--safe-bottom));
+      /* Room under fixed floating dock + FAB cradle */
+      padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
     }
 
     .library-filters-scroll,
@@ -1624,13 +1637,13 @@
       scroll-behavior: auto;
       /* Soft momentum + room for sticky section titles */
       scroll-padding-top: 0.35rem;
-      scroll-padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+      scroll-padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
       display: flex;
       flex-direction: column;
       gap: 1rem;
       align-items: stretch;
       width: 100%;
-      padding-bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
       /* Camouflage scrollbar — scroll still works */
       scrollbar-width: none;
       -ms-overflow-style: none;
@@ -8389,10 +8402,10 @@
 
       .main-nav,
       #main-nav-bar {
-        margin-left: 0.55rem !important;
-        margin-right: 0.55rem !important;
-        padding-left: 0.2rem !important;
-        padding-right: 0.2rem !important;
+        left: 0.45rem !important;
+        right: 0.45rem !important;
+        padding-left: 0.15rem !important;
+        padding-right: 0.15rem !important;
       }
 
       #smart-banner {
@@ -8439,10 +8452,9 @@
 
       .main-nav,
       #main-nav-bar {
-        /* Floating cradle — sit above home indicator once */
-        margin-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px)) !important;
-        padding-top: 0.8rem !important;
-        padding-bottom: 0.35rem !important;
+        bottom: max(0.15rem, calc(env(safe-area-inset-bottom, 0px) * 0.4)) !important;
+        padding-top: 0.95rem !important;
+        padding-bottom: 0.22rem !important;
       }
 
       .quick-add-hint {
@@ -8542,9 +8554,15 @@
 
       .main-nav,
       #main-nav-bar {
+        position: relative !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        width: auto !important;
         gap: 0.35rem;
         margin: 0 !important;
         min-height: 0 !important;
+        height: auto !important;
         padding: 0.35rem 1.5rem 0.15rem !important;
         border-top: none !important;
         border-bottom: none !important;
@@ -8552,6 +8570,7 @@
         box-shadow: none !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
+        pointer-events: auto !important;
       }
       /* Desktop: no cradle surface — classic top tabs */
       .main-nav-surface {
@@ -9348,7 +9367,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 238;
+    const HARBOR_BUILD_NUMBER = 239;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
