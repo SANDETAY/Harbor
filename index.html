@@ -2557,7 +2557,7 @@
       opacity: 0.92;
       transform: scale(0.99);
     }
-    /* Inline logger on Tide Journey — match the same calm mint field */
+    /* Inline logger on Streak Preview — match the same calm mint field */
     .proj-metric-panel {
       margin-top: 1rem;
       padding: 0.9rem 0.95rem 0.95rem;
@@ -7507,18 +7507,24 @@
     }
     .streak-week-dots {
       display: flex;
+      flex-direction: row;
       gap: 0.28rem;
       margin-top: 0.55rem;
+      /* Left = older day · right = today — fill progresses left → right */
+      direction: ltr;
     }
     .streak-week-dot {
       width: 0.48rem;
       height: 0.48rem;
       border-radius: 999px;
       background: rgb(var(--harbor-border));
+      transform-origin: left center;
+      transition: background 0.28s ease, box-shadow 0.28s ease, transform 0.32s cubic-bezier(0.22, 1.2, 0.36, 1);
     }
     .streak-week-dot.is-done {
       background: rgb(var(--harbor-primary));
       box-shadow: 0 0 0 2px rgb(var(--harbor-primary) / 0.15);
+      animation: streakDotFill 0.38s cubic-bezier(0.22, 1.2, 0.36, 1) both;
     }
     .streak-week-dot.is-pass {
       background: rgb(var(--harbor-primary) / 0.45);
@@ -7526,6 +7532,21 @@
     .streak-week-dot.is-today {
       outline: 1.5px solid rgb(var(--harbor-primary-light));
       outline-offset: 1px;
+    }
+    /* Stagger so the week fills left → right when the card paints */
+    .streak-week-dot.is-done:nth-child(1) { animation-delay: 0ms; }
+    .streak-week-dot.is-done:nth-child(2) { animation-delay: 35ms; }
+    .streak-week-dot.is-done:nth-child(3) { animation-delay: 70ms; }
+    .streak-week-dot.is-done:nth-child(4) { animation-delay: 105ms; }
+    .streak-week-dot.is-done:nth-child(5) { animation-delay: 140ms; }
+    .streak-week-dot.is-done:nth-child(6) { animation-delay: 175ms; }
+    .streak-week-dot.is-done:nth-child(7) { animation-delay: 210ms; }
+    @keyframes streakDotFill {
+      0% { transform: scaleX(0.35) scaleY(0.7); opacity: 0.35; }
+      100% { transform: scaleX(1) scaleY(1); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .streak-week-dot.is-done { animation: none; }
     }
     .streak-status-chip {
       display: inline-flex;
@@ -9696,6 +9717,9 @@
         <div id="life-panel-bills" class="life-panel hidden" role="tabpanel" aria-labelledby="life-flyout-bills">
           <div class="panel-head panel-head--toolbar-only">
             <div class="panel-toolbar panel-toolbar-cluster">
+              <button type="button" onclick="showBillImportModal()" class="chip-tool-btn" id="bills-import-btn" aria-label="Import bills CSV">
+                Import CSV
+              </button>
               <button type="button" onclick="addBillFromPrompt()" class="chip-add-btn" id="bills-add-btn" aria-label="Add Bill">
                 <i class="fa-solid fa-plus" aria-hidden="true"></i>
                 <span>Add</span>
@@ -9750,9 +9774,9 @@
         </div>
         <div id="streaks-list" class="streaks-list-root"></div>
 
-        <!-- Tide Journey (habit outlook / projections) -->
+        <!-- Streak Preview (habit outlook / projections) -->
         <div class="mt-5" id="habit-outlook-section">
-          <div class="section-header font-semibold text-harbor-text mb-2">Tide Journey</div>
+          <div class="section-header font-semibold text-harbor-text mb-2">Streak Preview</div>
           <div id="projection-panel"
             class="bg-harbor-surface border border-harbor-border rounded-3xl p-4 text-sm shadow-[var(--harbor-shadow-sm)]">
             <div id="projection-hint" class="text-harbor-muted text-xs leading-relaxed">Tap a Streak Above to See Your Progress</div>
@@ -9913,7 +9937,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 270;
+    const HARBOR_BUILD_NUMBER = 271;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -11954,7 +11978,7 @@
     function renderProjectionMetricLogger(habit) {
       const meta = getMetricInputMeta(habit);
       if (!meta) return '';
-      // Hide log UI during Tide Journey tutorial step (keeps the panel readable).
+      // Hide log UI during Streak Preview tutorial step (keeps the panel readable).
       if (state.settings.tutorialActive && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'projections-read') {
         return '';
       }
@@ -12921,6 +12945,16 @@
       return REAL_METRIC_UNITS.has(String(unit || '').toLowerCase());
     }
 
+    /**
+     * Daily self-care habits (floss, vitamins, water…) — not distance sports.
+     * These get a Streak Preview based on check-in days, not miles/steps.
+     */
+    function isCareHabit(habit) {
+      const t = String(habit?.title || '');
+      if (!t) return false;
+      return /\b(floss|flossing|vitamin|vitamins|multivitamin|meds?\b|medication|medicine|pills?|water|hydrate|hydration|drink enough|brush(?:ing)?(?:\s+teeth)?|teeth|toothbrush|sunscreen|meditat(?:e|ion)?|journal(?:ing)?|gratitude|skincare|moisturi[sz]e|stretch(?:ing)?|breath(?:e|ing)?|pray(?:er|ing)?|sleep|bedtime|mouth\s*wash|rinse)\b/i.test(t);
+    }
+
     /** True only for intentional measurable goals — not stretch, mobility, chores, etc. */
     function getHabitMetricType(habit) {
       if (!habit) return null;
@@ -12932,6 +12966,7 @@
       if (unit === 'steps') return 'steps';
       if (unit === 'dollars' || unit === 'usd') return 'savings';
       if (unit === 'pages' || unit === 'page') return 'pages';
+      if (unit === 'days' || unit === 'checkins' || unit === 'care') return 'care';
 
       // Title heuristics — word boundaries only; never treat stretch/mobility/etc. as metrics
       // Distance sports (log miles / distance swam, run, ridden…)
@@ -12943,6 +12978,8 @@
       if (/\b(save|saving|savings|money|budget|invest)\b/i.test(title)) return 'savings';
       // "read 10 pages" / "read" — not "ready", not random substrings
       if (/\b(pages?)\b/i.test(title) || /\bread\b/i.test(title)) return 'pages';
+      // Care check-ins (floss, vitamins, water…) — binary day metrics for Streak Preview
+      if (isCareHabit(habit)) return 'care';
 
       if (habit.target_value != null && isRealMetricUnit(unit)) return 'custom';
       return null;
@@ -12987,6 +13024,12 @@
     function logMetricOnComplete(habit) {
       const type = getHabitMetricType(habit);
       if (!type) return Promise.resolve();
+
+      // Care habits: each completion is one quiet check-in day (no miles popup)
+      if (type === 'care') {
+        logMetricValue(habit.id, 1, 'completion');
+        return Promise.resolve();
+      }
 
       const finishManual = (prompted) => {
         if (!prompted || prompted.value == null) return;
@@ -13054,6 +13097,15 @@
           });
         }
       };
+
+      // Care habits: every completed day counts as 1 check-in (no manual log needed)
+      if (type === 'care') {
+        (getCompletions(habit.id) || []).forEach(ds => upsert(ds, 1, 'completion'));
+        (state.metricLogs?.[habit.id] || []).forEach(entry => {
+          if (entry?.date) upsert(entry.date, entry.value != null ? Number(entry.value) : 1, entry.source || 'manual');
+        });
+        return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+      }
 
       (state.metricLogs?.[habit.id] || []).forEach(entry => {
         if (type === 'miles') {
@@ -13376,14 +13428,16 @@
       };
 
       if (!isQuantitativeHabit(habit)) {
-        result.message = 'Projections only apply to measurable goals — steps, miles, savings, pages, etc.';
+        result.message = 'Complete this streak a few times to unlock a calm progress preview.';
         return result;
       }
 
       const dataPoints = collectMetricDataPoints(habit);
       if (dataPoints.length === 0) {
-        result.canLogMetrics = true;
-        result.message = 'No activity logged yet. Use the log field below (or complete with a distance) to unlock 30-day projections.';
+        result.canLogMetrics = getHabitMetricType(habit) !== 'care';
+        result.message = getHabitMetricType(habit) === 'care'
+          ? 'Check this off once on Task — Streak Preview tracks your care days from completions.'
+          : 'No activity logged yet. Use the log field below (or complete with a distance) to unlock 30-day projections.';
         return result;
       }
 
@@ -13400,6 +13454,7 @@
         if (type === 'steps') return Math.round(v).toLocaleString() + ' steps';
         if (type === 'miles') return v.toFixed(1) + ' mi';
         if (type === 'pages') return Math.round(v) + ' pages';
+        if (type === 'care') return Math.round(v) + (Math.round(v) === 1 ? ' day' : ' days');
         return Math.round(v).toLocaleString() + (habit.unit ? ' ' + habit.unit : '');
       };
 
@@ -13414,6 +13469,18 @@
       result.canProject = true;
       const hasDevice = habitHasDeviceSync(habit.id);
       const profile = getUserProfile();
+
+      if (type === 'care') {
+        // Check-in days in the window (binary days, not summed glasses)
+        const careDays = sample.length;
+        const rate = careDays / 30;
+        const projectedCare = Math.round(rate * 30);
+        result.metrics.push({ label: 'Care days (30d)', value: `${careDays} of 30` });
+        result.metrics.push({ label: 'Consistency', value: `${Math.round(rate * 100)}%` });
+        result.metrics.push({ label: '30-day pace', value: `~${projectedCare} days` });
+        result.prideHtml = buildCarePride(habit, careDays, rate);
+        return result;
+      }
 
       result.metrics.push({ label: getProjectionPrimaryLabel(type), value: formatVal(totalLogged) });
 
@@ -13490,10 +13557,44 @@
      * Activity family for flavor only. Unknown titles → metric-generic family
      * so "Rollerblade park", "Elliptical 20m", "Push wheelchair" still work.
      */
+    function buildCarePride(habit, careDays, rate) {
+      const title = (habit?.title || 'this habit').toLowerCase();
+      const pct = Math.round((rate || 0) * 100);
+      let main;
+      if (careDays <= 0) {
+        main = 'One check-in starts the story.';
+      } else if (/\bfloss|teeth|brush/i.test(title)) {
+        main = careDays === 1
+          ? 'One floss day logged — your smile streak has a first chapter.'
+          : `${careDays} floss days in the last month · ${pct}% consistency.`;
+      } else if (/\bvitamin|meds?|medication|pill/i.test(title)) {
+        main = careDays === 1
+          ? 'First vitamin day on the board.'
+          : `${careDays} days you showed up for your vitamins · ${pct}% of the month.`;
+      } else if (/\bwater|hydrat|drink/i.test(title)) {
+        main = careDays === 1
+          ? 'Hydration check-in #1 — small sips still count.'
+          : `${careDays} hydration days · ${pct}% of the last month.`;
+      } else {
+        main = careDays === 1
+          ? 'First care day logged for this streak.'
+          : `${careDays} care days in 30 · ${pct}% consistency.`;
+      }
+      const sub = pct >= 80
+        ? 'That’s a strong quiet habit — keep the chain soft and steady.'
+        : pct >= 50
+          ? 'Halfway-plus is real progress — tomorrow is another easy win.'
+          : 'No judgment — every check-in is a vote for future you.';
+      return typeof outlookPrideHtml === 'function'
+        ? outlookPrideHtml(main, sub)
+        : `<div class="proj-pride"><div class="proj-pride-main">${main}</div><div class="proj-pride-sub">${sub}</div></div>`;
+    }
+
     function classifyOutlookActivity(habit, type) {
       if (type === 'steps') return 'steps';
       if (type === 'pages') return 'pages';
       if (type === 'savings') return 'savings';
+      if (type === 'care') return 'care';
       if (type === 'custom') return 'custom';
 
       const title = (habit?.title || '').toLowerCase();
@@ -16169,6 +16270,169 @@
 
     function addBillFromPrompt() {
       showAddBillModal();
+    }
+
+    /** Bills CSV: columns name/amount/day or bank export → recurring utilities-like charges */
+    function parseBillsCsv(text) {
+      const raw = String(text || '').replace(/^\uFEFF/, '').replace(/\t/g, ',');
+      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if (lines.length < 2) return { bills: [], fromBank: false };
+
+      let headerIdx = 0;
+      let headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().replace(/[_]+/g, ' ').trim());
+      for (let i = 0; i < Math.min(8, lines.length); i++) {
+        const cols = parseCsvLine(lines[i]).map(h => h.toLowerCase().replace(/[_]+/g, ' ').trim());
+        if (cols.some(c => /bill|name|payee|vendor|description|memo/.test(c)) &&
+            cols.some(c => /amount|due|day|date|debit|recurrence|cycle/.test(c))) {
+          headerIdx = i;
+          headers = cols;
+          break;
+        }
+      }
+
+      const findCol = (patterns) => headers.findIndex(h => patterns.some(p => p.test(h)));
+      const nameCol = findCol([/^name$/, /bill name/, /payee/, /vendor/, /merchant/, /description/, /memo/]);
+      const amountCol = findCol([/^amount$/, /payment/, /total/, /value/]);
+      const dayCol = findCol([/due day/, /day of month/, /^day$/, /due date/]);
+      const cycleCol = findCol([/recurrence/, /cycle/, /frequency/, /period/]);
+
+      // Structured bills sheet (name + amount + optional day)
+      const structured = [];
+      if (nameCol >= 0 && amountCol >= 0) {
+        for (let i = headerIdx + 1; i < lines.length; i++) {
+          const cols = parseCsvLine(lines[i]);
+          const name = (cols[nameCol] || '').trim();
+          if (!name || name.length < 2) continue;
+          const amount = parseMoneyValue(cols[amountCol]);
+          if (!(amount > 0)) continue;
+          let dueDay = 1;
+          if (dayCol >= 0) {
+            const rawDay = cols[dayCol];
+            const d = parseFlexibleDate(rawDay);
+            if (d) dueDay = d.getDate();
+            else {
+              const n = parseInt(String(rawDay).replace(/\D/g, ''), 10);
+              if (n >= 1 && n <= 31) dueDay = n;
+            }
+          }
+          let recurrence = 'monthly';
+          if (cycleCol >= 0) {
+            const c = String(cols[cycleCol] || '').toLowerCase();
+            if (/year|annual/.test(c)) recurrence = 'yearly';
+            else if (/quarter/.test(c)) recurrence = 'quarterly';
+            else if (/bi.?week|fortnight/.test(c)) recurrence = 'biweekly';
+            else if (/week/.test(c)) recurrence = 'weekly';
+          }
+          structured.push({ name, amount, dueDays: [dueDay], recurrence });
+        }
+        if (structured.length) return { bills: structured, fromBank: false };
+      }
+
+      // Fall back: bank-style CSV → treat recurring non-entertainment charges as bill candidates
+      const txs = parseBankCsv(text);
+      if (!txs.length) return { bills: [], fromBank: true };
+      const groups = {};
+      txs.forEach(tx => {
+        const key = normalizeMerchantKey(tx.description);
+        if (!key) return;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(tx);
+      });
+      const bills = [];
+      Object.entries(groups).forEach(([key, pool]) => {
+        if (pool.length < 2) return;
+        // Skip known streaming/subs — those belong in Subscriptions
+        if (matchSubscriptionPreset(pool[0].description)) return;
+        const avg = pool.reduce((s, t) => s + t.amount, 0) / pool.length;
+        const similar = pool.filter(t => Math.abs(t.amount - avg) <= Math.max(2, avg * 0.15));
+        if (similar.length < 2) return;
+        const sorted = similar.filter(t => t.date).sort((a, b) => a.date - b.date);
+        if (sorted.length >= 2) {
+          const gaps = [];
+          for (let i = 1; i < sorted.length; i++) gaps.push((sorted[i].date - sorted[i - 1].date) / 86400000);
+          const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+          if (avgGap < 20 || avgGap > 45) return; // monthly-ish only for bills auto-detect
+        }
+        const last = sorted[sorted.length - 1] || similar[similar.length - 1];
+        bills.push({
+          name: prettifyMerchantName(key, last.description),
+          amount: Math.round(avg * 100) / 100,
+          dueDays: [last.date ? last.date.getDate() : 1],
+          recurrence: 'monthly'
+        });
+      });
+      return { bills, fromBank: true };
+    }
+
+    function showBillImportModal() {
+      const modal = document.createElement('div');
+      modal.id = 'bill-import-modal';
+      modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full max-h-[82vh] bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm overflow-y-auto">
+          <div class="font-semibold text-lg mb-1">Import bills CSV</div>
+          <div class="text-xs text-harbor-muted mb-3 leading-relaxed">
+            Use a simple sheet with columns like <strong class="text-harbor-text">Name, Amount, Due day</strong>
+            — or a bank export. Harbor looks for monthly recurring charges (utilities, rent, insurance).
+            Streaming services are left for Subscriptions.
+          </div>
+          <label class="block w-full mb-3">
+            <input id="bill-csv-file" type="file" accept=".csv,text/csv" class="hidden">
+            <span class="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-harbor-raised border border-dashed border-harbor-border text-harbor-primary-light font-medium cursor-pointer">
+              <i class="fa-solid fa-file-arrow-up"></i> Choose CSV file
+            </span>
+          </label>
+          <textarea id="bill-csv-paste" rows="6" placeholder="Name,Amount,Due day&#10;Electric,120,15&#10;Rent,1800,1"
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-3 mb-3 outline-none text-harbor-text text-xs font-mono"></textarea>
+          <div class="flex gap-2">
+            <button type="button" onclick="this.closest('#bill-import-modal').remove()"
+              class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold">Cancel</button>
+            <button type="button" id="bill-csv-scan-btn"
+              class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Scan &amp; add</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+      const fileInput = modal.querySelector('#bill-csv-file');
+      const pasteEl = modal.querySelector('#bill-csv-paste');
+      fileInput.onchange = () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => { pasteEl.value = String(reader.result || ''); };
+        reader.readAsText(file);
+      };
+      modal.querySelector('#bill-csv-scan-btn').onclick = () => {
+        const text = pasteEl.value.trim();
+        if (!text) {
+          showToast('Upload or paste a CSV first');
+          return;
+        }
+        const { bills, fromBank } = parseBillsCsv(text);
+        if (!bills.length) {
+          showToast(fromBank
+            ? 'No recurring bills found — try a Name, Amount, Due day sheet'
+            : 'Could not read bills — check columns (Name, Amount, Due day)');
+          return;
+        }
+        let added = 0;
+        bills.forEach(b => {
+          const exists = (state.bills || []).some(x =>
+            (x.name || '').toLowerCase().replace(/[^a-z0-9]/g, '') ===
+            (b.name || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+          );
+          if (exists) return;
+          if (typeof addBill === 'function') {
+            addBill(b.name, b.dueDays || [1], b.amount, false, b.recurrence || 'monthly');
+            added++;
+          }
+        });
+        modal.remove();
+        if (typeof renderBills === 'function') renderBills();
+        showToast(added
+          ? `Added ${added} bill${added === 1 ? '' : 's'}`
+          : 'Those bills are already on your list');
+      };
     }
 
     function markBillPaid(billId) {
@@ -18998,18 +19262,50 @@
     }
 
     function findExistingSubscription(name, presetId, tierId) {
-      if (presetId && tierId) {
-        return (state.subscriptions || []).find(s => s.presetId === presetId && s.tierId === tierId) || null;
+      const list = state.subscriptions || [];
+      if (presetId) {
+        // Any tier of this preset counts as “already tracking” for browse UI
+        const byPreset = list.find(s => s.presetId === presetId && (tierId ? s.tierId === tierId : true));
+        if (byPreset) return byPreset;
       }
-      const norm = (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const norm = (name || '').toLowerCase().replace(/[^a-z0-9+]/g, '');
       if (!norm) return null;
-      return (state.subscriptions || []).find(s =>
-        s.name.toLowerCase().replace(/[^a-z0-9]/g, '') === norm
+      return list.find(s =>
+        s.name.toLowerCase().replace(/[^a-z0-9+]/g, '') === norm
+        || (norm.length >= 5 && s.name.toLowerCase().replace(/[^a-z0-9+]/g, '').includes(norm))
       ) || null;
     }
 
     function isPresetTierTracked(presetId, tierId) {
       return !!(state.subscriptions || []).find(s => s.presetId === presetId && s.tierId === tierId && s.active !== false);
+    }
+
+    /** True if any active sub matches this popular service (any tier). */
+    function isPresetTracked(preset) {
+      if (!preset) return false;
+      const list = (state.subscriptions || []).filter(s => s && s.active !== false);
+      if (list.some(s => s.presetId === preset.id)) return true;
+      if (preset.matchPattern) {
+        return list.some(s => preset.matchPattern.test(String(s.name || '')));
+      }
+      return false;
+    }
+
+    function focusTrackedSubscription(presetId) {
+      const preset = getSubscriptionPresetById(presetId);
+      const sub = (state.subscriptions || []).find(s =>
+        s.presetId === presetId || (preset?.matchPattern && preset.matchPattern.test(String(s.name || '')))
+      );
+      const name = sub?.name || preset?.name || 'That service';
+      showToast(`${name} is already on your list`);
+      // Land on the tracked list so the checkmark isn’t a dead end
+      try {
+        if (typeof switchLifePanel === 'function') switchLifePanel('subscriptions');
+        else if (typeof switchTab === 'function') switchTab('life');
+        requestAnimationFrame(() => {
+          document.getElementById('subscriptions-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      } catch (_) { /* ignore */ }
     }
 
     function matchSubscriptionPreset(description) {
@@ -19058,12 +19354,17 @@
     function quickAddSubscriptionPreset(presetId) {
       const preset = getSubscriptionPresetById(presetId);
       if (!preset) return;
+      // Already on list (checkmark) — jump to tracked subs instead of a silent no-op
+      if (isPresetTracked(preset)) {
+        focusTrackedSubscription(presetId);
+        return;
+      }
       const tiers = getVisibleSubscriptionTiers(preset);
       if (tiers.length <= 1) {
         const tier = tiers[0] || preset.tiers?.[0];
         const name = getSubscriptionDisplayName(preset, tier);
         if (findExistingSubscription(name, preset.id, tier?.id)) {
-          showToast(`Already tracking ${name}`);
+          focusTrackedSubscription(presetId);
           return;
         }
         if (addSubscriptionRecord({
@@ -19074,9 +19375,12 @@
           source: 'preset',
           presetId: preset.id,
           tierId: tier?.id || 'default',
-          tierLabel: tier?.label || null
+          tierLabel: tier?.label || null,
+          manageUrl: preset.manageUrl || null,
+          homeUrl: preset.homeUrl || null
         })) {
           showToast(`Added ${name}`);
+          renderSubscriptionPresets();
         }
         return;
       }
@@ -19296,45 +19600,70 @@
     }
 
     function parseBankCsv(text) {
-      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      // Strip BOM + normalize odd separators banks love to ship
+      const raw = String(text || '').replace(/^\uFEFF/, '').replace(/\t/g, ',');
+      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
       if (lines.length < 2) return [];
 
       let headerIdx = 0;
       let headers = [];
-      for (let i = 0; i < Math.min(8, lines.length); i++) {
-        const cols = parseCsvLine(lines[i]).map(h => h.toLowerCase());
-        if (cols.some(c => /date|posted/.test(c)) && cols.some(c => /amount|debit|credit|withdrawal|deposit|description|memo/.test(c))) {
+      for (let i = 0; i < Math.min(12, lines.length); i++) {
+        const cols = parseCsvLine(lines[i]).map(h => h.toLowerCase().replace(/[_]+/g, ' ').trim());
+        const looksHeader =
+          cols.some(c => /date|posted|posting|trans/.test(c)) &&
+          cols.some(c => /amount|debit|credit|withdrawal|deposit|description|memo|payee|merchant|narrative|details|running balance/.test(c));
+        if (looksHeader) {
           headerIdx = i;
           headers = cols;
           break;
         }
       }
-      if (!headers.length) headers = parseCsvLine(lines[0]).map(h => h.toLowerCase());
+      if (!headers.length) headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().replace(/[_]+/g, ' ').trim());
 
       const findCol = (patterns) => headers.findIndex(h => patterns.some(p => p.test(h)));
-      const dateCol = findCol([/transaction date/, /posting date/, /^date$/, /posted/]);
-      const descCol = findCol([/description/, /memo/, /payee/, /merchant/, /details/, /name/]);
-      const amountCol = findCol([/^amount$/, /transaction amount/, /value/]);
-      const debitCol = findCol([/debit/, /withdrawal/, /money out/]);
-      const creditCol = findCol([/credit/, /deposit/, /money in/]);
+      const dateCol = findCol([/transaction date/, /posting date/, /post date/, /trans date/, /^date$/, /posted/, /settled/]);
+      const descCol = findCol([/description/, /memo/, /payee/, /merchant/, /details/, /narrative/, /name/, /particulars/, /reference/]);
+      const amountCol = findCol([/^amount$/, /transaction amount/, /billing amount/, /original amount/, /value/, /sum/]);
+      const debitCol = findCol([/debit/, /withdrawal/, /money out/, /spent/, /charge/]);
+      const creditCol = findCol([/credit/, /deposit/, /money in/, /payment received/]);
 
       const transactions = [];
       for (let i = headerIdx + 1; i < lines.length; i++) {
         const cols = parseCsvLine(lines[i]);
         if (cols.length < 2) continue;
 
-        const desc = (descCol >= 0 ? cols[descCol] : cols[1] || cols[0] || '').trim();
+        // Prefer dedicated description columns; fall back to first text-like cell
+        let desc = (descCol >= 0 ? cols[descCol] : '').trim();
+        if (!desc || desc.length < 3) {
+          const fallback = cols.find((c, idx) => idx !== dateCol && idx !== amountCol && /[a-zA-Z]{3,}/.test(c || ''));
+          desc = (fallback || cols[1] || cols[0] || '').trim();
+        }
         if (!desc || desc.length < 3) continue;
+        // Skip obvious non-merchant noise
+        if (/^balance|^total|^opening|^closing|^beginning/i.test(desc)) continue;
 
         let expense = null;
         if (amountCol >= 0) {
           const amt = parseMoneyValue(cols[amountCol]);
+          // Banks differ: expenses as negative OR positive with separate debit column
           if (amt < 0) expense = Math.abs(amt);
-          else if (amt > 0 && debitCol < 0 && creditCol < 0) expense = amt;
+          else if (amt > 0 && debitCol < 0) expense = amt; // many exports: positive = money out
+          else if (amt > 0 && debitCol >= 0) {
+            // Prefer debit column when both exist
+            const debit = parseMoneyValue(cols[debitCol]);
+            if (debit > 0) expense = debit;
+            else if (creditCol >= 0 && parseMoneyValue(cols[creditCol]) > 0) expense = null; // income
+            else expense = amt;
+          }
         }
         if (expense == null && debitCol >= 0) {
           const debit = parseMoneyValue(cols[debitCol]);
           if (debit > 0) expense = debit;
+        }
+        // Credit-only rows are income — skip
+        if (expense == null && creditCol >= 0) {
+          const credit = parseMoneyValue(cols[creditCol]);
+          if (credit > 0) continue;
         }
         if (expense == null || expense < 0.5) continue;
 
@@ -19350,10 +19679,13 @@
 
       const cleaned = description.toUpperCase()
         .replace(/[^A-Z0-9\s]/g, ' ')
-        .replace(/\b(LLC|INC|USA|COM|BILL|PMT|PAYMENT|SUBSCRIPTION|RECURRING)\b/g, ' ')
+        // Common bank noise + card suffixes
+        .replace(/\b(LLC|INC|USA|US|COM|WWW|HTTP|HTTPS|BILL|PMT|PAYMENT|SUBSCRIPTION|RECURRING|AUTOPAY|AUTO PAY|POS|PURCHASE|CARD|DEBIT|CREDIT|VISA|MC|MASTERCARD|AMEX|ACH|WEB|ID|REF|TST|SQ\s*\*|PAYPAL\s*\*)\b/g, ' ')
+        .replace(/\b\d{4,}\b/g, ' ') // long numbers / auth codes
         .replace(/\s+/g, ' ')
         .trim();
-      const words = cleaned.split(' ').filter(Boolean);
+      const words = cleaned.split(' ').filter(w => w.length > 1);
+      // Prefer first meaningful brand token for grouping
       return words.slice(0, 3).join(' ') || cleaned.slice(0, 24);
     }
 
@@ -19397,6 +19729,7 @@
       const groups = {};
       transactions.forEach(tx => {
         const key = normalizeMerchantKey(tx.description);
+        if (!key) return;
         if (!groups[key]) groups[key] = [];
         groups[key].push(tx);
       });
@@ -19404,9 +19737,13 @@
       const detected = [];
       Object.entries(groups).forEach(([key, txs]) => {
         const dated = txs.filter(t => t.date).sort((a, b) => a.date - b.date);
-        const pool = dated.length >= 2 ? dated : txs;
+        const pool = dated.length >= 1 ? (dated.length ? dated : txs) : txs;
+        if (!pool.length) return;
+
+        // Known brands: accept a single hit as a low-confidence candidate
         if (pool.length < 2) {
           const preset = matchSubscriptionPreset(pool[0]?.description || '');
+          if (!preset) return; // unknown one-off spend — skip
           const item = buildDetectedSubscriptionItem({
             preset,
             amount: pool[0].amount,
@@ -19422,20 +19759,51 @@
         }
 
         const avgAmount = pool.reduce((sum, t) => sum + t.amount, 0) / pool.length;
-        const similar = pool.filter(t => Math.abs(t.amount - avgAmount) <= Math.max(1.5, avgAmount * 0.12));
-        if (similar.length < 2) return;
+        // Wider tolerance for tax/promo amount drift
+        const similar = pool.filter(t => Math.abs(t.amount - avgAmount) <= Math.max(2.5, avgAmount * 0.18));
+        if (similar.length < 2) {
+          // Still surface known brands even if amounts vary
+          const presetOnly = matchSubscriptionPreset(pool[0]?.description || '');
+          if (presetOnly) {
+            const item = buildDetectedSubscriptionItem({
+              preset: presetOnly,
+              amount: avgAmount,
+              cycle: 'monthly',
+              renewalDay: (dated[dated.length - 1] || pool[0]).date
+                ? (dated[dated.length - 1] || pool[0]).date.getDate()
+                : 1,
+              key,
+              confidence: 'low',
+              occurrences: pool.length,
+              sampleDescription: pool[0].description
+            });
+            if (item) detected.push(item);
+          }
+          return;
+        }
 
         const intervals = [];
         const sorted = similar.filter(t => t.date).sort((a, b) => a.date - b.date);
         for (let i = 1; i < sorted.length; i++) {
           intervals.push((sorted[i].date - sorted[i - 1].date) / 86400000);
         }
-        if (!intervals.length) return;
 
-        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
         let cycle = 'monthly';
-        if (avgInterval >= 320 && avgInterval <= 400) cycle = 'yearly';
-        else if (avgInterval < 22 || avgInterval > 38) return;
+        let confidence = similar.length >= 3 ? 'high' : 'medium';
+        if (intervals.length) {
+          const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+          if (avgInterval >= 300 && avgInterval <= 400) cycle = 'yearly';
+          else if (avgInterval >= 80 && avgInterval <= 100) cycle = 'quarterly';
+          else if (avgInterval >= 12 && avgInterval <= 16) cycle = 'biweekly';
+          else if (avgInterval >= 5 && avgInterval <= 9) cycle = 'weekly';
+          else if (avgInterval < 20 || avgInterval > 45) {
+            // Not clearly monthly — still keep known brands
+            const presetLoose = matchSubscriptionPreset(similar[0]?.description || '');
+            if (!presetLoose) return;
+            confidence = 'low';
+            cycle = 'monthly';
+          }
+        }
 
         const lastTx = sorted[sorted.length - 1] || similar[similar.length - 1];
         const preset = matchSubscriptionPreset(lastTx.description) || SUBSCRIPTION_PRESETS.find(p => p.id === key);
@@ -19445,7 +19813,7 @@
           cycle,
           renewalDay: lastTx.date ? lastTx.date.getDate() : 1,
           key,
-          confidence: similar.length >= 3 ? 'high' : 'medium',
+          confidence,
           occurrences: similar.length,
           sampleDescription: lastTx.description
         });
@@ -19619,16 +19987,20 @@
         <div class="sub-brand-grid">
           ${visible.map(p => {
             const trackedCount = (p.tiers || []).filter(t => isPresetTierTracked(p.id, t.id)).length;
-            const allTracked = trackedCount >= (p.tiers || []).length;
+            const allTracked = isPresetTracked(p) || ((p.tiers || []).length > 0 && trackedCount >= (p.tiers || []).length);
             const priceHint = getPresetPriceRangeLabel(p);
-            const trackedHint = trackedCount ? ` · ${trackedCount} tier${trackedCount === 1 ? '' : 's'} added` : '';
+            const trackedHint = allTracked ? ' · on your list' : (trackedCount ? ` · ${trackedCount} tier${trackedCount === 1 ? '' : 's'} added` : '');
+            const click = allTracked
+              ? `focusTrackedSubscription('${p.id}')`
+              : `quickAddSubscriptionPreset('${p.id}')`;
             return `
-              <button type="button" onclick="quickAddSubscriptionPreset('${p.id}')"
+              <button type="button" onclick="${click}"
                 class="sub-brand-tile ${allTracked ? 'is-tracked' : ''}"
-                title="${escapeSubscriptionHtml(priceHint + trackedHint)}">
+                title="${escapeSubscriptionHtml(priceHint + trackedHint)}"
+                aria-label="${escapeSubscriptionHtml(p.name)}${allTracked ? ' (already on your list)' : ''}">
                 <div class="relative">
                   ${subscriptionBrandLogoHtml(p, 'tile')}
-                  ${allTracked ? '<span class="sub-brand-check"><i class="fa-solid fa-check"></i></span>' : ''}
+                  ${allTracked ? '<span class="sub-brand-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>' : ''}
                 </div>
                 <span class="sub-brand-label">${escapeSubscriptionHtml(p.name)}</span>
               </button>`;
@@ -20198,14 +20570,30 @@
         .sort((a, b) => a.days - b.days);
     }
 
+    /** Completed today and worth showing under active Task items */
+    function shouldShowCompletedOnTaskTab(habit) {
+      if (!habit || !isCompletedToday(habit.id)) return false;
+      if (getHabitSkips(habit.id).includes(todayStr())) return false;
+      // Keep parked long-block chores out unless they were pulled onto Task
+      if (typeof isParkedForSummary === 'function' && isParkedForSummary(habit) && !isPulledToToday(habit) && !isOneOffTask(habit)) {
+        // Still show if user completed it somehow today
+        return true;
+      }
+      return true;
+    }
+
     function buildTodayFeed() {
       // Today = achievable daily rhythm. Heavy maintenance lives in Summary until pulled.
       const today = todayStr();
       const active = [];
+      const completed = [];
 
       state.habits.forEach(h => {
+        if (isCompletedToday(h.id)) {
+          if (shouldShowCompletedOnTaskTab(h)) completed.push(h);
+          return;
+        }
         // Multi-log (times_per_day > 1): stay until all completions for today are done
-        if (isCompletedToday(h.id)) return;
         if (getHabitSkips(h.id).includes(today)) return;
         if (!belongsOnTodayTab(h)) return;
         active.push(h);
@@ -20218,6 +20606,8 @@
         if (overdueDiff !== 0) return overdueDiff;
         return getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy);
       });
+      // Most recently completed first within the done group (stable: by title if no timestamp)
+      completed.sort((a, b) => String(a.title || '').localeCompare(String(b.title || '')));
 
       const syncPending = state.habits.filter(h => canShowActivitySync(h));
       const renewingSubs = getSubscriptionsRenewingSoon(3);
@@ -20237,9 +20627,18 @@
       const pulled = active.filter(h => isPulledToToday(h));
       const rest = active.filter(h => !isPulledToToday(h));
       if (pulled.length) {
-        sections.push({ type: 'habits', label: 'Pulled onto Today', items: pulled, variant: 'active' });
+        sections.push({ type: 'habits', label: 'Pulled onto Task', items: pulled, variant: 'active' });
       }
-      sections.push({ type: 'habits', label: pulled.length ? 'Today’s rhythm' : '', items: rest, variant: 'active' });
+      sections.push({ type: 'habits', label: pulled.length ? 'Active' : '', items: rest, variant: 'active' });
+      // Dimmed completed strip below active work for end-of-day review
+      if (completed.length) {
+        sections.push({
+          type: 'habits-done',
+          label: 'Completed today',
+          items: completed,
+          variant: 'done'
+        });
+      }
       return sections;
     }
 
@@ -20848,7 +21247,7 @@
     }
 
     function renderHabitCard(habit, container, options = {}) {
-      const { muted = false, upcomingLabel = '' } = options;
+      const { muted = false, upcomingLabel = '', completed = false } = options;
       const today = todayStr();
       const streak = computeCurrentStreak(habit.id);
       const isRecurring = isNonDailyRecurring(habit);
@@ -20880,32 +21279,40 @@
       const timesNeed = typeof getTimesPerDay === 'function' ? getTimesPerDay(habit) : 1;
       const timesDone = typeof countCompletionsOnDate === 'function' ? countCompletionsOnDate(habit.id, todayStr()) : 0;
       const isMulti = timesNeed > 1;
-      const mobileTapComplete = typeof isSwipeMobile === 'function' && isSwipeMobile();
+      const mobileTapComplete = !completed && typeof isSwipeMobile === 'function' && isSwipeMobile();
       // Minimal multi-log UI: fraction lives on the complete control (0/2 → 1/2 → done)
       // Circle + whole-card tap both complete (title used to steal taps and only expand).
       const hitClasses = 'task-complete-hit touch-target w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-harbor-border active:border-harbor-primary flex items-center justify-center text-xl'
         + (isMulti ? ' is-multi' : '')
-        + (isMulti && timesDone > 0 ? ' is-partial' : '');
-      const hitInner = isMulti
-        ? `<span class="habit-hit-frac" aria-hidden="true">${timesDone}/${timesNeed}</span>`
-        : `<i class="fa-regular fa-circle text-harbor-muted"></i>`;
-      const multiPill = isMulti
+        + (isMulti && timesDone > 0 && !completed ? ' is-partial' : '')
+        + (completed ? ' is-done-hit opacity-80' : '');
+      const hitInner = completed
+        ? `<i class="fa-solid fa-circle-check text-harbor-primary-light" aria-hidden="true"></i>`
+        : (isMulti
+          ? `<span class="habit-hit-frac" aria-hidden="true">${timesDone}/${timesNeed}</span>`
+          : `<i class="fa-regular fa-circle text-harbor-muted"></i>`);
+      const multiPill = isMulti && !completed
         ? `<span class="habit-multi-pill" title="${timesDone} of ${timesNeed} today">${timesDone}/${timesNeed}</span>`
         : '';
       const freqChip = !isMulti && isRecurring ? formatIntervalLabel(habit.interval_days, habit) : '';
+      const completedPill = completed
+        ? `<span class="text-[10px] font-bold uppercase tracking-wide text-harbor-primary-light px-1.5 py-0.5 rounded-full bg-harbor-primary/12 border border-harbor-primary/20">Completed</span>`
+        : '';
 
       const safeTitle = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(habit.title) : habit.title;
       const safeHabitId = String(habit.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      const hitClick = completed ? '' : `onclick="completeHabit('${safeHabitId}', event)"`;
       const contentHtml = `
-        <div onclick="completeHabit('${safeHabitId}', event)" class="${hitClasses}" role="button"
-          aria-label="${isMulti ? `${safeTitle}, ${timesDone} of ${timesNeed} today` : `Complete ${safeTitle}`}">
+        <div ${hitClick} class="${hitClasses}" role="${completed ? 'img' : 'button'}"
+          aria-label="${completed ? `Completed ${safeTitle}` : (isMulti ? `${safeTitle}, ${timesDone} of ${timesNeed} today` : `Complete ${safeTitle}`)}">
           ${hitInner}
         </div>
         <div class="flex-1 min-w-0 habit-main-tap">
-          <div class="font-medium leading-tight habit-title-text${showMuted ? ' text-harbor-muted' : ''}"
+          <div class="font-medium leading-tight habit-title-text${showMuted || completed ? ' text-harbor-muted' : ''}${completed ? ' line-through decoration-harbor-muted/40' : ''}"
             data-habit-title="1"
-            title="Tap to complete">${safeTitle}</div>
+            title="${completed ? 'Completed today' : 'Tap to complete'}">${safeTitle}</div>
           <div class="flex items-center gap-x-2 mt-0.5 flex-wrap">
+            ${completedPill}
             ${habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))
               ? `<span class="text-sky-300 text-xs px-1.5 rounded bg-sky-900/40 font-semibold">Pro booking</span>`
               : ''}
@@ -20934,9 +21341,9 @@
       `;
 
       row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
-        `habit-card harbor-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 active:bg-harbor-raised cursor-pointer${showMuted ? ' opacity-45' : ''} is-tap-complete${mobileTapComplete ? ' is-mobile-tap-complete' : ''}`);
+        `habit-card harbor-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 active:bg-harbor-raised${completed ? '' : ' cursor-pointer'}${showMuted || completed ? ' opacity-45' : ''}${completed ? ' is-completed-today' : ' is-tap-complete'}${mobileTapComplete ? ' is-mobile-tap-complete' : ''}`);
       const content = row.querySelector('.swipe-row-content');
-      if (content) {
+      if (content && !completed) {
         content.dataset.completeHabit = habit.id;
         content.setAttribute('role', 'button');
         content.setAttribute('aria-label', isMulti
@@ -20946,8 +21353,8 @@
       content?.addEventListener('contextmenu', (e) => { e.preventDefault(); showHabitDetail(habit.id); });
       // Whole-card tap completes (title used to only expand and blocked the handler).
       // Circle still has its own handler; completeHabit is idempotent / toast-guards doubles.
-      // Swipe Edit/Delete + inline actions are excluded.
-      if (content) {
+      // Swipe Edit/Delete + inline actions are excluded. Completed strip is view-only.
+      if (content && !completed) {
         content.addEventListener('click', (e) => {
           if (row.dataset.swipeSuppressClick === '1') return;
           if (row.classList.contains('is-open') || row.classList.contains('is-swiping')) return;
@@ -21205,10 +21612,11 @@
         section.items.forEach(item => {
           if (section.type === 'sync-pending') {
             renderCompletedSyncCard(item, container);
-          } else if (section.type === 'habits') {
+          } else if (section.type === 'habits' || section.type === 'habits-done') {
             const daysUntil = getDaysUntilHabitDue(item);
             renderHabitCard(item, container, {
               muted: section.variant === 'upcoming',
+              completed: section.type === 'habits-done' || section.variant === 'done',
               upcomingLabel: section.variant === 'upcoming' ? formatUpcomingLabel(item, daysUntil) : ''
             });
           } else if (section.type === 'subscriptions') {
@@ -28764,7 +29172,7 @@
         guides.push({ emoji: '🏅', label: 'Soft badge', text: 'Shows on Streaks cards automatically — no action needed.' });
       }
       if (bank.motivationBoostUntil && bank.motivationBoostUntil >= todayStr()) {
-        guides.push({ emoji: '✨', label: 'Calm boost', text: 'Open Streaks → tap a measurable habit → open Tide Journey.' });
+        guides.push({ emoji: '✨', label: 'Calm boost', text: 'Open Streaks → tap a measurable habit → open Streak Preview.' });
       }
       if (bank.skipToken) {
         guides.push({
@@ -29796,7 +30204,7 @@
         `;
 
       row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml, cardClass);
-      // Single tap handler for Tide Journey (works with swipe rows)
+      // Single tap handler for Streak Preview (works with swipe rows)
       const content = row.querySelector('.swipe-row-content');
       if (content && !content.dataset.projectionBound) {
         content.dataset.projectionBound = '1';
@@ -29974,8 +30382,11 @@
       updateProjectionHint();
       renderStreakCards();
 
-      const metricLogger = isQuantitativeHabit(habit) ? renderProjectionMetricLogger(habit) : '';
-      const showFatInsight = getHabitMetricType(habit) === 'miles' || getHabitMetricType(habit) === 'steps';
+      const metricType = getHabitMetricType(habit);
+      const metricLogger = isQuantitativeHabit(habit) && metricType !== 'care'
+        ? renderProjectionMetricLogger(habit)
+        : '';
+      const showFatInsight = metricType === 'miles' || metricType === 'steps';
       const fatInsightHtml = showFatInsight ? renderFatCalorieInsight(proj.fatInsightKcal || 0) : '';
       const milestone = getNextPassMilestone(habitId);
       const milestoneHtml = milestone
@@ -29985,13 +30396,16 @@
           : `<div class="proj-milestone">🔥 ${streak} day${streak === 1 ? '' : 's'} · longest ${longest}d · keep the chain</div>`);
 
       if (!proj.canProject) {
+        const unlockHint = metricType === 'care'
+          ? 'Complete it once on Task to unlock Streak Preview'
+          : (metricLogger ? 'Log once to unlock your 30-day outlook' : 'Complete or log to unlock a preview');
         panel.innerHTML = `
           <div class="proj-headline">${escapeBriefHtml(proj.title)}</div>
           <div class="text-xs bg-harbor-raised px-3 py-3 rounded-2xl text-harbor-muted leading-relaxed mb-2">${proj.message}</div>
           ${milestoneHtml}
           ${fatInsightHtml}
           ${metricLogger}
-          <div class="text-[10px] text-center mt-3 text-harbor-muted">${metricLogger ? 'Log once to unlock your 30-day outlook' : 'Add a target (steps, miles, pages…) for projections'}</div>
+          <div class="text-[10px] text-center mt-3 text-harbor-muted">${unlockHint}</div>
         `;
         bindProjectionMetricLogger(panel, habitId);
         finishProjectionPanelRender(document.getElementById('projection-panel') || panel);
@@ -30026,7 +30440,7 @@
         ${fatInsightHtml}
         ${proj.profileNote ? `<div class="mt-2 text-[10px] text-harbor-muted leading-snug">${proj.profileNote}</div>` : ''}
         ${metricLogger}
-        <div class="text-[10px] text-center mt-3 text-harbor-muted">Tap another fire to compare</div>
+        <div class="text-[10px] text-center mt-3 text-harbor-muted">Tap another streak to compare</div>
       `;
       bindProjectionMetricLogger(panel, habitId);
       finishProjectionPanelRender(document.getElementById('projection-panel') || panel);
@@ -30472,7 +30886,7 @@
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-fire text-orange-400 mr-1.5"></i>Streaks</h4>
-              <p>Habits that stick. Streak fires, Tide Journey, and <strong class="text-harbor-text">Harbor Day</strong> — claim rest when the meter is full.</p>
+              <p>Habits that stick. Streak fires, Streak Preview, and <strong class="text-harbor-text">Harbor Day</strong> — claim rest when the meter is full.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-book text-violet-300 mr-1.5"></i>Library</h4>
@@ -31591,7 +32005,7 @@
       {
         key: 'save',
         title: '$5 in savings every day',
-        blurb: 'Tracks a simple daily metric · opens Tide Journey',
+        blurb: 'Tracks a simple daily metric · opens Streak Preview',
         category: 'personal',
         est_minutes: 2,
         difficulty: 1,
