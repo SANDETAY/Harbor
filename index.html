@@ -10082,6 +10082,7 @@
             <div class="flex gap-1.5 mb-2.5 flex-wrap" id="budget-kind-filters" role="tablist" aria-label="Transaction type">
               <button type="button" class="cal-format-chip is-active" data-budget-kind="out" onclick="setBudgetKindFilter('out')">Money out</button>
               <button type="button" class="cal-format-chip" data-budget-kind="purchases" onclick="setBudgetKindFilter('purchases')">Purchases</button>
+              <button type="button" class="cal-format-chip" data-budget-kind="bills" onclick="setBudgetKindFilter('bills')">Fixed bills</button>
               <button type="button" class="cal-format-chip" data-budget-kind="transfers" onclick="setBudgetKindFilter('transfers')">Transfers</button>
               <button type="button" class="cal-format-chip" data-budget-kind="cards" onclick="setBudgetKindFilter('cards')">Card payments</button>
               <button type="button" class="cal-format-chip" data-budget-kind="savings" onclick="setBudgetKindFilter('savings')">Savings</button>
@@ -10320,7 +10321,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 277;
+    const HARBOR_BUILD_NUMBER = 278;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20557,18 +20558,19 @@
     // All money-out categories appear in the pie and legend (filterable).
     // moneyMove = transfers / card payments / savings — also filterable via type chips.
     const BUDGET_CATEGORIES = [
-      { id: 'housing', label: 'Housing', color: '#4F7CFF', pie: true },
-      { id: 'utilities', label: 'Utilities', color: '#7B6CF0', pie: true },
+      { id: 'housing', label: 'Mortgage & rent', color: '#4F7CFF', pie: true, fixedBill: true },
+      { id: 'utilities', label: 'Utilities & phone', color: '#7B6CF0', pie: true, fixedBill: true },
+      { id: 'insurance', label: 'Insurance', color: '#5B8DEF', pie: true, fixedBill: true },
+      { id: 'loans', label: 'Loans & car', color: '#C17B4A', pie: true, fixedBill: true },
       { id: 'groceries', label: 'Groceries', color: '#2F9B8C', pie: true },
       { id: 'dining', label: 'Dining out', color: '#E07A5F', pie: true },
-      { id: 'transport', label: 'Transport', color: '#E9A825', pie: true },
+      { id: 'transport', label: 'Transport & gas', color: '#E9A825', pie: true },
       { id: 'shopping', label: 'Shopping', color: '#D46B8C', pie: true },
       { id: 'health', label: 'Health & pets', color: '#3DB8A8', pie: true },
       { id: 'entertainment', label: 'Entertainment', color: '#8B6BC9', pie: true },
       { id: 'personal', label: 'Personal care', color: '#E0A0B0', pie: true },
       { id: 'education', label: 'Education', color: '#6A8EC9', pie: true },
       { id: 'charity', label: 'Giving', color: '#5E9E6B', pie: true },
-      { id: 'loans', label: 'Loans & debt', color: '#C17B4A', pie: true },
       { id: 'fees', label: 'Fees', color: '#A07070', pie: true },
       { id: 'cash', label: 'Cash & ATM', color: '#8A9A96', pie: true },
       { id: 'other', label: 'Other', color: '#9AA3A0', pie: true },
@@ -20581,6 +20583,7 @@
     const BUDGET_KIND_OPTIONS = [
       { id: 'out', label: 'Money out', totalLabel: 'Total money out' },
       { id: 'purchases', label: 'Purchases', totalLabel: 'Total purchases' },
+      { id: 'bills', label: 'Fixed bills', totalLabel: 'Total fixed bills' },
       { id: 'transfers', label: 'Transfers', totalLabel: 'Total transfers' },
       { id: 'cards', label: 'Card payments', totalLabel: 'Total card payments' },
       { id: 'savings', label: 'Savings', totalLabel: 'Total to savings' },
@@ -20607,7 +20610,11 @@
       'office supplies': 'shopping',
       'entertainment': 'entertainment',
       'online services': 'entertainment',
-      'insurance': 'health',
+      'insurance': 'insurance',
+      'auto insurance': 'insurance',
+      'home insurance': 'insurance',
+      'life insurance': 'insurance',
+      'health insurance': 'insurance',
       'healthcare': 'health',
       'medical': 'health',
       'pets/pet care': 'health',
@@ -20631,6 +20638,9 @@
 
     const BUDGET_MONEY_MOVE_IDS = new Set(
       BUDGET_CATEGORIES.filter(c => c.moneyMove).map(c => c.id)
+    );
+    const BUDGET_FIXED_BILL_IDS = new Set(
+      BUDGET_CATEGORIES.filter(c => c.fixedBill).map(c => c.id)
     );
 
     let budgetCategoryFilter = null;
@@ -20659,9 +20669,39 @@
       if (cat === 'transfers') return 'Transfer';
       if (cat === 'credit_cards') return 'Card payment';
       if (cat === 'savings') return 'Savings';
-      if (cat === 'loans') return 'Loan payment';
+      if (cat === 'loans') return 'Loan / car payment';
+      if (cat === 'insurance') return 'Insurance';
+      if (cat === 'housing') return 'Mortgage / rent';
+      if (cat === 'utilities') return 'Utility / phone';
       if (cat === 'cash') return 'Cash / ATM';
       return 'Debit';
+    }
+
+    function isBudgetFixedBillCategory(catId) {
+      return BUDGET_FIXED_BILL_IDS.has(catId);
+    }
+
+    /** Re-map bank “Insurance” that landed under Health before Insurance existed */
+    function migrateBudgetFixedBillCategories() {
+      const budget = ensureBudgetState();
+      let changed = false;
+      (budget.transactions || []).forEach(t => {
+        if (!t || t.isCredit) return;
+        const bank = String(t.bankCategory || '').trim().toLowerCase();
+        const fromBank = mapBankCategoryToHarbor(t.bankCategory);
+        // Insurance was previously mapped to health
+        if ((bank === 'insurance' || fromBank === 'insurance') &&
+            (t.category === 'health' || t.categoryAuto === 'health' || t.category === 'insurance')) {
+          if (t.category === 'health' || t.category === t.categoryAuto) {
+            if (t.category !== 'insurance') { t.category = 'insurance'; changed = true; }
+          }
+          if (t.categoryAuto === 'health' || !t.categoryAuto) {
+            t.categoryAuto = 'insurance';
+            changed = true;
+          }
+        }
+      });
+      if (changed) saveState();
     }
 
     function parseBudgetDate(raw) {
@@ -20699,17 +20739,18 @@
       const text = String(description || '');
       const rules = [
         [/freedom\s*mortgage|mortgage|rent\b|landlord|hoa\b/i, 'housing'],
-        [/clay\s*electric|clay\s*county\s*utility|electric|utility|utilities|water\s*bill|duke\s*energy|pg&e|t-?mobile|verizon|at&?t|comcast|xfinity|spectrum|telephone/i, 'utilities'],
+        [/clay\s*electric|clay\s*county\s*utility|electric|utility|utilities|water\s*bill|duke\s*energy|pg&e|t-?mobile|verizon|at&?t|comcast|xfinity|spectrum|telephone|phone\s*bill/i, 'utilities'],
+        [/\binsurance\b|geico|state\s*farm|progressive|allstate|usaa\s*(property|insurance)|liberty\s*mutual|nationwide|farmers\s*ins|auto\s*ins|homeowners/i, 'insurance'],
+        [/car\s*payment|auto\s*loan|vehicle\s*loan|toyota\s*financial|honda\s*financial|ford\s*credit|ally\s*auto|transfer\s*to\s*loan|klarna|affirm|afterpay|\bloan\b/i, 'loans'],
         [/publix|instacart|kroger|safeway|aldi|whole\s*foods|trader\s*joe|food\s*lion|heb|meijer|sprouts|winn[\s-]?dixie|grocery/i, 'groceries'],
         [/starbucks|mcdonald|chipotle|doordash|uber\s*eats|grubhub|subway|dunkin|wendy|burger|taco\s*bell|panera|chick[\s-]?fil|popeyes|pizza|restaurant|dining|cafe|coffee|smoothie/i, 'dining'],
         [/exxon|shell|chevron|mobil|valero|gas\s*station|sunpass|uber\b|lyft|parking|toll|fuel/i, 'transport'],
         [/amazon|amzn|costco|walmart|target|best\s*buy|ikea|nike|ebay|etsy|home\s*depot|lowe'?s?/i, 'shopping'],
-        [/cvs|walgreens|pharmacy|dental|hospital|doctor|insurance|usaa\s*property|gym|fitness|petco|petsmart|vet\b|veterinary/i, 'health'],
+        [/cvs|walgreens|pharmacy|dental|hospital|doctor|gym|fitness|petco|petsmart|vet\b|veterinary/i, 'health'],
         [/netflix|spotify|hulu|disney|hbo|peacock|microsoft|epic\s*theatres|cinema|movie|steam|xbox|playstation|youtube|apple\.com\/bill/i, 'entertainment'],
         [/sephora|ulta|salon|barber|spa/i, 'personal'],
         [/tuition|university|college|school|coursera|udemy/i, 'education'],
         [/church|charit|donation|tithe|elevate\s*life/i, 'charity'],
-        [/klarna|loan\b|affirm|afterpay/i, 'loans'],
         [/american\s*express|payment\s*to\s*chase|credit\s*card/i, 'credit_cards'],
         [/transfer\s*to\s*savings|transfer\s*to\s*certificate|savings\s*-/i, 'savings'],
         [/zelle|venmo|cash\s*app|apple\s*cash|paypal|transfer/i, 'transfers'],
@@ -20726,6 +20767,14 @@
 
     function isBudgetMoneyMoveCategory(catId) {
       return BUDGET_MONEY_MOVE_IDS.has(catId);
+    }
+
+    // purchases = discretionary-ish: not money-moves and not fixed bills
+    function isBudgetPurchaseCategory(catId) {
+      if (!catId || catId === 'income') return false;
+      if (isBudgetMoneyMoveCategory(catId)) return false;
+      if (isBudgetFixedBillCategory(catId)) return false;
+      return true;
     }
 
     /** Dedicated budget CSV reader — prefers Posting Date + Credit/Debit Indicator */
@@ -20867,8 +20916,11 @@
           return txs.filter(t => !t.isCredit && (t.category || '') === 'credit_cards');
         case 'savings':
           return txs.filter(t => !t.isCredit && (t.category || '') === 'savings');
+        case 'bills':
+          // Mortgage, phone/utilities, insurance, car/loans — the “keep the lights on” stack
+          return txs.filter(t => !t.isCredit && isBudgetFixedBillCategory(t.category));
         case 'purchases':
-          return txs.filter(t => !t.isCredit && !isBudgetMoneyMoveCategory(t.category));
+          return txs.filter(t => !t.isCredit && isBudgetPurchaseCategory(t.category));
         case 'out':
         default:
           return txs.filter(t => !t.isCredit);
@@ -21206,6 +21258,10 @@
       if (!empty || !content) return;
 
       ensureBudgetState();
+      if (!state.budget._fixedBillMigrated) {
+        state.budget._fixedBillMigrated = true;
+        migrateBudgetFixedBillCategories();
+      }
       const anyTx = (ensureBudgetState().transactions || []).some(t => t && (Number(t.amount) || 0) > 0);
       if (!anyTx) {
         empty.classList.remove('hidden');
@@ -21300,7 +21356,7 @@
       // Habit insights — purchases only (skip pure money-moves / income)
       if (insightsEl) {
         const insightSource = budgetKindFilter === 'income' || budgetKindFilter === 'transfers'
-          || budgetKindFilter === 'cards' || budgetKindFilter === 'savings'
+          || budgetKindFilter === 'cards' || budgetKindFilter === 'savings' || budgetKindFilter === 'bills'
           ? []
           : txs;
         const insights = getBudgetMerchantInsights(insightSource, 6);
