@@ -404,8 +404,13 @@
     }
 
     html, body {
+      margin: 0;
+      padding: 0;
       min-height: 100%;
       height: 100%;
+      /* iOS: fill the real screen edge-to-edge (viewport-fit=cover) */
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
       overflow-x: hidden;
       overscroll-behavior-x: none;
     }
@@ -413,6 +418,7 @@
     html {
       /* Deeper mint wash — coastal, not blank paper */
       background-color: #D6E8E2;
+      height: -webkit-fill-available;
     }
     html[data-theme="dark"] {
       background-color: #081210;
@@ -1061,7 +1067,7 @@
     #app-scroll { order: 2; }
     #main-nav-bar { order: 3; }
 
-    /* ── Mobile dock (SF-style): hairline bar, quiet icons, center Overview ── */
+    /* ── Mobile dock: flush to screen bottom; icons sit above home indicator ── */
     .main-nav,
     #main-nav-bar {
       position: relative;
@@ -1071,24 +1077,31 @@
       gap: 0;
       z-index: 50;
       overflow: visible;
-      padding: 0.4rem 0.2rem calc(0.18rem + var(--safe-bottom));
+      /* Top/side only — home-indicator inset is on the tab row, bar paints edge-to-edge */
+      padding: 0.35rem 0.2rem 0;
+      margin: 0;
       border-top: 0.5px solid rgba(60, 80, 75, 0.12);
       border-bottom: none !important;
-      background: rgba(252, 253, 252, 0.72) !important;
+      /* Opaque enough that home-indicator zone still reads as part of the dock */
+      background: rgba(248, 250, 249, 0.94) !important;
       box-shadow: none;
-      backdrop-filter: blur(24px) saturate(1.4);
-      -webkit-backdrop-filter: blur(24px) saturate(1.4);
+      backdrop-filter: blur(28px) saturate(1.5);
+      -webkit-backdrop-filter: blur(28px) saturate(1.5);
+      /* Paint into the physical bottom under the home indicator */
+      /* Home-indicator inset once — bar background fills to the physical edge */
+      padding-bottom: constant(safe-area-inset-bottom);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
     html[data-theme="dark"] .main-nav,
     html[data-theme="dark"] #main-nav-bar {
-      background: rgba(12, 22, 20, 0.78) !important;
+      background: rgba(10, 18, 16, 0.94) !important;
       border-top-color: rgba(255, 255, 255, 0.08);
       box-shadow: none;
     }
     html[data-theme="harbor"] .main-nav,
     html[data-theme="harbor"] #main-nav-bar {
-      background: rgba(250, 252, 251, 0.7) !important;
-      border-top-color: rgba(47, 155, 140, 0.1);
+      background: rgba(246, 250, 248, 0.94) !important;
+      border-top-color: rgba(47, 155, 140, 0.12);
     }
 
     /* Center slot for Overview FAB inside the dock */
@@ -1110,7 +1123,7 @@
     .main-nav-indicator {
       position: absolute;
       top: 0.22rem;
-      bottom: calc(0.18rem + var(--safe-bottom));
+      bottom: env(safe-area-inset-bottom, 0px);
       left: 0;
       width: 25%;
       border-radius: 0.7rem;
@@ -1136,8 +1149,9 @@
       align-items: center;
       justify-content: flex-end;
       gap: 0.2rem;
-      padding: 0.2rem 0.05rem 0.15rem;
-      min-height: 2.45rem;
+      /* Small gap above home indicator; safe-area is on the bar itself */
+      padding: 0.15rem 0.05rem 0.28rem;
+      min-height: 2.35rem;
       border: none;
       background: transparent !important;
       color: rgba(90, 110, 105, 0.72);
@@ -1360,6 +1374,9 @@
     .site-root {
       width: 100%;
       height: 100%;
+      min-height: 100%;
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
       display: flex;
       flex-direction: column;
       background: transparent !important;
@@ -1455,7 +1472,7 @@
     }
 
     .app-content-wrap {
-      flex: 1;
+      flex: 1 1 auto;
       min-height: 0;
       display: flex;
       flex-direction: column;
@@ -1468,7 +1485,7 @@
       position: relative;
       display: flex;
       flex-direction: column;
-      flex: 1;
+      flex: 1 1 auto;
       min-height: 0;
       overflow: hidden;
     }
@@ -8283,8 +8300,10 @@
 
       .main-nav,
       #main-nav-bar {
-        padding-top: 0.35rem !important;
-        padding-bottom: calc(0.2rem + var(--safe-bottom)) !important;
+        padding-top: 0.3rem !important;
+        /* Keep home-indicator fill; do not add a second safe-area gap */
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+        margin-bottom: 0 !important;
       }
 
       .quick-add-hint {
@@ -9121,7 +9140,7 @@
         </div>
         <button type="button" role="tab" aria-selected="false" onclick="switchTab('streaks')" id="tab-streaks"
           class="main-nav-tab">
-          <i class="fa-regular fa-star nav-tab-icon" aria-hidden="true"></i>
+          <i class="fa-solid fa-fire nav-tab-icon" aria-hidden="true"></i>
           <span class="nav-tab-label">Streaks</span>
         </button>
         <button type="button" role="tab" aria-selected="true" onclick="switchTab('today')" id="tab-today"
@@ -9176,7 +9195,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 235;
+    const HARBOR_BUILD_NUMBER = 236;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
