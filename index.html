@@ -181,10 +181,10 @@
 
     html[data-theme="dark"] .life-nav-tab.life-panel-active,
     html[data-theme="dark"] .main-nav-tab.nav-active {
-      color: #E8F2EE;
-      background: transparent;
+      color: rgb(var(--harbor-primary-light)) !important;
+      background: transparent !important;
       box-shadow: none;
-      font-weight: 750;
+      font-weight: 600;
     }
 
     html[data-theme="dark"] .life-chip-indicator {
@@ -193,14 +193,7 @@
     }
 
     html[data-theme="dark"] .main-nav-indicator {
-      background: linear-gradient(180deg, rgba(72, 178, 162, 0.35) 0%, rgba(47, 155, 140, 0.12) 100%);
-      box-shadow: inset 0 -2.5px 0 #48B2A2;
-    }
-
-    html[data-theme="dark"] .main-nav-tab.nav-active {
-      color: #E8F2EE;
-      text-shadow: none;
-      border-bottom-color: transparent;
+      /* Mobile: indicator hidden; desktop media re-enables */
     }
 
     html[data-theme="dark"] .summary-toggle-btn.is-active {
@@ -263,9 +256,10 @@
     }
 
     html[data-theme="harbor"] .main-nav-tab.nav-active {
-      color: #0A1F1E !important;
-      font-weight: 750;
+      color: #1F7A6E !important;
+      font-weight: 600;
       text-shadow: none;
+      background: transparent !important;
     }
 
     html[data-theme="harbor"] .life-chip-indicator {
@@ -274,8 +268,7 @@
     }
 
     html[data-theme="harbor"] .main-nav-indicator {
-      background: linear-gradient(180deg, rgba(60, 181, 166, 0.35) 0%, rgba(47, 155, 140, 0.12) 100%);
-      box-shadow: inset 0 -2.5px 0 #2F9B8C;
+      /* Mobile: indicator hidden; desktop media re-enables */
     }
 
     html[data-theme="harbor"] .summary-toggle-btn.is-active {
@@ -457,14 +450,12 @@
       ) !important;
     }
 
-    /* Transparent shell so mint wash shows */
+    /* Transparent shell so mint wash shows (dock keeps its own surface bar) */
     .app-frame,
     .app-frame.bg-harbor-bg,
     .site-root,
     #app-chrome,
     #app-scroll,
-    .main-nav,
-    .main-nav.bg-harbor-bg,
     .tab-content,
     .tab-content.bg-harbor-bg,
     #tab-content-library.bg-harbor-bg {
@@ -650,6 +641,11 @@
       0% { transform: scale(1); }
       45% { transform: scale(0.9); }
       100% { transform: scale(1); }
+    }
+    /* Mobile multi-log partial complete — subtle pulse, not full “done” fade */
+    #task-list .swipe-row.is-partial-tick .swipe-row-content,
+    #task-list .habit-card.is-partial-tick {
+      animation: multiTick 0.28s var(--harbor-ease-out);
     }
     .qt-times-chip {
       min-width: 2.35rem;
@@ -1060,72 +1056,155 @@
       color: rgb(var(--harbor-muted));
     }
 
+    /* Shell order: mobile = chrome → content → dock; desktop reorders nav under chrome */
+    #app-chrome { order: 1; }
+    #app-scroll { order: 2; }
+    #main-nav-bar { order: 3; }
+
+    /* ── Mobile dock (SF-style): hairline bar, quiet icons, center Overview ── */
     .main-nav,
     #main-nav-bar {
       position: relative;
-      gap: 0.35rem;
-      padding-bottom: 0.15rem;
+      flex-shrink: 0;
+      display: flex;
+      align-items: flex-end;
+      gap: 0;
+      z-index: 50;
+      overflow: visible;
+      padding: 0.4rem 0.2rem calc(0.18rem + var(--safe-bottom));
+      border-top: 0.5px solid rgba(60, 80, 75, 0.12);
       border-bottom: none !important;
-      border-bottom-width: 0 !important;
-      border-bottom-color: transparent !important;
-      background: transparent !important;
+      background: rgba(252, 253, 252, 0.72) !important;
+      box-shadow: none;
+      backdrop-filter: blur(24px) saturate(1.4);
+      -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    }
+    html[data-theme="dark"] .main-nav,
+    html[data-theme="dark"] #main-nav-bar {
+      background: rgba(12, 22, 20, 0.78) !important;
+      border-top-color: rgba(255, 255, 255, 0.08);
       box-shadow: none;
     }
+    html[data-theme="harbor"] .main-nav,
+    html[data-theme="harbor"] #main-nav-bar {
+      background: rgba(250, 252, 251, 0.7) !important;
+      border-top-color: rgba(47, 155, 140, 0.1);
+    }
 
-    /* Sliding active chip on main tabs */
+    /* Center slot for Overview FAB inside the dock */
+    .main-nav-fab-slot {
+      flex: 0 0 3.65rem;
+      width: 3.65rem;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      position: relative;
+      z-index: 3;
+      margin: 0;
+      padding-bottom: 0.05rem;
+      pointer-events: none;
+      align-self: flex-end;
+    }
+
+    /* Sliding pill — desktop only; mobile uses color-only selection like iOS */
     .main-nav-indicator {
       position: absolute;
-      top: 0.2rem;
-      bottom: 0.35rem;
+      top: 0.22rem;
+      bottom: calc(0.18rem + var(--safe-bottom));
       left: 0;
       width: 25%;
-      border-radius: var(--harbor-radius-md) var(--harbor-radius-md) 0.35rem 0.35rem;
-      background: linear-gradient(180deg, rgba(47, 155, 140, 0.28) 0%, rgba(47, 155, 140, 0.08) 100%);
-      box-shadow: inset 0 -2.5px 0 rgb(var(--harbor-primary));
+      border-radius: 0.7rem;
+      background: transparent;
+      box-shadow: none;
       pointer-events: none;
       z-index: 0;
-      opacity: 1;
+      opacity: 0;
       transition:
         transform var(--harbor-duration-slow) var(--harbor-ease-out),
-        width var(--harbor-duration-slow) var(--harbor-ease-out);
+        width var(--harbor-duration-slow) var(--harbor-ease-out),
+        opacity 0.2s ease;
       will-change: transform, width;
     }
 
     .main-nav-tab {
       position: relative;
       z-index: 1;
-      flex: 1;
-      padding: 0.7rem 0.3rem 0.65rem;
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.2rem;
+      padding: 0.2rem 0.05rem 0.15rem;
+      min-height: 2.45rem;
       border: none;
-      background: transparent;
-      color: rgb(var(--harbor-muted) / 0.88);
+      background: transparent !important;
+      color: rgba(90, 110, 105, 0.72);
       font-family: var(--harbor-font);
-      font-size: 0.88rem;
-      font-weight: 650;
-      letter-spacing: -0.015em;
+      font-size: 0.58rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
       cursor: pointer;
-      border-radius: var(--harbor-radius-md) var(--harbor-radius-md) 0 0;
-      border-bottom: 3px solid transparent;
-      transition: color 0.25s ease, background 0.25s ease, transform 0.15s var(--harbor-ease-out);
+      border-radius: 0;
+      border-bottom: none;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+      transition: color 0.2s ease, transform 0.15s var(--harbor-ease-out);
+    }
+    html[data-theme="dark"] .main-nav-tab {
+      color: rgba(180, 200, 194, 0.55);
+    }
+
+    .main-nav-tab .nav-tab-icon {
+      font-size: 1.05rem;
+      line-height: 1;
+      width: 1.35rem;
+      height: 1.15rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      pointer-events: none;
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+    }
+    .main-nav-tab .nav-tab-label {
+      pointer-events: none;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.58rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      opacity: 0.95;
+    }
+    .main-nav-tab.nav-active .nav-tab-icon {
+      opacity: 1;
     }
 
     .main-nav-tab:hover {
-      color: rgb(var(--harbor-text));
+      color: rgb(var(--harbor-text) / 0.85);
     }
 
     .main-nav-tab:active {
-      transform: scale(0.98);
+      transform: scale(0.94);
+      opacity: 0.85;
     }
 
     .main-nav-tab.nav-active {
-      color: #0A1F1E;
+      color: rgb(var(--harbor-primary)) !important;
       border-bottom-color: transparent;
-      background: transparent;
-      font-weight: 750;
+      background: transparent !important;
+      font-weight: 600;
       text-shadow: none;
     }
     html[data-theme="dark"] .main-nav-tab.nav-active {
-      color: #E8F2EE;
+      color: rgb(var(--harbor-primary-light)) !important;
+    }
+    html[data-theme="harbor"] .main-nav-tab.nav-active {
+      color: #1F7A6E !important;
     }
 
     .life-subnav {
@@ -1411,8 +1490,8 @@
       -webkit-overflow-scrolling: touch;
       /* Prefer vertical scroll; horizontal pans free for tab swipe */
       touch-action: pan-y;
-      /* Room for bottom-center Summary FAB */
-      padding-bottom: calc(5.25rem + var(--safe-bottom));
+      /* Room for bottom dock (nav is outside scroll) + a little breathing room */
+      padding-bottom: calc(1.25rem + var(--safe-bottom));
     }
 
     .library-filters-scroll,
@@ -1472,13 +1551,13 @@
       scroll-behavior: auto;
       /* Soft momentum + room for sticky section titles */
       scroll-padding-top: 0.35rem;
-      scroll-padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+      scroll-padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
       display: flex;
       flex-direction: column;
       gap: 1rem;
       align-items: stretch;
       width: 100%;
-      padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
       /* Camouflage scrollbar — scroll still works */
       scrollbar-width: none;
       -ms-overflow-style: none;
@@ -1733,6 +1812,10 @@
     }
     body > #summary-modal {
       z-index: 300 !important;
+    }
+    /* Tour coachmark must sit above Summary (300) and KPI sheets (320) on steps 7–8 */
+    body > #tutorial-overlay.is-above-summary {
+      z-index: 340 !important;
     }
     body.harbor-modal-open #site-root {
       pointer-events: none !important;
@@ -2024,7 +2107,7 @@
       opacity: 0.92;
       transform: scale(0.99);
     }
-    /* Inline logger on Projected Wins — match the same calm mint field */
+    /* Inline logger on Habit Pace — match the same calm mint field */
     .proj-metric-panel {
       margin-top: 1rem;
       padding: 0.9rem 0.95rem 0.95rem;
@@ -3000,10 +3083,16 @@
 
     #smart-banner {
       /* smart banner compact mega-patch */
-      margin-top: 0.35rem;
-      margin-bottom: 0.25rem;
-      padding: 0.45rem 0.7rem !important;
+      margin-top: 0.2rem;
+      margin-bottom: 0.15rem;
+      padding: 0.32rem 0.62rem !important;
+      min-height: 0 !important;
       transition: opacity var(--harbor-duration) ease, transform var(--harbor-duration) var(--harbor-ease-out);
+    }
+    #smart-banner .text-sm,
+    #smart-banner .text-xs {
+      font-size: 0.72rem !important;
+      line-height: 1.3 !important;
     }
 
     #smart-banner-label {
@@ -3504,6 +3593,43 @@
       color: rgb(var(--harbor-text));
       opacity: 0.92;
     }
+    .release-notes-intro {
+      font-size: 0.75rem;
+      line-height: 1.45;
+      color: rgb(var(--harbor-muted));
+      margin: 0 0 0.65rem;
+    }
+    .release-notes-section {
+      margin-top: 0.65rem;
+    }
+    .release-notes-section:first-of-type {
+      margin-top: 0.35rem;
+    }
+    .release-notes-section-h {
+      font-size: 0.68rem;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-primary-light));
+      margin: 0 0 0.3rem;
+    }
+    .release-notes-section .release-notes-list {
+      padding-left: 1rem;
+    }
+    .release-notes-section .release-notes-list li {
+      font-size: 0.76rem;
+    }
+
+    /* Mobile Today: no complete bubble — tap the row body to finish */
+    @media (max-width: 767px) {
+      #task-list .task-complete-hit {
+        display: none !important;
+      }
+      #task-list .habit-card.habit-row {
+        gap: 0.65rem !important;
+        padding-left: 0.95rem !important;
+      }
+    }
 
     /* Household person color coding on events */
     .person-swatch {
@@ -3803,8 +3929,8 @@
       flex-wrap: wrap;
       align-items: center;
       justify-content: flex-end;
-      gap: 0.35rem;
-      max-width: min(100%, 18rem);
+      gap: 0.4rem;
+      max-width: 100%;
     }
     .panel-head--toolbar-only {
       justify-content: flex-end;
@@ -3815,18 +3941,35 @@
       max-width: 100%;
       width: 100%;
     }
+    /* Status chip (free time) — same pill system as Hours/File/URL, not a button */
+    .chip-tool-btn.chip-tool-static {
+      cursor: default;
+      user-select: none;
+      pointer-events: none;
+      max-width: 9.5rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chip-tool-btn.chip-tool-static:active {
+      transform: none;
+      opacity: 1;
+    }
+    .chip-tool-btn.chip-tool-static:empty {
+      display: none;
+    }
     .chip-tool-btn {
       appearance: none;
       -webkit-appearance: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 0.35rem;
       flex-shrink: 0;
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       font-weight: 650;
       letter-spacing: -0.01em;
-      padding: 0.4rem 0.65rem;
-      min-height: 2rem;
+      padding: 0.42rem 0.72rem;
+      min-height: 2.15rem;
       border-radius: 999px;
       border: 1px solid rgba(47, 155, 140, 0.2);
       background: rgb(var(--harbor-surface));
@@ -3834,13 +3977,22 @@
       box-shadow: var(--harbor-shadow-sm);
       cursor: pointer;
       white-space: nowrap;
+      line-height: 1;
+      transition: transform 0.12s ease, opacity 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .chip-tool-btn i {
+      font-size: 0.72rem;
+      opacity: 0.92;
+      flex-shrink: 0;
+      line-height: 1;
     }
     .chip-tool-btn:active {
       transform: scale(0.97);
       opacity: 0.92;
     }
     .chip-tool-btn.is-active,
-    .chip-tool-btn[aria-expanded="true"] {
+    .chip-tool-btn[aria-expanded="true"],
+    #work-schedule-chip.is-set {
       border-color: rgba(47, 155, 140, 0.4);
       background: rgba(47, 155, 140, 0.1);
       color: rgb(var(--harbor-text));
@@ -3851,7 +4003,8 @@
       color: rgb(var(--harbor-primary-light));
     }
     html[data-theme="dark"] .chip-tool-btn.is-active,
-    html[data-theme="dark"] .chip-tool-btn[aria-expanded="true"] {
+    html[data-theme="dark"] .chip-tool-btn[aria-expanded="true"],
+    html[data-theme="dark"] #work-schedule-chip.is-set {
       border-color: rgba(72, 178, 162, 0.4);
       background: rgba(72, 178, 162, 0.12);
       color: rgb(var(--harbor-text));
@@ -3895,11 +4048,7 @@
     .schedule-sync-quiet:empty {
       display: none;
     }
-    /* Compact work-hours control in the schedule toolbar */
-    .work-hours-chip.is-set,
-    #work-schedule-chip.is-set {
-      /* set state used on manage row label */
-    }
+    /* work-schedule-chip.is-set styled with other chip-tool active states */
     .life-manage-wrap {
       position: relative;
       flex-shrink: 0;
@@ -4166,6 +4315,70 @@
       background: rgba(47, 155, 140, 0.12);
       color: rgb(var(--harbor-text));
     }
+    .qt-energy-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .qt-energy-chip,
+    button.qt-diff {
+      appearance: none;
+      flex: 0 0 auto;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      border-radius: 999px;
+      padding: 0.42rem 0.7rem;
+      font-size: 0.72rem;
+      font-weight: 650;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+      line-height: 1.2;
+    }
+    .qt-energy-chip.is-active,
+    button.qt-diff.is-active,
+    button.qt-diff.border-harbor-primary {
+      border-color: rgba(47, 155, 140, 0.45) !important;
+      background: rgba(47, 155, 140, 0.12) !important;
+      color: rgb(var(--harbor-text)) !important;
+    }
+    .qt-weekday-section {
+      margin-top: 0.65rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid rgb(var(--harbor-border) / 0.65);
+    }
+    .qt-weekday-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .qt-weekday-chip {
+      appearance: none;
+      flex: 0 0 auto;
+      min-width: 2.35rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      border-radius: 999px;
+      padding: 0.42rem 0.55rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .qt-weekday-chip.is-active {
+      border-color: rgba(47, 155, 140, 0.5);
+      background: rgba(47, 155, 140, 0.14);
+      color: rgb(var(--harbor-text));
+    }
+    .qt-weekday-hint {
+      margin-top: 0.35rem;
+      font-size: 0.62rem;
+      line-height: 1.35;
+      color: rgb(var(--harbor-muted));
+    }
     .qt-recur-more-wrap {
       margin-top: 0.4rem;
     }
@@ -4186,44 +4399,60 @@
     }
     .library-filter-chip {
       color: rgb(var(--harbor-text)) !important;
-      opacity: 0.92;
+      opacity: 1 !important;
+      font-weight: 600;
+      background: rgb(var(--harbor-raised)) !important;
+      border-color: rgb(var(--harbor-border)) !important;
     }
     .library-filter-chip.is-active,
     .library-filter-chip[aria-selected="true"] {
-      opacity: 1;
-      font-weight: 700;
+      opacity: 1 !important;
+      font-weight: 750;
+      color: rgb(var(--harbor-text)) !important;
+      background: rgba(47, 155, 140, 0.2) !important;
+      border-color: rgb(var(--harbor-primary)) !important;
     }
     .library-header {
       position: sticky;
       top: 0;
       z-index: 12;
-      background: linear-gradient(180deg, rgb(var(--harbor-bg)) 70%, transparent 100%);
-      padding-bottom: 0.25rem;
-      margin-bottom: 0.15rem;
+      background: rgb(var(--harbor-bg));
+      padding-bottom: 0.4rem;
+      margin-bottom: 0;
+      border-bottom: 1px solid rgb(var(--harbor-border) / 0.55);
+      box-shadow: 0 6px 12px -8px rgba(18, 48, 44, 0.18);
     }
     html[data-theme="dark"] .library-header {
-      background: linear-gradient(180deg, rgb(var(--harbor-bg)) 78%, transparent 100%);
+      background: rgb(var(--harbor-bg));
+      box-shadow: 0 8px 14px -10px rgba(0, 0, 0, 0.45);
     }
     #library-list {
-      padding-top: 0.15rem;
+      padding-top: 0.55rem;
+      scroll-margin-top: 0.5rem;
     }
     .person-pick-btn.is-selected,
     .person-color-swatch.is-selected {
-      outline: 2px solid rgb(var(--harbor-primary));
-      outline-offset: 2px;
-      box-shadow: 0 0 0 3px rgba(47, 155, 140, 0.25);
+      outline: 2.5px solid rgb(var(--harbor-primary));
+      outline-offset: 3px;
+      box-shadow: 0 0 0 4px rgba(47, 155, 140, 0.28), 0 2px 8px rgba(18, 48, 44, 0.18);
+      transform: scale(1.08);
+    }
+    .person-color-swatch {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* mega-patch panel tools */
-    /* ── Overview FAB — refined coastal glass orb ── */
+    /* ── Overview FAB — quiet solid orb (dock center / desktop corner) ── */
     button.summary-orb,
     .summary-orb {
-      --orb-size: 3.95rem;
-      position: fixed !important;
+      --orb-size: 3.15rem;
+      position: relative !important;
       left: auto !important;
-      right: max(0.9rem, env(safe-area-inset-right, 0px)) !important;
-      bottom: calc(1.4rem + var(--safe-bottom) + env(keyboard-inset-height, 0px)) !important;
-      transform: none;
+      right: auto !important;
+      bottom: auto !important;
+      transform: translateY(-0.72rem);
       z-index: 55 !important;
       width: var(--orb-size) !important;
       height: var(--orb-size) !important;
@@ -4239,7 +4468,13 @@
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       isolation: isolate;
-      transition: transform 0.28s var(--harbor-ease-out);
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: auto !important;
+      flex-shrink: 0;
+    }
+    /* Docked FAB: hide caption — aria-label remains */
+    .summary-orb--dock .summary-orb-label {
+      display: none !important;
     }
 
     button.summary-orb.hidden,
@@ -4247,142 +4482,108 @@
       display: none !important;
     }
 
+    /* Soft ambient only — no busy pulse by default on dock */
     .summary-orb-glow {
       position: absolute;
-      inset: -18%;
+      inset: -12%;
       border-radius: 999px;
-      background:
-        radial-gradient(circle at 50% 45%, rgba(47, 155, 140, 0.32) 0%, rgba(47, 155, 140, 0.1) 42%, transparent 70%);
-      filter: blur(10px);
-      animation: orbAmbientGlow 5.5s ease-in-out infinite;
+      background: radial-gradient(circle at 50% 50%, rgba(47, 155, 140, 0.22) 0%, transparent 68%);
+      filter: blur(8px);
+      animation: none;
       pointer-events: none;
       z-index: 0;
-      opacity: 0.85;
+      opacity: 0.55;
     }
 
-    /* Quiet champagne-teal ring — not a neon spinner */
+    /* Spin ring off by default (cleaner); desktop floating can re-enable if needed */
     .summary-orb-spin {
-      position: absolute;
-      inset: -3px;
-      border-radius: 999px;
-      background: conic-gradient(
-        from 210deg,
-        transparent 0deg,
-        transparent 55deg,
-        rgba(214, 196, 150, 0.15) 90deg,
-        rgba(255, 255, 255, 0.85) 118deg,
-        rgba(154, 214, 202, 0.55) 145deg,
-        transparent 195deg,
-        transparent 360deg
-      );
-      animation: orbSpin 9s linear infinite;
-      pointer-events: none;
-      z-index: 1;
-      opacity: 0.9;
-      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1.6px), #000 calc(100% - 0.9px));
-      mask: radial-gradient(farthest-side, transparent calc(100% - 1.6px), #000 calc(100% - 0.9px));
+      display: none;
     }
 
     .summary-orb-core {
       position: relative;
       z-index: 2;
-      width: calc(var(--orb-size) - 0.42rem);
-      height: calc(var(--orb-size) - 0.42rem);
+      width: 100%;
+      height: 100%;
       border-radius: 999px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background:
-        radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.62) 0%, transparent 38%),
-        radial-gradient(circle at 72% 78%, rgba(28, 112, 102, 0.35) 0%, transparent 48%),
-        linear-gradient(160deg, #6BCFC0 0%, #2F9B8C 42%, #1A6B61 100%);
-      border: 1px solid rgba(255, 255, 255, 0.55);
+      background: linear-gradient(165deg, #3AAFA0 0%, #2A8F82 55%, #247A6F 100%);
+      border: none;
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.55) inset,
-        0 -10px 18px rgba(16, 70, 64, 0.22) inset,
-        0 14px 28px rgba(18, 58, 52, 0.22),
-        0 4px 10px rgba(47, 155, 140, 0.18),
-        0 0 0 1px rgba(47, 155, 140, 0.08);
+        0 0.5px 0 rgba(255, 255, 255, 0.35) inset,
+        0 6px 16px rgba(30, 90, 82, 0.28),
+        0 1px 3px rgba(18, 48, 44, 0.12);
       overflow: hidden;
-      transition: box-shadow 0.28s ease, transform 0.28s var(--harbor-ease-out);
+      transition: box-shadow 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     html[data-theme="dark"] .summary-orb-core {
-      background:
-        radial-gradient(circle at 28% 24%, rgba(154, 214, 202, 0.28) 0%, transparent 40%),
-        radial-gradient(circle at 70% 80%, rgba(8, 18, 16, 0.55) 0%, transparent 50%),
-        linear-gradient(160deg, #2F8A7C 0%, #1A524A 48%, #0A1816 100%);
-      border-color: rgba(154, 214, 202, 0.28);
+      background: linear-gradient(165deg, #3A9E90 0%, #2A6F66 50%, #1A4540 100%);
       box-shadow:
-        0 1px 0 rgba(154, 214, 202, 0.18) inset,
-        0 -10px 20px rgba(0, 0, 0, 0.35) inset,
-        0 14px 32px rgba(0, 8, 6, 0.55),
-        0 0 0 1px rgba(72, 178, 162, 0.14);
+        0 0.5px 0 rgba(180, 230, 220, 0.12) inset,
+        0 8px 20px rgba(0, 0, 0, 0.4),
+        0 0 0 0.5px rgba(72, 178, 162, 0.2);
     }
 
     .summary-orb-core::before {
       content: '';
       position: absolute;
-      inset: 2px;
+      inset: 0;
       border-radius: inherit;
-      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, transparent 42%);
       pointer-events: none;
       z-index: 0;
     }
 
     .summary-orb-core::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background: linear-gradient(
-        125deg,
-        rgba(255, 255, 255, 0.22) 0%,
-        transparent 36%,
-        transparent 62%,
-        rgba(0, 0, 0, 0.08) 100%
-      );
-      pointer-events: none;
-      z-index: 0;
+      display: none;
     }
 
     .summary-orb-icon {
       position: relative;
       z-index: 1;
-      width: 1.72rem;
-      height: 1.72rem;
+      width: 1.45rem;
+      height: 1.45rem;
       display: block;
       object-fit: contain;
       object-position: center center;
       pointer-events: none;
       user-select: none;
       -webkit-user-drag: none;
-      filter:
-        drop-shadow(0 0 1px rgba(255, 255, 255, 0.4))
-        drop-shadow(0 1px 2px rgba(8, 40, 36, 0.35));
-      animation: harborMarkBob 4s ease-in-out infinite;
+      filter: brightness(0) invert(1);
+      opacity: 0.95;
+      animation: none;
     }
 
     .summary-orb-label {
       position: absolute;
-      bottom: -1.2rem;
+      bottom: -1.35rem;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 0.56rem;
+      font-size: 0.6rem;
       font-weight: 700;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: #1C7066;
+      color: #0F4F47;
       white-space: nowrap;
       pointer-events: none;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+      text-shadow: none;
       z-index: 3;
-      opacity: 0.92;
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.85);
+      border: 0.5px solid rgba(47, 155, 140, 0.18);
+      border-radius: 999px;
+      padding: 0.12rem 0.42rem;
+      box-shadow: 0 2px 8px rgba(18, 48, 44, 0.08);
     }
     html[data-theme="dark"] .summary-orb-label {
-      color: #9AD6CA;
-      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
-      opacity: 0.95;
+      color: #C8F0E6;
+      background: rgba(12, 28, 26, 0.82);
+      border-color: rgba(72, 178, 162, 0.35);
+      text-shadow: none;
+      opacity: 1;
     }
 
     /* Count capsule — refined glass, not a loud alert bubble */
@@ -4453,25 +4654,23 @@
 
     .summary-orb:hover .summary-orb-core {
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.6) inset,
-        0 -10px 18px rgba(16, 70, 64, 0.2) inset,
-        0 18px 36px rgba(18, 58, 52, 0.26),
-        0 6px 16px rgba(47, 155, 140, 0.22),
-        0 0 0 1px rgba(47, 155, 140, 0.12);
+        0 0.5px 0 rgba(255, 255, 255, 0.4) inset,
+        0 8px 20px rgba(30, 90, 82, 0.32),
+        0 2px 6px rgba(18, 48, 44, 0.12);
     }
 
     .summary-orb:active {
-      transform: scale(0.96);
+      transform: translateY(-0.72rem) scale(0.94);
     }
-
-    .summary-orb:active .summary-orb-spin,
-    .summary-orb:active .summary-orb-glow {
-      animation-play-state: paused;
+    @media (min-width: 768px) {
+      .summary-orb:active {
+        transform: scale(0.94) !important;
+      }
     }
 
     .summary-orb:focus-visible {
       outline: 2px solid rgb(var(--harbor-primary-light));
-      outline-offset: 6px;
+      outline-offset: 4px;
     }
 
     .tutorial-target-pulse.summary-orb .summary-orb-core {
@@ -4677,17 +4876,79 @@
       width: 100%;
       max-height: 92vh;
       min-height: 42vh;
-      overflow-x: hidden;
-      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
       border-radius: var(--harbor-radius-xl) var(--harbor-radius-xl) 0 0;
       border-top: 1px solid rgba(47, 155, 140, 0.14);
       background:
         radial-gradient(ellipse 90% 50% at 50% -10%, rgba(47, 155, 140, 0.1) 0%, transparent 55%),
         rgb(var(--harbor-surface));
       box-shadow: var(--harbor-shadow-md), 0 -8px 32px rgba(18, 48, 44, 0.1);
-      -webkit-overflow-scrolling: touch;
       isolation: isolate;
       animation: sheetUp var(--harbor-duration-slow) var(--harbor-ease-out) forwards;
+    }
+    .summary-sheet-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+    /* Thumb-zone close — mobile only (desktop keeps top-right Close) */
+    .summary-sheet-foot {
+      display: none;
+      flex-shrink: 0;
+      padding: 0.65rem 0 0;
+      margin-top: 0.15rem;
+      border-top: 1px solid rgb(var(--harbor-border) / 0.65);
+      background:
+        linear-gradient(180deg, transparent 0%, rgb(var(--harbor-surface)) 18%);
+      padding-bottom: max(0.15rem, env(safe-area-inset-bottom, 0px));
+    }
+    .summary-sheet-done {
+      appearance: none;
+      width: 100%;
+      min-height: 3rem;
+      border-radius: 1rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-text));
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 4px 14px rgba(4, 22, 20, 0.12);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .summary-sheet-done:active {
+      transform: scale(0.985);
+      background: rgba(47, 155, 140, 0.12);
+      border-color: rgba(47, 155, 140, 0.35);
+    }
+    .summary-sheet-dismiss-hint {
+      display: none;
+      text-align: center;
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: rgb(var(--harbor-muted));
+      margin: -0.15rem 0 0.45rem;
+      letter-spacing: 0.01em;
+    }
+    @media (max-width: 767px) {
+      .summary-sheet-foot {
+        display: block;
+      }
+      .summary-sheet-dismiss-hint {
+        display: block;
+      }
+      .summary-sheet .modal-grab-pill {
+        width: 2.75rem;
+        height: 0.28rem;
+        margin-bottom: 0.35rem;
+        opacity: 0.85;
+      }
     }
     html[data-theme="dark"] .summary-sheet {
       border-top-color: rgba(72, 178, 162, 0.16);
@@ -4695,6 +4956,9 @@
         radial-gradient(ellipse 90% 50% at 50% -10%, rgba(72, 178, 162, 0.1) 0%, transparent 55%),
         rgb(var(--harbor-surface));
       box-shadow: var(--harbor-shadow-md), 0 -10px 36px rgba(0, 10, 8, 0.45);
+    }
+    html[data-theme="dark"] .summary-sheet-done {
+      background: rgba(24, 42, 38, 0.95);
     }
 
     body.summary-open #site-root {
@@ -4720,7 +4984,7 @@
       background: rgba(8, 18, 18, 0.55);
     }
 
-    /* Same shell as day-events — must be fixed bottom sheet or KPI taps look like no-ops */
+    /* Full-height list sheet over Summary — thumb-friendly Done at bottom */
     #summary-kpi-detail-modal {
       position: fixed;
       inset: 0;
@@ -4736,26 +5000,68 @@
       z-index: 1;
       width: 100%;
       max-width: 32rem;
-      max-height: min(78vh, 36rem);
+      height: min(96vh, 100dvh);
+      max-height: min(96vh, 100dvh);
       display: flex;
       flex-direction: column;
       overflow: hidden;
       background: rgb(var(--harbor-surface));
       color: rgb(var(--harbor-text));
       border-top: 1px solid rgb(var(--harbor-border));
-      border-radius: 1.5rem 1.5rem 0 0;
+      border-radius: 1.25rem 1.25rem 0 0;
       box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.4);
-      -webkit-overflow-scrolling: touch;
+      padding-bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
     }
 
     .summary-kpi-detail-list {
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       flex: 1 1 auto;
-      min-height: 4rem;
-      max-height: min(52vh, 24rem);
+      min-height: 0;
+      max-height: none;
       margin: 0 -0.15rem;
-      padding: 0 0.15rem 0.25rem;
+      padding: 0 0.15rem 0.35rem;
+      overscroll-behavior: contain;
+    }
+
+    .summary-kpi-detail-foot {
+      flex-shrink: 0;
+      padding-top: 0.65rem;
+      margin-top: 0.15rem;
+      border-top: 1px solid rgb(var(--harbor-border) / 0.65);
+    }
+
+    .summary-kpi-detail-done {
+      appearance: none;
+      width: 100%;
+      min-height: 3rem;
+      border-radius: 1rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-text));
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 4px 14px rgba(4, 22, 20, 0.12);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .summary-kpi-detail-done:active {
+      transform: scale(0.985);
+      background: rgba(47, 155, 140, 0.12);
+      border-color: rgba(47, 155, 140, 0.35);
+    }
+    html[data-theme="dark"] .summary-kpi-detail-done {
+      background: rgba(24, 42, 38, 0.95);
+    }
+
+    @media (max-width: 767px) {
+      #summary-kpi-detail-modal .summary-kpi-detail-sheet {
+        max-width: 100%;
+        height: min(97vh, 100dvh);
+        max-height: min(97vh, 100dvh);
+        border-radius: 1.1rem 1.1rem 0 0;
+      }
     }
 
     .summary-kpi-detail-row {
@@ -5711,6 +6017,46 @@
     .tutorial-overlay.is-active {
       display: block;
       pointer-events: none;
+    }
+
+    /* Summary is z 300 / KPI sheets 320 — tour must float above both on steps 7–8 */
+    .tutorial-overlay.is-above-summary {
+      z-index: 340 !important;
+    }
+    /*
+     * No full-screen dim above Summary — the 9999px spotlight shade greys out the sheet.
+     * Keep a light mint ring only; Tasks tile also gets a pulse (below).
+     */
+    .tutorial-overlay.is-above-summary .tutorial-highlight {
+      z-index: 345 !important;
+      box-shadow:
+        0 0 0 2.5px rgba(107, 191, 176, 0.95),
+        0 0 0 6px rgba(47, 155, 140, 0.2),
+        0 0 20px rgba(47, 155, 140, 0.35) !important;
+      background: transparent !important;
+    }
+    .tutorial-overlay.is-above-summary .tutorial-highlight.is-hidden,
+    .tutorial-overlay.is-above-summary .tutorial-highlight.hidden {
+      box-shadow: none !important;
+    }
+    .tutorial-overlay.is-above-summary .tutorial-card {
+      z-index: 350 !important;
+      pointer-events: auto !important;
+      /* Soft lift so the coachmark reads clearly without dimming Summary */
+      box-shadow:
+        var(--harbor-shadow-md),
+        0 12px 40px rgba(0, 12, 10, 0.35) !important;
+    }
+    #summary-modal .summary-kpi.tutorial-target-pulse,
+    #summary-modal .summary-kpi.tutorial-interactive-target,
+    #summary-kpi-tasks.tutorial-target-pulse {
+      position: relative;
+      z-index: 5 !important;
+      box-shadow:
+        0 0 0 3px rgba(107, 191, 176, 0.95),
+        0 0 0 8px rgba(47, 155, 140, 0.22),
+        var(--harbor-glow-primary) !important;
+      animation: orbTutorialPulse 1.2s ease-in-out infinite;
     }
 
     .welcome-spotlight-overlay {
@@ -7619,12 +7965,34 @@
       flex-direction: column;
       min-height: 0;
       padding-bottom: 0.75rem;
+      /* Invisible scrollbar — still scrollable */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    #tab-content-today:not(.hidden)::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+      background: transparent;
     }
 
     #tab-content-today:not(.hidden) #task-list {
       flex: 1 1 auto;
       min-height: 0;
       overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    #tab-content-today:not(.hidden) #task-list::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+      background: transparent;
+    }
+    #tab-content-today:not(.hidden) #task-list::-webkit-scrollbar-thumb {
+      background: transparent;
     }
 
     /* ── Mobile-first: phone layout (default + small screens) ── */
@@ -7686,10 +8054,14 @@
 
       .chip-tool-btn,
       .chip-add-btn {
-        max-width: 100%;
-        white-space: normal;
+        /* Keep single-line pills — wrapping made labels look broken next to +Add */
+        max-width: none;
+        white-space: nowrap;
         text-align: center;
-        line-height: 1.2;
+        line-height: 1;
+      }
+      .chip-tool-btn.chip-tool-static {
+        max-width: 7.5rem;
       }
 
       .library-task-inner {
@@ -7711,13 +8083,11 @@
         line-height: 1.2;
       }
 
+      /* FAB stays in dock on mobile */
       button.summary-orb,
       .summary-orb {
-        --orb-size: 4rem;
-        left: auto !important;
-        right: max(0.9rem, env(safe-area-inset-right, 0px)) !important;
-        bottom: calc(1.45rem + var(--safe-bottom)) !important;
-        transform: none;
+        --orb-size: 3.1rem;
+        transform: translateY(-0.68rem);
       }
 
       .app-menu-wrap--mobile {
@@ -7747,7 +8117,6 @@
 
       #main-nav-bar {
         flex-shrink: 0;
-        margin-top: auto;
       }
 
       #app-scroll {
@@ -7857,16 +8226,17 @@
         font-size: 0.68rem !important;
       }
 
-      .main-nav {
-        padding-top: 0.3rem !important;
-      }
-
       #app-chrome > div:nth-child(2),
       #smart-banner,
-      .main-nav,
       .tab-content {
         padding-left: 1rem !important;
         padding-right: 1rem !important;
+      }
+
+      .main-nav,
+      #main-nav-bar {
+        padding-left: 0.55rem !important;
+        padding-right: 0.55rem !important;
       }
 
       #smart-banner {
@@ -7897,13 +8267,24 @@
       }
 
       .main-nav-tab {
-        font-size: 0.8rem;
-        padding: 0.55rem 0.15rem 0.5rem;
-        font-weight: 650;
+        font-size: 0.55rem;
+        padding: 0.18rem 0.04rem 0.12rem;
+        min-height: 2.4rem;
+        gap: 0.18rem;
+        font-weight: 500;
+      }
+      .main-nav-tab .nav-tab-icon {
+        font-size: 1.05rem;
       }
 
       .main-nav-tab.nav-active {
-        font-weight: 750;
+        font-weight: 600;
+      }
+
+      .main-nav,
+      #main-nav-bar {
+        padding-top: 0.35rem !important;
+        padding-bottom: calc(0.2rem + var(--safe-bottom)) !important;
       }
 
       .quick-add-hint {
@@ -7930,7 +8311,12 @@
       .fixed.inset-0 .rounded-t-3xl,
       .summary-sheet {
         max-height: 92vh !important;
-        padding-bottom: calc(1.25rem + var(--safe-bottom)) !important;
+      }
+      .summary-sheet {
+        padding-bottom: 0.75rem !important;
+      }
+      .summary-sheet-foot {
+        padding-bottom: max(0.55rem, env(safe-area-inset-bottom, 0px)) !important;
       }
 
       #onboarding {
@@ -7957,10 +8343,21 @@
 
     @media (max-width: 380px) {
       .main-nav-tab {
-        font-size: 0.76rem;
-        letter-spacing: -0.015em;
-        padding-left: 0.1rem;
-        padding-right: 0.1rem;
+        font-size: 0.52rem;
+        letter-spacing: 0;
+        padding-left: 0.02rem;
+        padding-right: 0.02rem;
+      }
+      .main-nav-tab .nav-tab-icon {
+        font-size: 0.98rem;
+      }
+      .main-nav-fab-slot {
+        flex-basis: 3.35rem;
+        width: 3.35rem;
+      }
+      button.summary-orb,
+      .summary-orb {
+        --orb-size: 2.95rem;
       }
 
       .section-header {
@@ -7974,13 +8371,101 @@
         display: none !important;
       }
 
+      /* Traditional top tabs (not a sliding dock) — nav sits under chrome */
+      #app-chrome { order: 1; }
+      #main-nav-bar { order: 2; }
+      #app-scroll { order: 3; }
+
+      .main-nav,
+      #main-nav-bar {
+        gap: 0.35rem;
+        padding: 0.35rem 1.5rem 0.15rem !important;
+        border-top: none !important;
+        border-bottom: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+      html[data-theme="dark"] .main-nav,
+      html[data-theme="dark"] #main-nav-bar {
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+
+      /* Desktop: restore subtle sliding underline pill */
+      .main-nav-indicator {
+        opacity: 1;
+        top: 0.2rem;
+        bottom: 0.35rem;
+        border-radius: var(--harbor-radius-md) var(--harbor-radius-md) 0.35rem 0.35rem;
+        background: linear-gradient(180deg, rgba(47, 155, 140, 0.22) 0%, rgba(47, 155, 140, 0.06) 100%);
+        box-shadow: inset 0 -2px 0 rgb(var(--harbor-primary));
+      }
+      html[data-theme="dark"] .main-nav-indicator {
+        background: linear-gradient(180deg, rgba(72, 178, 162, 0.28) 0%, rgba(47, 155, 140, 0.1) 100%);
+        box-shadow: inset 0 -2px 0 #48B2A2;
+      }
+      html[data-theme="harbor"] .main-nav-indicator {
+        background: linear-gradient(180deg, rgba(60, 181, 166, 0.28) 0%, rgba(47, 155, 140, 0.08) 100%);
+        box-shadow: inset 0 -2px 0 #2F9B8C;
+      }
+
+      /* Desktop tab order: Today · Life · Streaks · Library (classic) */
+      #tab-today { order: 1; }
+      #tab-life { order: 2; }
+      #tab-streaks { order: 3; }
+      #tab-library { order: 4; }
+      .main-nav-fab-slot { order: 5; }
+
+      .main-nav-tab {
+        flex-direction: row;
+        gap: 0;
+        padding: 0.7rem 0.3rem 0.65rem;
+        min-height: 0;
+        font-size: 0.88rem;
+        font-weight: 650;
+        letter-spacing: -0.015em;
+        border-radius: var(--harbor-radius-md) var(--harbor-radius-md) 0 0;
+        color: rgb(var(--harbor-muted) / 0.88);
+        justify-content: center;
+      }
+      /* Icons are mobile-only */
+      .main-nav-tab .nav-tab-icon {
+        display: none !important;
+      }
+      .main-nav-tab .nav-tab-label {
+        font-size: inherit;
+        font-weight: inherit;
+      }
+      .main-nav-tab.nav-active {
+        font-weight: 750;
+      }
+
+      /* Collapse FAB slot in the top bar; float orb bottom-right */
+      .main-nav-fab-slot {
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible;
+        pointer-events: none;
+      }
       button.summary-orb,
       .summary-orb {
-        --orb-size: 4.05rem;
+        --orb-size: 3.85rem;
+        position: fixed !important;
         left: auto !important;
         right: 1.5rem !important;
         bottom: calc(1.55rem + var(--safe-bottom)) !important;
-        transform: none;
+        transform: none !important;
+        pointer-events: auto !important;
+      }
+      .summary-orb-glow {
+        opacity: 0.65;
+      }
+      .summary-orb--dock .summary-orb-label {
+        display: none !important;
       }
 
       body {
@@ -8388,17 +8873,6 @@
         <div id="smart-bill-footnote" class="hidden"></div>
       </div>
 
-      <!-- Tab Navigation -->
-      <div id="main-nav-bar" class="main-nav px-5 pt-2 flex" role="tablist" aria-label="Main navigation">
-        <button type="button" role="tab" aria-selected="true" onclick="switchTab('today')" id="tab-today"
-          class="main-nav-tab nav-active">Today</button>
-        <button type="button" role="tab" aria-selected="false" onclick="switchTab('life')" id="tab-life"
-          class="main-nav-tab">Life</button>
-        <button type="button" role="tab" aria-selected="false" onclick="switchTab('streaks')" id="tab-streaks"
-          class="main-nav-tab">Streaks</button>
-        <button type="button" role="tab" aria-selected="false" onclick="switchTab('library')" id="tab-library"
-          class="main-nav-tab">Library</button>
-      </div>
       </div><!-- /app-chrome -->
 
       <div id="app-scroll">
@@ -8438,31 +8912,25 @@
 
         <!-- Schedule Panel -->
         <div id="life-panel-schedule" class="life-panel">
-          <div class="panel-head">
-            <div class="min-w-0 flex-1">
-              <div id="schedule-free-time" class="schedule-free-pill schedule-free-pill--hero" aria-live="polite"></div>
-            </div>
-            <div class="panel-toolbar panel-toolbar-cluster">
-              <div class="life-manage-wrap">
-                <button type="button" class="chip-tool-btn" id="schedule-manage-btn"
-                  onclick="toggleLifeManageMenu('schedule')" aria-haspopup="menu" aria-expanded="false">Manage</button>
-                <div id="schedule-manage-menu" class="life-manage-menu hidden" role="menu">
-                  <button type="button" role="menuitem" id="work-schedule-chip" onclick="closeLifeManageMenus(); showWorkScheduleModal()">
-                    <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                    <span><span class="life-manage-title">Work hours</span><span id="work-schedule-chip-label" class="life-manage-sub">Flexible</span></span>
-                  </button>
-                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showScheduleImportModal()">
-                    <i class="fa-solid fa-file-import" aria-hidden="true"></i>
-                    <span>Import file</span>
-                  </button>
-                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showCalendarFeedModal()">
-                    <i class="fa-solid fa-link" aria-hidden="true"></i>
-                    <span>Connect calendar</span>
-                  </button>
-                </div>
-              </div>
+          <div class="panel-head panel-head--toolbar-only">
+            <div class="panel-toolbar panel-toolbar-cluster" role="toolbar" aria-label="Schedule tools">
+              <span id="schedule-free-time" class="chip-tool-btn chip-tool-static" role="status" aria-live="polite" title="Free time today"></span>
+              <button type="button" class="chip-tool-btn" id="work-schedule-chip" onclick="showWorkScheduleModal()"
+                aria-label="Set work hours" title="Work hours for free-time estimates">
+                <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                <span id="work-schedule-chip-label">Hours</span>
+              </button>
+              <button type="button" class="chip-tool-btn" onclick="showScheduleImportModal()" aria-label="Import calendar file">
+                <i class="fa-solid fa-file-import" aria-hidden="true"></i>
+                <span>File</span>
+              </button>
+              <button type="button" class="chip-tool-btn" onclick="showCalendarFeedModal()" aria-label="Connect calendar URL">
+                <i class="fa-solid fa-link" aria-hidden="true"></i>
+                <span>URL</span>
+              </button>
               <button type="button" onclick="showAddCalendarEventModal()" class="chip-add-btn" id="schedule-add-btn" aria-label="Add event">
-                <i class="fa-solid fa-plus"></i>Add
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                <span>Add</span>
               </button>
             </div>
           </div>
@@ -8472,7 +8940,7 @@
             <button type="button" role="tab" data-schedule-view="week" onclick="setScheduleView('week')"
               class="cal-format-chip">This Week</button>
           </div>
-          <div class="text-[10px] text-harbor-muted mb-2 px-0.5 leading-snug">Full month is in <strong class="text-harbor-primary-light font-semibold">Overview</strong> (glowing button).</div>
+          <div class="text-[10px] text-harbor-muted mb-2 px-0.5 leading-snug">Full month is in <strong class="text-harbor-primary-light font-semibold">Overview</strong>.</div>
           <div id="schedule-section-title" class="hidden" aria-hidden="true"></div>
           <div id="schedule-availability" class="hidden" aria-hidden="true"></div>
           <div id="schedule-sync-badge" class="schedule-sync-quiet text-[10px] text-harbor-muted/80 mb-1.5"></div>
@@ -8487,12 +8955,13 @@
                 aria-expanded="false">Dinner lists</button>
               <button type="button" id="grocery-edit-dinner-btn" class="chip-tool-btn hidden"
                 onclick="editActiveDinnerList()" aria-label="Edit this dinner list">Edit dinner</button>
+              <button type="button" class="chip-tool-btn" onclick="tryShowAddMealPresetModal()" aria-label="Add recipe">
+                <i class="fa-solid fa-utensils" aria-hidden="true"></i>
+                <span>Recipe</span>
+              </button>
               <div class="life-manage-wrap">
                 <button type="button" class="chip-tool-btn" onclick="toggleLifeManageMenu('grocery')" aria-haspopup="menu" aria-expanded="false">Manage</button>
                 <div id="grocery-manage-menu" class="life-manage-menu hidden" role="menu">
-                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); tryShowAddMealPresetModal()">
-                    <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add recipe</span>
-                  </button>
                   <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showManageMealPresetsModal()">
                     <i class="fa-solid fa-utensils" aria-hidden="true"></i><span>Edit dinner lists</span>
                   </button>
@@ -8500,13 +8969,14 @@
                     onclick="closeLifeManageMenus(); editActiveDinnerList()">
                     <i class="fa-solid fa-pen" aria-hidden="true"></i><span>Edit this dinner</span>
                   </button>
-                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); clearCheckedGrocery()">
-                    <i class="fa-solid fa-check-double" aria-hidden="true"></i><span>Clear checked</span>
-                  </button>
                 </div>
               </div>
+              <button type="button" class="chip-tool-btn" onclick="clearCheckedGrocery()" aria-label="Clear checked items">
+                Clear
+              </button>
               <button type="button" onclick="showAddGroceryItemModal()" class="chip-add-btn" id="grocery-add-btn" aria-label="Add Grocery Item">
-                <i class="fa-solid fa-plus"></i>Add
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                <span>Add</span>
               </button>
             </div>
           </div>
@@ -8520,7 +8990,8 @@
           <div class="panel-head panel-head--toolbar-only">
             <div class="panel-toolbar panel-toolbar-cluster">
               <button type="button" onclick="addBillFromPrompt()" class="chip-add-btn" id="bills-add-btn" aria-label="Add Bill">
-                <i class="fa-solid fa-plus"></i>Add
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                <span>Add</span>
               </button>
             </div>
           </div>
@@ -8539,7 +9010,8 @@
                 Import CSV
               </button>
               <button type="button" onclick="showAddSubscriptionModal()" class="chip-add-btn" id="subs-add-btn" aria-label="Add Subscription">
-                <i class="fa-solid fa-plus"></i>Add
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                <span>Add</span>
               </button>
             </div>
           </div>
@@ -8570,32 +9042,25 @@
         </div>
       </div>
 
-      <!-- STREAKS TAB: fires → outlook → Harbor Day (reward last) -->
+      <!-- STREAKS TAB: fires → pace → Harbor Day (reward last) -->
       <div id="tab-content-streaks" class="tab-content px-5 pb-6 bg-transparent hidden">
-        <div class="streaks-tab-head mb-3">
-          <div class="section-header font-semibold text-harbor-text">Streaks</div>
-          <div class="text-[11px] text-harbor-muted leading-snug mt-0.5">Pride and progress — not a second to-do list. Earn rest when you’re ready.</div>
-        </div>
-
-        <!-- 1. Your fires (grouped watchlist when many) -->
-        <div class="flex items-baseline justify-between gap-2 mb-2">
-          <div class="section-header font-semibold text-harbor-text text-[0.95rem]">Your fires</div>
+        <div class="flex items-baseline justify-between gap-2 mb-2.5">
           <div id="streaks-count-label" class="text-[10px] text-harbor-muted tabular-nums"></div>
         </div>
         <div id="streaks-list" class="streaks-list-root"></div>
 
-        <!-- 2. Habit Outlook -->
+        <!-- Habit Pace (was Habit Pace) -->
         <div class="mt-5" id="habit-outlook-section">
-          <div class="section-header font-semibold text-harbor-text mb-1">Habit Outlook</div>
-          <div class="text-[10px] text-harbor-muted mb-2">Tap a fire above for pace, pride stats, and logging.</div>
+          <div class="section-header font-semibold text-harbor-text mb-1">Habit Pace</div>
+          <div class="text-[10px] text-harbor-muted mb-2">Tap a fire for pace, pride stats, and logging.</div>
           <div id="projection-panel"
             class="bg-harbor-surface border border-harbor-border rounded-3xl p-4 text-sm shadow-[var(--harbor-shadow-sm)]">
-            <div id="projection-hint" class="text-harbor-muted text-xs leading-relaxed">Pick a habit to see where you’re headed — and celebrate the progress.</div>
+            <div id="projection-hint" class="text-harbor-muted text-xs leading-relaxed">Tap a fire above to see where you’re headed.</div>
             <div id="projection-content" class="hidden"></div>
           </div>
         </div>
 
-        <!-- 3. Harbor Day — earned rest at the bottom -->
+        <!-- Harbor Day — earned rest at the bottom -->
         <div class="mt-5">
           <div class="section-header font-semibold text-harbor-text text-[0.95rem] mb-2">Earn rest</div>
           <div id="reward-bank-panel"></div>
@@ -8628,18 +9093,43 @@
       </div>
       </div><!-- /app-scroll -->
 
-      <!-- Summary FAB — thumb zone, day/week/month digest -->
-      <button type="button" id="summary-launcher" class="summary-orb hidden"
-        onclick="showSummaryModal()"
-        aria-label="Open Overview — day, week, and month at a glance">
-        <span class="summary-orb-glow" aria-hidden="true"></span>
-        <span class="summary-orb-spin" aria-hidden="true"></span>
-        <span class="summary-orb-core" aria-hidden="true">
-          <img class="summary-orb-icon" src="harbor-fab-anchor.png" width="128" height="128" alt="" decoding="async">
-        </span>
-        <span class="summary-orb-label" aria-hidden="true">Overview</span>
-        <span id="summary-fab-badge" class="summary-orb-badge hidden" aria-hidden="true"></span>
-      </button>
+      <!-- Main tabs: mobile dock Library·Life·FAB·Today·Streaks · desktop top tabs (CSS order) -->
+      <div id="main-nav-bar" class="main-nav flex" role="tablist" aria-label="Main navigation">
+        <button type="button" role="tab" aria-selected="false" onclick="switchTab('library')" id="tab-library"
+          class="main-nav-tab">
+          <i class="fa-regular fa-bookmark nav-tab-icon" aria-hidden="true"></i>
+          <span class="nav-tab-label">Library</span>
+        </button>
+        <button type="button" role="tab" aria-selected="false" onclick="switchTab('life')" id="tab-life"
+          class="main-nav-tab">
+          <i class="fa-regular fa-compass nav-tab-icon" aria-hidden="true"></i>
+          <span class="nav-tab-label">Life</span>
+        </button>
+        <!-- Center Overview FAB (in-dock on mobile; floats corner on desktop) -->
+        <div class="main-nav-fab-slot" id="main-nav-fab-slot">
+          <button type="button" id="summary-launcher" class="summary-orb summary-orb--dock hidden"
+            onclick="showSummaryModal()"
+            aria-label="Open Overview — day, week, and month at a glance">
+            <span class="summary-orb-glow" aria-hidden="true"></span>
+            <span class="summary-orb-spin" aria-hidden="true"></span>
+            <span class="summary-orb-core" aria-hidden="true">
+              <img class="summary-orb-icon" src="harbor-fab-anchor.png" width="128" height="128" alt="" decoding="async">
+            </span>
+            <span class="summary-orb-label" aria-hidden="true">Overview</span>
+            <span id="summary-fab-badge" class="summary-orb-badge hidden" aria-hidden="true"></span>
+          </button>
+        </div>
+        <button type="button" role="tab" aria-selected="false" onclick="switchTab('streaks')" id="tab-streaks"
+          class="main-nav-tab">
+          <i class="fa-regular fa-star nav-tab-icon" aria-hidden="true"></i>
+          <span class="nav-tab-label">Streaks</span>
+        </button>
+        <button type="button" role="tab" aria-selected="true" onclick="switchTab('today')" id="tab-today"
+          class="main-nav-tab nav-active">
+          <i class="fa-regular fa-calendar nav-tab-icon" aria-hidden="true"></i>
+          <span class="nav-tab-label">Today</span>
+        </button>
+      </div>
       </div><!-- /app-shell -->
       </div><!-- /app-content-wrap -->
     </div><!-- /app-frame -->
@@ -8686,7 +9176,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 206;
+    const HARBOR_BUILD_NUMBER = 235;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -8704,63 +9194,101 @@
 
     /**
      * User-facing changelog (newest day first).
-     * One entry per calendar day — keep adding highlights to today’s block; don’t mint
-     * a new version number for every fix. Product version stays on the 0.9 train until 1.0.
+     * Prefer `sections` (test-friendly groups). `highlights` is a short flat list for older UI.
+     * Product train stays on 0.9 until 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
       {
         version: '0.9',
         date: '2026-07-10',
-        title: 'Life tools, Summary & subscriptions',
+        title: 'What to test · build 219',
+        intro: 'Quick pass list for this train. Walk each section and check the bullets — that’s the test plan.',
+        sections: [
+          {
+            heading: 'Today · mobile',
+            items: [
+              'Tap the task row (not a circle) to complete',
+              'Swipe left still opens Edit / Delete',
+              'Multi-log chores still show 1/2 progress on the row',
+              'Fresh start / Just explore seeds Make the bed + Walk + Read + Save'
+            ]
+          },
+          {
+            heading: 'Today · web (wide screen)',
+            items: [
+              'Complete circle still shows and works'
+            ]
+          },
+          {
+            heading: 'Summary',
+            items: [
+              'Bottom Done closes Overview (thumb zone)',
+              'Tasks list is near full-screen with Done',
+              'Tasks list keeps scroll after Add to Today'
+            ]
+          },
+          {
+            heading: 'Quick tour',
+            items: [
+              'Step 2 always has a task (restores starters if Today empty)',
+              'Steps 7–8: coachmark above Summary without greying the sheet',
+              'Tasks tile ringed; full list opens; Install says Add Harbor to Your Home Screen'
+            ]
+          },
+          {
+            heading: 'Add / Edit + Life',
+            items: [
+              'Chore → More options → Sun–Sat preferred days',
+              'Energy chips match other chip sizes',
+              'Schedule: Hours · File · URL · Add'
+            ]
+          }
+        ],
         highlights: [
-          'Connect Calendar wizard for Google and Apple — plain steps, not buried secret-URL jargon',
-          'When Google blocks a live link, Harbor offers one-tap network helper (or Import a file)',
-          'Mobile caution banner: See tutorial link opens full Add to Home Screen steps; also in Settings',
-          'Menu cleaned up: less redundancy, Settings first, What’s New / patch notes kept front and center',
-          'Settings streamlined for faster scanning — fewer sections, shorter copy',
-          'Browser tab title: Harbor · One App For the Whole Day',
-          'Biweekly chore tags say “Every 2 weeks” (not fortnight)',
-          'Seasonal chores (heating tune-up, leaf raking, spring lawn care, etc.) only show when that season is near',
-          'Heavy maintenance (pressure wash, aerate lawn, dryer vent…) lives in Summary → When You Can — Add to Today when you’re ready',
-          'Comprehensive “plan ahead” detection: travel (cabin, mountains, out of town), long blocks, projects, big errands, life events — freeform titles included',
-          'Fixed blank splash (script crash from a duplicated constant)',
-          'Today stays a lighter, achievable list; bigger work doesn’t pile on until you pull it over',
-          'Library default task names use Title Case, with small words like and / or / at left lower mid-phrase',
-          'Bills support weekly, biweekly, monthly, quarterly, and yearly cadence',
-          'Multi pay-date bills multiply the amount by days selected',
-          'Student status shows discounted rates only when browsing popular services (e.g. Amazon Prime yearly) — not rewritten across your active list',
-          'Browse popular services sits above your active subscriptions',
-          'Smart Suggestions approximate free time in hours, not raw minutes',
-          'Feedback emails the builder when online — Web3Forms primary, with FormSubmit and mail-app backup',
-          'Tap Tasks, Events, Bills, or Grocery in Summary for the full list',
-          'Weekly chores (like mow the lawn) show on Today and Summary as soon as you add them',
-          'Family tags on events: color on the title, no extra filler circle by the name',
-          'Summary list sheets open correctly as a bottom panel',
-          'Streaks ranked by satisfaction; Harbor Day and custom rewards polished',
-          'Privacy policy, Free vs Pro notes, and Capacitor path for store builds'
+          'Starters include Make the bed; tour always has a Today task',
+          'Summary Done + full-screen task list',
+          'Tour coachmark over Summary without dim',
+          'Mobile tap-to-complete; web circle kept'
         ]
       },
       {
         version: '0.8',
         date: '2026-07-09',
         title: 'Harbor identity & coastal UI',
+        intro: 'Baseline rebrand — spot-check only if you skipped earlier builds.',
+        sections: [
+          {
+            heading: 'Brand',
+            items: [
+              'Harbor name + Create Your Harbor splash',
+              'Coastal mint theme / night mode'
+            ]
+          }
+        ],
         highlights: [
-          'Full rebrand to Harbor — Create Your Harbor splash and mark',
-          'Coastal mint theme with refined coastal night mode',
-          'Subscriptions browser with brand icons and plan tiers',
-          'Calmer Life panels: yours-first lists and Manage menus',
-          'App menu, Quick tour, and Feature Overview'
+          'Full rebrand to Harbor',
+          'Coastal mint theme',
+          'Subscriptions browser + calmer Life panels'
         ]
       },
       {
         version: '0.7',
         date: '2026-07-08',
         title: 'Daily rhythm foundations',
+        sections: [
+          {
+            heading: 'Core',
+            items: [
+              'Energy-aware Today + Smart Suggestions',
+              'Life tab: grocery, bills, schedule',
+              'Streaks + Harbor Day; data stays on device'
+            ]
+          }
+        ],
         highlights: [
           'Energy-aware Today list and Smart Suggestions',
           'Groceries, bills, and schedule in one Life tab',
-          'Streaks, passes, and Harbor Day reward bank',
-          'Local-first data — no account required'
+          'Streaks, passes, and Harbor Day reward bank'
         ]
       }
     ];
@@ -9065,6 +9593,7 @@
       },
       {
         id: 'apple-one',
+        homeUrl: 'https://appleid.apple.com/',
         manageUrl: 'https://www.apple.com/account/subscriptions/', name: 'Apple One', brandColor: '#1D1D1F', matchPattern: /apple\.com\/bill|apple one/i,
         tiers: [
           { id: 'individual', label: 'Individual', amount: 19.95, cycle: 'monthly' },
@@ -9074,6 +9603,7 @@
       },
       {
         id: 'icloud',
+        homeUrl: 'https://www.icloud.com/',
         manageUrl: 'https://www.icloud.com/settings/', name: 'iCloud+', brandColor: '#3693F3', matchPattern: /icloud/i,
         tiers: [
           { id: '50gb', label: '50 GB', amount: 0.99, cycle: 'monthly' },
@@ -9094,6 +9624,7 @@
       },
       {
         id: 'microsoft-365',
+        homeUrl: 'https://login.live.com/',
         manageUrl: 'https://account.microsoft.com/services', name: 'Microsoft 365', brandColor: '#D83B01', matchPattern: /microsoft|office 365|msft/i,
         tiers: [
           { id: 'personal', label: 'Personal', amount: 9.99, cycle: 'monthly', studentAmount: 0 },
@@ -9102,6 +9633,7 @@
       },
       {
         id: 'adobe',
+        homeUrl: 'https://auth.services.adobe.com/en_US/index.html',
         manageUrl: 'https://account.adobe.com/plans', name: 'Adobe Creative Cloud', brandColor: '#FF0000', matchPattern: /adobe/i,
         tiers: [
           { id: 'photography', label: 'Photography (1 TB)', amount: 22.99, cycle: 'monthly', studentAmount: 19.99 },
@@ -9111,8 +9643,8 @@
       },
       {
         id: 'gym',
-        homeUrl: 'https://www.planetfitness.com/login',
-        manageUrl: 'https://www.planetfitness.com/login',
+        homeUrl: 'https://www.chuze.com/login',
+        manageUrl: 'https://www.chuze.com/login',
         name: 'Gym', brandColor: '#FF6B35', matchPattern: /planet fitness|la fitness|equinox|ymca|24 hour fitness|gold'?s gym|anytime fitness|orangetheory|chuze|gym/i,
         tiers: [
           { id: 'pf-classic', label: 'Planet Fitness Classic', amount: 15, cycle: 'monthly' },
@@ -9125,6 +9657,7 @@
       },
       {
         id: 'peacock',
+        homeUrl: 'https://www.peacocktv.com/signin',
         manageUrl: 'https://www.peacocktv.com/account', name: 'Peacock', brandColor: '#000000', matchPattern: /peacock/i,
         tiers: [
           { id: 'premium', label: 'Premium', amount: 7.99, cycle: 'monthly' },
@@ -9133,6 +9666,7 @@
       },
       {
         id: 'paramount',
+        homeUrl: 'https://www.paramountplus.com/account/signin/',
         manageUrl: 'https://www.paramountplus.com/account/', name: 'Paramount+', brandColor: '#0064FF', matchPattern: /paramount/i,
         tiers: [
           { id: 'essential', label: 'Essential', amount: 7.99, cycle: 'monthly', studentAmount: 5.99 },
@@ -9141,6 +9675,7 @@
       },
       {
         id: 'dropbox',
+        homeUrl: 'https://www.dropbox.com/login',
         manageUrl: 'https://www.dropbox.com/account', name: 'Dropbox', brandColor: '#0061FF', matchPattern: /dropbox/i,
         tiers: [
           { id: 'plus', label: 'Plus', amount: 11.99, cycle: 'monthly' },
@@ -10280,7 +10815,8 @@
       if (habit && !shouldTrackStreak(habit)) return 0;
       if (habit && !isRecurringHabit(habit)) return 0;
 
-      const dates = [...getCompletions(habitId)].sort().reverse();
+      // Unique calendar days only (multi-log can push the same date more than once)
+      const dates = [...new Set(getCompletions(habitId) || [])].sort().reverse();
       if (dates.length === 0) return 0;
 
       let streak = 0;
@@ -10301,6 +10837,9 @@
         } else if (passSet.has(ds) || (typeof isCheatGraceDay === 'function' && isCheatGraceDay(ds))) {
           // Pass / Harbor grace: day doesn't break streak (doesn't add a day either)
           checkDate.setDate(checkDate.getDate() - 1);
+        } else if (i === 0) {
+          // Today not done yet — still during the day; count the run ending yesterday
+          checkDate.setDate(checkDate.getDate() - 1);
         } else {
           break;
         }
@@ -10313,20 +10852,23 @@
       if (habit && !shouldTrackStreak(habit)) return 0;
       if (habit && !isRecurringHabit(habit)) return 0;
 
-      const dates = [...getCompletions(habitId)].sort();
+      // Unique days — multi-log same-day entries must not reset the longest run
+      const dates = [...new Set(getCompletions(habitId) || [])].sort();
       if (dates.length === 0) return 0;
       
       let longest = 1;
       let current = 1;
       
       for (let i = 1; i < dates.length; i++) {
-        const prev = new Date(dates[i-1]);
-        const curr = new Date(dates[i]);
-        const diff = (curr - prev) / (1000 * 3600 * 24);
+        const prev = new Date(dates[i - 1] + 'T12:00:00');
+        const curr = new Date(dates[i] + 'T12:00:00');
+        const diff = Math.round((curr - prev) / 86400000);
         
         if (diff === 1) {
           current++;
           longest = Math.max(longest, current);
+        } else if (diff === 0) {
+          // same day (shouldn't happen after Set) — ignore
         } else {
           current = 1;
         }
@@ -10629,7 +11171,7 @@
     function renderProjectionMetricLogger(habit) {
       const meta = getMetricInputMeta(habit);
       if (!meta) return '';
-      // Hide log UI during Projected Wins tutorial step (keeps the panel readable).
+      // Hide log UI during Habit Pace tutorial step (keeps the panel readable).
       if (state.settings.tutorialActive && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'projections-read') {
         return '';
       }
@@ -11005,7 +11547,7 @@
       editor.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end sm:items-center justify-center z-[70]';
       editor.innerHTML = `
         <div class="absolute inset-0" onclick="this.closest('.fixed').remove()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full sm:max-w-md bg-harbor-surface border-t sm:border border-harbor-border rounded-t-3xl sm:rounded-3xl p-5 text-sm mb-[max(0.5rem,env(keyboard-inset-height,0px))] max-h-[min(88vh,100dvh-2rem)] overflow-y-auto">
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet relative w-full sm:max-w-md bg-harbor-surface border-t sm:border border-harbor-border rounded-t-3xl sm:rounded-3xl p-5 text-sm mb-[max(5.5rem,env(keyboard-inset-height,0px))] max-h-[min(72vh,100dvh-7rem)] overflow-y-auto translate-y-[-min(18vh,7rem)] sm:translate-y-0">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-3">${existing ? 'Edit person' : 'Add person'}</div>
           <label class="block text-[10px] text-harbor-muted mb-1">Name</label>
@@ -11017,12 +11559,15 @@
               `<option value="${r.id}" ${draft.role === r.id ? 'selected' : ''}>${r.label}</option>`
             ).join('')}
           </select>
-          <label class="block text-[10px] text-harbor-muted mb-1.5">Color</label>
-          <div class="flex flex-wrap gap-2.5 mb-4" id="hp-colors">
+          <label class="block text-[10px] text-harbor-muted mb-1.5">Color <span class="text-harbor-primary-light font-semibold" id="hp-color-picked">selected</span></label>
+          <div class="flex flex-wrap gap-3 mb-4" id="hp-colors">
             ${HOUSEHOLD_COLOR_PALETTE.map(c => `
               <button type="button" data-color="${c}"
-                class="household-color-dot person-color-swatch ${draft.color.toLowerCase() === c.toLowerCase() ? 'is-selected ring-2 ring-harbor-primary scale-110' : ''}"
-                style="background:${c}; width:1.7rem; height:1.7rem; border:2px solid rgba(18,40,37,0.15);" aria-label="Color ${c}"></button>
+                class="household-color-dot person-color-swatch ${draft.color.toLowerCase() === c.toLowerCase() ? 'is-selected' : ''}"
+                style="background:${c}; width:2rem; height:2rem; border:2px solid rgba(18,40,37,0.18); box-shadow: inset 0 0 0 0 transparent;"
+                aria-label="Color ${c}" aria-pressed="${draft.color.toLowerCase() === c.toLowerCase() ? 'true' : 'false'}">
+                <i class="fa-solid fa-check text-white text-[10px] drop-shadow ${draft.color.toLowerCase() === c.toLowerCase() ? '' : 'opacity-0'}" aria-hidden="true"></i>
+              </button>
             `).join('')}
           </div>
           <div class="flex gap-2">
@@ -11039,11 +11584,12 @@
         editor.querySelectorAll('#hp-colors button').forEach(b => {
           const on = (b.dataset.color || '').toLowerCase() === (color || '').toLowerCase();
           b.classList.toggle('is-selected', on);
-          b.classList.toggle('ring-2', on);
-          b.classList.toggle('ring-harbor-primary', on);
-          b.classList.toggle('scale-110', on);
           b.setAttribute('aria-pressed', on ? 'true' : 'false');
+          const icon = b.querySelector('i');
+          if (icon) icon.classList.toggle('opacity-0', !on);
         });
+        const picked = editor.querySelector('#hp-color-picked');
+        if (picked) picked.textContent = '✓ picked';
       };
       paintColorSel();
       editor.querySelectorAll('#hp-colors button').forEach(btn => {
@@ -11444,11 +11990,24 @@
             Harbor <span class="tabular-nums font-semibold text-harbor-text">${getHarborVersionShort()}</span>
             <span class="opacity-70">· build ${HARBOR_BUILD_NUMBER}</span>
             ${HARBOR_CHANNEL && HARBOR_CHANNEL !== 'stable' ? ` · ${HARBOR_CHANNEL}` : ''}
-            <span class="block mt-1 opacity-80">Notes are grouped by day on the ${getHarborVersionShort()} train until 1.0.</span>
+            <span class="block mt-1 opacity-80">Use the latest card as your smoke-test checklist.</span>
           </div>
           <div class="space-y-0">
             ${entries.length ? entries.map((entry, idx) => {
               const dayTag = entry.date === todayIso ? ' · today' : (idx === 0 ? ' · latest' : '');
+              const sections = Array.isArray(entry.sections) ? entry.sections : null;
+              const bodyHtml = sections && sections.length
+                ? `${entry.intro ? `<p class="release-notes-intro">${escapeBriefHtml(entry.intro)}</p>` : ''}
+                  ${sections.map(sec => `
+                    <div class="release-notes-section">
+                      <div class="release-notes-section-h">${escapeBriefHtml(sec.heading || '')}</div>
+                      <ul class="release-notes-list">
+                        ${(sec.items || []).map(h => `<li>${escapeBriefHtml(h)}</li>`).join('')}
+                      </ul>
+                    </div>`).join('')}`
+                : `<ul class="release-notes-list">
+                    ${(entry.highlights || []).map(h => `<li>${escapeBriefHtml(h)}</li>`).join('')}
+                  </ul>`;
               return `
               <article class="release-notes-entry"${idx === 0 ? ' data-current="true"' : ''}>
                 <div class="release-notes-head">
@@ -11456,9 +12015,7 @@
                   <span class="release-notes-date">Harbor ${escapeBriefHtml(entry.version || HARBOR_VERSION)}</span>
                 </div>
                 ${entry.title ? `<div class="release-notes-title">${escapeBriefHtml(entry.title)}</div>` : ''}
-                <ul class="release-notes-list">
-                  ${(entry.highlights || []).map(h => `<li>${escapeBriefHtml(h)}</li>`).join('')}
-                </ul>
+                ${bodyHtml}
               </article>`;
             }).join('') : `
               <div class="text-sm text-harbor-muted text-center py-6">No release notes yet.</div>`}
@@ -12213,7 +12770,7 @@
       }
 
       if (periodic && perPeriod > 0 && habit?.interval_days > 1) {
-        soft = `${formatVal(perPeriod)} ${formatIntervalLabel(habit.interval_days).toLowerCase()} · ${soft}`;
+        soft = `${formatVal(perPeriod)} ${formatIntervalLabel(habit.interval_days, habit).toLowerCase()} · ${soft}`;
       }
       return outlookPrideHtml(main, soft);
     }
@@ -12480,6 +13037,79 @@
     function isNonDailyRecurring(habit) {
       const d = habit?.interval_days;
       return d != null && d > 1;
+    }
+
+    /** Preferred weekdays on a habit/chore: 0=Sun … 6=Sat (JS Date.getDay). null = any day. */
+    const WEEKDAY_CHIP_OPTIONS = [
+      { d: 0, label: 'Sun' },
+      { d: 1, label: 'Mon' },
+      { d: 2, label: 'Tue' },
+      { d: 3, label: 'Wed' },
+      { d: 4, label: 'Thu' },
+      { d: 5, label: 'Fri' },
+      { d: 6, label: 'Sat' }
+    ];
+
+    function getHabitWeekdays(habit) {
+      if (!habit) return null;
+      const raw = habit.weekdays ?? habit.preferred_weekdays;
+      if (!Array.isArray(raw) || !raw.length) return null;
+      const days = [...new Set(raw.map(n => Number(n)).filter(n => Number.isInteger(n) && n >= 0 && n <= 6))]
+        .sort((a, b) => a - b);
+      return days.length ? days : null;
+    }
+
+    function dateWeekday(dateStr = todayStr()) {
+      return new Date(String(dateStr) + 'T12:00:00').getDay();
+    }
+
+    function habitMatchesWeekdayPreference(habit, dateStr = todayStr()) {
+      const days = getHabitWeekdays(habit);
+      if (!days) return true;
+      return days.includes(dateWeekday(dateStr));
+    }
+
+    /**
+     * Weekly+ chores with preferred days: if a preferred day already passed this period
+     * and the chore still isn’t done, keep it due (catch-up) until the period ends.
+     * Daily Mon–Fri style does NOT catch up on Sat/Sun.
+     */
+    function hasPassedPreferredWeekdayThisPeriod(habit, dateStr = todayStr()) {
+      const days = getHabitWeekdays(habit);
+      if (!days?.length || isDailyTask(habit) || isOneOffTask(habit)) return false;
+      if (!isHabitActiveThisPeriod(habit)) return false;
+      const today = new Date(dateStr + 'T12:00:00');
+      for (let i = 1; i <= 13; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        if (!days.includes(d.getDay())) continue;
+        const ds = dateStrLocal(d);
+        // Stay inside the same period (week / month / …)
+        if (getHabitPeriodKey(habit, ds) !== getHabitPeriodKey(habit, dateStr)) continue;
+        return true;
+      }
+      return false;
+    }
+
+    function formatWeekdayShortList(days) {
+      if (!days || !days.length) return '';
+      const labels = WEEKDAY_CHIP_OPTIONS.filter(o => days.includes(o.d)).map(o => o.label);
+      if (labels.length === 7) return 'Every day';
+      if (labels.length === 5 && !days.includes(0) && !days.includes(6)) return 'Weekdays';
+      if (labels.length === 2 && days.includes(0) && days.includes(6)) return 'Weekends';
+      return labels.join(', ');
+    }
+
+    /** Next calendar date (YYYY-MM-DD) on a preferred weekday, starting from fromDate (inclusive). */
+    function nextDateMatchingWeekdays(weekdays, fromDateStr = todayStr()) {
+      if (!weekdays?.length) return fromDateStr;
+      const start = new Date(fromDateStr + 'T12:00:00');
+      for (let i = 0; i < 14; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        if (weekdays.includes(d.getDay())) return dateStrLocal(d);
+      }
+      return fromDateStr;
     }
 
     /** Daily habits track streaks by default; one-time + weekly+ chores do not. */
@@ -12808,19 +13438,29 @@
       return { text, cls };
     }
 
-    function formatIntervalLabel(days) {
-      if (days === 0) return 'One-time';
-      if (!days) return 'Daily';
-      if (days === 2) return '3 times a week';
-      if (days === 3) return 'Twice a week';
-      if (days === 7) return 'Weekly';
-      if (days === 14) return 'Every 2 weeks';
-      if (days >= 28 && days <= 31) return 'Monthly';
-      if (days >= 58 && days <= 62) return 'Every ~2 months';
-      if (days >= 85 && days <= 95) return 'Every 3 months';
-      if (days >= 175 && days <= 185) return 'Twice a year';
-      if (days >= 360) return 'Yearly';
-      return `Every ${days} days`;
+    function formatIntervalLabel(days, habitOrWeekdays) {
+      let base;
+      if (days === 0) base = 'One-time';
+      else if (!days) base = 'Daily';
+      else if (days === 2) base = '3 days a week';
+      else if (days === 3) base = '2 days a week';
+      else if (days === 7) base = 'Weekly';
+      else if (days === 14) base = 'Every 2 weeks';
+      else if (days >= 28 && days <= 31) base = 'Monthly';
+      else if (days >= 58 && days <= 62) base = 'Every ~2 months';
+      else if (days >= 85 && days <= 95) base = 'Every 3 months';
+      else if (days >= 175 && days <= 185) base = 'Twice a year';
+      else if (days >= 360) base = 'Yearly';
+      else base = `Every ${days} days`;
+
+      const weekdays = Array.isArray(habitOrWeekdays)
+        ? habitOrWeekdays
+        : getHabitWeekdays(habitOrWeekdays);
+      if (weekdays?.length) {
+        const dayLabel = formatWeekdayShortList(weekdays);
+        if (dayLabel) return `${base} · ${dayLabel}`;
+      }
+      return base;
     }
 
     function getDaysUntilHabitDue(habit) {
@@ -12837,6 +13477,36 @@
           }
         }
         return 90;
+      }
+      const weekdays = getHabitWeekdays(habit);
+      if (weekdays) {
+        // Count days until the next preferred weekday that is still open
+        const today = todayStr();
+        for (let i = 0; i < 14; i++) {
+          const d = new Date(today + 'T12:00:00');
+          d.setDate(d.getDate() + i);
+          const ds = dateStrLocal(d);
+          if (!weekdays.includes(d.getDay())) continue;
+          if (i === 0 && isCompletedToday(habit.id)) continue;
+          if (isDailyTask(habit)) return i;
+          // weekly+: only if this period still open (or next week's matching day)
+          if (isHabitActiveThisPeriod(habit) || i > 0) {
+            // if period already completed, jump to next period start then preferred day
+            if (!isHabitActiveThisPeriod(habit) && habit.interval_days > 1) {
+              const untilPeriod = getDaysUntilNextPeriodStart(habit);
+              const periodStart = (() => {
+                const p = new Date(today + 'T12:00:00');
+                p.setDate(p.getDate() + untilPeriod);
+                return dateStrLocal(p);
+              })();
+              const nextPref = nextDateMatchingWeekdays(weekdays, periodStart);
+              const delta = Math.round((new Date(nextPref + 'T12:00:00') - new Date(today + 'T12:00:00')) / 86400000);
+              return Math.max(0, delta);
+            }
+            return i;
+          }
+        }
+        return 7;
       }
       if (!habit.interval_days || habit.interval_days <= 1) return 0;
       if (isHabitActiveThisPeriod(habit)) return 0;
@@ -13170,8 +13840,8 @@
 
     const TASK_RECURRENCE_OPTIONS = [
       { key: 'daily', label: 'Daily', days: null },
-      { key: '2', label: '3 times a week', days: 2 },
-      { key: '3', label: 'Twice a week', days: 3 },
+      { key: '2', label: '3 days a week', days: 2 },
+      { key: '3', label: '2 days a week', days: 3 },
       { key: '7', label: 'Weekly', days: 7 },
       { key: '14', label: 'Every 2 weeks', days: 14 },
       { key: '30', label: 'Monthly', days: 30 },
@@ -13182,16 +13852,16 @@
 
     const HABIT_RECURRENCE_OPTIONS = [
       { key: 'daily', label: 'Daily', days: null },
-      { key: '2', label: '3 times a week', days: 2 },
-      { key: '3', label: 'Twice a week', days: 3 },
+      { key: '2', label: '3 days a week', days: 2 },
+      { key: '3', label: '2 days a week', days: 3 },
       { key: '7', label: 'Weekly', days: 7 }
     ];
 
     // Chores: primary chips stay short; "More" holds longer intervals
     const CHORE_RECURRENCE_PRIMARY = [
       { key: 'daily', label: 'Daily', days: null },
-      { key: '3', label: 'Twice a week', days: 3 },
-      { key: '2', label: '3 times a week', days: 2 },
+      { key: '3', label: '2 days a week', days: 3 },
+      { key: '2', label: '3 days a week', days: 2 },
       { key: '7', label: 'Weekly', days: 7 },
       { key: '30', label: 'Monthly', days: 30 }
     ];
@@ -13322,7 +13992,12 @@
       const habit = state.habits.find(h => h.id === taskId);
       const libTask = (state.customLibrary || []).find(t => t.id === taskId);
       if (habit) {
-        showQuickTaskModal({ mode: habit.is_personal || libTask ? 'library' : 'habit', editHabitId: habitId, editTaskId: libTask ? taskId : undefined });
+        // editHabitId must be the task id (was undefined: habitId typo broke Edit from Library)
+        showQuickTaskModal({
+          mode: habit.is_personal || libTask ? 'library' : 'habit',
+          editHabitId: taskId,
+          editTaskId: libTask ? taskId : undefined
+        });
       } else if (libTask) {
         showQuickTaskModal({ mode: 'library', editTaskId: taskId });
       } else {
@@ -13371,15 +14046,15 @@
             <div class="grid grid-cols-3 gap-1.5" role="group" aria-label="Task type">
               <button type="button" class="qt-kind-chip" data-kind="task" aria-pressed="false">
                 <div class="text-sm font-semibold text-harbor-text">Task</div>
-                <div class="text-[9px] text-harbor-muted leading-snug mt-0.5">One and done</div>
+                <div class="text-[9px] text-harbor-muted leading-snug mt-0.5">Do it once</div>
               </button>
               <button type="button" class="qt-kind-chip" data-kind="habit" aria-pressed="false">
                 <div class="text-sm font-semibold text-harbor-text">Habit</div>
-                <div class="text-[9px] text-harbor-muted leading-snug mt-0.5">Builds streaks</div>
+                <div class="text-[9px] text-harbor-muted leading-snug mt-0.5">Keeps a streak</div>
               </button>
               <button type="button" class="qt-kind-chip" data-kind="chore" aria-pressed="false">
                 <div class="text-sm font-semibold text-harbor-text">Chore</div>
-                <div class="text-[9px] text-harbor-muted leading-snug mt-0.5">Repeats, no streak</div>
+                <div class="text-[9px] text-harbor-muted leading-snug mt-0.5">Repeats on a cadence</div>
               </button>
             </div>
             <div id="qt-kind-hint" class="text-[10px] text-harbor-primary-light mt-1.5 leading-snug"></div>
@@ -13400,6 +14075,11 @@
             <div id="qt-recur-more-wrap" class="qt-recur-more-wrap hidden">
               <button type="button" id="qt-recur-more-btn" class="qt-recur-more-btn">More options</button>
               <div id="qt-recurrence-more-row" class="qt-recurrence-row mt-1.5 hidden" role="group" aria-label="More how often"></div>
+              <div id="qt-weekday-section" class="qt-weekday-section hidden">
+                <label class="block text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5">Preferred day(s)</label>
+                <div id="qt-weekday-row" class="qt-weekday-row" role="group" aria-label="Preferred days of the week"></div>
+                <div class="qt-weekday-hint">e.g. trash day · pick one or more · leave empty for any day</div>
+              </div>
             </div>
             <div id="qt-times-section" class="hidden">
               <label class="block text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mt-2.5 mb-1">Times per day</label>
@@ -13409,10 +14089,10 @@
 
           <div id="qt-energy-section" class="mb-3">
             <label class="block text-xs text-harbor-muted mb-1.5">Energy needed</label>
-            <div class="flex gap-1.5">
-              <button type="button" data-diff="1" class="qt-diff flex-1 py-2.5 rounded-xl text-xs font-semibold border border-harbor-border bg-harbor-raised text-harbor-muted">Low</button>
-              <button type="button" data-diff="2" class="qt-diff flex-1 py-2.5 rounded-xl text-xs font-semibold border border-harbor-primary bg-harbor-primary/15 text-harbor-text">Med</button>
-              <button type="button" data-diff="3" class="qt-diff flex-1 py-2.5 rounded-xl text-xs font-semibold border border-harbor-border bg-harbor-raised text-harbor-muted">High</button>
+            <div class="qt-energy-row" role="group" aria-label="Energy needed">
+              <button type="button" data-diff="1" class="qt-diff qt-energy-chip">Low</button>
+              <button type="button" data-diff="2" class="qt-diff qt-energy-chip is-active">Med</button>
+              <button type="button" data-diff="3" class="qt-diff qt-energy-chip">High</button>
             </div>
           </div>
 
@@ -13432,7 +14112,7 @@
 
           <button type="button" id="qt-save"
             class="w-full py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold active:opacity-90">
-            ${isEdit ? 'Save changes' : isLibrary ? 'Save to Personal' : 'Add to Today'}
+            ${isEdit ? 'Save changes' : isLibrary ? 'Save to Personal' : 'Add task'}
           </button>
         </div>
       `;
@@ -13443,7 +14123,8 @@
       let selectedDiff = editSource ? (editSource.difficulty || 2) : inferred.difficulty;
       let selectedKind = 'task'; // task | habit | chore
       let selectedTimesPerDay = editSource?.times_per_day ? Math.max(1, Number(editSource.times_per_day) || 1) : 1;
-      let showChoreMore = false;
+      let selectedWeekdays = getHabitWeekdays(editSource) ? [...getHabitWeekdays(editSource)] : [];
+      let showChoreMore = !!(selectedWeekdays.length); // open More if preferred days already set
       const MINUTE_PRESETS = [
         { label: '5 min', value: 5 },
         { label: '15 min', value: 15 },
@@ -13529,6 +14210,40 @@
         refreshSummary();
       }
 
+      function renderWeekdayChips() {
+        const section = modal.querySelector('#qt-weekday-section');
+        const row = modal.querySelector('#qt-weekday-row');
+        if (!section || !row) return;
+        // Preferred days live under More for chores (and habits that open more)
+        const showSection = (selectedKind === 'chore' || selectedKind === 'habit') && showChoreMore;
+        section.classList.toggle('hidden', !showSection);
+        if (!showSection) return;
+        row.innerHTML = WEEKDAY_CHIP_OPTIONS.map(o => {
+          const on = selectedWeekdays.includes(o.d);
+          return `<button type="button" class="qt-weekday-chip${on ? ' is-active' : ''}" data-weekday="${o.d}" aria-pressed="${on ? 'true' : 'false'}">${o.label}</button>`;
+        }).join('');
+        row.querySelectorAll('.qt-weekday-chip').forEach(btn => {
+          btn.onclick = () => {
+            const d = parseInt(btn.dataset.weekday, 10);
+            if (!Number.isInteger(d)) return;
+            if (selectedWeekdays.includes(d)) {
+              selectedWeekdays = selectedWeekdays.filter(x => x !== d);
+            } else {
+              selectedWeekdays = [...selectedWeekdays, d].sort((a, b) => a - b);
+            }
+            // Weekly-style chores often need a cadence when a day is picked
+            if (selectedWeekdays.length && selectedKind === 'chore'
+                && (selectedInterval == null || selectedInterval === 0 || selectedInterval === 1)) {
+              intervalUserPicked = true;
+              selectedInterval = 7;
+              updateIntervalButtons();
+            }
+            renderWeekdayChips();
+            refreshSummary();
+          };
+        });
+      }
+
       function renderRecurrenceChips() {
         if (!recurrenceRow) return;
         const moreWrap = modal.querySelector('#qt-recur-more-wrap');
@@ -13544,11 +14259,30 @@
           if (moreWrap && moreRow) {
             moreWrap.classList.remove('hidden');
             const inMore = more.some(o => recurrenceOptionMatches(o));
-            if (inMore) showChoreMore = true;
+            if (inMore || selectedWeekdays.length) showChoreMore = true;
             moreRow.classList.toggle('hidden', !showChoreMore);
             moreRow.innerHTML = more.map(opt =>
               `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
             ).join('');
+            if (moreBtn) {
+              moreBtn.textContent = showChoreMore ? 'Fewer options' : 'More options';
+              moreBtn.onclick = () => {
+                showChoreMore = !showChoreMore;
+                renderRecurrenceChips();
+              };
+            }
+          }
+        } else if (selectedKind === 'habit') {
+          // Habits: primary cadence + More for preferred days (no extra long intervals)
+          const opts = recurrenceOptionsForKind();
+          recurrenceRow.innerHTML = opts.map(opt =>
+            `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
+          ).join('');
+          if (moreWrap && moreRow) {
+            moreWrap.classList.remove('hidden');
+            moreRow.innerHTML = '';
+            moreRow.classList.add('hidden');
+            if (selectedWeekdays.length) showChoreMore = true;
             if (moreBtn) {
               moreBtn.textContent = showChoreMore ? 'Fewer options' : 'More options';
               moreBtn.onclick = () => {
@@ -13577,6 +14311,7 @@
         });
         updateIntervalButtons();
         renderTimesPerDay();
+        renderWeekdayChips();
       }
 
       function updateIntervalButtons() {
@@ -13673,6 +14408,7 @@
         if (kind === 'task') {
           intervalUserPicked = true;
           selectedInterval = 0;
+          selectedWeekdays = [];
         } else if (kind === 'habit') {
           intervalUserPicked = true;
           // Keep a non-daily interval if user already picked one; default daily
@@ -13720,9 +14456,14 @@
         }
         updateRecurrenceVisibility();
         updateIntervalButtons();
+        paintEnergyChips();
+      }
+
+      function paintEnergyChips() {
         modal.querySelectorAll('.qt-diff').forEach(btn => {
           const match = parseInt(btn.dataset.diff, 10) === selectedDiff;
-          btn.className = `qt-diff flex-1 py-2 rounded-xl text-xs font-semibold border ${match ? 'border-harbor-primary bg-harbor-primary/15 text-harbor-text' : 'border-harbor-border bg-harbor-raised text-harbor-muted'}`;
+          btn.classList.toggle('is-active', match);
+          btn.setAttribute('aria-pressed', match ? 'true' : 'false');
         });
       }
 
@@ -13730,12 +14471,10 @@
         if (interval == null || interval === 1) {
           if (selectedTimesPerDay >= 3) return '3 times a day habit';
           if (selectedTimesPerDay === 2) return 'Twice a day habit';
-          return 'Daily habit';
+          const days = formatWeekdayShortList(selectedWeekdays);
+          return days ? `Daily habit · ${days}` : 'Daily habit';
         }
-        if (interval === 2) return '3 times a week habit';
-        if (interval === 3) return 'Twice a week habit';
-        if (interval === 7) return 'Weekly habit';
-        return formatIntervalLabel(interval) + ' habit';
+        return formatIntervalLabel(interval, selectedWeekdays) + ' habit';
       }
 
       function refreshSummary() {
@@ -13750,9 +14489,11 @@
             freq = selectedTimesPerDay >= 2
               ? `${selectedTimesPerDay === 2 ? 'Twice' : selectedTimesPerDay + ' times'} a day chore`
               : 'Daily chore';
-          } else if (selectedInterval === 2) freq = '3 times a week chore';
-          else if (selectedInterval === 3) freq = 'Twice a week chore';
-          else freq = formatIntervalLabel(selectedInterval || 7) + ' chore';
+            const days = formatWeekdayShortList(selectedWeekdays);
+            if (days) freq += ` · ${days}`;
+          } else {
+            freq = formatIntervalLabel(selectedInterval || 7, selectedWeekdays) + ' chore';
+          }
         } else if (isSchedulingTaskTitle(title)) freq = 'One-time';
         const tag = isLibrary ? ' · tagged Personal' : '';
         const streakNote = selectedKind === 'habit' ? ' · tracks streak' : ' · no streak';
@@ -13822,13 +14563,11 @@
         btn.onclick = () => applyKind(btn.dataset.kind);
       });
 
+      paintEnergyChips();
       modal.querySelectorAll('.qt-diff').forEach(btn => {
         btn.onclick = () => {
-          modal.querySelectorAll('.qt-diff').forEach(b => {
-            b.className = 'qt-diff flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-border bg-harbor-raised text-harbor-muted';
-          });
-          btn.className = 'qt-diff flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-primary bg-harbor-primary/15 text-harbor-text';
           selectedDiff = parseInt(btn.dataset.diff, 10);
+          paintEnergyChips();
           refreshSummary();
         };
       });
@@ -13861,19 +14600,22 @@
         const trackStreak = selectedKind === 'habit';
         const isRecurring = interval != null && interval !== 0;
         const editId = options.editHabitId || options.editTaskId;
-        // Draft for park scoring — boost time/energy on travel & project language so Today stays light
+        // New heavy freeform work: nudge park scoring so Today stays light.
+        // On edit, keep the user's explicit minutes / energy (don't re-inflate).
         let difficulty = selectedDiff;
-        const parkProbe = {
-          title,
-          note: '',
-          interval_days: interval,
-          est_minutes: minutes,
-          difficulty,
-          is_preset: false
-        };
-        if (typeof getTaskParkScore === 'function' && getTaskParkScore(parkProbe) >= 2) {
-          if (!minutes || minutes < 60) minutes = Math.max(minutes || 0, 90);
-          if (difficulty < 3) difficulty = 3;
+        if (!isEdit) {
+          const parkProbe = {
+            title,
+            note: '',
+            interval_days: interval,
+            est_minutes: minutes,
+            difficulty,
+            is_preset: false
+          };
+          if (typeof getTaskParkScore === 'function' && getTaskParkScore(parkProbe) >= 2) {
+            if (!minutes || minutes < 60) minutes = Math.max(minutes || 0, 90);
+            if (difficulty < 3) difficulty = 3;
+          }
         }
         const task = {
           id: isEdit ? editId : ((mode === 'library' || isRecurring) ? 'custom-lib-' : 'custom-') + Date.now(),
@@ -13887,12 +14629,20 @@
           librarySection: (mode === 'library' || isRecurring) ? 'Personal' : undefined,
           trackStreak
         };
-        if ((selectedKind === 'habit' || selectedKind === 'chore')
+        const keepTimesPerDay = (selectedKind === 'habit' || selectedKind === 'chore')
             && (interval == null || interval === 1)
-            && selectedTimesPerDay > 1) {
+            && selectedTimesPerDay > 1;
+        if (keepTimesPerDay) {
           task.times_per_day = selectedTimesPerDay;
         } else {
           delete task.times_per_day;
+        }
+        if ((selectedKind === 'habit' || selectedKind === 'chore') && selectedWeekdays.length) {
+          task.weekdays = [...selectedWeekdays];
+        } else {
+          // Explicit null so edits clear previously saved preferred days on merge
+          task.weekdays = null;
+          task.preferred_weekdays = null;
         }
         if (inf.unit || editSource?.unit) {
           const activeGoal = getActiveGoalInput();
@@ -13908,10 +14658,26 @@
           task.est_minutes = 0;
         }
 
+        /** Spread-merge keeps old keys when the draft omitted them — strip intentionally cleared fields. */
+        function applyClearedEditFields(target) {
+          if (!target) return target;
+          if (!keepTimesPerDay) delete target.times_per_day;
+          if (!task.weekdays) {
+            delete target.weekdays;
+            delete target.preferred_weekdays;
+          }
+          if (task.target_value == null && task.unit == null && !(inf.unit || editSource?.unit)) {
+            delete target.target_value;
+            delete target.unit;
+          }
+          return target;
+        }
+
         if (isEdit) {
           const habitIdx = state.habits.findIndex(h => h.id === editId);
           if (habitIdx >= 0) {
             const merged = stampHabitMeta({ ...state.habits[habitIdx], ...task, id: editId });
+            applyClearedEditFields(merged);
             state.habits[habitIdx] = merged;
             syncTaskToPersonalLibrary(merged);
           }
@@ -13919,7 +14685,9 @@
             if (!state.customLibrary) state.customLibrary = [];
             const libIdx = state.customLibrary.findIndex(t => t.id === editId);
             if (libIdx >= 0) {
-              state.customLibrary[libIdx] = { ...state.customLibrary[libIdx], ...task, id: editId };
+              const libMerged = { ...state.customLibrary[libIdx], ...task, id: editId };
+              applyClearedEditFields(libMerged);
+              state.customLibrary[libIdx] = libMerged;
             } else if (task.is_personal) {
               state.customLibrary.push({ ...task, id: editId });
             }
@@ -13928,6 +14696,8 @@
           saveState();
           renderTasks();
           renderLibrary();
+          if (typeof renderStreaks === 'function') renderStreaks();
+          if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
           showToast(`"${title}" updated`);
         } else if (mode === 'library') {
           if (!state.customLibrary) state.customLibrary = [];
@@ -13949,6 +14719,7 @@
           renderTasks();
           renderLibrary();
           renderStreaks();
+          if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
           const kindLabel = selectedKind === 'habit' ? 'habit' : selectedKind === 'chore' ? 'chore' : 'task';
           let where = '';
           if (typeof isParkedForSummary === 'function' && isParkedForSummary(task)) {
@@ -14101,8 +14872,10 @@
           }
         }
       });
-      // Collapse after pick for a calmer chrome
-      energyExpanded = false;
+      // Keep choices open during the energy tutorial step so Low/Med/High stay tappable
+      const onEnergyTour = state?.settings?.tutorialActive
+        && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'energy-smart';
+      energyExpanded = !!onEnergyTour;
       syncEnergyCompactUI();
 
       // Always re-sort Today's list for the selected energy.
@@ -14813,7 +15586,7 @@
     }
 
     function getMealEnergyFilterLabel(energy) {
-      return 'Themed dinners · Sun–Sat · tap a day for its shopping list';
+      return '';
     }
 
     function removeMealPreset(presetId) {
@@ -15378,10 +16151,11 @@
       if (labelEl) {
         if (isMeal) {
           labelEl.classList.remove('hidden');
-          labelEl.innerHTML = `Editing <strong class="text-harbor-text">${escapeBriefHtml(preset?.label || 'dinner')}</strong>${preset?.recipe ? ` · ${escapeBriefHtml(preset.recipe)}` : ''} · <span class="text-harbor-primary-light">Add</span> updates this dinner · use <strong class="text-harbor-text">Edit dinner</strong> for the full list`;
+          labelEl.innerHTML = `<strong class="text-harbor-text">${escapeBriefHtml(preset?.label || 'Dinner')}</strong>${preset?.recipe ? ` · ${escapeBriefHtml(preset.recipe)}` : ''}`;
         } else {
-          labelEl.classList.remove('hidden');
-          labelEl.textContent = 'Your main shopping list · open Dinner lists for themed meal shops';
+          // Quiet master list — no dinner/grocery filler under the toolbar
+          labelEl.classList.add('hidden');
+          labelEl.textContent = '';
         }
       }
 
@@ -15446,24 +16220,32 @@
       bindSwipeRows(container);
     }
 
-    function refreshCalendarCache() {
+    function refreshCalendarCache(options = {}) {
       const cal = getMockCalendar();
-      const todayEvents = filterEventsForDate(normalizeCalendarEvents(cal.events), todayStr());
+      const all = normalizeCalendarEvents(cal.events);
+      const today = todayStr();
+      // Include multi-day events that span today (not only those that start today)
+      const todayEvents = all.filter(e => eventOccursOnDate(e, today));
       const avail = computeDayAvailability({
         events: todayEvents.map(e => ({
           time: e.time,
           title: e.title,
-          durationMin: e.durationMin || 30
+          durationMin: e.durationMin || 30,
+          date: getEventDate(e),
+          endDate: e.endDate || null
         }))
       });
       state.calendarCache = {
-        date: todayStr(),
+        date: today,
         events: todayEvents,
         freeMinutes: avail.freeMinutes,
         note: cal.note || '',
         weekAhead: cal.weekAhead || []
       };
-      saveState();
+      // Avoid writing localStorage on every Schedule re-render; callers that mutate events save themselves.
+      if (options.save === true) {
+        try { saveState(); } catch (_) { /* ignore */ }
+      }
       return state.calendarCache;
     }
 
@@ -15599,7 +16381,28 @@
       }
 
       const events = extraEvents || state.calendarCache?.events || [];
+      const today = todayStr();
+      const dayStart = typeof AWAKE_DAY_START === 'number' ? AWAKE_DAY_START : 7 * 60;
+      const dayEnd = typeof AWAKE_DAY_END === 'number' ? AWAKE_DAY_END : 22 * 60;
       events.forEach(e => {
+        const startD = getEventDate(e);
+        const endD = getEventEndDate(e);
+        const multiDay = endD > startD;
+        const allDayish = (Number(e.durationMin) || 0) >= 12 * 60;
+        // Multi-day / all-day: block the free-time window so trips don’t look “open”
+        if (multiDay || allDayish) {
+          if (multiDay && startD === today && endD > today) {
+            // First day of multi-day: busy from start time through end of day
+            const start = parseTimeMins(e.time || '00:00');
+            blocks.push({ start: Math.min(start, dayEnd - 15), end: dayEnd, title: e.title, type: 'event' });
+          } else if (multiDay && endD === today && startD < today) {
+            // Last day: busy from morning through a reasonable end (or full window)
+            blocks.push({ start: dayStart, end: dayEnd, title: e.title, type: 'event' });
+          } else {
+            blocks.push({ start: dayStart, end: dayEnd, title: e.title, type: 'event' });
+          }
+          return;
+        }
         const start = parseTimeMins(e.time);
         blocks.push({
           start,
@@ -15697,8 +16500,8 @@
         busy,
         workLabel: getWorkScheduleLabel(ws),
         summary: factors.length
-          ? `${formatDurationShort(committedMinutes)} planned · ${factors.join(' + ')} · 7am–10pm`
-          : 'Open day — set hours or add events for smarter gaps'
+          ? formatScheduleLoadLabel({ dayFreeMinutes: dayFreeMinutes })
+          : 'Open day — set hours for smarter free-time'
       };
     }
 
@@ -15885,7 +16688,9 @@
 
     function getUpcomingEvents(limit) {
       const cache = state.calendarCache || refreshCalendarCache();
-      const events = cache.events || [];
+      const today = todayStr();
+      // Cache is today-scoped; still re-check multi-day span for safety
+      const events = (cache.events || []).filter(e => eventOccursOnDate(e, today));
       const now = new Date();
       const nowMins = now.getHours() * 60 + now.getMinutes();
 
@@ -15894,7 +16699,13 @@
           const [h, m] = (e.time || '00:00').split(':').map(Number);
           return { ...e, sortMins: h * 60 + (m || 0) };
         })
-        .filter(e => e.sortMins >= nowMins - 15)
+        .filter(e => {
+          // Multi-day / all-day already underway count as “up”
+          if ((Number(e.durationMin) || 0) >= 12 * 60 || getEventEndDate(e) > getEventDate(e)) {
+            return getCalendarEventPhase(e, today) !== 'past';
+          }
+          return e.sortMins >= nowMins - 15;
+        })
         .sort((a, b) => a.sortMins - b.sortMins)
         .slice(0, limit || 5);
     }
@@ -15997,13 +16808,13 @@
     function scheduleEmptyActionsHtml() {
       return `<div class="harbor-empty-actions">
         <button type="button" class="chip-add-btn" onclick="showAddCalendarEventModal()">
-          <i class="fa-solid fa-plus" aria-hidden="true"></i>Add event
+          <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add event</span>
         </button>
         <button type="button" class="chip-tool-btn" onclick="showCalendarFeedModal()">
-          <i class="fa-solid fa-link" aria-hidden="true"></i>Connect calendar
+          <i class="fa-solid fa-link" aria-hidden="true"></i><span>Connect calendar</span>
         </button>
         <button type="button" class="chip-tool-btn" onclick="triggerCalendarICSImport()">
-          <i class="fa-solid fa-file-import" aria-hidden="true"></i>Import file
+          <i class="fa-solid fa-file-import" aria-hidden="true"></i><span>Import file</span>
         </button>
       </div>`;
     }
@@ -17069,16 +17880,23 @@
       // This Week = after Today only (no double-listing with Today sub-tab)
       const weekAhead = getWeekBeyondTodayBounds(today);
       if (freeEl) {
+        // Compact chip left of Hours — full detail in title tooltip
         if (view === 'week') {
           const weekEvents = filterEventsForScheduleWeek(allEvents);
-          freeEl.textContent = weekEvents.length
-            ? `${weekEvents.length} upcoming event${weekEvents.length === 1 ? '' : 's'}`
-            : 'Clear ahead';
+          const n = weekEvents.length;
+          freeEl.textContent = n ? `${n} up` : 'Clear';
+          freeEl.title = n
+            ? `${n} upcoming event${n === 1 ? '' : 's'} this week`
+            : 'Nothing coming up after today';
+          freeEl.setAttribute('aria-label', freeEl.title);
         } else {
           const liveN = allEvents.filter(e => eventOccursOnDate(e, today) && getCalendarEventPhase(e, today) !== 'past').length;
-          freeEl.textContent = liveN
-            ? `${liveN} still ahead · ${formatScheduleLoadLabel(avail)}`
-            : formatScheduleLoadLabel(avail);
+          const load = formatScheduleLoadLabel(avail);
+          freeEl.textContent = load;
+          freeEl.title = liveN
+            ? `${liveN} still ahead · ${load}`
+            : (avail.summary || load);
+          freeEl.setAttribute('aria-label', freeEl.title);
         }
       }
       if (detailEl) {
@@ -18364,12 +19182,20 @@
       // Seasonal chores stay off Today until their window (e.g. heating tune-up in fall)
       if (!isHabitInSeason(habit, today)) return false;
 
+      // Preferred days (e.g. trash on Tue): due on that day, or catch-up later in the period if missed
+      const preferred = getHabitWeekdays(habit);
+      if (preferred) {
+        const onPreferred = habitMatchesWeekdayPreference(habit, today);
+        const catchUp = hasPassedPreferredWeekdayThisPeriod(habit, today);
+        if (!onPreferred && !catchUp) return false;
+      }
+
       if (isOneOffTask(habit)) {
         return comps.length === 0;
       }
       
       if (habit.interval_days == null || habit.interval_days <= 1) {
-        return true; // daily
+        return true; // daily (optionally Mon–Fri via weekdays)
       }
 
       return isHabitActiveThisPeriod(habit);
@@ -18496,12 +19322,15 @@
     /** Light daily rhythm titles that should stay on Today even if duration is longer (walk, gym…). */
     function isDailyRhythmTitle(text) {
       const t = String(text || '').toLowerCase();
-      return /\b(walk|run|jog|steps|gym|workout|exercise|stretch|mobility|yoga|pilates|meditat|journal|read\b|floss|vitamin|make (the )?bed|drink water|pray|prayer|bike ride|swim|laps|push-?ups|core work)\b/.test(t);
+      return /\b(walk|run|jog|steps|gym|workout|exercise|stretch|mobility|yoga|pilates|meditat|journal|read\b|floss|vitamin|make (the )?bed|drink water|pray|prayer|bike ride|swim|laps|push-?ups|core work|sav(e|ings)|\$\d+)\b/.test(t);
     }
 
     function isDailyRhythmTask(habit) {
       if (!habit || !isDailyTask(habit)) return false;
-      if (habit.unit === 'steps' || habit.unit === 'miles' || habit.unit === 'mi' || habit.unit === 'pages') return true;
+      const unit = String(habit.unit || '').toLowerCase();
+      // Metric dailies (steps, savings, pages…) always stay on Today
+      if (['steps', 'miles', 'mi', 'km', 'pages', 'dollars', 'usd', 'savings'].includes(unit)) return true;
+      if (habit.target_value != null && (Number(habit.est_minutes) || 0) <= 30) return true;
       if (isDailyRhythmTitle(`${habit.title || ''} ${habit.note || ''}`)) return true;
       const mins = Number(habit.est_minutes) || 0;
       const diff = Number(habit.difficulty) || 2;
@@ -18577,7 +19406,7 @@
       return true;
     }
 
-    function clearExpiredPullToTodayFlags() {
+    function clearExpiredPullToTodayFlags(opts = {}) {
       const today = todayStr();
       let changed = false;
       (state.habits || []).forEach(h => {
@@ -18586,6 +19415,10 @@
           changed = true;
         }
       });
+      // Persist so yesterday’s pull flags don’t reappear after reload
+      if (changed && opts.save !== false) {
+        try { saveState(); } catch (_) { /* ignore */ }
+      }
       return changed;
     }
 
@@ -18604,11 +19437,12 @@
       renderTasks();
       if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
       if (typeof updateSmartBanner === 'function') updateSmartBanner();
+      // Refresh Summary UI without jumping the task list (or main sheet) back to the top
       if (document.getElementById('summary-body')) {
-        try { refreshSummaryModal(summaryMode || 'day'); } catch (_) { /* ignore */ }
+        try { refreshSummaryModal(summaryMode || 'day', { preserveScroll: true }); } catch (_) { /* ignore */ }
       }
       if (document.getElementById('summary-kpi-detail-modal')) {
-        try { showSummaryKpiDetail('tasks'); } catch (_) { /* ignore */ }
+        try { refreshSummaryKpiDetail('tasks', { preserveScroll: true }); } catch (_) { /* ignore */ }
       }
       showToast(`On Today · ${habit.title}`);
     }
@@ -18621,7 +19455,10 @@
       renderTasks();
       if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
       if (document.getElementById('summary-body')) {
-        try { refreshSummaryModal(summaryMode || 'day'); } catch (_) { /* ignore */ }
+        try { refreshSummaryModal(summaryMode || 'day', { preserveScroll: true }); } catch (_) { /* ignore */ }
+      }
+      if (document.getElementById('summary-kpi-detail-modal')) {
+        try { refreshSummaryKpiDetail('tasks', { preserveScroll: true }); } catch (_) { /* ignore */ }
       }
       showToast('Moved back to Summary');
     }
@@ -18953,7 +19790,9 @@
       const timesNeed = typeof getTimesPerDay === 'function' ? getTimesPerDay(habit) : 1;
       const timesDone = typeof countCompletionsOnDate === 'function' ? countCompletionsOnDate(habit.id, todayStr()) : 0;
       const isMulti = timesNeed > 1;
+      const mobileTapComplete = typeof isSwipeMobile === 'function' && isSwipeMobile();
       // Minimal multi-log UI: fraction lives on the complete control (0/2 → 1/2 → done)
+      // Mobile hides the bubble (CSS) and completes via row tap instead
       const hitClasses = 'task-complete-hit touch-target w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-harbor-border active:border-harbor-primary flex items-center justify-center text-xl'
         + (isMulti ? ' is-multi' : '')
         + (isMulti && timesDone > 0 ? ' is-partial' : '');
@@ -18963,20 +19802,23 @@
       const multiPill = isMulti
         ? `<span class="habit-multi-pill" title="${timesDone} of ${timesNeed} today">${timesDone}/${timesNeed}</span>`
         : '';
-      const freqChip = !isMulti && isRecurring ? formatIntervalLabel(habit.interval_days) : '';
+      const freqChip = !isMulti && isRecurring ? formatIntervalLabel(habit.interval_days, habit) : '';
 
       const safeTitle = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(habit.title) : habit.title;
+      // Web: circle completes. Mobile: meta row is not a separate complete control (whole card is).
+      const metaCompleteAttr = mobileTapComplete ? '' : ` onclick="completeHabit('${habit.id}', event)"`;
       const contentHtml = `
-        <div onclick="completeHabit('${habit.id}', event)" class="${hitClasses}" role="button"
-          aria-label="${isMulti ? `${safeTitle}, ${timesDone} of ${timesNeed} today` : `Complete ${safeTitle}`}">
+        <div ${mobileTapComplete ? '' : `onclick="completeHabit('${habit.id}', event)"`} class="${hitClasses}" role="button"
+          aria-label="${isMulti ? `${safeTitle}, ${timesDone} of ${timesNeed} today` : `Complete ${safeTitle}`}"
+          ${mobileTapComplete ? 'aria-hidden="true" tabindex="-1"' : ''}>
           ${hitInner}
         </div>
-        <div class="flex-1 min-w-0">
+        <div class="flex-1 min-w-0 habit-main-tap">
           <div class="font-medium leading-tight habit-title-text${showMuted ? ' text-harbor-muted' : ''}"
             data-habit-title="1"
             onclick="event.stopPropagation(); toggleHabitTitleExpand(this)"
             title="Tap title to expand">${safeTitle}${weatherIcon ? ` <span class="ml-1 text-base" title="Current weather: ${state.settings.mockWeather || 'unknown'}">${weatherIcon}</span>` : ''}</div>
-          <div class="flex items-center gap-x-2 mt-0.5 flex-wrap" onclick="completeHabit('${habit.id}', event)">
+          <div class="flex items-center gap-x-2 mt-0.5 flex-wrap"${metaCompleteAttr}>
             ${habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))
               ? `<span class="text-sky-300 text-xs px-1.5 rounded bg-sky-900/40 font-semibold">Pro booking</span>`
               : ''}
@@ -19005,9 +19847,27 @@
       `;
 
       row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
-        `habit-card harbor-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 active:bg-harbor-raised cursor-pointer${showMuted ? ' opacity-45' : ''}`);
+        `habit-card harbor-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 active:bg-harbor-raised cursor-pointer${showMuted ? ' opacity-45' : ''}${mobileTapComplete ? ' is-mobile-tap-complete' : ''}`);
       const content = row.querySelector('.swipe-row-content');
+      if (content) {
+        content.dataset.completeHabit = habit.id;
+        if (mobileTapComplete) content.setAttribute('role', 'button');
+        if (mobileTapComplete) {
+          content.setAttribute('aria-label', isMulti
+            ? `Complete ${habit.title}, ${timesDone} of ${timesNeed} today`
+            : `Complete ${habit.title}`);
+        }
+      }
       content?.addEventListener('contextmenu', (e) => { e.preventDefault(); showHabitDetail(habit.id); });
+      // Mobile: tap the card body to complete (circle is hidden). Swipe still owns Edit/Delete.
+      if (mobileTapComplete && content) {
+        content.addEventListener('click', (e) => {
+          if (row.dataset.swipeSuppressClick === '1') return;
+          if (row.classList.contains('is-open') || row.classList.contains('is-swiping')) return;
+          if (e.target.closest('.row-inline-actions, .swipe-action, button, a, [data-habit-title]')) return;
+          completeHabit(habit.id, e);
+        });
+      }
       container.appendChild(row);
     }
 
@@ -19202,14 +20062,35 @@
       }
 
       if (!hasAny) {
-        container.innerHTML = harborSoftBanner + harborEmptyHtml(
-          '📋',
-          'No tasks yet',
-          'Add something for today, or grab a ready-made task from the Library.',
-          `<div class="harbor-empty-actions">
+        // Distinguish brand-new empty vs “finished everything due today”
+        const hasAnyHabits = (state.habits || []).length > 0;
+        const parkedDue = hasAnyHabits && (state.habits || []).some(h => {
+          try { return isDueToday(h) && isParkedForSummary(h) && !isPulledToToday(h); } catch (_) { return false; }
+        });
+        const title = !hasAnyHabits
+          ? 'No tasks yet'
+          : parkedDue
+            ? 'Today is light'
+            : 'All clear for now';
+        const body = !hasAnyHabits
+          ? 'Add something for today, or grab a ready-made task from the Library.'
+          : parkedDue
+            ? 'Nothing light left on Today. Bigger jobs wait in <strong>Overview</strong> until you add them.'
+            : 'Nice work — nothing left on Today. Pull something from Overview or add a new task when you’re ready.';
+        const actions = !hasAnyHabits
+          ? `<div class="harbor-empty-actions">
             <button type="button" class="chip-add-btn" onclick="showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add task</button>
             <button type="button" class="chip-tool-btn" onclick="switchTab('library')">Browse Library</button>
           </div>`
+          : `<div class="harbor-empty-actions">
+            <button type="button" class="chip-add-btn" onclick="showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add task</button>
+            <button type="button" class="chip-tool-btn" onclick="showSummaryModal()">Open Overview</button>
+          </div>`;
+        container.innerHTML = harborSoftBanner + harborEmptyHtml(
+          !hasAnyHabits ? '📋' : (parkedDue ? '🌤️' : '✅'),
+          title,
+          body,
+          actions
         );
         return;
       }
@@ -19256,6 +20137,9 @@
     }
 
     function renderTasks() {
+      if (typeof clearExpiredPullToTodayFlags === 'function') {
+        try { clearExpiredPullToTodayFlags(); } catch (_) { /* ignore */ }
+      }
       renderTodayFeed();
       updateHeaderContext();
       if (currentTab === 'today') updateSummaryLauncher();
@@ -19350,8 +20234,14 @@
         card.classList.add('task-complete');
         setTimeout(refreshUi, 460);
       } else if (card && need > 1) {
+        // Partial multi-log: never use full “task-complete” animation (looks finished)
         const hit = card.querySelector('.task-complete-hit');
-        hit?.classList.add('is-tick');
+        if (hit && window.getComputedStyle(hit).display !== 'none') {
+          hit.classList.add('is-tick');
+        } else {
+          card.classList.add('is-partial-tick');
+          setTimeout(() => card.classList.remove('is-partial-tick'), 220);
+        }
         setTimeout(refreshUi, 200);
       } else {
         refreshUi();
@@ -19963,10 +20853,26 @@
 
     function isHabitScheduledOn(habit, dateStr) {
       const comps = getCompletions(habit.id) || [];
-      if (comps.includes(dateStr)) return false;
+      // Multi-log: still scheduled until all times_per_day are logged for that date
+      const need = typeof getTimesPerDay === 'function' ? getTimesPerDay(habit) : 1;
+      const doneOnDate = typeof countCompletionsOnDate === 'function'
+        ? countCompletionsOnDate(habit.id, dateStr)
+        : comps.filter(d => d === dateStr).length;
+      if (doneOnDate >= need) return false;
       if (!isHabitInSeason(habit, dateStr)) return false;
+      // Align with isDueToday preferred-day + catch-up rules
+      const preferred = getHabitWeekdays(habit);
+      if (preferred) {
+        const onPreferred = habitMatchesWeekdayPreference(habit, dateStr);
+        const catchUp = dateStr === todayStr() && hasPassedPreferredWeekdayThisPeriod(habit, dateStr);
+        if (!onPreferred && !catchUp) return false;
+      }
       if (isOneOffTask(habit)) return comps.length === 0 && dateStr === todayStr();
       if (isDailyTask(habit)) return true;
+      // Weekly+ with preferred days: open period (and preferred/catch-up already gated)
+      if (preferred && isHabitActiveThisPeriod(habit)) {
+        return true;
+      }
       return getNextDueDate(habit) === dateStr;
     }
 
@@ -20069,33 +20975,42 @@
           });
         }
       } else {
-        // Week brief: full week of scheduled tasks + upcoming weekly/monthly chores
-        const { start, end } = getWeekBounds(today);
-        const cursor = new Date(start + 'T12:00:00');
-        const endDate = new Date(end + 'T12:00:00');
-        const seen = new Set();
-        while (cursor <= endDate) {
-          const ds = dateStrLocal(cursor);
+        // Week brief: remaining week only (today → week end), matching Schedule events.
+        // Full Sun–Sat walk re-listed Mon–yesterday incomplete dailies with past dates.
+        const weekRem = typeof getWeekRemainingBounds === 'function'
+          ? getWeekRemainingBounds(today)
+          : getWeekBounds(today);
+        if (weekRem.empty) {
+          /* nothing left this week */
+        } else {
+          const start = weekRem.start;
+          const end = weekRem.end;
+          const cursor = new Date(start + 'T12:00:00');
+          const endDate = new Date(end + 'T12:00:00');
+          const seen = new Set();
+          while (cursor <= endDate) {
+            const ds = dateStrLocal(cursor);
+            state.habits.forEach(h => {
+              if (!isHabitScheduledOn(h, ds) || seen.has(h.id)) return;
+              seen.add(h.id);
+              const daysUntil = Math.round((cursor - new Date(today + 'T12:00:00')) / 86400000);
+              items.push({ habit: h, date: ds, daysUntil });
+            });
+            cursor.setDate(cursor.getDate() + 1);
+          }
+          // Include non-daily chores whose next due falls in the remaining week
           state.habits.forEach(h => {
-            if (!isHabitScheduledOn(h, ds) || seen.has(h.id)) return;
+            if (seen.has(h.id) || !isNonDailyRecurring(h)) return;
+            const daysUntil = getDaysUntilHabitDue(h);
+            if (daysUntil < 0) return;
+            const d = new Date(today + 'T12:00:00');
+            d.setDate(d.getDate() + daysUntil);
+            const ds = dateStrLocal(d);
+            if (ds < start || ds > end) return;
             seen.add(h.id);
-            const daysUntil = Math.round((cursor - new Date(today + 'T12:00:00')) / 86400000);
             items.push({ habit: h, date: ds, daysUntil });
           });
-          cursor.setDate(cursor.getDate() + 1);
         }
-        // Include non-daily chores whose next due falls this week even if period logic differs
-        state.habits.forEach(h => {
-          if (seen.has(h.id) || !isNonDailyRecurring(h)) return;
-          const daysUntil = getDaysUntilHabitDue(h);
-          if (daysUntil < 0 || daysUntil > 6) return;
-          const d = new Date(today + 'T12:00:00');
-          d.setDate(d.getDate() + daysUntil);
-          const ds = dateStrLocal(d);
-          if (ds < start || ds > end) return;
-          seen.add(h.id);
-          items.push({ habit: h, date: ds, daysUntil });
-        });
       }
 
       return items.sort((a, b) => {
@@ -20369,7 +21284,8 @@
         events,
         week,
         month,
-        headline: buildBriefHeadline(mode, ctx, tasks, bills, mode === 'day' ? events : []),
+        // Pass real events for all modes (week/month are day-groups; day is a flat list)
+        headline: buildBriefHeadline(mode, ctx, tasks, bills, events),
         insight: buildBriefInsight(mode, ctx, tasks, bills, grocery)
       };
     }
@@ -20821,7 +21737,7 @@
         <div class="text-[11px] text-harbor-muted mb-2 font-medium tracking-wide">${escapeBriefHtml(periodLabel)}</div>
 
         <div class="summary-kpis" aria-label="At a glance">
-          <button type="button" class="summary-kpi${kpiTasksHot ? ' is-live' : ''}" data-summary-kpi="tasks" aria-label="View ${taskN} task${taskN === 1 ? '' : 's'}">
+          <button type="button" id="summary-kpi-tasks" class="summary-kpi${kpiTasksHot ? ' is-live' : ''}" data-summary-kpi="tasks" aria-label="View ${taskN} task${taskN === 1 ? '' : 's'}">
             <div class="summary-kpi-val">${taskN}</div>
             <div class="summary-kpi-lbl">Tasks</div>
           </button>
@@ -20879,23 +21795,30 @@
           ${show.map(item => {
             const h = item.habit;
             const mins = h.est_minutes ? `${h.est_minutes} min` : '';
-            const freq = isDailyTask(h) ? 'Daily' : isOneOffTask(h) ? 'One-time' : formatIntervalLabel(h.interval_days);
+            const freq = isDailyTask(h)
+              ? (formatWeekdayShortList(getHabitWeekdays(h) || []) ? `Daily · ${formatWeekdayShortList(getHabitWeekdays(h))}` : 'Daily')
+              : isOneOffTask(h) ? 'One-time' : formatIntervalLabel(h.interval_days, h);
             const due = (item.daysUntil ?? 0) <= 0
               ? 'Ready when you are'
               : item.daysUntil === 1
                 ? 'Tomorrow'
                 : formatBriefDateLabel(item.date);
             const why = getTaskParkReasonLabel(h);
+            // Only pull when actually due today (matches Tasks KPI detail + pullHabitToToday)
+            const canPull = typeof isDueToday === 'function' ? isDueToday(h) : (item.daysUntil ?? 0) <= 0;
+            const actionHtml = canPull
+              ? `<button type="button" class="summary-pull-today-btn" data-pull-habit="${escapeBriefHtml(h.id)}"
+                  onclick="event.preventDefault(); event.stopPropagation(); pullHabitToToday('${escapeBriefHtml(h.id)}')">
+                  Add to Today
+                </button>`
+              : `<span class="summary-kpi-detail-side text-harbor-muted text-[10px] whitespace-nowrap">${escapeBriefHtml(due)}</span>`;
             return `
               <div class="summary-when-row">
                 <div class="summary-when-main">
                   <div class="summary-when-title">${escapeBriefHtml(h.title)}</div>
                   <div class="summary-when-meta">${escapeBriefHtml(due)}${why ? ` · ${escapeBriefHtml(why)}` : ''} · ${escapeBriefHtml(freq)}${mins ? ` · ${escapeBriefHtml(mins)}` : ''}</div>
                 </div>
-                <button type="button" class="summary-pull-today-btn" data-pull-habit="${escapeBriefHtml(h.id)}"
-                  onclick="event.preventDefault(); event.stopPropagation(); pullHabitToToday('${escapeBriefHtml(h.id)}')">
-                  Add to Today
-                </button>
+                ${actionHtml}
               </div>`;
           }).join('')}
           ${moreFooter}
@@ -20904,6 +21827,65 @@
 
     function closeSummaryKpiDetail() {
       document.getElementById('summary-kpi-detail-modal')?.remove();
+    }
+
+    /**
+     * Refresh Summary → Tasks (or other KPI) list in place.
+     * preserveScroll keeps the user's place after Add to Today / Undo.
+     */
+    function refreshSummaryKpiDetail(kind, options = {}) {
+      const { preserveScroll = true } = options;
+      const modal = document.getElementById('summary-kpi-detail-modal');
+      if (!modal) {
+        showSummaryKpiDetail(kind);
+        return;
+      }
+
+      const list = modal.querySelector('#summary-kpi-detail-list')
+        || modal.querySelector('.summary-kpi-detail-list')
+        || modal.querySelector('[data-sheet-scroll="1"]');
+      const savedScroll = preserveScroll && list ? list.scrollTop : 0;
+
+      let rangeLabel = 'Today';
+      let count = 0;
+      let rowsHtml = '';
+      try {
+        const brief = buildSummary(summaryMode || 'day');
+        rangeLabel = brief.mode === 'day' ? 'Today' : brief.mode === 'month' ? 'This month' : 'This week';
+        const counts = {
+          tasks: (brief.tasks || []).length,
+          events: flattenBriefEvents(brief).length,
+          bills: (brief.bills || []).length,
+          grocery: (state.groceryMaster || []).filter(g => !g.checked).length
+        };
+        count = counts[kind] ?? 0;
+        rowsHtml = renderSummaryKpiDetailRows(kind, brief);
+      } catch (err) {
+        console.error('[Harbor] KPI detail refresh failed', err);
+        rowsHtml = `<div class="summary-empty py-4 text-center">Couldn’t refresh this list.</div>`;
+      }
+
+      if (list) list.innerHTML = rowsHtml;
+
+      // Update “N items · This week” under the title without rebuilding the sheet
+      const metaLine = modal.querySelector('#summary-kpi-detail-meta')
+        || modal.querySelector('[data-kpi-detail-meta="1"]');
+      if (metaLine) {
+        metaLine.textContent = `${count} item${count === 1 ? '' : 's'} · ${rangeLabel}`;
+      }
+
+      if (preserveScroll && list) {
+        const restore = () => {
+          // Clamp if the list got shorter after Add to Today
+          const max = Math.max(0, list.scrollHeight - list.clientHeight);
+          list.scrollTop = Math.min(savedScroll, max);
+        };
+        restore();
+        requestAnimationFrame(() => {
+          restore();
+          requestAnimationFrame(restore);
+        });
+      }
     }
 
     function flattenBriefEvents(brief) {
@@ -20938,7 +21920,7 @@
             ? 'One-time'
             : isDailyTask(h)
               ? 'Daily'
-              : formatIntervalLabel(h.interval_days);
+              : formatIntervalLabel(h.interval_days, h);
           const mins = h.est_minutes != null ? `${h.est_minutes || 0} min` : '';
           const parked = isParkedForSummary(h);
           const pulled = isPulledToToday(h);
@@ -21096,20 +22078,25 @@
         <div class="absolute inset-0" data-kpi-detail-backdrop="1" aria-hidden="true"></div>
         <div class="summary-kpi-detail-sheet summary-day-events-sheet modal-sheet p-5 text-sm" data-sheet-panel="1">
           <div class="modal-grab-pill" aria-hidden="true"></div>
-          <div class="font-semibold text-lg mb-0.5 flex items-center justify-between gap-2">
+          <div class="font-semibold text-lg mb-0.5 flex items-center justify-between gap-2 flex-shrink-0">
             <span>${escapeBriefHtml(title)}</span>
             <button type="button" class="modal-close-chip" data-kpi-detail-close="1" aria-label="Close">Close</button>
           </div>
-          <div class="text-[11px] text-harbor-muted mb-3">
+          <div class="text-[11px] text-harbor-muted mb-2 flex-shrink-0" id="summary-kpi-detail-meta" data-kpi-detail-meta="1">
             ${count} item${count === 1 ? '' : 's'} · ${escapeBriefHtml(rangeLabel)}
           </div>
           <div class="summary-kpi-detail-list" id="summary-kpi-detail-list" data-sheet-scroll="1">
             ${rowsHtml}
           </div>
           ${jump ? `<button type="button" id="summary-kpi-detail-jump"
-            class="w-full mt-3 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-semibold text-harbor-primary-light active:bg-harbor-border flex-shrink-0">
+            class="w-full mt-2 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-semibold text-harbor-primary-light active:bg-harbor-border flex-shrink-0">
             ${escapeBriefHtml(jump.label)} <i class="fa-solid fa-arrow-right text-[9px] ml-1" aria-hidden="true"></i>
           </button>` : ''}
+          <div class="summary-kpi-detail-foot">
+            <button type="button" class="summary-kpi-detail-done" data-kpi-detail-close="1" aria-label="Done — close list">
+              Done
+            </button>
+          </div>
         </div>`;
       document.body.appendChild(modal);
 
@@ -21120,10 +22107,12 @@
         if (Date.now() < ignoreBackdropUntil) return;
         closeSummaryKpiDetail();
       });
-      modal.querySelector('[data-kpi-detail-close]')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        closeSummaryKpiDetail();
+      modal.querySelectorAll('[data-kpi-detail-close]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          closeSummaryKpiDetail();
+        });
       });
       modal.querySelector('.summary-kpi-detail-sheet')?.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -21136,6 +22125,16 @@
       requestAnimationFrame(() => {
         if (modal.isConnected) wireSheetSwipeToDismiss(modal);
       });
+      if (kind === 'tasks') {
+        maybeAdvanceTutorial('summary-kpi-tasks');
+      }
+      // Keep tour coachmark above the full-screen task list
+      if (state.settings.tutorialActive) {
+        const overlay = document.getElementById('tutorial-overlay');
+        overlay?.classList.add('is-above-summary');
+        const card = document.getElementById('tutorial-card');
+        if (card) card.style.zIndex = '';
+      }
     }
 
     function closeSummaryModal() {
@@ -21143,6 +22142,20 @@
       document.body.classList.remove('summary-open');
       closeSummaryDayEventsModal();
       closeSummaryKpiDetail();
+      // Drop elevated tutorial layer unless the active step still wants it
+      try {
+        const overlay = document.getElementById('tutorial-overlay');
+        if (!overlay) { /* no tour */ }
+        else if (state.settings?.tutorialActive && typeof APP_TUTORIAL_STEPS !== 'undefined') {
+          const step = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
+          const lift = typeof shouldTutorialLiftAboveSummary === 'function'
+            ? shouldTutorialLiftAboveSummary(step)
+            : !!step?.aboveSummary;
+          overlay.classList.toggle('is-above-summary', lift);
+        } else {
+          overlay.classList.remove('is-above-summary');
+        }
+      } catch (_) { /* ignore */ }
     }
 
     // ==================== SHEET SWIPE-TO-DISMISS ====================
@@ -21283,9 +22296,9 @@
       let pointerId = null;
 
       const getScrollTop = () => {
-        // Prefer dedicated scroll bodies (weather pane, event forms) over the sheet root
+        // Prefer dedicated scroll bodies (Summary, weather, event forms) over the sheet root
         const scroller = sheet.querySelector(
-          '[data-sheet-scroll], .weather-sheet-body, #cal-ev-sheet-scroll, .modal-sheet-event-body, .overflow-y-auto'
+          '.summary-sheet-scroll, [data-sheet-scroll], .weather-sheet-body, #cal-ev-sheet-scroll, .modal-sheet-event-body, .overflow-y-auto'
         );
         if (scroller && scroller !== sheet) return scroller.scrollTop || 0;
         return sheet.scrollTop || 0;
@@ -21427,13 +22440,25 @@
     }
 
 
-    function refreshSummaryModal(mode) {
+    function refreshSummaryModal(mode, options = {}) {
+      const { preserveScroll = false } = options;
       summaryMode = mode;
       const body = document.getElementById('summary-body');
       if (!body) return;
+      const sheet = body.closest('.summary-sheet') || document.querySelector('#summary-modal .summary-sheet');
+      const scrollEl = body.closest('.summary-sheet-scroll') || sheet;
+      const savedScroll = preserveScroll && scrollEl ? scrollEl.scrollTop : 0;
       const brief = buildSummary(mode);
       body.innerHTML = renderSummaryModalContent(brief);
       wireSummaryModal(body);
+      if (preserveScroll && scrollEl) {
+        const restore = () => { scrollEl.scrollTop = savedScroll; };
+        restore();
+        requestAnimationFrame(() => {
+          restore();
+          requestAnimationFrame(restore);
+        });
+      }
     }
 
     function wireSummaryModal(container) {
@@ -21490,6 +22515,7 @@
         <div class="summary-modal-backdrop" data-summary-backdrop="1"></div>
         <div class="summary-sheet p-5 text-sm" data-sheet-panel="1">
           <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="summary-sheet-dismiss-hint">Swipe down or tap Done below</div>
           <div class="summary-dash-head">
             <div class="summary-dash-brand">
               <div class="summary-dash-mark" aria-hidden="true">
@@ -21501,7 +22527,14 @@
             </div>
             <button type="button" class="modal-close-chip" data-summary-close="1" aria-label="Close">Close</button>
           </div>
-          <div id="summary-body">${bodyHtml}</div>
+          <div class="summary-sheet-scroll" data-sheet-scroll="1">
+            <div id="summary-body">${bodyHtml}</div>
+          </div>
+          <div class="summary-sheet-foot">
+            <button type="button" class="summary-sheet-done" data-summary-close="1" aria-label="Done — close Summary">
+              Done
+            </button>
+          </div>
         </div>
       `;
       document.body.appendChild(modal);
@@ -21513,10 +22546,12 @@
         if (Date.now() < ignoreBackdropUntil) return;
         closeSummaryModal();
       });
-      modal.querySelector('[data-summary-close]')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        closeSummaryModal();
+      modal.querySelectorAll('[data-summary-close]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          closeSummaryModal();
+        });
       });
       // Keep sheet taps from hitting backdrop (don't capture — day buttons need to fire)
       modal.querySelector('.summary-sheet')?.addEventListener('click', (e) => {
@@ -21540,7 +22575,10 @@
       // Bottom-center FAB on all main tabs (Today, Life, Streaks, Library)
       const showOnMainTabs = MAIN_TAB_ORDER.includes(currentTab);
       const onboarded = isUserOnboarded();
-      const onBriefTutorialStep = state.settings.tutorialActive && APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id === 'summary';
+      const tutorialStepId = state.settings.tutorialActive
+        ? APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id
+        : null;
+      const onBriefTutorialStep = tutorialStepId === 'summary' || tutorialStepId === 'summary-tasks';
       const hideDuringEarlyTutorial = state.settings.tutorialActive && !onBriefTutorialStep && !state.settings.tutorialCompleted;
       const allowBrief = !hideDuringEarlyTutorial && (state.settings.tutorialCompleted || onBriefTutorialStep || onboarded);
       el.classList.toggle('hidden', !showOnMainTabs || !allowBrief);
@@ -22944,12 +23982,144 @@
     }
 
 
+    function isTutorialRectUsable(rect) {
+      if (!rect) return false;
+      const r = normalizeTutorialRect(rect);
+      // Reject zero/off-screen rects so we never ring the header date by mistake
+      return r && r.width >= 28 && r.height >= 28
+        && r.bottom > 8 && r.right > 8
+        && r.top < (window.innerHeight || 800) - 8
+        && r.left < (window.innerWidth || 400) - 8;
+    }
+
     function getTutorialTaskCard() {
-      return document.querySelector('#task-list .swipe-row[data-feed-type="habit"] .swipe-row-content')
-        || document.querySelector('#task-list .swipe-row[data-feed-type="habit"]')
-        || document.querySelector('#task-list [onclick*="completeHabit"]')?.closest('.swipe-row-content, .habit-card')
-        || document.querySelector('#task-list .habit-card')
-        || document.getElementById('task-list');
+      const list = document.getElementById('task-list');
+      if (!list) return null;
+
+      // Prefer a visible incomplete habit: the complete circle is the real teaching target
+      const habitRows = [...list.querySelectorAll('.swipe-row[data-feed-type="habit"], .swipe-row[data-swipe-type="habit"]')];
+      const pickFromRow = (row) => {
+        if (!row) return null;
+        const hit = row.querySelector('.task-complete-hit');
+        const content = row.querySelector('.swipe-row-content') || row;
+        // Prefer the whole card so the ring frames the task, not a tiny circle
+        const cand = content || hit || row;
+        const rect = cand.getBoundingClientRect?.();
+        return isTutorialRectUsable(rect) ? cand : null;
+      };
+
+      // Incomplete first (circle still empty)
+      for (const row of habitRows) {
+        const hit = row.querySelector('.task-complete-hit');
+        const done = hit?.querySelector('.fa-circle-check, .fa-check');
+        if (done) continue;
+        const el = pickFromRow(row);
+        if (el) return el;
+      }
+      for (const row of habitRows) {
+        const el = pickFromRow(row);
+        if (el) return el;
+      }
+
+      // Broader fallbacks — never return #task-list shell (empty/zero rect lands near chrome)
+      const loose = list.querySelector('.swipe-row-content.habit-card, .habit-card.harbor-card, .habit-card');
+      if (loose && isTutorialRectUsable(loose.getBoundingClientRect())) return loose;
+
+      return null;
+    }
+
+    /** Make sure step 2 has a real task card to ring — seed + re-render if Today is empty. */
+    /** How many habits currently show on the Today tab (incomplete + not parked). */
+    function countHabitsVisibleOnToday() {
+      return (state.habits || []).filter(h => {
+        try {
+          return typeof belongsOnTodayTab === 'function' ? belongsOnTodayTab(h) : isDueToday(h);
+        } catch (_) {
+          return false;
+        }
+      }).length;
+    }
+
+    /**
+     * Guarantee at least one completable task on Today for the tour (and empty Today repair).
+     * Never wipes existing habits — only fills gaps / reactivates a light demo task.
+     */
+    function ensureTodayHasCompletableTask() {
+      if (countHabitsVisibleOnToday() > 0) return false;
+
+      // Empty list → full default starter pack (Walk / Read / Save)
+      if (!state.habits?.length) {
+        ensureStarterRoutineTasks();
+        if (countHabitsVisibleOnToday() > 0) return true;
+      }
+
+      // Missing default starters by title → re-add those only
+      const existingTitles = new Set(
+        (state.habits || []).map(h => String(h.title || '').trim().toLowerCase()).filter(Boolean)
+      );
+      const missingStarters = createStarterHabits().filter(
+        s => !existingTitles.has(String(s.title || '').trim().toLowerCase())
+      );
+      if (missingStarters.length) {
+        state.habits.push(...missingStarters);
+        saveState();
+        if (countHabitsVisibleOnToday() > 0) return true;
+      }
+
+      // Starters exist but are done/skipped today — reuse or add a light daily for the tour
+      let demo = (state.habits || []).find(h =>
+        h.id === 'tutorial-demo-today' || String(h.id || '').startsWith('tutorial-demo-')
+      );
+      if (!demo) {
+        // Prefer re-opening a classic starter title if present but finished today
+        demo = (state.habits || []).find(h =>
+          /make the bed|walk 5000|read 10 pages|\$5 in savings/i.test(h.title || '')
+        );
+      }
+      if (demo) {
+        if (state.completions?.[demo.id]) {
+          state.completions[demo.id] = (state.completions[demo.id] || []).filter(d => d !== todayStr());
+        }
+        if (state.habitSkips?.[demo.id]) {
+          state.habitSkips[demo.id] = (state.habitSkips[demo.id] || []).filter(d => d !== todayStr());
+        }
+        // Keep it a light daily on Today for the tour
+        if (demo.interval_days === 0 || demo.interval_days == null) demo.interval_days = null;
+        demo.parkOnSummary = false;
+        demo.est_minutes = demo.est_minutes > 0 ? demo.est_minutes : 5;
+        demo.difficulty = Math.min(Number(demo.difficulty) || 1, 2);
+        delete demo.weekdays;
+        delete demo.preferred_weekdays;
+        if (demo.pullToToday && demo.pullToToday !== todayStr()) delete demo.pullToToday;
+        saveState();
+        if (countHabitsVisibleOnToday() > 0) return true;
+      }
+
+      // Last resort — simple daily that always belongs on Today
+      state.habits.push(stampHabitMeta({
+        id: 'tutorial-demo-today',
+        title: 'Make the bed',
+        category: 'home',
+        interval_days: null,
+        est_minutes: 3,
+        difficulty: 1,
+        trackStreak: true,
+        is_preset: false,
+        parkOnSummary: false
+      }));
+      saveState();
+      return true;
+    }
+
+    function prepareTutorialCompleteTaskStep() {
+      switchTab('today');
+      ensureTodayHasCompletableTask();
+      renderTasks();
+      // Bring first task into view before measuring
+      requestAnimationFrame(() => {
+        const card = getTutorialTaskCard();
+        card?.scrollIntoView?.({ block: 'center', behavior: 'auto' });
+      });
     }
 
     function getTutorialQuantStreakCard() {
@@ -23009,11 +24179,14 @@
       {
         id: 'complete-task',
         title: 'Finish a task',
-        body: 'Tap the <strong>circle</strong> on a task when it’s done. Try one now.',
+        body: () => (typeof isSwipeMobile === 'function' && isSwipeMobile())
+          ? 'Tap a <strong>task</strong> when it’s done. Swipe left anytime to Edit or Delete.'
+          : 'Tap the <strong>circle</strong> on a task when it’s done. Try one now.',
         target: () => getTutorialTaskCard(),
         waitFor: 'habit-complete',
         interactive: true,
-        prepare: () => switchTab('today')
+        cardPlacement: 'below',
+        prepare: () => prepareTutorialCompleteTaskStep()
       },
       {
         id: 'energy-smart',
@@ -23066,27 +24239,105 @@
         unlockNextOnly: true,
         interactive: true,
         cardPlacement: 'above',
+        // Once Summary opens, lift the tour card above the sheet
+        aboveSummaryOnWait: true,
         prepare: () => {
           switchTab('today');
           updateSummaryLauncher();
           const fab = document.getElementById('summary-launcher');
           if (fab) fab.classList.remove('hidden');
           hideTutorialSmartBanner();
+          // Back-nav: Overview may already be open — re-unlock Next without forcing a re-tap
+          requestAnimationFrame(() => {
+            if (document.getElementById('summary-modal')) {
+              try { maybeAdvanceTutorial('summary-open'); } catch (_) { /* ignore */ }
+            }
+          });
         }
       },
       {
+        id: 'summary-tasks',
+        title: 'Open your task list',
+        body: 'Tap the <strong>Tasks</strong> tile in Overview (the number box that says Tasks). That opens your full task list for this range.',
+        target: () => getTutorialSummaryTasksKpi(),
+        waitFor: 'summary-kpi-tasks',
+        unlockNextOnly: true,
+        interactive: true,
+        // Keep coachmark under the tile so it never covers the tap target
+        cardPlacement: 'below',
+        aboveSummary: true,
+        prepare: () => prepareTutorialSummaryTasksStep()
+      },
+      {
         id: 'install-home',
-        title: 'Keep Harbor handy',
-        body: () => getInstallTutorialBody(),
+        title: 'Keep Harbor Handy',
+        // Static HTML only — no platform walkthrough text in the tour card
+        body: '<button type="button" class="tutorial-install-cta" style="margin:0" onclick="event.stopPropagation(); openInstallGuideFromTutorial()">Add Harbor to Your Home Screen</button>',
         target: null,
         noHighlight: true,
         cardPlacement: 'center',
         prepare: () => {
           switchTab('today');
+          if (typeof closeSummaryKpiDetail === 'function') closeSummaryKpiDetail();
           if (typeof closeSummaryModal === 'function') closeSummaryModal();
+          document.getElementById('install-guide-modal')?.remove();
         }
       }
     ];
+
+    function getTutorialSummaryTasksKpi() {
+      return document.getElementById('summary-kpi-tasks')
+        || document.querySelector('#summary-modal [data-summary-kpi="tasks"]')
+        || document.querySelector('#summary-body [data-summary-kpi="tasks"]')
+        || document.querySelector('[data-summary-kpi="tasks"]');
+    }
+
+    function prepareTutorialSummaryTasksStep() {
+      switchTab('today');
+      hideTutorialSmartBanner();
+      updateSummaryLauncher();
+      const fab = document.getElementById('summary-launcher');
+      if (fab) fab.classList.remove('hidden');
+      // Close task sheet so the user must tap Tasks themselves (unless re-entering with it open)
+      const kpiWasOpen = !!document.getElementById('summary-kpi-detail-modal');
+      if (typeof closeSummaryKpiDetail === 'function') closeSummaryKpiDetail();
+      // Always ensure Overview is open with a fresh Tasks tile
+      try {
+        if (!document.getElementById('summary-modal')) {
+          showSummaryModal(summaryMode || 'day');
+        } else if (typeof refreshSummaryModal === 'function') {
+          refreshSummaryModal(summaryMode || 'day', { preserveScroll: false });
+        }
+      } catch (_) { /* ignore */ }
+
+      const ringTasks = () => {
+        const step = APP_TUTORIAL_STEPS[state.settings.tutorialStep];
+        if (!step || step.id !== 'summary-tasks') return;
+        const kpi = getTutorialSummaryTasksKpi();
+        if (!kpi) return false;
+        kpi.scrollIntoView?.({ block: 'nearest', behavior: 'auto' });
+        applyTutorialStepHighlight(step);
+        return true;
+      };
+      // Paint Summary, then force the ring onto the Tasks tile (several frames)
+      requestAnimationFrame(() => {
+        if (ringTasks()) return;
+        setTimeout(() => {
+          if (ringTasks()) return;
+          try { if (!document.getElementById('summary-modal')) showSummaryModal(summaryMode || 'day'); } catch (_) {}
+          setTimeout(() => ringTasks(), 220);
+        }, 120);
+      });
+      // Back-nav edge: if the task list was already open, re-satisfy wait after paint
+      if (kpiWasOpen) {
+        setTimeout(() => {
+          try {
+            if (typeof showSummaryKpiDetail === 'function') showSummaryKpiDetail('tasks');
+            maybeAdvanceTutorial('summary-kpi-tasks');
+          } catch (_) { /* ignore */ }
+        }, 280);
+      }
+    }
 
     /**
      * Detect phone brand + browser for plain-English install help.
@@ -23229,23 +24480,9 @@
     }
 
     function getInstallTutorialBody() {
-      const profile = detectInstallDeviceProfile();
-      const guide = getInstallStepsForProfile(profile.id);
-      const canTap = canNativePwaInstall();
-      return `
-        <p class="tutorial-install-lead">Add Harbor to your home screen so it’s one tap away — like a regular app.</p>
-        <div class="tutorial-install-platform">
-          <div class="tutorial-install-platform-title">${guide.title}</div>
-          <ol class="tutorial-install-steps">
-            ${guide.steps.slice(0, 3).map(s => `<li>${s}</li>`).join('')}
-          </ol>
-        </div>
-        <button type="button" class="tutorial-install-cta" onclick="event.stopPropagation(); openInstallGuideFromTutorial()">
-          ${canTap ? 'Add to Home Screen' : 'Show me how'}
-        </button>
-        <p class="tutorial-install-note" style="margin-bottom:0">
-          You can also open <strong>Menu → Add to Home Screen</strong> anytime. Your data stays on this device.
-        </p>`;
+      // Tour card only — never embed Computer / iPhone / Android steps here.
+      // Full walkthrough opens from the button via showAddToHomeScreenGuide.
+      return '<button type="button" class="tutorial-install-cta" style="margin:0" onclick="event.stopPropagation(); openInstallGuideFromTutorial()">Add Harbor to Your Home Screen</button>';
     }
 
     function getPrototypeTutorialBody() {
@@ -23374,11 +24611,33 @@
 
     function getTutorialTargetRect(target) {
       if (!target) return null;
+      // Never ring the empty list shell or page chrome (header date lives top-left)
       if (target === document.getElementById('task-list') || target === document.getElementById('streaks-list')) {
-        const firstCard = target.querySelector('.habit-card, .harbor-card');
-        if (firstCard) return normalizeTutorialRect(firstCard.getBoundingClientRect());
+        const firstCard = target.querySelector('.swipe-row-content.habit-card, .habit-card, .harbor-card, .swipe-row-content');
+        if (firstCard && isTutorialRectUsable(firstCard.getBoundingClientRect())) {
+          return normalizeTutorialRect(firstCard.getBoundingClientRect());
+        }
+        return null;
       }
-      return normalizeTutorialRect(target.getBoundingClientRect());
+      if (target.id === 'header-date-line' || target.id === 'header-day-stack' || target.closest?.('#site-header')) {
+        // Guard: if a bad selector ever hits the header date, fall back to a real task card
+        const fallback = getTutorialTaskCard();
+        if (fallback && fallback !== target) return getTutorialTargetRect(fallback);
+        return null;
+      }
+      const rect = normalizeTutorialRect(target.getBoundingClientRect());
+      // Summary KPI tiles can be a bit short — still ring them
+      const isSummaryKpi = !!(target.id === 'summary-kpi-tasks' || target.dataset?.summaryKpi || target.closest?.('.summary-kpi'));
+      if (!isTutorialRectUsable(rect) && !isSummaryKpi) {
+        // Zero-size or off-screen — try parent card
+        const parent = target.closest?.('.swipe-row-content, .habit-card, .swipe-row');
+        if (parent && parent !== target && isTutorialRectUsable(parent.getBoundingClientRect())) {
+          return normalizeTutorialRect(parent.getBoundingClientRect());
+        }
+        return null;
+      }
+      if (isSummaryKpi && (!rect || rect.width < 8 || rect.height < 8)) return null;
+      return rect;
     }
 
     function centerTutorialCard(step) {
@@ -23603,11 +24862,26 @@
       document.querySelectorAll('.tab-content').forEach(el => el.removeEventListener('scroll', onTutorialViewportSync));
     }
 
+    /** Tour card must sit above Summary / KPI once those sheets are open (or wait was satisfied). */
+    function shouldTutorialLiftAboveSummary(step) {
+      if (!step) return false;
+      if (step.aboveSummary) return true;
+      const summaryOpen = !!document.getElementById('summary-modal')
+        || !!document.getElementById('summary-kpi-detail-modal');
+      if (step.aboveSummaryOnWait && (tutorialWaitSatisfied || summaryOpen)) return true;
+      if ((step.id === 'summary' || step.id === 'summary-tasks') && summaryOpen) return true;
+      return false;
+    }
+
     function applyTutorialStepHighlight(step) {
       const overlay = document.getElementById('tutorial-overlay');
       const card = document.getElementById('tutorial-card');
       // Keep the ring visible so it can glide to the next target
       clearTutorialHighlight({ hideRing: false, clearCardPos: false });
+      const liftAbove = shouldTutorialLiftAboveSummary(step);
+      if (overlay) {
+        overlay.classList.toggle('is-above-summary', liftAbove);
+      }
 
       if (step?.noHighlight || step?.cardPlacement === 'center') {
         const highlight = document.getElementById('tutorial-highlight');
@@ -23619,11 +24893,86 @@
         return;
       }
 
+      // Overview already open on the “tap Overview” step — coachmark only (don’t re-ring buried FAB)
+      if (step?.id === 'summary' && (tutorialWaitSatisfied || document.getElementById('summary-modal'))) {
+        const highlight = document.getElementById('tutorial-highlight');
+        if (highlight) highlight.classList.add('is-hidden', 'hidden');
+        if (overlay) {
+          overlay.classList.add('is-above-summary');
+          overlay.classList.remove('is-interactive-step');
+        }
+        if (card) {
+          card.classList.remove('hidden');
+          card.classList.add('tutorial-card-interactive');
+        }
+        centerTutorialCard(step);
+        return;
+      }
+
+      // Full task list open — keep coachmark readable; ring only needed before tap
+      if (step?.id === 'summary-tasks' && document.getElementById('summary-kpi-detail-modal')) {
+        const highlight = document.getElementById('tutorial-highlight');
+        if (highlight) highlight.classList.add('is-hidden', 'hidden');
+        if (overlay) {
+          overlay.classList.add('is-above-summary');
+          overlay.classList.remove('is-interactive-step');
+        }
+        if (card) {
+          card.classList.remove('hidden');
+          card.classList.add('tutorial-card-interactive');
+        }
+        centerTutorialCard(step);
+        return;
+      }
+
       const unionRect = step.highlightUnion?.();
       let target = typeof step.target === 'function' ? step.target() : (step.target ? document.querySelector(step.target) : null);
+      // complete-task: re-resolve after paint if Today list just re-rendered
+      if (step?.id === 'complete-task' && !target) {
+        target = getTutorialTaskCard();
+      }
+      if (step?.id === 'summary-tasks' && !target) {
+        target = getTutorialSummaryTasksKpi();
+      }
       const rect = unionRect || (target ? getTutorialTargetRect(target) : null);
 
-      if (rect) positionTutorialHighlightRect(rect, step);
+      if (rect) {
+        positionTutorialHighlightRect(rect, step);
+      } else if (step?.id === 'complete-task' || step?.id === 'summary-tasks') {
+        // One retry after layout — Summary may still be painting
+        setTimeout(() => {
+          if (!state.settings.tutorialActive) return;
+          if (APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id !== step.id) return;
+          const retry = step.id === 'summary-tasks' ? getTutorialSummaryTasksKpi() : getTutorialTaskCard();
+          const retryRect = retry ? getTutorialTargetRect(retry) : null;
+          if (retryRect) {
+            positionTutorialHighlightRect(retryRect, step);
+            if (retry) {
+              tutorialTargetEl = retry;
+              retry.classList.add('tutorial-target-pulse');
+              applyTutorialInteractivity(step, retry, overlay, card);
+            }
+          } else if (step.id === 'summary-tasks') {
+            // Summary not ready — open and try once more
+            try { if (!document.getElementById('summary-modal')) showSummaryModal(summaryMode || 'day'); } catch (_) {}
+            setTimeout(() => {
+              if (APP_TUTORIAL_STEPS[state.settings.tutorialStep]?.id !== 'summary-tasks') return;
+              const again = getTutorialSummaryTasksKpi();
+              const r2 = again ? getTutorialTargetRect(again) : null;
+              if (r2) {
+                positionTutorialHighlightRect(r2, step);
+                if (again) {
+                  tutorialTargetEl = again;
+                  again.classList.add('tutorial-target-pulse');
+                  applyTutorialInteractivity(step, again, overlay, card);
+                }
+              }
+            }, 200);
+          } else {
+            clearTutorialHighlight({ hideRing: true, clearCardPos: false });
+          }
+        }, 160);
+      }
 
       if (target) {
         tutorialTargetEl = target;
@@ -23781,14 +25130,45 @@
 
       // Some steps only unlock Next (e.g. Summary) so the user can explore before continuing
       if (step.unlockNextOnly) {
-        const nextLabel = step.id === 'summary' ? 'Next' : 'Next';
-        unlockTutorialNextButton(nextLabel);
+        unlockTutorialNextButton('Next');
         const bodyEl = document.getElementById('tutorial-body');
         if (bodyEl && step.id === 'summary') {
           bodyEl.innerHTML = 'Nice — Overview is open. Peek at day, week, or month, then tap <strong>Next</strong>.';
         }
+        if (bodyEl && step.id === 'summary-tasks') {
+          bodyEl.innerHTML = 'Great — that’s the full <strong>Tasks</strong> list. Scroll it, then tap <strong>Next</strong> (or Done) when you’re ready.';
+        }
+        // Lift tour above Summary / task list so the coachmark stays visible (steps 7–8)
+        const overlay = document.getElementById('tutorial-overlay');
         const card = document.getElementById('tutorial-card');
-        if (card) card.style.zIndex = '300';
+        const highlight = document.getElementById('tutorial-highlight');
+        if (overlay && shouldTutorialLiftAboveSummary(step)) {
+          overlay.classList.add('is-above-summary');
+        }
+        if (card) {
+          card.style.zIndex = '';
+          card.classList.remove('hidden');
+        }
+        // After Overview opens / task list opens, drop the spotlight hole — keep coachmark only
+        // (the 9999px dim was greying out Summary; ring is only needed to point at Tasks)
+        if (step.id === 'summary' || (step.id === 'summary-tasks' && document.getElementById('summary-kpi-detail-modal'))) {
+          if (highlight) {
+            highlight.classList.add('is-hidden', 'hidden');
+          }
+          document.querySelectorAll('.tutorial-target-pulse').forEach(el => {
+            if (!el.classList.contains('summary-kpi') && el.id !== 'summary-kpi-tasks') {
+              el.classList.remove('tutorial-target-pulse', 'tutorial-interactive-target');
+            }
+          });
+        }
+        // Reposition coachmark so it isn’t covered after Summary paints
+        requestAnimationFrame(() => {
+          if (step.id === 'summary' || (step.id === 'summary-tasks' && document.getElementById('summary-kpi-detail-modal'))) {
+            centerTutorialCard(step);
+          } else if (tutorialLastTargetRect) {
+            positionTutorialCard(tutorialLastTargetRect, step);
+          }
+        });
         return;
       }
 
@@ -23877,7 +25257,11 @@
             nextBtn.classList.toggle('opacity-50', waiting);
             nextBtn.classList.toggle('pointer-events-none', waiting);
             nextBtn.textContent = waiting
-              ? (step.id === 'complete-task' ? 'Tap a circle…' : step.id === 'summary' ? 'Tap Overview…' : 'Your turn…')
+              ? (step.id === 'complete-task'
+                  ? ((typeof isSwipeMobile === 'function' && isSwipeMobile()) ? 'Tap a task…' : 'Tap a circle…')
+                : step.id === 'summary' ? 'Tap Overview…'
+                : step.id === 'summary-tasks' ? 'Tap Tasks…'
+                : 'Your turn…')
               : (stepIndex === APP_TUTORIAL_STEPS.length - 1 ? 'Finish' : 'Next');
           }
           if (card) {
@@ -23923,8 +25307,8 @@
     function startAppTutorial() {
       hideWelcomeSpotlight();
       tutorialLastCardPlacement = 'below';
-      // Seed starters only if Today is empty — never wipe user tasks
-      ensureStarterRoutineTasks();
+      // Restore default Today tasks if the list is empty / all done (never wipe user work)
+      ensureTodayHasCompletableTask();
       state.settings.showWelcomeBanner = false;
       state.settings.welcomeBannerDismissed = true;
       state.settings.tutorialActive = true;
@@ -23977,7 +25361,7 @@
       const card = document.getElementById('tutorial-card');
       const highlight = document.getElementById('tutorial-highlight');
       if (overlay) {
-        overlay.classList.remove('is-active');
+        overlay.classList.remove('is-active', 'is-above-summary', 'is-interactive-step');
         overlay.setAttribute('aria-hidden', 'true');
       }
       if (card) {
@@ -25106,7 +26490,7 @@
       const proScheduled = proOpt && state.habits.some(h => h.id === 'pro-schedule-' + task.id);
       const isPersonal = isPersonalLibraryTask(task);
       const diff = task.difficulty || 2;
-      const intervalLabel = formatIntervalLabel(task.interval_days);
+      const intervalLabel = formatIntervalLabel(task.interval_days, task);
       const visual = getLibraryTaskVisual(task);
       const energyLabel = getDifficultyLabel(diff);
       const metricChip = (task.target_value && task.unit)
@@ -25773,7 +27157,7 @@
         guides.push({ emoji: '🏅', label: 'Soft badge', text: 'Shows on Streaks cards automatically — no action needed.' });
       }
       if (bank.motivationBoostUntil && bank.motivationBoostUntil >= todayStr()) {
-        guides.push({ emoji: '✨', label: 'Calm boost', text: 'Open Streaks → tap a measurable habit → read Projected Wins.' });
+        guides.push({ emoji: '✨', label: 'Calm boost', text: 'Open Streaks → tap a measurable habit → read Habit Pace.' });
       }
       if (bank.skipToken) {
         guides.push({
@@ -26433,10 +27817,14 @@
       }
       delete state.completions[habitId];
       if (state.habitSkips) delete state.habitSkips[habitId];
+      if (state.habitPasses) delete state.habitPasses[habitId];
       if (state.metricLogs) delete state.metricLogs[habitId];
       if (state.healthSyncs) delete state.healthSyncs[habitId];
       if (state.rewardBank?.streakMilestones?.[habitId]) {
         delete state.rewardBank.streakMilestones[habitId];
+      }
+      if (state.rewardBank?.passMilestones?.[habitId]) {
+        delete state.rewardBank.passMilestones[habitId];
       }
 
       if (currentProjectionHabit === habitId) currentProjectionHabit = null;
@@ -26742,9 +28130,10 @@
         <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Stop streak"><i class="fa-solid fa-trash-can"></i> Remove</button>
       `;
 
+      // No inline onclick — single listener below (avoids open-then-close double fire)
       const contentHtml = dense
         ? `
-          <div class="streak-dense-row" onclick="showProjections('${habit.id}')">
+          <div class="streak-dense-row">
             <div class="streak-dense-left">
               <div class="streak-card-title truncate">${escapeBriefHtml(habit.title)}</div>
               <div class="streak-dense-sub">
@@ -26763,7 +28152,7 @@
           </div>
         `
         : `
-          <div class="flex justify-between items-start gap-3 w-full" onclick="showProjections('${habit.id}')">
+          <div class="flex justify-between items-start gap-3 w-full">
             <div class="flex-1 min-w-0">
               <div class="streak-card-title truncate">${escapeBriefHtml(habit.title)}</div>
               <div class="streak-card-meta">Longest ${longest}d${isQuantitativeHabit(habit) ? ' · measurable' : ''}</div>
@@ -26785,6 +28174,18 @@
         `;
 
       row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml, cardClass);
+      // Single tap handler for Habit Pace (works with swipe rows)
+      const content = row.querySelector('.swipe-row-content');
+      if (content && !content.dataset.projectionBound) {
+        content.dataset.projectionBound = '1';
+        content.style.cursor = 'pointer';
+        content.addEventListener('click', (e) => {
+          if (e.target.closest('.row-inline-actions, .swipe-action, button')) return;
+          if (row.dataset.swipeSuppressClick === '1') return;
+          if (row.classList.contains('is-swiping')) return;
+          showProjections(habit.id);
+        });
+      }
       return row;
     }
 
@@ -26849,13 +28250,12 @@
       }
 
       if (fleet.mode === 'simple') {
-        appendStreakFleetSection(container, {
-          id: 'streak-fleet-all',
-          label: 'Your fires',
-          count: fleet.glowing.length,
-          rows: fleet.glowing,
-          dense: false
-        });
+        // No extra section header — user is already on Streaks
+        const stack = document.createElement('div');
+        stack.className = 'streak-fleet-stack';
+        stack.id = 'streak-fleet-all';
+        fleet.glowing.forEach(entry => stack.appendChild(buildStreakCardElement(entry, { dense: false })));
+        container.appendChild(stack);
         bindSwipeRows(container);
         return;
       }
@@ -27223,31 +28623,38 @@
       document.body.appendChild(modal);
     }
 
+    function purgeHabitSideData(habitId) {
+      if (!habitId) return;
+      delete state.completions?.[habitId];
+      if (state.habitSkips) delete state.habitSkips[habitId];
+      if (state.habitPasses) delete state.habitPasses[habitId];
+      if (state.healthSyncs) delete state.healthSyncs[habitId];
+      if (state.metricLogs) delete state.metricLogs[habitId];
+      if (state.customUsage) delete state.customUsage[habitId];
+      if (state.rewardBank?.streakMilestones) delete state.rewardBank.streakMilestones[habitId];
+      if (state.rewardBank?.passMilestones) delete state.rewardBank.passMilestones[habitId];
+    }
+
     function deleteHabitFromToday(habitId, event) {
       if (event) event.stopImmediatePropagation();
       const habit = state.habits.find(h => h.id === habitId);
       if (!habit) return;
       if (!confirm(`Remove "${habit.title}" from your tasks?`)) return;
       state.habits = state.habits.filter(h => h.id !== habitId);
-      delete state.completions[habitId];
-      delete state.habitSkips?.[habitId];
-      delete state.healthSyncs?.[habitId];
-      delete state.metricLogs?.[habitId];
+      purgeHabitSideData(habitId);
       saveState();
       renderTasks();
       renderStreaks();
       renderLibrary();
       updateSmartBanner();
+      if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
       showToast('Task removed');
     }
 
     function removeHabit(habitId, btnEl) {
       if (!confirm('Remove this habit entirely?')) return;
       state.habits = state.habits.filter(h => h.id !== habitId);
-      delete state.completions[habitId];
-      delete state.habitSkips?.[habitId];
-      delete state.healthSyncs?.[habitId];
-      delete state.metricLogs?.[habitId];
+      purgeHabitSideData(habitId);
       saveState();
       
       if (btnEl?.closest) btnEl.closest('.fixed')?.remove();
@@ -27255,6 +28662,7 @@
       renderStreaks();
       renderLibrary();
       updateSmartBanner();
+      if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
     }
 
     // ==================== APP MENU ====================
@@ -27311,8 +28719,8 @@
         <div class="app-menu-group">
           ${appMenuItemHtml('profile', 'fa-regular fa-user', 'Profile', 'Name and home base')}
           ${appMenuItemHtml('household', 'fa-solid fa-people-group', 'Household', 'Family tags and event colors')}
-          ${appMenuItemHtml('export-profile', 'fa-solid fa-file-export', 'Export backup', 'Save a Harbor file to share or move')}
-          ${appMenuItemHtml('import-profile', 'fa-solid fa-file-import', 'Import backup', 'Restore from a Harbor file')}
+          ${appMenuItemHtml('export-profile', 'fa-solid fa-file-export', 'Share / export profile', 'Save a Harbor file to share or move')}
+          ${appMenuItemHtml('import-profile', 'fa-solid fa-file-import', 'Import profile', 'Restore from a Harbor file')}
         </div>
 
         <div class="app-menu-section-label">Help</div>
@@ -28212,6 +29620,8 @@
         '.app-menu-dropdown',
         '.swipe-action',
         '.life-subnav', // Life chips are tap-only
+        '#main-nav-bar', // Bottom dock is tap-only (don't steal tab button clicks)
+        '.main-nav-tab',
         '[role="dialog"]',
         '[role="slider"]'
       ].join(','))) return true;
@@ -28441,16 +29851,14 @@
     // Starter pack — small set that demos energy, streaks/metrics
     const STARTER_ROUTINE_TASKS = [
       {
-        key: 'save',
-        title: '$5 in savings every day',
-        blurb: 'Tracks a simple daily metric · opens Projected Wins',
-        category: 'personal',
-        est_minutes: 0,
+        key: 'bed',
+        title: 'Make the bed',
+        blurb: 'Quick win · perfect first complete in the tour',
+        category: 'home',
+        est_minutes: 3,
         difficulty: 1,
-        target_value: 5,
-        unit: 'dollars',
-        icon: 'fa-piggy-bank',
-        accent: 'text-emerald-300'
+        icon: 'fa-bed',
+        accent: 'text-harbor-primary-light'
       },
       {
         key: 'walk',
@@ -28475,6 +29883,18 @@
         unit: 'pages',
         icon: 'fa-book-open',
         accent: 'text-amber-300'
+      },
+      {
+        key: 'save',
+        title: '$5 in savings every day',
+        blurb: 'Tracks a simple daily metric · opens Habit Pace',
+        category: 'personal',
+        est_minutes: 2,
+        difficulty: 1,
+        target_value: 5,
+        unit: 'dollars',
+        icon: 'fa-piggy-bank',
+        accent: 'text-emerald-300'
       }
     ];
 
@@ -28508,6 +29928,12 @@
       return true;
     }
 
+    /** Soft repair: if onboarded and Today has nothing due, put default starters back. */
+    function ensureDefaultStartersIfTodayEmpty() {
+      if (countHabitsVisibleOnToday() > 0) return false;
+      return ensureTodayHasCompletableTask();
+    }
+
     function refreshAppAfterOnboarding() {
       showMainContent();
       renderTasks();
@@ -28524,10 +29950,11 @@
     }
 
     function repairOnboardedEmptyTodayList() {
-      if (!isUserOnboarded() || state.habits?.length > 0) return;
-      // Only seed empty lists — never wipe existing tasks or re-open the forced tour
+      if (!isUserOnboarded()) return;
+      // Only seed when the habit list is truly empty — finishing everything for the day is OK
+      // (do not un-complete tasks or force Make the bed on every reload)
+      if (state.habits?.length > 0) return;
       ensureStarterRoutineTasks();
-      saveState();
     }
 
     const MAINTENANCE_PREF_OPTIONS = [
@@ -28639,6 +30066,8 @@
         const summary = decodeICSText(
           (block.match(/SUMMARY[^:;\r\n]*:([^\r\n]+)/i) || block.match(/DESCRIPTION[^:;\r\n]*:([^\r\n]+)/i) || [])[1]
         );
+        const dtstartLine = (block.match(/DTSTART[^:;\r\n]*:[^\r\n]+/i) || [])[0] || '';
+        const dtendLine = (block.match(/DTEND[^:;\r\n]*:[^\r\n]+/i) || [])[0] || '';
         const dtstart = (block.match(/DTSTART[^:;\r\n]*:([^\r\n]+)/i) || [])[1]?.trim();
         const dtend = (block.match(/DTEND[^:;\r\n]*:([^\r\n]+)/i) || [])[1]?.trim();
         const durationRaw = (block.match(/DURATION[^:;\r\n]*:([^\r\n]+)/i) || [])[1]?.trim();
@@ -28648,21 +30077,54 @@
         if (!start || isNaN(start.getTime())) return;
 
         const eventDate = dateStrLocal(start);
-        if (eventDate < minDate || eventDate > maxDate) return;
+        // Keep events that start in range, or multi-day spans still covering today→max
+        if (eventDate > maxDate) return;
+
+        const isDateOnly = /VALUE=DATE/i.test(dtstartLine) || /VALUE=DATE/i.test(block)
+          || (dtstart && !/[T:]/i.test(dtstart) && String(dtstart).replace(/[^0-9]/g, '').length === 8);
 
         const end = dtend ? parseICSDate(dtend) : null;
         let durationMin = parseICSDurationMinutes(durationRaw);
         if (!durationMin && end && !isNaN(end.getTime())) {
           durationMin = Math.max(15, Math.round((end - start) / 60000));
         }
-        if (!durationMin) durationMin = /VALUE=DATE/i.test(block) ? 1440 : 60;
+        if (!durationMin) durationMin = isDateOnly ? 1440 : 60;
+
+        // Multi-day end date (RFC 5545: all-day DTEND is exclusive)
+        let endDate = null;
+        if (end && !isNaN(end.getTime())) {
+          let endDs = dateStrLocal(end);
+          const endIsDateOnly = /VALUE=DATE/i.test(dtendLine)
+            || (dtend && !/[T:]/i.test(dtend) && String(dtend).replace(/[^0-9]/g, '').length === 8);
+          if (isDateOnly || endIsDateOnly) {
+            const exclusive = new Date(endDs + 'T12:00:00');
+            exclusive.setDate(exclusive.getDate() - 1);
+            endDs = dateStrLocal(exclusive);
+          }
+          if (endDs > eventDate) endDate = endDs;
+        } else if (durationMin >= 1440) {
+          const days = Math.max(0, Math.ceil(durationMin / 1440) - 1);
+          if (days > 0) {
+            const d = new Date(eventDate + 'T12:00:00');
+            d.setDate(d.getDate() + days);
+            endDate = dateStrLocal(d);
+          }
+        }
+
+        // Drop fully past multi-day / single events outside import window
+        const spanEnd = endDate || eventDate;
+        if (spanEnd < minDate) return;
+        if (eventDate < minDate && spanEnd < minDate) return;
 
         events.push({
           id: `ev-ics-${stamp}-${i}`,
           date: eventDate,
-          time: `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`,
+          endDate: endDate || undefined,
+          time: isDateOnly
+            ? '09:00'
+            : `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`,
           title: summary,
-          durationMin
+          durationMin: Math.min(durationMin, endDate ? 1440 : 480)
         });
       });
 
