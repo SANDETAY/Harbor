@@ -10429,7 +10429,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 288;
+    const HARBOR_BUILD_NUMBER = 289;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20730,6 +20730,7 @@
       { id: 'transport', label: 'Transport & gas', color: '#D4A017', pie: true },
       { id: 'shopping', label: 'Shopping', color: '#D46B8C', pie: true },
       { id: 'health', label: 'Health & pets', color: '#3DB8A8', pie: true },
+      { id: 'subscriptions', label: 'Subscriptions', color: '#A78BFA', pie: true },
       { id: 'entertainment', label: 'Entertainment', color: '#8B6BC9', pie: true },
       { id: 'personal', label: 'Personal care', color: '#E0A0B0', pie: true },
       { id: 'education', label: 'Education', color: '#6A8EC9', pie: true },
@@ -20739,17 +20740,19 @@
       { id: 'other', label: 'Other', color: '#9AA3A0', pie: true },
       { id: 'transfers', label: 'Transfers', color: '#6B8A99', pie: true, moneyMove: true },
       { id: 'credit_cards', label: 'Debt', color: '#8A7A6A', pie: true, moneyMove: true },
-      { id: 'savings', label: 'Savings moves', color: '#5A9E8E', pie: true, moneyMove: true },
+      { id: 'savings', label: 'Savings', color: '#5A9E8E', pie: true, moneyMove: true },
       { id: 'income', label: 'Income', color: '#3D9A6A', pie: true, income: true }
     ];
 
-    // Compact “lens” filters (dropdown) — month chips stay primary
+    // Primary budget lenses — every CSV row lands in exactly one (see getBudgetBucket)
+    // Order: Income → Spending → Bills → Subscriptions → Savings → Expenses
     const BUDGET_KIND_OPTIONS = [
-      { id: 'out', label: 'Spending', short: 'Spending', hint: 'Everything leaving the account', totalLabel: 'Total money out' },
-      { id: 'wants', label: 'Wants', short: 'Wants', hint: 'Dining, shopping, clothing, entertainment & fun', totalLabel: 'Total wants' },
-      { id: 'bills', label: 'Fixed bills', short: 'Bills', hint: 'Mortgage, rent, electric, water, phone, internet, insurance, car…', totalLabel: 'Total fixed bills' },
-      { id: 'moves', label: 'Account moves', short: 'Moves', hint: 'Transfers, debt (card payments), savings', totalLabel: 'Total account moves' },
-      { id: 'income', label: 'Income', short: 'Income', hint: 'Paychecks, deposits & money in', totalLabel: 'Total income' }
+      { id: 'income', label: 'Income', short: 'Income', hint: 'Paychecks, deposits & money in', totalLabel: 'Total income' },
+      { id: 'spending', label: 'Spending', short: 'Spending', hint: 'Groceries, dining, shopping, gas, everyday purchases', totalLabel: 'Total spending' },
+      { id: 'bills', label: 'Bills', short: 'Bills', hint: 'Mortgage, rent, electric, water, phone, internet, insurance, car…', totalLabel: 'Total bills' },
+      { id: 'subscriptions', label: 'Subscriptions', short: 'Subscriptions', hint: 'Streaming, software, memberships', totalLabel: 'Total subscriptions' },
+      { id: 'savings', label: 'Savings', short: 'Savings', hint: 'Transfers to savings & certificates', totalLabel: 'Total to savings' },
+      { id: 'expenses', label: 'Expenses', short: 'Expenses', hint: 'Debt payments, transfers, fees, ATM & other', totalLabel: 'Total expenses' }
     ];
 
     // Bank “Category” column → Harbor ids (Navy Fed / similar exports)
@@ -20771,7 +20774,7 @@
       'home improvement': 'shopping',
       'office supplies': 'shopping',
       'entertainment': 'entertainment',
-      'online services': 'entertainment',
+      'online services': 'subscriptions',
       'insurance': 'insurance',
       'auto insurance': 'insurance',
       'home insurance': 'insurance',
@@ -20820,7 +20823,7 @@
 
     let budgetCategoryFilter = null;
     let budgetMonthRange = 'current'; // current | last | all
-    let budgetKindFilter = 'out'; // out | wants | bills | moves | income
+    let budgetKindFilter = 'spending'; // income | spending | bills | subscriptions | savings | expenses
 
     function ensureBudgetState() {
       if (!state.budget || typeof state.budget !== 'object') {
@@ -21067,10 +21070,12 @@
         [/exxon|shell|chevron|mobil|valero|bp\b|speedway|circle\s*k|wawa|sheetz|race\s*trac|racetrac|qt\b|quiktrip|casey'?s|gas\s*station|sunpass|ez[\s-]?pass|fastrak|tx\s*tag|peach\s*pass|nc\s*quick|i-?pass|riverlink|toll|uber\b|lyft|parking|fuel/i, 'transport'],
         [/amazon|amzn|costco|walmart|target|best\s*buy|ikea|nike|ebay|etsy|home\s*depot|lowe'?s?|nordstrom|macys|macy'?s|kohls|kohl'?s|tj\s*maxx|marshalls|ross\s*stores|old\s*navy|gap\b|everbank\s*concessio|concession/i, 'shopping'],
         [/cvs|walgreens|rite\s*aid|pharmacy|dental|hospital|doctor|labcorp|quest\s*diag|gym|fitness|planet\s*fitness|la\s*fitness|orangetheory|petco|petsmart|vet\b|veterinary/i, 'health'],
-        [/netflix|spotify|hulu|disney|hbo|max\b|peacock|paramount|microsoft|redmond\s*us|openai|chatgpt|cinema|movie|amc\s*theat|regal\s*cinem|steam|xbox|playstation|youtube|apple\.com\/bill|apple\s*tv|certus\s*fusion|wm2tm/i, 'entertainment'],
+        // Subscriptions (recurring digital / memberships) before one-off entertainment
+        [/netflix|spotify|hulu|disney\+?|disney\s*plus|hbo|max\b|peacock|paramount|apple\.com\/bill|apple\s*tv|apple\s*music|icloud|youtube\s*premium|youtube\s*tv|amazon\s*prime|prime\s*video|microsoft|office\s*365|microsoft\s*365|xbox\s*game|playstation\s*plus|openai|chatgpt|adobe|canva|dropbox|google\s*one|google\s*storage|notion|slack|zoom\.us|github|patreon|onlyfans|audible|kindle\s*unlim|crunchyroll|espn\+|paramount\+|discovery\+|hulu|sirius|spotify|planet\s*fitness|la\s*fitness|orangetheory|equinox|lifetime\s*fitness|classpass|peloton|calm\b|headspace|duolingo|redmond\s*us|wm2tm|certus\s*fusion/i, 'subscriptions'],
+        [/cinema|movie|amc\s*theat|regal\s*cinem|epic\s*theatres|steam|xbox(?!\s*game)|playstation(?!\s*plus)|concert|ticketmaster|live\s*nation/i, 'entertainment'],
         [/sephora|ulta|salon|barber|spa|great\s*clips|supercuts/i, 'personal'],
         [/tuition|university|college|school|coursera|udemy|chegg/i, 'education'],
-        [/church|charit|donation|tithe|united\s*way|red\s*cross|gofundme|patreon/i, 'charity'],
+        [/church|charit|donation|tithe|united\s*way|red\s*cross|gofundme/i, 'charity'],
         [/atm|cash\s*withdraw/i, 'cash'],
         // Income — civilian + federal/military common US payroll labels
         [/salary|paycheck|payroll|direct\s*deposit|dfas|veteran\s*affairs|vacp|social\s*security|ssa\s*treas|irs\s*treas|tax\s*refund|dividend|deposit|adp\s*payroll|gusto|paychex|intuit\s*payroll/i, 'income'],
@@ -21088,7 +21093,7 @@
         if (/debit/i.test(typeStr) || /debit/i.test(typeGroup) || /debit/i.test(text)) return 'transfers';
       }
 
-      if (typeof matchSubscriptionPreset === 'function' && matchSubscriptionPreset(text)) return 'entertainment';
+      if (typeof matchSubscriptionPreset === 'function' && matchSubscriptionPreset(text)) return 'subscriptions';
       return 'other';
     }
 
@@ -21166,26 +21171,65 @@
       return false;
     }
 
-    /** Wants lens: lifestyle spending — dining, shopping, entertainment, fun */
-    function isBudgetWantTransaction(t) {
-      if (!t || t.isCredit || detectBudgetIsCredit(t)) return false;
+    /** Everyday spending — groceries, dining, shopping, gas, fun (not bills/subs/savings/debt) */
+    function isBudgetSpendingTransaction(t) {
+      if (!t || detectBudgetIsCredit(t)) return false;
       const cat = t.category || 'other';
+      if (cat === 'savings' || cat === 'subscriptions') return false;
       if (isBudgetMoneyMoveCategory(cat)) return false;
       if (isBudgetFixedBillCategory(cat)) return false;
-      // Core want categories
+      if (isBudgetSubscriptionTransaction(t)) return false;
+      // Core lifestyle / variable spend
+      if (['dining', 'shopping', 'personal', 'groceries', 'transport', 'entertainment', 'education', 'charity', 'health'].includes(cat)) {
+        return true;
+      }
       if (isBudgetDiscretionaryCategory(cat)) return true;
-      // Bank CSV lifestyle tags (Clothing/Shoes, Online Services, Restaurants/Dining…)
       if (isBudgetWantBankCategory(t.bankCategory)) return true;
-      // Merchant name heuristics
       const desc = `${t.description || ''} ${t.bankDescription || ''}`;
       if (isBudgetWantMerchant(desc)) return true;
-      // Small POS “other” purchases (not wires / ACH self-pays)
+      // POS retail that isn’t clearly a bill/transfer
       if (cat === 'other') {
         const d = desc.toLowerCase();
-        if (/withdrawal\s*by\s*wire|ach\s*orig|zelle|transfer/i.test(d)) return false;
+        if (/withdrawal\s*by\s*wire|ach\s*orig|zelle|transfer|payment\s+to/i.test(d)) return false;
         if (/pos|debit-?dc|sq\s*\*|tst\*/i.test(d)) return true;
       }
       return false;
+    }
+
+    /** Streaming / software / memberships */
+    function isBudgetSubscriptionTransaction(t) {
+      if (!t || detectBudgetIsCredit(t)) return false;
+      const cat = t.category || 'other';
+      if (cat === 'subscriptions') return true;
+      const desc = `${t.description || ''} ${t.bankDescription || ''}`;
+      const bank = String(t.bankCategory || '');
+      if (/online\s*services/i.test(bank)) return true;
+      if (typeof matchSubscriptionPreset === 'function' && matchSubscriptionPreset(desc)) return true;
+      if (/netflix|spotify|hulu|disney|hbo|\bmax\b|peacock|paramount|apple\.com\/bill|icloud|youtube\s*premium|prime\s*video|amazon\s*prime|microsoft|office\s*365|openai|chatgpt|adobe|dropbox|google\s*one|notion|slack|audible|peloton|planet\s*fitness|classpass|calm\b|headspace|sirius/i.test(desc)) {
+        return true;
+      }
+      return false;
+    }
+
+    // Legacy alias
+    function isBudgetWantTransaction(t) {
+      return isBudgetSpendingTransaction(t);
+    }
+
+    /**
+     * Every CSV row maps to exactly one top-level bucket:
+     * Income → Spending → Bills → Subscriptions → Savings → Expenses
+     */
+    function getBudgetBucket(t) {
+      if (!t) return 'expenses';
+      if (isBudgetIncomeTransaction(t) || detectBudgetIsCredit(t)) return 'income';
+      const cat = t.category || 'other';
+      if (cat === 'savings') return 'savings';
+      if (isBudgetFixedBillCategory(cat)) return 'bills';
+      if (isBudgetSubscriptionTransaction(t) || cat === 'subscriptions') return 'subscriptions';
+      if (isBudgetSpendingTransaction(t)) return 'spending';
+      // Residual money-out: debt pays, Zelle/transfers, fees, ATM, misc
+      return 'expenses';
     }
 
     // purchases = discretionary-ish: not money-moves and not fixed bills
@@ -21202,8 +21246,8 @@
      */
     function reclassifyAllBudgetTransactions(force = false) {
       const budget = ensureBudgetState();
-      if (!force && budget._fullRecatV8) return false;
-      budget._fullRecatV8 = true;
+      if (!force && budget._fullRecatV9) return false;
+      budget._fullRecatV9 = true;
       let changed = 0;
       (budget.transactions || []).forEach(t => {
         if (!t) return;
@@ -21482,40 +21526,26 @@
       return txs;
     }
 
-    /** Month + kind (debit/credit/transfer/etc.) filtered set for pie + list */
+    /** Month + primary bucket filter for pie + list */
     function getBudgetViewTransactions(range, kind) {
-      const k = kind || budgetKindFilter || 'out';
+      const k = kind || budgetKindFilter || 'spending';
       let txs = getBudgetTransactionsInMonth(range);
-      switch (k) {
-        case 'income':
-          return txs.filter(t => isBudgetIncomeTransaction(t));
-        case 'bills':
-          // Mortgage, phone/utilities, insurance, car/loans — the “keep the lights on” stack
-          return txs.filter(t => !detectBudgetIsCredit(t) && isBudgetFixedBillCategory(t.category));
-        case 'wants':
-          // Lifestyle wants — dining, shopping, entertainment, clothing, fun
-          return txs.filter(t => isBudgetWantTransaction(t));
-        case 'moves':
-          return txs.filter(t => !detectBudgetIsCredit(t) && isBudgetMoneyMoveCategory(t.category));
-        // Legacy kinds from older builds
-        case 'transfers':
-          return txs.filter(t => !detectBudgetIsCredit(t) && (t.category || '') === 'transfers');
-        case 'cards':
-          return txs.filter(t => !detectBudgetIsCredit(t) && (t.category || '') === 'credit_cards');
-        case 'savings':
-          return txs.filter(t => !detectBudgetIsCredit(t) && (t.category || '') === 'savings');
-        case 'purchases':
-          return txs.filter(t => !detectBudgetIsCredit(t) && isBudgetPurchaseCategory(t.category));
-        case 'out':
-        default:
-          // Money out only — never mix paychecks into the spending pie
-          return txs.filter(t => !detectBudgetIsCredit(t));
-      }
+      // Normalize legacy lens ids from older builds
+      const legacy = {
+        out: 'spending',
+        wants: 'spending',
+        purchases: 'spending',
+        moves: 'expenses',
+        transfers: 'expenses',
+        cards: 'expenses'
+      };
+      const bucket = legacy[k] || k;
+      return txs.filter(t => getBudgetBucket(t) === bucket);
     }
 
     // Back-compat alias
     function getBudgetSpendTransactions(range) {
-      return getBudgetViewTransactions(range, 'out');
+      return getBudgetViewTransactions(range, 'spending');
     }
 
     function normalizeBudgetMerchant(description) {
@@ -21684,6 +21714,7 @@
       delete budget._fullRecatV6;
       delete budget._fullRecatV7;
       delete budget._fullRecatV8;
+      delete budget._fullRecatV9;
       // Any successful CSV import finishes the monthly budget-review task
       if (typeof markBudgetReviewCompleteFromImport === 'function') {
         markBudgetReviewCompleteFromImport({ silent: true });
@@ -21904,7 +21935,7 @@
       };
       budgetCategoryFilter = null;
       budgetMonthRange = 'current';
-      budgetKindFilter = 'out';
+      budgetKindFilter = 'spending';
       saveState();
       renderBudget();
       showToast('Budget cleared · category memory kept');
@@ -21932,7 +21963,7 @@
 
     function setBudgetKindFilter(kind) {
       const ok = BUDGET_KIND_OPTIONS.some(k => k.id === kind);
-      budgetKindFilter = ok ? kind : 'out';
+      budgetKindFilter = ok ? kind : 'spending';
       budgetCategoryFilter = null;
       closeBudgetLensMenu();
       renderBudget();
@@ -22052,7 +22083,7 @@
         if (ok) {
           budgetCategoryFilter = null;
           budgetMonthRange = 'current';
-          budgetKindFilter = 'out';
+          budgetKindFilter = 'spending';
           renderBudget();
           const remembered = typeof result === 'object' ? (result.remembered || 0) : 0;
           const mem = remembered > 0
@@ -22207,8 +22238,8 @@
       if (!state.budget._rulesHarvested) {
         harvestBudgetMerchantRulesFromTransactions();
       }
-      // Always reclassify once on this build — income, Other, debt labels, split fixed bills
-      if (!state.budget._fullRecatV8) {
+      // Always reclassify once on this build — new buckets + bills split
+      if (!state.budget._fullRecatV9) {
         reclassifyAllBudgetTransactions(true);
       } else if (!state.budget._otherRecatV2) {
         state.budget._otherRecatV2 = true;
@@ -22229,12 +22260,12 @@
         btn.classList.toggle('is-active', btn.getAttribute('data-budget-range') === budgetMonthRange);
       });
       // Migrate legacy kind ids from older sessions
-      if (['purchases', 'transfers', 'cards', 'savings'].includes(budgetKindFilter)) {
-        if (budgetKindFilter === 'purchases') budgetKindFilter = 'wants';
-        else if (budgetKindFilter === 'transfers' || budgetKindFilter === 'cards' || budgetKindFilter === 'savings') {
-          budgetKindFilter = 'moves';
-        }
-      }
+      const kindLegacyMap = {
+        out: 'spending', wants: 'spending', purchases: 'spending',
+        moves: 'expenses', transfers: 'expenses', cards: 'expenses'
+      };
+      if (kindLegacyMap[budgetKindFilter]) budgetKindFilter = kindLegacyMap[budgetKindFilter];
+      if (!BUDGET_KIND_OPTIONS.some(k => k.id === budgetKindFilter)) budgetKindFilter = 'spending';
       const kindOpt = getBudgetKindOption(budgetKindFilter);
       const lensLabel = document.getElementById('budget-lens-label');
       if (lensLabel) lensLabel.textContent = kindOpt.short || kindOpt.label;
@@ -22252,24 +22283,35 @@
       BUDGET_CATEGORIES.forEach(c => { totals[c.id] = 0; });
       txs.forEach(t => {
         let cat = t.category || 'other';
-        if (budgetKindFilter === 'income' || t.isCredit || isBudgetIncomeTransaction(t)) {
-          // Income lens: roll true income together; keep transfer-in visible if categorized as such
-          if (budgetKindFilter === 'income') {
-            cat = (t.category === 'transfers' || t.category === 'savings') ? t.category : 'income';
-          } else if (t.isCredit) {
-            cat = (t.category === 'transfers' || t.category === 'savings') ? t.category : 'income';
-          }
+        if (budgetKindFilter === 'income') {
+          cat = (t.category === 'transfers' || t.category === 'savings') ? t.category : 'income';
+        } else if (budgetKindFilter === 'subscriptions' && (t.category === 'entertainment' || !t.category)) {
+          if (isBudgetSubscriptionTransaction(t)) cat = 'subscriptions';
+        } else if (budgetKindFilter === 'bills' && cat === 'housing') {
+          cat = 'mortgage'; // legacy → show under Mortgage when possible
         }
         totals[cat] = (totals[cat] || 0) + (Number(t.amount) || 0);
       });
 
-      // Pie = every category with amount in this view
+      // Pie categories for this lens (only slices that exist in data will show)
       const pieCats = BUDGET_CATEGORIES.filter(c => {
+        if (c.pie === false) return false;
         if (budgetKindFilter === 'income') {
           return c.id === 'income' || c.id === 'transfers' || c.id === 'savings';
         }
         if (c.id === 'income') return false;
-        return c.pie !== false;
+        if (budgetKindFilter === 'bills') return !!c.fixedBill;
+        if (budgetKindFilter === 'subscriptions') {
+          return c.id === 'subscriptions' || c.id === 'entertainment';
+        }
+        if (budgetKindFilter === 'savings') return c.id === 'savings';
+        if (budgetKindFilter === 'spending') {
+          return ['dining', 'shopping', 'personal', 'groceries', 'transport', 'entertainment', 'education', 'charity', 'health', 'other'].includes(c.id);
+        }
+        if (budgetKindFilter === 'expenses') {
+          return ['credit_cards', 'transfers', 'fees', 'cash', 'loans', 'other', 'charity'].includes(c.id);
+        }
+        return true;
       });
       const grand = pieCats.reduce((s, c) => s + (totals[c.id] || 0), 0)
         || txs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
@@ -22279,7 +22321,7 @@
         if (!txs.length) {
           // Helpful hint when month filter hides income that exists in other months
           let hint = `No ${kindOpt.label.toLowerCase()} in this period`;
-          if (budgetKindFilter === 'income' || budgetKindFilter === 'wants') {
+          if (['income', 'spending', 'bills', 'subscriptions', 'savings', 'expenses'].includes(budgetKindFilter)) {
             const allKind = getBudgetViewTransactions('all', budgetKindFilter);
             if (allKind.length) {
               hint += ` · ${allKind.length} in All`;
@@ -22329,8 +22371,8 @@
 
       // Habit insights — purchases only (skip pure money-moves / income)
       if (insightsEl) {
-        // Insights only when looking at spending or wants (never bills / moves / income)
-        const insightSource = (budgetKindFilter === 'out' || budgetKindFilter === 'wants' || budgetKindFilter === 'purchases')
+        // Insights for everyday spending (wants that compound)
+        const insightSource = (budgetKindFilter === 'spending' || budgetKindFilter === 'out' || budgetKindFilter === 'wants')
           ? txs
           : [];
         const insights = getBudgetMerchantInsights(insightSource, 6);
