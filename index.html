@@ -1485,6 +1485,7 @@
     .life-flyout-backdrop {
       position: fixed;
       inset: 0;
+      /* Above page content, below cradle (peer) and flyout */
       z-index: 58;
       background: rgb(var(--harbor-text) / 0.14);
       backdrop-filter: blur(3px) saturate(1.05);
@@ -1500,8 +1501,10 @@
 
     .life-flyout {
       position: fixed;
-      z-index: 62;
+      /* Must sit ABOVE main cradle + FAB (peer is z 64) so menu never clips behind */
+      z-index: 80;
       width: 10.75rem;
+      max-height: min(70dvh, calc(100dvh - 7.5rem - env(safe-area-inset-bottom, 0px)));
       opacity: 0;
       pointer-events: none;
       transform: translateY(8px) scale(0.96);
@@ -1510,6 +1513,8 @@
         opacity 0.2s var(--harbor-ease-out),
         transform 0.22s var(--harbor-ease-out);
       filter: drop-shadow(0 12px 28px rgb(var(--harbor-text) / 0.14));
+      /* Keep the whole menu in the viewport on short phones */
+      overflow: visible;
     }
     .life-flyout.is-open {
       opacity: 1;
@@ -1538,6 +1543,9 @@
         0 1px 2px rgb(var(--harbor-text) / 0.04);
       backdrop-filter: blur(18px) saturate(1.12);
       -webkit-backdrop-filter: blur(18px) saturate(1.12);
+      max-height: inherit;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     html[data-theme="dark"] .life-flyout-card {
       background: rgb(var(--harbor-surface) / 0.96);
@@ -1637,7 +1645,10 @@
       color: rgb(var(--harbor-primary-light)) !important;
     }
 
-    /* Cradle stays tappable above Life scrim (toggle Life / switch tabs) */
+    /*
+     * Cradle stays tappable above the scrim so Life can toggle closed.
+     * Flyout is z-index 80 so the menu still paints above the FAB notch.
+     */
     #main-nav-bar.life-flyout-peer {
       z-index: 64 !important;
     }
@@ -9852,7 +9863,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 267;
+    const HARBOR_BUILD_NUMBER = 268;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -19893,39 +19904,62 @@
       if (!btn || !fly) return;
       const r = btn.getBoundingClientRect();
       const isDesktop = window.matchMedia('(min-width: 768px)').matches;
-      // Temporarily show for measurement if needed
+      const layoutH = window.innerHeight || document.documentElement.clientHeight || 0;
+      const layoutW = window.innerWidth || document.documentElement.clientWidth || 0;
+
+      // Measure while paintable (hidden attribute zeros boxes on some WebKits)
       const wasHidden = fly.hasAttribute('hidden');
-      if (wasHidden) {
-        fly.hidden = false;
-        fly.style.visibility = 'hidden';
-        fly.style.pointerEvents = 'none';
-      }
-      const flyW = fly.offsetWidth || 172;
-      const flyH = fly.offsetHeight || 220;
+      const prevVis = fly.style.visibility;
+      const prevPE = fly.style.pointerEvents;
+      if (wasHidden) fly.hidden = false;
+      fly.style.visibility = 'hidden';
+      fly.style.pointerEvents = 'none';
+      // Force layout so width/height are real before placing
+      void fly.offsetHeight;
+
+      const flyW = Math.max(fly.offsetWidth || 0, 172);
+      const flyH = Math.max(fly.offsetHeight || 0, 200);
       let left = r.left + r.width / 2 - flyW / 2;
-      left = Math.max(10, Math.min(left, window.innerWidth - flyW - 10));
+      left = Math.max(10, Math.min(left, layoutW - flyW - 10));
 
       if (isDesktop) {
         // Top nav — open downward
         fly.classList.add('life-flyout--down');
         let top = r.bottom + 10;
-        if (top + flyH > window.innerHeight - 12) {
+        if (top + flyH > layoutH - 12) {
           top = Math.max(12, r.top - flyH - 10);
           fly.classList.remove('life-flyout--down');
         }
         fly.style.top = `${Math.round(top)}px`;
         fly.style.bottom = 'auto';
       } else {
-        // Bottom cradle — open upward, caret points at Life
+        // Bottom cradle — open fully above dock + FAB notch (not just the Life label)
         fly.classList.remove('life-flyout--down');
-        const gap = 12;
-        const bottom = Math.max(12, window.innerHeight - r.top + gap);
+        const nav = document.getElementById('main-nav-bar');
+        const fabSlot = document.getElementById('main-nav-fab-slot');
+        const orb = document.querySelector('#summary-launcher.summary-orb--dock, .main-nav-fab-slot .summary-orb');
+        const tops = [r.top];
+        if (nav) tops.push(nav.getBoundingClientRect().top);
+        if (fabSlot) tops.push(fabSlot.getBoundingClientRect().top);
+        if (orb && !orb.classList.contains('hidden')) {
+          tops.push(orb.getBoundingClientRect().top);
+        }
+        // Highest chrome edge (smallest top) — menu must clear this
+        const clearTop = Math.min(...tops.filter(n => Number.isFinite(n)));
+        // Comfortable gap so caret + card sit above the cradle, not into it
+        const gap = 16;
+        // CSS bottom = distance from viewport bottom to menu bottom edge
+        let bottom = layoutH - clearTop + gap;
+        // Keep menu fully on-screen (status bar / notch)
+        const maxBottom = Math.max(gap, layoutH - flyH - 12);
+        bottom = Math.min(Math.max(bottom, gap), maxBottom);
+        // Prefer bottom positioning (more stable with iOS home indicator than top)
         fly.style.bottom = `${Math.round(bottom)}px`;
         fly.style.top = 'auto';
       }
       fly.style.left = `${Math.round(left)}px`;
 
-      // Align caret under Life button center
+      // Align caret toward Life button center (still above the dock)
       const caret = fly.querySelector('.life-flyout-caret');
       if (caret) {
         const caretX = r.left + r.width / 2 - left;
@@ -19933,10 +19967,9 @@
         caret.style.marginLeft = '-5.5px';
       }
 
-      if (wasHidden) {
-        fly.style.visibility = '';
-        fly.hidden = true;
-      }
+      fly.style.visibility = prevVis || '';
+      fly.style.pointerEvents = prevPE || '';
+      if (wasHidden) fly.hidden = true;
     }
 
     function openLifeFlyout() {
@@ -19951,15 +19984,17 @@
         backdrop.hidden = false;
         backdrop.setAttribute('aria-hidden', 'false');
       }
-      // Keep cradle above the scrim so Life can toggle closed and other tabs stay reachable
+      // Cradle above scrim (still tappable); flyout z-index 80 paints above FAB
       mainNav?.classList.add('life-flyout-peer');
       positionLifeFlyout();
       requestAnimationFrame(() => {
+        // Re-measure after paint — iOS standalone often settles FAB/safe-area late
+        positionLifeFlyout();
         fly.classList.add('is-open');
         backdrop?.classList.add('is-open');
-        // Focus first/active item for keyboard users
+        requestAnimationFrame(() => positionLifeFlyout());
         const active = fly.querySelector('.life-flyout-item.is-active') || fly.querySelector('.life-flyout-item');
-        active?.focus();
+        active?.focus({ preventScroll: true });
       });
       lifeFlyoutOpen = true;
       if (lifeBtn) lifeBtn.setAttribute('aria-expanded', 'true');
@@ -20030,9 +20065,12 @@
         }
       });
 
-      window.addEventListener('resize', () => {
+      const reanchor = () => {
         if (lifeFlyoutOpen) positionLifeFlyout();
-      });
+      };
+      window.addEventListener('resize', reanchor);
+      window.visualViewport?.addEventListener('resize', reanchor);
+      window.visualViewport?.addEventListener('scroll', reanchor);
       window.addEventListener('scroll', () => {
         if (lifeFlyoutOpen) closeLifeFlyout();
       }, true);
