@@ -1707,12 +1707,75 @@
       opacity: 0.35;
     }
 
+    /* Mobile: hide web subnav (flyout only). Desktop: show subtabs under main nav. */
+    .life-web-subnav {
+      display: none;
+    }
+
     @media (min-width: 768px) {
       #tab-content-life.life-tab-shell:not(.hidden) {
-        padding: 0.7rem 1.25rem 1.25rem !important;
+        padding: 0.55rem 1.25rem 1.25rem !important;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
       }
-      .life-flyout {
-        width: 11.5rem;
+      /* Popup Life menu is mobile-only */
+      .life-flyout,
+      .life-flyout-backdrop {
+        display: none !important;
+      }
+      .life-web-subnav {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: stretch;
+        gap: 0.2rem;
+        margin: 0 0 0.85rem;
+        padding: 0.28rem;
+        border-radius: 1rem;
+        border: 1px solid rgb(var(--harbor-border));
+        background: rgb(var(--harbor-surface));
+        box-shadow: var(--harbor-shadow-sm);
+      }
+      .life-web-tab {
+        flex: 1 1 0;
+        min-width: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 0.55rem 0.45rem;
+        border: none;
+        border-radius: 0.75rem;
+        background: transparent;
+        color: rgb(var(--harbor-muted));
+        font-family: var(--harbor-font);
+        font-size: 0.8rem;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: color 0.15s ease, background 0.15s ease;
+      }
+      .life-web-tab i {
+        font-size: 0.85rem;
+        opacity: 0.9;
+      }
+      .life-web-tab:hover {
+        color: rgb(var(--harbor-text));
+        background: rgb(var(--harbor-raised));
+      }
+      .life-web-tab.life-panel-active {
+        color: #fff;
+        background: linear-gradient(165deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
+        box-shadow: 0 2px 10px rgb(var(--harbor-primary) / 0.22);
+      }
+      html[data-theme="dark"] .life-web-tab.life-panel-active {
+        color: #fff;
+      }
+      #tab-content-life .life-panels-scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
       }
     }
 
@@ -9781,8 +9844,40 @@
         </div>
       </div>
 
-      <!-- LIFE TAB — full-screen sections; pick via Life flyout on main dock -->
+      <!-- LIFE TAB — web: subtabs under main nav; mobile: flyout from Life dock -->
       <div id="tab-content-life" class="tab-content life-tab-shell bg-transparent hidden">
+        <nav class="life-web-subnav" role="tablist" aria-label="Life sections">
+          <button type="button" role="tab" class="life-web-tab life-panel-active" id="life-web-tab-schedule"
+            data-life-panel="schedule" aria-selected="true" aria-controls="life-panel-schedule"
+            onclick="selectLifeSection('schedule')">
+            <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+            <span>Plan</span>
+          </button>
+          <button type="button" role="tab" class="life-web-tab" id="life-web-tab-grocery"
+            data-life-panel="grocery" aria-selected="false" aria-controls="life-panel-grocery"
+            onclick="selectLifeSection('grocery')">
+            <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
+            <span>Shop</span>
+          </button>
+          <button type="button" role="tab" class="life-web-tab" id="life-web-tab-bills"
+            data-life-panel="bills" aria-selected="false" aria-controls="life-panel-bills"
+            onclick="selectLifeSection('bills')">
+            <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
+            <span>Bills</span>
+          </button>
+          <button type="button" role="tab" class="life-web-tab" id="life-web-tab-budget"
+            data-life-panel="budget" aria-selected="false" aria-controls="life-panel-budget"
+            onclick="selectLifeSection('budget')">
+            <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+            <span>Budget</span>
+          </button>
+          <button type="button" role="tab" class="life-web-tab" id="life-web-tab-subscriptions"
+            data-life-panel="subscriptions" aria-selected="false" aria-controls="life-panel-subscriptions"
+            onclick="selectLifeSection('subscriptions')">
+            <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+            <span>Subs</span>
+          </button>
+        </nav>
         <div class="life-panels-scroll">
         <!-- Schedule Panel -->
         <div id="life-panel-schedule" class="life-panel" role="tabpanel" aria-labelledby="life-flyout-schedule">
@@ -10126,7 +10221,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 273;
+    const HARBOR_BUILD_NUMBER = 274;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20675,11 +20770,21 @@
     }
 
     function updateLifeFlyoutActive() {
-      document.querySelectorAll('.life-flyout-item[data-life-panel]').forEach(btn => {
+      // Mobile flyout + desktop web subnav share data-life-panel
+      document.querySelectorAll('.life-flyout-item[data-life-panel], .life-web-tab[data-life-panel]').forEach(btn => {
         const on = btn.getAttribute('data-life-panel') === currentLifePanel;
         btn.classList.toggle('is-active', on);
+        btn.classList.toggle('life-panel-active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
         btn.setAttribute('aria-current', on ? 'true' : 'false');
+        if (btn.classList.contains('life-web-tab')) {
+          btn.setAttribute('tabindex', on ? '0' : '-1');
+        }
       });
+    }
+
+    function isLifeMobileNav() {
+      return window.matchMedia('(max-width: 767px)').matches;
     }
 
     function updateLifeNavLabel() {
@@ -20768,6 +20873,11 @@
     }
 
     function openLifeFlyout() {
+      // Desktop uses inline Life subtabs — no popup
+      if (typeof isLifeMobileNav === 'function' && !isLifeMobileNav()) {
+        switchTab('life');
+        return;
+      }
       const fly = document.getElementById('life-flyout');
       const backdrop = document.getElementById('life-flyout-backdrop');
       const lifeBtn = document.getElementById('tab-life');
@@ -20823,11 +20933,20 @@
       setTimeout(finish, 220);
     }
 
-    /** Life dock button — opens vertical section menu (does not jump tabs until pick) */
+    /**
+     * Life main-nav button:
+     * - Mobile: open vertical flyout to pick Plan/Shop/Bills/Budget/Subs
+     * - Web/desktop: open Life tab (subtabs sit under main tabs)
+     */
     function onLifeNavClick(event) {
       if (event) {
         event.preventDefault();
         event.stopPropagation();
+      }
+      if (typeof isLifeMobileNav === 'function' && !isLifeMobileNav()) {
+        if (typeof closeLifeFlyout === 'function') closeLifeFlyout();
+        switchTab('life');
+        return;
       }
       if (lifeFlyoutOpen) {
         closeLifeFlyout();
@@ -20836,7 +20955,7 @@
       openLifeFlyout();
     }
 
-    /** Pick a Life section → full-screen panel under shared chrome */
+    /** Pick a Life section → panel under shared chrome */
     function selectLifeSection(panel, options = {}) {
       if (!LIFE_PANEL_ORDER.includes(panel)) return;
       closeLifeFlyout();
