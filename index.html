@@ -2014,7 +2014,6 @@
       color: rgb(var(--harbor-muted));
       font-size: 0.68rem;
       flex-shrink: 0;
-      tabular-nums;
       font-variant-numeric: tabular-nums;
     }
     .budget-insight-hook {
@@ -2043,6 +2042,112 @@
       display: flex;
       flex-direction: column;
       gap: 0.45rem;
+    }
+
+    .grocery-quick-add {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.2rem;
+      border-radius: 1rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+    }
+    .grocery-quick-input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      outline: none;
+      padding: 0.55rem 0.7rem;
+      font-size: 0.9rem;
+      color: rgb(var(--harbor-text));
+    }
+    .grocery-quick-input::placeholder {
+      color: rgb(var(--harbor-muted));
+    }
+    .grocery-quick-btn {
+      flex-shrink: 0;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.75rem;
+      border: none;
+      background: rgb(var(--harbor-primary));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+    .grocery-quick-btn:active {
+      opacity: 0.9;
+    }
+    #grocery-trip-progress:not(.hidden) {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .grocery-trip-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: rgb(var(--harbor-primary) / 0.12);
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.65rem;
+      font-weight: 650;
+    }
+    .harbor-backup-nudge {
+      border-radius: 1rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      padding: 0.7rem 0.85rem;
+      margin-bottom: 0.75rem;
+    }
+    .harbor-backup-nudge-title {
+      font-size: 0.82rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-text));
+    }
+    .harbor-backup-nudge-meta {
+      font-size: 0.68rem;
+      color: rgb(var(--harbor-muted));
+      line-height: 1.35;
+      margin-top: 0.2rem;
+    }
+    .harbor-backup-nudge-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.55rem;
+    }
+    .bill-amount-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.1rem;
+      flex-shrink: 0;
+      min-width: 3.5rem;
+    }
+    .bill-amount-main {
+      font-size: 0.9rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: rgb(var(--harbor-text));
+      line-height: 1.15;
+    }
+    .bill-amount-sub {
+      font-size: 0.58rem;
+      color: rgb(var(--harbor-muted));
+      font-weight: 550;
+      text-align: right;
+      line-height: 1.2;
+      max-width: 6.5rem;
+    }
+    .bill-row-is-paid .bill-amount-main {
+      color: rgb(var(--harbor-muted));
     }
 
     #tab-content-life {
@@ -6771,7 +6876,7 @@
       margin-top: 0.1rem;
     }
 
-    /* Harbor Pulse — Overview companion to Schedule */
+    /* Harbor Pulse — Overview alerts; free time lives in Schedule */
     .summary-pulse-blurb {
       font-size: 0.6rem;
       color: rgb(var(--harbor-muted));
@@ -10113,13 +10218,13 @@
             data-life-panel="schedule" aria-selected="true" aria-controls="life-panel-schedule"
             onclick="selectLifeSection('schedule')">
             <i class="fa-regular fa-calendar" aria-hidden="true"></i>
-            <span>Plan</span>
+            <span>Schedule</span>
           </button>
           <button type="button" role="tab" class="life-web-tab" id="life-web-tab-grocery"
             data-life-panel="grocery" aria-selected="false" aria-controls="life-panel-grocery"
             onclick="selectLifeSection('grocery')">
             <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
-            <span>Shop</span>
+            <span>Grocery</span>
           </button>
           <button type="button" role="tab" class="life-web-tab" id="life-web-tab-bills"
             data-life-panel="bills" aria-selected="false" aria-controls="life-panel-bills"
@@ -10137,7 +10242,7 @@
             data-life-panel="subscriptions" aria-selected="false" aria-controls="life-panel-subscriptions"
             onclick="selectLifeSection('subscriptions')">
             <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-            <span>Subs</span>
+            <span>Subscriptions</span>
           </button>
         </nav>
         <div class="life-panels-scroll">
@@ -10147,15 +10252,28 @@
             <div class="panel-toolbar panel-toolbar-cluster schedule-toolbar" role="toolbar" aria-label="Schedule tools">
               <span id="schedule-free-time" class="chip-tool-btn chip-tool-static" role="status" aria-live="polite" title="Free time today"></span>
               <div class="schedule-toolbar-end">
-                <button type="button" class="chip-tool-btn" id="work-schedule-chip" onclick="showWorkScheduleModal()"
-                  aria-label="Set work hours" title="Work hours for free-time estimates">
-                  <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                  <span id="work-schedule-chip-label">Hours</span>
-                </button>
                 <button type="button" onclick="showAddCalendarEventModal()" class="chip-add-btn" id="schedule-add-btn" aria-label="Add event">
                   <i class="fa-solid fa-plus" aria-hidden="true"></i>
                   <span>Add</span>
                 </button>
+                <div class="life-manage-wrap">
+                  <button type="button" class="chip-tool-btn" onclick="toggleLifeManageMenu('schedule')" aria-haspopup="menu" aria-expanded="false">Manage</button>
+                  <div id="schedule-manage-menu" class="life-manage-menu hidden" role="menu">
+                    <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showWorkScheduleModal()">
+                      <i class="fa-regular fa-clock" aria-hidden="true"></i><span>Work hours</span>
+                    </button>
+                    <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showCalendarFeedModal()">
+                      <i class="fa-solid fa-link" aria-hidden="true"></i><span>Connect calendar</span>
+                    </button>
+                    <button type="button" role="menuitem" onclick="closeLifeManageMenus(); triggerCalendarICSImport()">
+                      <i class="fa-solid fa-file-import" aria-hidden="true"></i><span>Import .ics file</span>
+                    </button>
+                    <button type="button" role="menuitem" id="schedule-manage-hidden"
+                      onclick="closeLifeManageMenus(); showSuppressedCalendarEventsModal()">
+                      <i class="fa-regular fa-eye-slash" aria-hidden="true"></i><span>Hidden events</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -10176,36 +10294,41 @@
           <div class="panel-head panel-head--toolbar-only">
             <div class="panel-toolbar panel-toolbar-cluster">
               <button type="button" id="grocery-dinners-btn" class="chip-tool-btn" onclick="toggleGroceryDinners()"
-                aria-expanded="false" aria-label="Show dinners">Show dinners</button>
+                aria-expanded="false" aria-label="Show dinners">Dinners</button>
               <button type="button" id="grocery-edit-dinner-btn" class="chip-tool-btn hidden"
                 onclick="editActiveDinnerList()" aria-label="Edit this dinner list">Edit dinner</button>
-              <button type="button" class="chip-tool-btn" onclick="tryShowAddMealPresetModal()" aria-label="Add recipe">
-                <i class="fa-solid fa-utensils" aria-hidden="true"></i>
-                <span>Recipe</span>
-              </button>
               <div class="life-manage-wrap">
                 <button type="button" class="chip-tool-btn" onclick="toggleLifeManageMenu('grocery')" aria-haspopup="menu" aria-expanded="false">Manage</button>
                 <div id="grocery-manage-menu" class="life-manage-menu hidden" role="menu">
+                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); tryShowAddMealPresetModal()">
+                    <i class="fa-solid fa-utensils" aria-hidden="true"></i><span>Add recipe</span>
+                  </button>
                   <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showManageMealPresetsModal()">
-                    <i class="fa-solid fa-utensils" aria-hidden="true"></i><span>Edit dinner lists</span>
+                    <i class="fa-solid fa-list" aria-hidden="true"></i><span>Edit dinner lists</span>
                   </button>
                   <button type="button" role="menuitem" id="grocery-manage-edit-active"
                     onclick="closeLifeManageMenus(); editActiveDinnerList()">
                     <i class="fa-solid fa-pen" aria-hidden="true"></i><span>Edit this dinner</span>
                   </button>
+                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); clearCheckedGrocery()">
+                    <i class="fa-solid fa-broom" aria-hidden="true"></i><span>Clear checked</span>
+                  </button>
                 </div>
               </div>
-              <button type="button" class="chip-tool-btn" onclick="clearCheckedGrocery()" aria-label="Clear checked items">
-                Clear
-              </button>
-              <button type="button" onclick="showAddGroceryItemModal()" class="chip-add-btn" id="grocery-add-btn" aria-label="Add Grocery Item">
-                <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                <span>Add</span>
-              </button>
             </div>
           </div>
           <div id="grocery-view-label" class="text-[10px] text-harbor-muted leading-snug mb-1.5 px-0.5"></div>
           <div id="meal-grocery-filters" class="library-filters-scroll mb-2 -mx-1 px-1 hidden"></div>
+          <div id="grocery-trip-progress" class="hidden text-[11px] text-harbor-muted mb-1.5 px-0.5 font-medium" aria-live="polite"></div>
+          <div class="grocery-quick-add mb-2" id="grocery-quick-add">
+            <input id="grocery-quick-input" type="text" enterkeyhint="done" autocomplete="off"
+              class="grocery-quick-input" placeholder="Add item…"
+              aria-label="Quick add grocery item"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();addGroceryFromQuickInput();}">
+            <button type="button" class="grocery-quick-btn" onclick="addGroceryFromQuickInput()" aria-label="Add item">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            </button>
+          </div>
           <div id="grocery-list" class="space-y-2 mb-2"></div>
         </div>
 
@@ -10229,21 +10352,27 @@
             <div class="panel-toolbar panel-toolbar-cluster schedule-toolbar" style="width:100%">
               <span class="chip-tool-btn chip-tool-static text-[11px] font-semibold text-harbor-muted" id="budget-range-label" role="status">Spending</span>
               <div class="schedule-toolbar-end">
-                <button type="button" onclick="showBudgetImportModal()" class="chip-tool-btn" id="budget-import-btn" aria-label="Import bank CSV">
-                  Import CSV
+                <button type="button" onclick="showBudgetImportModal()" class="chip-add-btn" id="budget-import-btn" aria-label="Import bank CSV">
+                  <i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i>
+                  <span>Import</span>
                 </button>
-                <button type="button" onclick="clearBudgetData()" class="chip-tool-btn" id="budget-clear-btn" aria-label="Clear budget data">
-                  Clear
-                </button>
+                <div class="life-manage-wrap">
+                  <button type="button" class="chip-tool-btn" onclick="toggleLifeManageMenu('budget')" aria-haspopup="menu" aria-expanded="false">Manage</button>
+                  <div id="budget-manage-menu" class="life-manage-menu hidden" role="menu">
+                    <button type="button" role="menuitem" onclick="closeLifeManageMenus(); clearBudgetData()">
+                      <i class="fa-solid fa-trash-can" aria-hidden="true"></i><span>Clear budget data</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
           <div id="budget-empty" class="harbor-empty py-6">
             <div class="harbor-empty-icon" aria-hidden="true">📊</div>
-            <div class="text-sm font-medium text-harbor-text">See where your money goes</div>
+            <div class="text-sm font-medium text-harbor-text">See where money went</div>
             <div class="text-xs text-harbor-muted mt-1.5 leading-relaxed max-w-xs mx-auto">
-              Import a bank CSV. Harbor uses posting dates, tags common merchants (utilities, dining, shopping…),
-              and shows this month vs last month — including habits that stack up (like coffee every day).
+              Import a bank CSV to see this month vs last — dining, shopping, utilities, and habits that stack up.
+              Import stays on this device.
             </div>
             <div class="harbor-empty-actions mt-3">
               <button type="button" class="chip-add-btn" onclick="showBudgetImportModal()">
@@ -10292,20 +10421,28 @@
         <div id="life-panel-subscriptions" class="life-panel hidden" role="tabpanel" aria-labelledby="life-flyout-subscriptions">
           <div class="panel-head panel-head--toolbar-only mb-2">
             <div class="panel-toolbar panel-toolbar-cluster schedule-toolbar" style="width:100%">
-              <label class="student-pricing-toggle student-pricing-chip flex items-center gap-1.5 px-2 py-1 rounded-xl bg-harbor-raised border border-harbor-border cursor-pointer select-none flex-shrink-0" title="Show student rates when browsing popular services">
-                <span class="text-[11px] font-semibold text-harbor-text whitespace-nowrap">Student</span>
-                <input id="student-pricing-toggle" type="checkbox" class="student-pricing-switch flex-shrink-0"
-                  onchange="toggleStudentPricing(this.checked)" aria-label="Student status pricing">
-              </label>
-              <div class="schedule-toolbar-end">
-                <button type="button" onclick="showSubscriptionImportModal()" class="chip-tool-btn" id="subs-import-btn" aria-label="Import subscriptions CSV">
-                  Import CSV
-                </button>
+              <div class="schedule-toolbar-end" style="margin-left:auto">
                 <button type="button" onclick="showAddSubscriptionModal()" class="chip-add-btn" id="subs-add-btn" aria-label="Add Subscription">
                   <i class="fa-solid fa-plus" aria-hidden="true"></i>
                   <span>Add</span>
                 </button>
+                <div class="life-manage-wrap">
+                  <button type="button" class="chip-tool-btn" onclick="toggleLifeManageMenu('subscriptions')" aria-haspopup="menu" aria-expanded="false">Manage</button>
+                  <div id="subscriptions-manage-menu" class="life-manage-menu hidden" role="menu">
+                    <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showSubscriptionImportModal()">
+                      <i class="fa-solid fa-file-import" aria-hidden="true"></i><span>Import CSV</span>
+                    </button>
+                    <button type="button" role="menuitem" onclick="closeLifeManageMenus(); document.getElementById('student-pricing-toggle')?.click()">
+                      <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i><span id="subs-manage-student-label">Student rates</span>
+                    </button>
+                  </div>
+                </div>
               </div>
+              <label class="student-pricing-toggle student-pricing-chip hidden" title="Show student rates when browsing popular services">
+                <span class="text-[11px] font-semibold text-harbor-text whitespace-nowrap">Student</span>
+                <input id="student-pricing-toggle" type="checkbox" class="student-pricing-switch flex-shrink-0"
+                  onchange="toggleStudentPricing(this.checked)" aria-label="Student status pricing">
+              </label>
             </div>
           </div>
           <button type="button" id="subs-browse-btn" class="chip-tool-btn w-full mb-2" onclick="toggleSubsBrowse()"
@@ -10433,12 +10570,12 @@
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-schedule"
         data-life-panel="schedule" onclick="selectLifeSection('schedule')">
         <i class="fa-regular fa-calendar" aria-hidden="true"></i>
-        <span>Plan</span>
+        <span>Schedule</span>
       </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-grocery"
         data-life-panel="grocery" onclick="selectLifeSection('grocery')">
         <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
-        <span>Shop</span>
+        <span>Grocery</span>
       </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-bills"
         data-life-panel="bills" onclick="selectLifeSection('bills')">
@@ -10453,7 +10590,7 @@
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-subscriptions"
         data-life-panel="subscriptions" onclick="selectLifeSection('subscriptions')">
         <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-        <span>Subs</span>
+        <span>Subscriptions</span>
       </button>
       <span class="life-flyout-caret" aria-hidden="true"></span>
     </div>
@@ -10500,7 +10637,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 304;
+    const HARBOR_BUILD_NUMBER = 313;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -10524,10 +10661,102 @@
     const HARBOR_CHANGELOG = [
       {
         version: '0.9',
-        date: '2026-07-11',
-        title: 'Swipe Undo fix · build 304',
-        intro: 'Swipe Undo on completed tasks works again for weekly/monthly and multi-log Frequency.',
+        date: '2026-07-12',
+        title: 'Polish pass · build 313',
+        intro: 'Plain Life names, lighter toolbars, hidden calendar restore, quieter backup nudge.',
         sections: [
+          {
+            heading: 'Life labels & toolbars',
+            items: [
+              'Plan → Schedule, Shop → Grocery (with Subscriptions, Bills, Budget)',
+              'Schedule/Grocery/Budget/Subscriptions: primary action + Manage for secondary tools',
+              'Grocery quick-add stays the add path (no + Add pill)'
+            ]
+          },
+          {
+            heading: 'Calendar hidden events',
+            items: [
+              'Manage → Hidden events: restore one or all',
+              'Status badge “N hidden” opens the same sheet'
+            ]
+          },
+          {
+            heading: 'Overview & backup',
+            items: [
+              'Pulse is Harbor Day + urgent only (no Schedule row)',
+              'Backup nudge after ~7 days of data, then every ~30 days'
+            ]
+          },
+          {
+            heading: 'Grocery',
+            items: [
+              'Always-on quick add field — type and Enter (no modal for normal adds)',
+              'Trip progress: X left · Y checked; dinner lists labeled trip mode',
+              'Empty states point at type-to-add and Show dinners'
+            ]
+          },
+          {
+            heading: 'Bills',
+            items: [
+              'Multi-day bills show period total + “$X × N · days” under the amount',
+              'Paid rows show Undo; amounts sit in a clear right-hand stack',
+              'Due copy shortened (Due today · 1st, 15th)'
+            ]
+          },
+          {
+            heading: 'Overview',
+            items: [
+              'Focus clear state mentions When You Can count; tap opens Today',
+              'Up next shows due date + minutes',
+              'When You Can previews 3 items with shorter blurb'
+            ]
+          },
+          {
+            heading: 'Backup',
+            items: [
+              'Soft “Save a backup?” nudge on Today when data exists and no recent export',
+              'Export records last backup time; Later / Don’t ask snooze'
+            ]
+          },
+          {
+            heading: 'Calendar trust',
+            items: [
+              'Deleting a feed/import event keeps it hidden after refresh (local suppress list)',
+              'Confirm copy explains Harbor-only vs Google/Apple/Outlook',
+              'Schedule empty states and status badge say “on this device”'
+            ]
+          },
+          {
+            heading: 'Chore discoverability',
+            items: [
+              'Today shows “Not on Today · still in Harbor” for weekly chores and parked jobs',
+              'Parked items can Add to Today; others open Overview',
+              'Add-chore toast points to the new strip / Overview'
+            ]
+          },
+          {
+            heading: 'Bills · Subs · Budget',
+            items: [
+              'Empty states explain owe-on-a-date vs memberships vs CSV look-back',
+              'Cross-links between the three panels'
+            ]
+          },
+          {
+            heading: 'Subscriptions',
+            items: [
+              'Tap a tracked sub (or Edit) to change name, amount, cycle, renewal day, and manage URL',
+              'Save updates monthly total and renewal labels without removing the sub'
+            ]
+          },
+          {
+            heading: 'Overview · Schedule split',
+            items: [
+              'Day / week Overview shows Next up (1–2 events) instead of a full schedule list',
+              'Open Schedule jumps to Life → Schedule (Today or This week)',
+              'Harbor Pulse no longer shows open-water free time — that lives on Schedule',
+              'This Month still has the planning calendar map in Overview'
+            ]
+          },
           {
             heading: 'Completed tasks',
             items: [
@@ -10570,9 +10799,9 @@
           }
         ],
         highlights: [
-          'Theme chrome matches selected palette end-to-end',
-          'Weather chip colors track rain chance tiers',
-          'Calendar feeds pull past + current + upcoming events'
+          'Grocery quick add + trip progress',
+          'Bill amounts & paid Undo clearer',
+          'Soft backup reminder on Today'
         ]
       },
       {
@@ -10734,6 +10963,9 @@
           samsung: { connected: false, email: null, connectedAt: null }
         },
         importedCalendarEvents: [],
+        // Soft-deleted feed/import events — kept so refresh/import does not resurrect them
+        suppressedCalendarEventKeys: [],
+        suppressedCalendarEvents: [], // snapshots for restore UI
         calendarFeeds: [], // { id, url, label, lastSyncedAt, lastEventCount, lastError }
         workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
         eventTimeFormat: '12h',
@@ -11437,6 +11669,8 @@
             samsung: { connected: false, email: null, connectedAt: null }
           },
           importedCalendarEvents: [],
+          suppressedCalendarEventKeys: [],
+          suppressedCalendarEvents: [],
           calendarFeeds: [],
           workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
           eventTimeFormat: '12h',
@@ -11678,6 +11912,12 @@
       }
       if (!state.settings.importedCalendarEvents) {
         state.settings.importedCalendarEvents = [];
+      }
+      if (!Array.isArray(state.settings.suppressedCalendarEventKeys)) {
+        state.settings.suppressedCalendarEventKeys = [];
+      }
+      if (!Array.isArray(state.settings.suppressedCalendarEvents)) {
+        state.settings.suppressedCalendarEvents = [];
       }
       // Ensure household profiles exist and always include a "Me" entry
       state.settings.householdProfiles = ensureHouseholdProfiles(state.settings.householdProfiles);
@@ -13238,11 +13478,96 @@
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1500);
-        showToast('Profile exported — share the file with your spouse');
+        if (state.settings) {
+          state.settings.lastBackupExportAt = new Date().toISOString();
+          state.settings.backupNudgeDismissedAt = null;
+          try { saveState(); } catch (_) { /* ignore */ }
+        }
+        showToast('Backup saved — keep the file somewhere safe');
+        if (typeof renderTodayFeed === 'function') renderTodayFeed();
       } catch (err) {
         console.warn('[Harbor] export failed', err);
         showToast('Could not export profile', 'warn');
       }
+    }
+
+    /** Soft local-only backup nudge — once after ~1 week of data, then ~every 30 days. */
+    function shouldShowBackupNudge() {
+      if (!state?.settings?.onboarded) return false;
+      if (state.settings.backupNudgeSnoozeUntil) {
+        try {
+          if (new Date(state.settings.backupNudgeSnoozeUntil) > new Date()) return false;
+        } catch (_) { /* show */ }
+      }
+      const habits = (state.habits || []).length;
+      const bills = (state.bills || []).length;
+      const subs = (state.subscriptions || []).length;
+      const grocery = (state.groceryMaster || []).length;
+      const hasRealData = habits + bills + subs + grocery >= 4;
+      if (!hasRealData) return false;
+
+      // First-time: only after ~7 days of real use (oldest habit/bill/sub timestamp)
+      const last = state.settings.lastBackupExportAt;
+      if (!last) {
+        let earliest = null;
+        (state.habits || []).forEach(h => {
+          const t = h.added_at || h.addedAt;
+          if (t && (!earliest || t < earliest)) earliest = t;
+        });
+        if (!earliest && state.settings?.firstOpenAt) earliest = state.settings.firstOpenAt;
+        if (!earliest) {
+          // Stamp first open so we can wait a week instead of nagging day one
+          if (!state.settings.firstOpenAt) {
+            state.settings.firstOpenAt = new Date().toISOString();
+            try { saveState(); } catch (_) { /* ignore */ }
+          }
+          earliest = state.settings.firstOpenAt;
+        }
+        try {
+          const ageDays = (Date.now() - new Date(earliest).getTime()) / 86400000;
+          return ageDays >= 7;
+        } catch (_) {
+          return false;
+        }
+      }
+      try {
+        const days = (Date.now() - new Date(last).getTime()) / 86400000;
+        return days >= 30;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function dismissBackupNudge(days = 30) {
+      if (!state.settings) return;
+      const until = new Date();
+      until.setDate(until.getDate() + days);
+      state.settings.backupNudgeSnoozeUntil = until.toISOString();
+      saveState();
+      if (typeof renderTodayFeed === 'function') renderTodayFeed();
+      showToast(days >= 90 ? 'OK — won’t ask for a while' : 'OK — remind me later');
+    }
+
+    function renderBackupNudgeHtml() {
+      if (!shouldShowBackupNudge()) return '';
+      const last = state.settings?.lastBackupExportAt;
+      let when = 'It’s been a week with data on this device.';
+      if (last) {
+        try {
+          const d = new Date(last);
+          when = `Last backup ${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}.`;
+        } catch (_) { /* keep default */ }
+      }
+      return `
+        <div class="harbor-backup-nudge" role="region" aria-label="Backup reminder">
+          <div class="harbor-backup-nudge-title">Save a backup?</div>
+          <div class="harbor-backup-nudge-meta">${escapeBriefHtml(when)} Harbor stays on this device — a file export is your safety net.</div>
+          <div class="harbor-backup-nudge-actions">
+            <button type="button" class="chip-add-btn" onclick="exportHarborProfile()"><i class="fa-solid fa-download" aria-hidden="true"></i>Export backup</button>
+            <button type="button" class="chip-tool-btn" onclick="dismissBackupNudge(30)">Later</button>
+            <button type="button" class="chip-tool-btn" onclick="dismissBackupNudge(90)">Don’t ask</button>
+          </div>
+        </div>`;
     }
 
     function triggerHarborProfileImport() {
@@ -16590,9 +16915,9 @@
           const kindLabel = selectedKind === 'habit' ? 'habit' : selectedKind === 'chore' ? 'chore' : 'task';
           let where = '';
           if (typeof isParkedForSummary === 'function' && isParkedForSummary(task) && !isPulledToToday(task)) {
-            where = ' · in Summary until you Add to Task';
+            where = ' · Overview / “Not on Today” until you Add to Today';
           } else if (selectedKind === 'chore' && !isDueToday(task)) {
-            where = ' · due later in Summary';
+            where = ' · not due yet — find it under “Not on Today” or Overview';
           } else if (selectedKind === 'habit' || isRhythmTitle) {
             where = ' · on Today';
           }
@@ -16671,27 +16996,51 @@
       btn.setAttribute('aria-expanded', groceryDinnersOpen ? 'true' : 'false');
       btn.setAttribute('aria-label', groceryDinnersOpen ? 'Hide dinners' : 'Show dinners');
       btn.classList.toggle('is-active', groceryDinnersOpen);
-      // Closed → “Show dinners”; open → “Hide dinners”
-      btn.textContent = groceryDinnersOpen ? 'Hide dinners' : 'Show dinners';
+      btn.textContent = groceryDinnersOpen ? 'Hide dinners' : 'Dinners';
+    }
+
+    /** When dinner chips are hidden, always show the main Shopping list. */
+    function ensureShoppingListWhenDinnersHidden(options = {}) {
+      if (groceryDinnersOpen) return false;
+      if (!isGroceryMealView()) return false;
+      state.groceryView = { mode: 'master' };
+      state.groceryTripItems = [];
+      if (options.save !== false) {
+        try { saveState(); } catch (_) { /* ignore */ }
+      }
+      return true;
     }
 
     function toggleGroceryDinners() {
       groceryDinnersOpen = !groceryDinnersOpen;
       const filters = document.getElementById('meal-grocery-filters');
       if (filters) filters.classList.toggle('hidden', !groceryDinnersOpen);
-      if (groceryDinnersOpen) renderMealGroceryFilters();
+      if (groceryDinnersOpen) {
+        renderMealGroceryFilters();
+        updateGroceryDinnersButton();
+        return;
+      }
+      // Hide dinners → always land on Shopping list (not a leftover dinner trip)
+      ensureShoppingListWhenDinnersHidden({ save: true });
+      if (filters) {
+        filters.innerHTML = '';
+        filters.classList.add('hidden');
+      }
       updateGroceryDinnersButton();
+      renderGrocery();
     }
 
     function syncGroceryDinnersUI() {
-      // Don’t force the dinner chip tray open just because a dinner list is selected —
-      // user can still show/hide the themed dinner pills freely.
+      // Dinners closed ⇒ Shopping list only (no lingering dinner trip)
+      ensureShoppingListWhenDinnersHidden({ save: true });
       const btn = document.getElementById('grocery-dinners-btn');
       if (btn) updateGroceryDinnersButton();
       const filters = document.getElementById('meal-grocery-filters');
       if (filters) filters.classList.toggle('hidden', !groceryDinnersOpen);
       if (groceryDinnersOpen && typeof renderMealGroceryFilters === 'function') {
         renderMealGroceryFilters();
+      } else if (filters && !groceryDinnersOpen) {
+        filters.innerHTML = '';
       }
     }
 
@@ -17314,7 +17663,41 @@
       renderBills();
       renderTodayFeed();
       updateSmartBanner();
+      if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('bills');
       showToast(`${bill.name} marked paid`);
+    }
+
+    function markBillUnpaid(billId) {
+      const bill = state.bills.find(b => b.id === billId);
+      if (!bill) return;
+      delete bill.lastPaid;
+      saveState();
+      renderBills();
+      renderTodayFeed();
+      updateSmartBanner();
+      if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('bills');
+      showToast(`${bill.name} marked unpaid`);
+    }
+
+    /** Row amount: multi-pay bills show per charge + period total clearly. */
+    function formatBillRowAmountParts(bill) {
+      normalizeBillAmountFields(bill);
+      const per = getBillPerPaymentAmount(bill);
+      const days = getBillDueDays(bill);
+      const n = days.length;
+      const period = getBillPeriodTotal(bill);
+      if (!(period > 0) && !(per > 0)) return { main: '', sub: '' };
+      if (n > 1 && per > 0) {
+        return {
+          main: formatBillAmountPrecise(period),
+          sub: `${formatBillAmountPrecise(per)} × ${n} · ${formatBillDueDaysList(days)}`
+        };
+      }
+      const rec = formatBillRecurrenceShort(bill.recurrence || 'monthly').replace(/^\//, '');
+      return {
+        main: formatBillAmountPrecise(period || per),
+        sub: rec ? `per ${rec}` : 'per period'
+      };
     }
 
     function removeBill(billId) {
@@ -17384,10 +17767,9 @@
         container.innerHTML = harborEmptyHtml(
           '💳',
           'No bills yet',
-          'Track rent, utilities, and other payments you owe — not streaming or gym memberships.',
+          'Track rent, utilities, insurance, and other payments you owe on a date.',
           `<div class="harbor-empty-actions">
             <button type="button" class="chip-add-btn" onclick="addBillFromPrompt()"><i class="fa-solid fa-plus"></i>Add bill</button>
-            <button type="button" class="chip-tool-btn" onclick="switchLifePanel('subscriptions')">Go to Subscriptions</button>
           </div>`
         );
         return;
@@ -17412,18 +17794,16 @@
           : (bill.recurrence === 'biweekly') ? 'this period'
           : 'this month';
         const dueLabel = status === 'paid' ? `Paid ${paidPeriod}`
-          : status === 'autopay' ? `Autopay • ${dueDates}`
-          : status === 'due_today' ? `Due today (${dueDates})`
-          : status === 'overdue' ? `Overdue (${dueDates})`
-          : days === 1 ? `Due tomorrow (${dueDates})` : `Due in ${days} days (${dueDates})`;
+          : status === 'autopay' ? `Autopay · ${dueDates}`
+          : status === 'due_today' ? `Due today · ${dueDates}`
+          : status === 'overdue' ? `Overdue · ${dueDates}`
+          : days === 1 ? `Tomorrow · ${dueDates}` : `In ${days}d · ${dueDates}`;
         const recLabel = formatBillRecurrenceLabel(bill.recurrence || 'monthly');
-        normalizeBillAmountFields(bill);
-        const periodTotal = getBillPeriodTotal(bill);
-        const amountLabel = periodTotal > 0
-          ? `${formatBillAmountPrecise(periodTotal)}${formatBillRecurrenceShort(bill.recurrence)}`
-          : '';
+        const amtParts = formatBillRowAmountParts(bill);
         const safeId = escapeBriefHtml(bill.id);
         const safeName = escapeBriefHtml(bill.name);
+        const isPaid = status === 'paid';
+        const isAutopay = status === 'autopay';
 
         const row = document.createElement('div');
         row.className = 'swipe-row';
@@ -17437,27 +17817,33 @@
         `;
         const contentHtml = `
           <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-harbor-border flex items-center justify-center text-lg" onclick="editBillFromList('${safeId}')">
-            <i class="fa-solid fa-file-invoice-dollar text-harbor-primary-light"></i>
+            <i class="fa-solid fa-file-invoice-dollar ${isPaid ? 'text-harbor-muted' : 'text-harbor-primary-light'}"></i>
           </div>
           <div class="flex-1 min-w-0" onclick="editBillFromList('${safeId}')">
-            <div class="font-medium leading-tight">${safeName}</div>
-            <div class="flex items-center gap-x-2 mt-0.5 flex-wrap">
+            <div class="font-medium leading-tight ${isPaid ? 'text-harbor-muted' : ''}">${safeName}</div>
+            <div class="flex items-center gap-x-1.5 mt-0.5 flex-wrap">
               <span class="text-[10px] px-1.5 py-px rounded-full ${style.badge}">${style.label}</span>
               <span class="text-[10px] px-1.5 py-px rounded-full bg-harbor-border/50 text-harbor-muted">${escapeBriefHtml(recLabel)}</span>
-              <span class="text-xs text-harbor-muted">${escapeBriefHtml(dueLabel)}</span>
-              ${amountLabel ? `<span class="text-xs text-harbor-text font-medium">${escapeBriefHtml(amountLabel)}</span>` : ''}
+              <span class="text-[11px] text-harbor-muted">${escapeBriefHtml(dueLabel)}</span>
             </div>
           </div>
+          <div class="bill-amount-stack ${isPaid ? 'bill-row-is-paid' : ''}" onclick="editBillFromList('${safeId}')">
+            ${amtParts.main ? `<div class="bill-amount-main">${escapeBriefHtml(amtParts.main)}</div>` : ''}
+            ${amtParts.sub ? `<div class="bill-amount-sub">${escapeBriefHtml(amtParts.sub)}</div>` : ''}
+          </div>
           <div class="row-inline-actions flex flex-col gap-y-1 items-end flex-shrink-0">
-            ${status !== 'paid' && status !== 'autopay' ? `<button type="button" onclick="event.stopImmediatePropagation(); markBillPaid('${safeId}')" class="text-[10px] px-2 py-1 bg-harbor-primary hover:bg-harbor-primary-light text-white rounded-xl font-medium">Paid</button>` : ''}
+            ${!isPaid && !isAutopay
+              ? `<button type="button" onclick="event.stopImmediatePropagation(); markBillPaid('${safeId}')" class="text-[10px] px-2 py-1 bg-harbor-primary hover:bg-harbor-primary-light text-white rounded-xl font-medium">Paid</button>`
+              : isPaid
+                ? `<button type="button" onclick="event.stopImmediatePropagation(); markBillUnpaid('${safeId}')" class="text-[10px] px-2 py-1 rounded-xl border border-harbor-border text-harbor-muted font-medium">Undo</button>`
+                : `<span class="text-[10px] text-harbor-muted font-medium">Auto</span>`}
             <button type="button" onclick="event.stopImmediatePropagation(); editBillFromList('${safeId}')" class="text-[10px] text-harbor-primary-light font-medium">Edit</button>
-            <button type="button" onclick="event.stopImmediatePropagation(); removeBill('${safeId}')" class="text-[10px] text-harbor-muted hover:text-rose-400">Delete</button>
           </div>
         `;
         row.innerHTML = buildSwipeRowHtml(
           actionsHtml,
           contentHtml,
-          'bg-harbor-surface border border-harbor-border rounded-3xl px-4 py-3 flex items-center gap-x-3'
+          `bg-harbor-surface border border-harbor-border rounded-3xl px-4 py-3 flex items-center gap-x-3 ${isPaid ? 'opacity-80' : ''}`
         );
         container.appendChild(row);
       });
@@ -17896,11 +18282,18 @@
     function selectMealGroceryList(mealId) {
       if (!mealId) {
         state.groceryView = { mode: 'master' };
+        state.groceryTripItems = [];
+        saveState();
         renderGrocery();
         return;
       }
       const preset = getMealPresetById(mealId);
       if (!preset) return;
+      // Dinner list only exists while dinners tray is open
+      if (!groceryDinnersOpen) {
+        groceryDinnersOpen = true;
+        updateGroceryDinnersButton();
+      }
       if ((preset.effort || 2) > currentEnergy) {
         showToast(`${getMealEffortLabel(preset.effort)} dinner — list loaded for planning`);
       }
@@ -17921,21 +18314,24 @@
     function renderMealGroceryFilters() {
       const container = document.getElementById('meal-grocery-filters');
       if (!container) return;
-      const activeMeal = state.groceryView?.mode === 'meal' ? state.groceryView.mealId : null;
+      // Dinners hidden → no chips; list itself is forced to Shopping list in renderGrocery
+      if (!groceryDinnersOpen) {
+        container.innerHTML = '';
+        container.classList.add('hidden');
+        if (typeof updateGroceryDinnersButton === 'function') updateGroceryDinnersButton();
+        return;
+      }
+
+      let activeMeal = state.groceryView?.mode === 'meal' ? state.groceryView.mealId : null;
       const visible = getMealPresetsForEnergy(currentEnergy);
 
       if (activeMeal && !visible.some(p => p.id === activeMeal)) {
         state.groceryView = { mode: 'master' };
         state.groceryTripItems = [];
+        activeMeal = null;
       }
 
       if (typeof updateGroceryDinnersButton === 'function') updateGroceryDinnersButton();
-      // Always honor Show/Hide dinners — hide the themed dinner pills when closed
-      if (!groceryDinnersOpen) {
-        container.innerHTML = '';
-        container.classList.add('hidden');
-        return;
-      }
 
       container.classList.remove('hidden');
       container.innerHTML = `
@@ -17967,7 +18363,44 @@
       document.getElementById('grocery-add-modal')?.remove();
     }
 
+    /** Fast path: toolbar-adjacent field on Shop — no modal. */
+    function addGroceryFromQuickInput() {
+      const input = document.getElementById('grocery-quick-input');
+      if (!input) {
+        showAddGroceryItemModal();
+        return;
+      }
+      const name = input.value.trim();
+      if (!name) {
+        input.focus();
+        return;
+      }
+      addGroceryItem(name);
+      input.value = '';
+      input.focus();
+    }
+
+    function updateGroceryQuickAddUi() {
+      const input = document.getElementById('grocery-quick-input');
+      const wrap = document.getElementById('grocery-quick-add');
+      if (!input) return;
+      const isMeal = isGroceryMealView();
+      const preset = isMeal ? getMealPresetById(state.groceryView?.mealId) : null;
+      input.placeholder = isMeal
+        ? `Add to ${preset?.label || 'dinner'}…`
+        : 'Add item…';
+      input.setAttribute('aria-label', isMeal ? 'Quick add to dinner list' : 'Quick add grocery item');
+      if (wrap) wrap.classList.remove('hidden');
+    }
+
     function showAddGroceryItemModal() {
+      // Prefer the always-on quick field — faster than a sheet
+      const quick = document.getElementById('grocery-quick-input');
+      if (quick && document.getElementById('life-panel-grocery') && !document.getElementById('life-panel-grocery').classList.contains('hidden')) {
+        quick.focus();
+        try { quick.select(); } catch (_) { /* ignore */ }
+        return;
+      }
       document.getElementById('grocery-add-modal')?.remove();
       const isMeal = isGroceryMealView();
       const preset = isMeal ? getMealPresetById(state.groceryView?.mealId) : null;
@@ -17983,7 +18416,7 @@
               <div class="font-semibold text-lg text-harbor-text">${isMeal ? 'Add to dinner list' : 'Add grocery item'}</div>
               <div class="text-[10px] text-harbor-muted mt-0.5">${isMeal
                 ? `Goes on ${escapeBriefHtml(preset?.label || 'this dinner')} · also updates the saved recipe`
-                : 'Or use the mic for hands-free adds'}</div>
+                : 'Type and hit Enter for speed'}</div>
             </div>
             <button type="button" onclick="document.getElementById('grocery-add-modal')?.remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
@@ -18057,10 +18490,16 @@
       const labelEl = document.getElementById('grocery-view-label');
       const editDinnerBtn = document.getElementById('grocery-edit-dinner-btn');
       const manageEditActive = document.getElementById('grocery-manage-edit-active');
-      const addBtn = document.getElementById('grocery-add-btn');
+      const progressEl = document.getElementById('grocery-trip-progress');
       if (!container) return;
 
+      // Default surface is always Shopping list unless dinners tray is open on a dinner
+      if (ensureShoppingListWhenDinnersHidden({ save: true })) {
+        /* switched back to master */
+      }
+
       renderMealGroceryFilters();
+      updateGroceryQuickAddUi();
 
       const isMeal = isGroceryMealView();
       const items = getActiveGroceryItems();
@@ -18072,14 +18511,11 @@
       if (manageEditActive) {
         manageEditActive.classList.toggle('hidden', !isMeal);
       }
-      if (addBtn) {
-        addBtn.setAttribute('aria-label', isMeal ? 'Add item to this dinner list' : 'Add grocery item');
-      }
 
       if (labelEl) {
         if (isMeal) {
           labelEl.classList.remove('hidden');
-          labelEl.innerHTML = `<strong class="text-harbor-text">${escapeBriefHtml(preset?.label || 'Dinner')}</strong>${preset?.recipe ? ` · ${escapeBriefHtml(preset.recipe)}` : ''}`;
+          labelEl.innerHTML = `<strong class="text-harbor-text">${escapeBriefHtml(preset?.label || 'Dinner')}</strong>${preset?.recipe ? ` · ${escapeBriefHtml(preset.recipe)}` : ''} · trip mode`;
         } else {
           // Quiet master list — no dinner/grocery filler under the toolbar
           labelEl.classList.add('hidden');
@@ -18092,19 +18528,37 @@
       const unchecked = items.filter(g => !g.checked);
       const checked = items.filter(g => g.checked);
 
+      if (progressEl) {
+        if (items.length === 0) {
+          progressEl.classList.add('hidden');
+          progressEl.innerHTML = '';
+        } else {
+          progressEl.classList.remove('hidden');
+          const left = unchecked.length;
+          const done = checked.length;
+          progressEl.innerHTML = left
+            ? `<span class="grocery-trip-pill">${left} left</span>${done ? `<span class="text-harbor-muted">${done} checked</span>` : ''}${isMeal ? `<span class="text-harbor-muted">· dinner trip</span>` : ''}`
+            : `<span class="grocery-trip-pill">All checked</span><button type="button" class="text-[10px] font-semibold text-harbor-primary-light" onclick="clearCheckedGrocery()">Clear checked</button>`;
+        }
+      }
+
       if (items.length === 0) {
         container.innerHTML = harborEmptyHtml(
           '🛒',
           isMeal ? 'Empty dinner list' : 'No list yet',
           isMeal
-            ? 'Add ingredients with <strong>Add</strong>, or open <strong>Edit dinner</strong> to paste a full list.'
-            : 'Use <strong>Add</strong> for staples, or open <strong>Dinner lists</strong> for a ready-made meal shop.',
+            ? 'Type an ingredient above and hit Enter, or open <strong>Edit dinner</strong> to paste a full list.'
+            : 'Type above and hit Enter for staples, or <strong>Show dinners</strong> for a ready-made meal shop.',
           isMeal
             ? `<div class="harbor-empty-actions">
-                <button type="button" class="chip-add-btn" onclick="showAddGroceryItemModal()"><i class="fa-solid fa-plus"></i>Add item</button>
+                <button type="button" class="chip-add-btn" onclick="document.getElementById('grocery-quick-input')?.focus()"><i class="fa-solid fa-plus"></i>Type to add</button>
                 <button type="button" class="chip-tool-btn" onclick="editActiveDinnerList()">Edit dinner</button>
+                <button type="button" class="chip-tool-btn" onclick="selectMealGroceryList(null)">Shopping list</button>
               </div>`
-            : ''
+            : `<div class="harbor-empty-actions">
+                <button type="button" class="chip-add-btn" onclick="document.getElementById('grocery-quick-input')?.focus()"><i class="fa-solid fa-plus"></i>Type to add</button>
+                <button type="button" class="chip-tool-btn" onclick="toggleGroceryDinners()">Show dinners</button>
+              </div>`
         );
         return;
       }
@@ -18785,6 +19239,9 @@
         <button type="button" class="chip-tool-btn" onclick="triggerCalendarICSImport()">
           <i class="fa-solid fa-file-import" aria-hidden="true"></i><span>Import file</span>
         </button>
+      </div>
+      <div class="text-[10px] text-harbor-muted text-center mt-2.5 leading-snug px-2">
+        Schedule lives on this device. Imports don’t change Google, Apple, or Outlook.
       </div>`;
     }
 
@@ -19070,6 +19527,207 @@
 
     function filterCalendarEventsById(events, eventId) {
       return (events || []).filter(e => getStableCalendarEventId(e) !== eventId);
+    }
+
+    /** Stable keys so soft-deleted feed events stay gone after refresh/import. */
+    function getCalendarEventSuppressKeys(e) {
+      if (!e) return [];
+      const keys = [];
+      const id = e.id || getStableCalendarEventId(e);
+      if (id) keys.push(`id:${id}`);
+      const date = getEventDate(e);
+      const time = (e.time || '00:00').slice(0, 5);
+      const title = String(e.title || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      const src = e.calendarSource || 'local';
+      if (title) keys.push(`sig:${src}|${date}|${time}|${title}`);
+      // Match series occurrences sharing the same ICS UID stem in id (ev-ics-UID-date)
+      if (id && String(id).startsWith('ev-ics-')) {
+        const stem = String(id).replace(/-\d{4}-\d{2}-\d{2}(?:-\d+)?$/, '');
+        if (stem && stem !== id) keys.push(`stem:${stem}|${date}|${time}|${title}`);
+      }
+      return [...new Set(keys.filter(Boolean))];
+    }
+
+    function getSuppressedCalendarKeySet() {
+      const list = state.settings?.suppressedCalendarEventKeys;
+      return new Set(Array.isArray(list) ? list : []);
+    }
+
+    function isCalendarEventSuppressed(e) {
+      const set = getSuppressedCalendarKeySet();
+      if (!set.size) return false;
+      return getCalendarEventSuppressKeys(e).some(k => set.has(k));
+    }
+
+    function suppressCalendarEvent(e) {
+      if (!e) return;
+      if (!Array.isArray(state.settings.suppressedCalendarEventKeys)) {
+        state.settings.suppressedCalendarEventKeys = [];
+      }
+      if (!Array.isArray(state.settings.suppressedCalendarEvents)) {
+        state.settings.suppressedCalendarEvents = [];
+      }
+      const keys = getCalendarEventSuppressKeys(e);
+      const set = new Set(state.settings.suppressedCalendarEventKeys);
+      keys.forEach(k => set.add(k));
+      let next = [...set];
+      if (next.length > 800) next = next.slice(next.length - 800);
+      state.settings.suppressedCalendarEventKeys = next;
+
+      // Snapshot so user can restore without waiting for a feed refresh
+      const snapId = e.id || getStableCalendarEventId(e);
+      const entries = state.settings.suppressedCalendarEvents.filter(x => x && x.id !== snapId);
+      entries.unshift({
+        id: snapId,
+        keys,
+        title: e.title || 'Event',
+        date: getEventDate(e),
+        time: e.time || '',
+        sourceLabel: e.calendarSourceLabel || e.calendarSource || 'Calendar',
+        event: { ...e },
+        suppressedAt: new Date().toISOString()
+      });
+      state.settings.suppressedCalendarEvents = entries.slice(0, 100);
+    }
+
+    function filterSuppressedCalendarEvents(events) {
+      if (!events?.length) return events || [];
+      if (!getSuppressedCalendarKeySet().size) return events;
+      return events.filter(e => !isCalendarEventSuppressed(e));
+    }
+
+    function isImportedOrFeedCalendarEvent(e) {
+      return !!(e && (e.calendarSource || (e.id && String(e.id).startsWith('ev-ics-'))));
+    }
+
+    function getSuppressedCalendarEventCount() {
+      const snaps = state.settings?.suppressedCalendarEvents;
+      if (Array.isArray(snaps) && snaps.length) return snaps.length;
+      const keys = state.settings?.suppressedCalendarEventKeys || [];
+      return keys.filter(k => String(k).startsWith('id:')).length;
+    }
+
+    function restoreSuppressedCalendarEvent(entryId) {
+      const entries = Array.isArray(state.settings.suppressedCalendarEvents)
+        ? state.settings.suppressedCalendarEvents
+        : [];
+      const entry = entries.find(x => x && x.id === entryId);
+      if (!entry) {
+        showToast('Nothing to restore', 'warn');
+        return;
+      }
+      const dropKeys = new Set(entry.keys || []);
+      if (entry.id) dropKeys.add(`id:${entry.id}`);
+      state.settings.suppressedCalendarEventKeys = (state.settings.suppressedCalendarEventKeys || [])
+        .filter(k => !dropKeys.has(k));
+      state.settings.suppressedCalendarEvents = entries.filter(x => x && x.id !== entryId);
+
+      if (entry.event) {
+        if (!Array.isArray(state.settings.importedCalendarEvents)) {
+          state.settings.importedCalendarEvents = [];
+        }
+        const restored = { ...entry.event };
+        const exists = state.settings.importedCalendarEvents.some(
+          e => (e.id || getStableCalendarEventId(e)) === (restored.id || getStableCalendarEventId(restored))
+        );
+        if (!exists) {
+          state.settings.importedCalendarEvents.unshift(restored);
+          state.settings.importedCalendarEvents = normalizeCalendarEvents(state.settings.importedCalendarEvents);
+        }
+      }
+      refreshCalendarCache();
+      saveState();
+      renderSchedule();
+      updateCalendarStatusUI();
+      showToast(`Restored “${entry.title || 'event'}” in Harbor`);
+      const modal = document.getElementById('suppressed-cal-modal');
+      if (modal) showSuppressedCalendarEventsModal();
+    }
+
+    function restoreAllSuppressedCalendarEvents() {
+      const entries = Array.isArray(state.settings.suppressedCalendarEvents)
+        ? [...state.settings.suppressedCalendarEvents]
+        : [];
+      if (!entries.length && !(state.settings.suppressedCalendarEventKeys || []).length) {
+        showToast('No hidden events');
+        return;
+      }
+      if (!confirm('Show all hidden calendar events in Harbor again?')) return;
+      if (!Array.isArray(state.settings.importedCalendarEvents)) {
+        state.settings.importedCalendarEvents = [];
+      }
+      entries.forEach(entry => {
+        if (!entry?.event) return;
+        const restored = { ...entry.event };
+        const rid = restored.id || getStableCalendarEventId(restored);
+        const exists = state.settings.importedCalendarEvents.some(
+          e => (e.id || getStableCalendarEventId(e)) === rid
+        );
+        if (!exists) state.settings.importedCalendarEvents.push(restored);
+      });
+      state.settings.importedCalendarEvents = normalizeCalendarEvents(state.settings.importedCalendarEvents);
+      state.settings.suppressedCalendarEventKeys = [];
+      state.settings.suppressedCalendarEvents = [];
+      refreshCalendarCache();
+      saveState();
+      renderSchedule();
+      updateCalendarStatusUI();
+      document.getElementById('suppressed-cal-modal')?.remove();
+      showToast('All hidden events restored in Harbor');
+      if (typeof refreshAllCalendarFeeds === 'function') {
+        try { refreshAllCalendarFeeds({ silent: true }); } catch (_) { /* optional */ }
+      }
+    }
+
+    function showSuppressedCalendarEventsModal() {
+      document.getElementById('suppressed-cal-modal')?.remove();
+      const entries = Array.isArray(state.settings.suppressedCalendarEvents)
+        ? state.settings.suppressedCalendarEvents
+        : [];
+      const keyOnly = !entries.length && (state.settings.suppressedCalendarEventKeys || []).length > 0;
+      const modal = document.createElement('div');
+      modal.id = 'suppressed-cal-modal';
+      modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[70]';
+      const rows = entries.length
+        ? entries.map(entry => {
+            const safeId = String(entry.id || '').replace(/'/g, "\\'");
+            const when = entry.date
+              ? `${entry.date}${entry.time ? ` · ${entry.time}` : ''}`
+              : '';
+            return `
+              <div class="flex items-center gap-2 py-2.5 border-b border-harbor-border/70">
+                <div class="flex-1 min-w-0">
+                  <div class="font-medium text-sm truncate">${escapeBriefHtml(entry.title || 'Event')}</div>
+                  <div class="text-[10px] text-harbor-muted truncate">${escapeBriefHtml(when)}${entry.sourceLabel ? ` · ${escapeBriefHtml(entry.sourceLabel)}` : ''}</div>
+                </div>
+                <button type="button" class="text-[10px] font-semibold text-harbor-primary-light px-2 py-1 rounded-xl bg-harbor-primary/12"
+                  onclick="restoreSuppressedCalendarEvent('${safeId}')">Restore</button>
+              </div>`;
+          }).join('')
+        : `<div class="text-sm text-harbor-muted py-4 text-center">${keyOnly
+          ? 'Older hidden events are stored as keys only. Restore all, then refresh the calendar feed.'
+          : 'No hidden events. Deletes from imported calendars land here so they stay gone after refresh.'}</div>`;
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[85vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-1">
+            <div class="font-semibold text-lg">Hidden events</div>
+            <button type="button" class="modal-close-chip" onclick="this.closest('#suppressed-cal-modal')?.remove()" aria-label="Close">Close</button>
+          </div>
+          <div class="text-[11px] text-harbor-muted mb-3 leading-snug">
+            Harbor-only. Restoring shows the event here again — it does not change Google, Apple, or Outlook.
+          </div>
+          <div class="mb-3">${rows}</div>
+          <div class="flex gap-2">
+            <button type="button" class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold"
+              onclick="this.closest('#suppressed-cal-modal')?.remove()">Done</button>
+            ${(entries.length || keyOnly) ? `
+              <button type="button" class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold"
+                onclick="restoreAllSuppressedCalendarEvents()">Restore all</button>
+            ` : ''}
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
     }
 
     function persistCalendarEventIds() {
@@ -19690,10 +20348,19 @@
     }
 
     function deleteCalendarEvent(eventId) {
-      if (!confirm('Remove this event from your schedule?')) return;
+      const ev = typeof getCalendarEventById === 'function' ? getCalendarEventById(eventId) : null;
+      const fromFeed = isImportedOrFeedCalendarEvent(ev);
+      const msg = fromFeed
+        ? 'Remove this from Harbor’s schedule?\n\nThis only affects Harbor on this device — not Google, Apple, or Outlook.\nHarbor will keep it hidden if the calendar refreshes.'
+        : 'Remove this event from Harbor’s schedule?\n\nEvents stay on this device only.';
+      if (!confirm(msg)) return;
 
       const dayModal = document.getElementById('summary-day-events-modal');
       const dayDate = dayModal?.dataset?.forDate || null;
+
+      if (ev && fromFeed) {
+        suppressCalendarEvent(ev);
+      }
 
       if (state.settings.mockCalendar?.events) {
         state.settings.mockCalendar.events = filterCalendarEventsById(state.settings.mockCalendar.events, eventId);
@@ -19701,12 +20368,21 @@
       if (state.settings.importedCalendarEvents?.length) {
         state.settings.importedCalendarEvents = filterCalendarEventsById(state.settings.importedCalendarEvents, eventId);
       }
+      // Belt-and-suspenders: drop any suppress-matched rows still in stores
+      if (state.settings.importedCalendarEvents?.length) {
+        state.settings.importedCalendarEvents = filterSuppressedCalendarEvents(state.settings.importedCalendarEvents);
+      }
+      if (state.settings.mockCalendar?.events) {
+        state.settings.mockCalendar.events = filterSuppressedCalendarEvents(state.settings.mockCalendar.events);
+      }
       refreshCalendarCache();
       saveState();
       renderSchedule();
       renderTodayFeed();
       updateSmartBanner();
-      showToast('Event removed');
+      showToast(fromFeed
+        ? 'Removed in Harbor · stays off if the feed refreshes'
+        : 'Event removed · local only');
 
       // Keep Summary month in sync + refresh day popup list if it was open
       if (document.getElementById('summary-modal') && typeof summaryMode === 'string') {
@@ -19904,7 +20580,7 @@
             weekAhead.empty ? 'You’re on Today' : 'Nothing coming up',
             weekAhead.empty
               ? 'The rest of this week is covered by Today. Check back tomorrow for a fresh week view.'
-              : 'Today holds what’s left for the day. Add something ahead, or open Summary for the full month.',
+              : 'No events after today in Harbor yet. Add one, import a file, or connect a feed — all stay local until you refresh.',
             scheduleEmptyActionsHtml()
           );
           return;
@@ -19925,7 +20601,7 @@
           container.innerHTML = harborEmptyHtml(
             '📅',
             'Open schedule',
-            cache?.note || 'No events today. Add one, or connect a calendar so free time is real.',
+            'No events today in Harbor. Add one, import a .ics file, or connect a feed. Free-time estimates stay on this device.',
             scheduleEmptyActionsHtml()
           );
           return;
@@ -20007,6 +20683,10 @@
     function syncStudentPricingToggleUi() {
       const el = document.getElementById('student-pricing-toggle');
       if (el) el.checked = isStudentPricingEnabled();
+      const label = document.getElementById('subs-manage-student-label');
+      if (label) {
+        label.textContent = isStudentPricingEnabled() ? 'Student rates: On' : 'Student rates: Off';
+      }
     }
 
     function getSubscriptionsMonthlyTotal() {
@@ -20184,18 +20864,19 @@
       return SUBSCRIPTION_PRESETS.find(p => p.matchPattern && p.matchPattern.test(description)) || null;
     }
 
+    function cleanSubscriptionUrl(u) {
+      const s = String(u || '').trim();
+      if (!s) return null;
+      if (/^https?:\/\//i.test(s)) return s;
+      return 'https://' + s.replace(/^\/+/, '');
+    }
+
     function addSubscriptionRecord({ name, amount, cycle, renewalDay, source, presetId, tierId, tierLabel, manageUrl, homeUrl }) {
       if (findExistingSubscription(name, presetId, tierId)) {
         showToast(`Already tracking ${name}`);
         return false;
       }
       if (!state.subscriptions) state.subscriptions = [];
-      const cleanUrl = (u) => {
-        const s = String(u || '').trim();
-        if (!s) return null;
-        if (/^https?:\/\//i.test(s)) return s;
-        return 'https://' + s.replace(/^\/+/, '');
-      };
       state.subscriptions.unshift({
         id: 'sub-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
         name,
@@ -20207,8 +20888,8 @@
         presetId: presetId || null,
         tierId: tierId || null,
         tierLabel: tierLabel || null,
-        manageUrl: cleanUrl(manageUrl),
-        homeUrl: cleanUrl(homeUrl),
+        manageUrl: cleanSubscriptionUrl(manageUrl),
+        homeUrl: cleanSubscriptionUrl(homeUrl),
         addedAt: new Date().toISOString()
       });
       saveState();
@@ -20220,6 +20901,46 @@
         document.getElementById('life-panel-subscriptions')?.scrollIntoView({ block: 'start' });
       });
       return true;
+    }
+
+    function updateSubscriptionRecord(subId, { name, amount, cycle, renewalDay, manageUrl }) {
+      const sub = (state.subscriptions || []).find(s => s.id === subId);
+      if (!sub) return false;
+      const nextName = normalizeUserText(name);
+      if (!nextName) return false;
+
+      // Block rename into a different already-tracked sub (same name + preset/tier)
+      const clash = (state.subscriptions || []).find(s =>
+        s.id !== subId &&
+        s.active !== false &&
+        String(s.name || '').toLowerCase() === nextName.toLowerCase() &&
+        (s.presetId || null) === (sub.presetId || null) &&
+        (s.tierId || null) === (sub.tierId || null)
+      );
+      if (clash) {
+        showToast(`Already tracking ${nextName}`);
+        return false;
+      }
+
+      sub.name = nextName;
+      sub.amount = amount || 0;
+      sub.cycle = cycle || sub.cycle || 'monthly';
+      sub.renewalDay = Math.min(31, Math.max(1, renewalDay || 1));
+      if (manageUrl !== undefined) {
+        sub.manageUrl = cleanSubscriptionUrl(manageUrl);
+      }
+      sub.updatedAt = new Date().toISOString();
+      saveState();
+      renderSubscriptions();
+      if (typeof renderTasks === 'function') renderTasks();
+      if (typeof updateSmartBanner === 'function') updateSmartBanner();
+      return true;
+    }
+
+    function editSubscriptionFromList(subId) {
+      const sub = (state.subscriptions || []).find(s => s.id === subId);
+      if (!sub) return;
+      showAddSubscriptionModal(null, sub);
     }
 
     function quickAddSubscriptionPreset(presetId) {
@@ -20366,15 +21087,35 @@
       };
     }
 
-    function showAddSubscriptionModal(preset = null) {
+    /**
+     * Add or edit a subscription.
+     * @param {object|null} preset - brand preset when adding from browse
+     * @param {object|null} existingSub - tracked sub when editing
+     */
+    function showAddSubscriptionModal(preset = null, existingSub = null) {
+      document.getElementById('add-sub-modal')?.remove();
+
+      const editing = existingSub && existingSub.id
+        ? ((state.subscriptions || []).find(s => s.id === existingSub.id) || existingSub)
+        : null;
+      const isEdit = !!editing;
+
       const modal = document.createElement('div');
       modal.id = 'add-sub-modal';
       modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
+      const title = isEdit
+        ? 'Edit subscription'
+        : (preset ? `Add ${preset.name}` : 'Add Subscription');
+      const blurb = isEdit
+        ? 'Update price, renewal day, or manage link — Harbor never logs into the provider.'
+        : (preset
+          ? 'Adjust the amount if yours differs from list price.'
+          : '');
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
         <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm">
-          <div class="font-semibold text-lg mb-1">${preset ? `Add ${preset.name}` : 'Add Subscription'}</div>
-          ${preset ? `<div class="text-xs text-harbor-muted mb-3">Adjust the amount if yours differs from list price.</div>` : ''}
+          <div class="font-semibold text-lg mb-1">${escapeSubscriptionHtml(title)}</div>
+          ${blurb ? `<div class="text-xs text-harbor-muted mb-3">${blurb}</div>` : ''}
           <input id="sub-name" type="text" placeholder="Netflix, Spotify..."
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-3 mb-2 outline-none text-harbor-text">
           <input id="sub-amount" type="number" min="0" step="0.01" placeholder="Amount"
@@ -20396,13 +21137,19 @@
             <button type="button" onclick="this.closest('#add-sub-modal').remove()"
               class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold">Cancel</button>
             <button type="button" id="sub-save-btn"
-              class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Add</button>
+              class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold">${isEdit ? 'Save' : 'Add'}</button>
           </div>
         </div>
       `;
       document.body.appendChild(modal);
 
-      if (preset) {
+      if (isEdit) {
+        modal.querySelector('#sub-name').value = editing.name || '';
+        modal.querySelector('#sub-amount').value = editing.amount != null ? editing.amount : '';
+        modal.querySelector('#sub-cycle').value = editing.cycle || 'monthly';
+        modal.querySelector('#sub-renewal').value = editing.renewalDay || 1;
+        modal.querySelector('#sub-manage-url').value = editing.manageUrl || editing.homeUrl || '';
+      } else if (preset) {
         const tiers = getVisibleSubscriptionTiers(preset);
         const tier = tiers[0] || preset.tiers?.[0];
         modal.querySelector('#sub-name').value = getSubscriptionDisplayName(preset, tier);
@@ -20421,6 +21168,15 @@
         const cycle = modal.querySelector('#sub-cycle').value;
         const renewalDay = parseInt(modal.querySelector('#sub-renewal').value, 10) || 1;
         const manageUrl = (modal.querySelector('#sub-manage-url')?.value || '').trim();
+
+        if (isEdit) {
+          if (updateSubscriptionRecord(editing.id, { name, amount, cycle, renewalDay, manageUrl })) {
+            modal.remove();
+            showToast(`Updated ${name}`);
+          }
+          return;
+        }
+
         const tiers = preset ? getVisibleSubscriptionTiers(preset) : [];
         const tier = tiers[0] || preset?.tiers?.[0];
         if (addSubscriptionRecord({
@@ -21105,7 +21861,7 @@
         container.innerHTML = harborEmptyHtml(
           '🔁',
           'Nothing tracked yet',
-          'Add Netflix, gym, or other renewals here — keep rent and utilities under Bills.',
+          'Track Netflix, gym, cloud storage, and other memberships that renew.',
           `<div class="harbor-empty-actions">
             <button type="button" class="chip-add-btn" onclick="showAddSubscriptionModal()"><i class="fa-solid fa-plus"></i>Add</button>
             <button type="button" class="chip-tool-btn" onclick="showSubscriptionImportModal()">Import CSV</button>
@@ -21126,30 +21882,32 @@
         const active = sub.active !== false;
         const preset = resolveSubscriptionPreset(sub);
         const cycleLabel = formatSubscriptionCycleLabel(sub.cycle || 'monthly');
+        const safeId = String(sub.id || '').replace(/'/g, "\\'");
         const card = document.createElement('div');
         card.className = `sub-tracked-card harbor-card bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 ${active ? '' : 'opacity-55'}`;
         card.innerHTML = `
-          ${subscriptionBrandLogoHtml(preset || sub, 'md')}
-          <div class="flex-1 min-w-0">
+          <div class="flex-shrink-0" onclick="editSubscriptionFromList('${safeId}')">${subscriptionBrandLogoHtml(preset || sub, 'md')}</div>
+          <div class="flex-1 min-w-0" onclick="editSubscriptionFromList('${safeId}')" role="button" tabindex="0" aria-label="Edit ${escapeSubscriptionHtml(sub.name)}">
             <div class="font-medium truncate text-[0.9rem]">${escapeSubscriptionHtml(sub.name)}</div>
             <div class="text-[11px] text-harbor-muted truncate">${sub.tierLabel ? `${escapeSubscriptionHtml(sub.tierLabel)} · ` : ''}${cycleLabel} · renews ${ordinalDay(sub.renewalDay || 1)}</div>
+            <button type="button" onclick="event.stopPropagation(); editSubscriptionFromList('${safeId}')" class="text-[10px] text-harbor-primary-light font-medium mt-0.5">Edit</button>
           </div>
           <div class="text-right flex-shrink-0">
             <div class="text-sm font-semibold tabular-nums">${formatSubscriptionAmount(sub.amount)}</div>
-            <button type="button" onclick="event.stopPropagation(); ${active ? `showCancelSubscriptionModal('${sub.id}')` : `resumeSubscription('${sub.id}')`}" class="sub-tracked-cancel mt-0.5">${active ? 'Cancel' : 'Resume'}</button>
+            <button type="button" onclick="event.stopPropagation(); ${active ? `showCancelSubscriptionModal('${safeId}')` : `resumeSubscription('${safeId}')`}" class="sub-tracked-cancel mt-0.5">${active ? 'Cancel' : 'Resume'}</button>
           </div>
-          <button onclick="removeSubscription('${sub.id}')" class="text-harbor-muted hover:text-rose-400 text-base leading-none px-0.5" aria-label="Remove subscription">×</button>
+          <button type="button" onclick="event.stopPropagation(); removeSubscription('${safeId}')" class="text-harbor-muted hover:text-rose-400 text-base leading-none px-0.5" aria-label="Remove subscription">×</button>
         `;
         container.appendChild(card);
       });
     }
 
     const LIFE_PANEL_META = {
-      schedule: { label: 'Plan', icon: 'fa-regular fa-calendar' },
-      grocery: { label: 'Shop', icon: 'fa-solid fa-basket-shopping' },
+      schedule: { label: 'Schedule', icon: 'fa-regular fa-calendar' },
+      grocery: { label: 'Grocery', icon: 'fa-solid fa-basket-shopping' },
       bills: { label: 'Bills', icon: 'fa-solid fa-file-invoice-dollar' },
       budget: { label: 'Budget', icon: 'fa-solid fa-chart-pie' },
-      subscriptions: { label: 'Subs', icon: 'fa-solid fa-arrows-rotate' }
+      subscriptions: { label: 'Subscriptions', icon: 'fa-solid fa-arrows-rotate' }
     };
 
     let lifeFlyoutOpen = false;
@@ -23485,6 +24243,60 @@
       return true;
     }
 
+    /**
+     * Weekly/monthly chores and parked maintenance that don’t sit on Today.
+     * Discoverability only — not a second full list.
+     */
+    function collectDiscoverableLaterTasks(limit = 6) {
+      const today = todayStr();
+      const out = [];
+      (state.habits || []).forEach(h => {
+        if (!h || h.is_pro_reminder) return;
+        if (isCompletedToday(h.id)) return;
+        if (getHabitSkips(h.id).includes(today)) return;
+        if (getHabitPasses(h.id).includes(today)) return;
+        // Already on the main Today list
+        if (belongsOnTodayTab(h)) return;
+
+        const parkedReady = typeof isParkedForSummary === 'function'
+          && isParkedForSummary(h)
+          && isDueToday(h)
+          && !isPulledToToday(h);
+        const laterWeekly = isNonDailyRecurring(h) && !isDueToday(h);
+        if (!parkedReady && !laterWeekly) return;
+
+        let nextLabel = '';
+        try {
+          if (parkedReady) {
+            nextLabel = 'Ready when you can';
+          } else {
+            const next = typeof getNextDueDate === 'function' ? getNextDueDate(h) : null;
+            if (next && next === today) nextLabel = 'Due soon';
+            else if (next) {
+              const d = new Date(next + 'T12:00:00');
+              nextLabel = 'Next ' + d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+            } else {
+              nextLabel = formatIntervalLabel(h.interval_days, h) || 'Later';
+            }
+          }
+        } catch (_) {
+          nextLabel = parkedReady ? 'Ready when you can' : 'Later';
+        }
+
+        out.push({
+          habit: h,
+          kind: parkedReady ? 'parked' : 'later',
+          nextLabel
+        });
+      });
+
+      out.sort((a, b) => {
+        if (a.kind !== b.kind) return a.kind === 'parked' ? -1 : 1;
+        return String(a.habit.title || '').localeCompare(String(b.habit.title || ''));
+      });
+      return out.slice(0, limit);
+    }
+
     function buildTodayFeed() {
       // Today = achievable daily rhythm. Heavy maintenance lives in Summary until pulled.
       const today = todayStr();
@@ -23514,6 +24326,7 @@
 
       const syncPending = state.habits.filter(h => canShowActivitySync(h));
       const renewingSubs = getSubscriptionsRenewingSoon(3);
+      const laterTasks = collectDiscoverableLaterTasks(6);
 
       const sections = [];
       if (syncPending.length) {
@@ -23540,6 +24353,15 @@
           label: 'Completed today',
           items: completed,
           variant: 'done'
+        });
+      }
+      // Weekly chores + parked jobs — so “where did mow the lawn go?” has an answer
+      if (laterTasks.length) {
+        sections.push({
+          type: 'later-chores',
+          label: 'Not on Today · still in Harbor',
+          items: laterTasks,
+          variant: 'upcoming'
         });
       }
       return sections;
@@ -24426,6 +25248,51 @@
       container.appendChild(card);
     }
 
+    /** Discoverability row — weekly chore / parked job not on the main Today list. */
+    function renderLaterChoreDiscoverCard(item, container) {
+      const habit = item?.habit || item;
+      if (!habit) return;
+      const parked = item.kind === 'parked';
+      const mins = habit.est_minutes ? `${habit.est_minutes} min` : '';
+      const freq = isOneOffTask(habit)
+        ? 'One-time'
+        : (formatIntervalLabel(habit.interval_days, habit) || 'Chore');
+      const meta = [item.nextLabel || (parked ? 'Ready when you can' : 'Later'), freq, mins]
+        .filter(Boolean)
+        .join(' · ');
+      const safeId = String(habit.id || '').replace(/'/g, "\\'");
+      const card = document.createElement('div');
+      card.className = 'habit-row bg-harbor-surface/80 border border-dashed border-harbor-border rounded-2xl px-3.5 py-2.5 flex items-center gap-x-3';
+      card.dataset.feedType = 'later-chore';
+      card.innerHTML = `
+        <div class="w-9 h-9 flex-shrink-0 rounded-2xl border border-harbor-border bg-harbor-raised flex items-center justify-center text-base" aria-hidden="true">${parked ? '🧰' : '🗓️'}</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-sm truncate text-harbor-text">${escapeBriefHtml(habit.title || 'Chore')}</div>
+          <div class="text-[11px] text-harbor-muted mt-0.5 truncate">${escapeBriefHtml(meta)}</div>
+        </div>
+        <div class="flex flex-col items-end gap-1 flex-shrink-0">
+          ${parked
+            ? `<button type="button" class="text-[10px] font-semibold text-harbor-primary-light px-2 py-1 rounded-xl bg-harbor-primary/15" data-pull="${safeId}">Add to Today</button>`
+            : `<button type="button" class="text-[10px] font-semibold text-harbor-primary-light" data-overview="1">Overview</button>`}
+        </div>
+      `;
+      card.querySelector('[data-pull]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (typeof pullHabitToToday === 'function') pullHabitToToday(habit.id);
+      });
+      card.querySelector('[data-overview]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (typeof showSummaryModal === 'function') showSummaryModal('week');
+        else if (typeof openSummaryToTask === 'function') openSummaryToTask(habit.id);
+      });
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        if (typeof showHabitDetail === 'function') showHabitDetail(habit.id);
+        else if (typeof showSummaryModal === 'function') showSummaryModal('week');
+      });
+      container.appendChild(card);
+    }
+
     function renderScheduleFeedCard(ev, container) {
       const card = document.createElement('div');
       const person = getHouseholdPerson(ev.personId);
@@ -24489,7 +25356,11 @@
       }
 
       const sections = buildTodayFeed();
-      const hasAny = sections.some(s => s.items.length > 0);
+      // Later-chore strip alone should not skip the “nothing due on Today” empty card
+      const hasPrimary = sections.some(s => s.type !== 'later-chores' && s.items.length > 0);
+      const laterSection = sections.find(s => s.type === 'later-chores' && s.items.length);
+      const hasAny = hasPrimary || !!laterSection;
+      const backupNudgeHtml = typeof renderBackupNudgeHtml === 'function' ? renderBackupNudgeHtml() : '';
 
       // Soft banner for Moment / Window — list stays usable
       let harborSoftBanner = '';
@@ -24520,22 +25391,26 @@
           </div>`;
       }
 
-      if (!hasAny) {
-        // Distinguish brand-new empty vs “finished everything due today”
+      if (!hasPrimary) {
+        // Distinguish brand-new empty vs “finished everything due today” vs chores waiting
         const hasAnyHabits = (state.habits || []).length > 0;
         const parkedDue = hasAnyHabits && (state.habits || []).some(h => {
           try { return isDueToday(h) && isParkedForSummary(h) && !isPulledToToday(h); } catch (_) { return false; }
         });
+        const laterItems = laterSection?.items || [];
+        const laterN = laterItems.length;
         const title = !hasAnyHabits
           ? 'No tasks yet'
-          : parkedDue
-            ? 'Today is light'
+          : parkedDue || laterN
+            ? 'Nothing due on Today'
             : 'All clear for now';
         const body = !hasAnyHabits
           ? 'Add something for today, or grab a ready-made task from the Library.'
           : parkedDue
-            ? 'Nothing light left on Today. Bigger jobs wait in <strong>Overview</strong> until you add them.'
-            : 'Nice work — nothing left on Today. Pull something from Overview or add a new task when you’re ready.';
+            ? 'Lighter list is clear. Bigger jobs sit below (or in <strong>Overview</strong>) until you add them to Today.'
+            : laterN
+              ? `Weekly or monthly chores stay off Today until they’re due. ${laterN} still in Harbor — listed below or in Overview.`
+              : 'Nice work — nothing left on Today. Pull something from Overview or add a new task when you’re ready.';
         const actions = !hasAnyHabits
           ? `<div class="harbor-empty-actions">
             <button type="button" class="chip-add-btn" onclick="showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add task</button>
@@ -24545,15 +25420,27 @@
             <button type="button" class="chip-add-btn" onclick="showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add task</button>
             <button type="button" class="chip-tool-btn" onclick="showSummaryModal()">Open Overview</button>
           </div>`;
-        container.innerHTML = harborSoftBanner + harborEmptyHtml(
-          !hasAnyHabits ? '📋' : (parkedDue ? '🌤️' : '✅'),
+        container.innerHTML = backupNudgeHtml + harborSoftBanner + harborEmptyHtml(
+          !hasAnyHabits ? '📋' : (laterN || parkedDue ? '🗓️' : '✅'),
           title,
           body,
           actions
         );
+        if (laterN) {
+          const hdr = document.createElement('div');
+          hdr.className = 'feed-section-label font-semibold mb-2 mt-4 text-[10px] uppercase tracking-wider text-harbor-muted/70';
+          hdr.textContent = 'Not on Today · still in Harbor';
+          container.appendChild(hdr);
+          laterItems.forEach(item => renderLaterChoreDiscoverCard(item, container));
+        }
         return;
       }
 
+      if (backupNudgeHtml) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = backupNudgeHtml;
+        while (wrap.firstChild) container.appendChild(wrap.firstChild);
+      }
       if (harborSoftBanner) {
         const wrap = document.createElement('div');
         wrap.innerHTML = harborSoftBanner;
@@ -24570,7 +25457,9 @@
         }
 
         section.items.forEach(item => {
-          if (section.type === 'sync-pending') {
+          if (section.type === 'later-chores') {
+            renderLaterChoreDiscoverCard(item, container);
+          } else if (section.type === 'sync-pending') {
             renderCompletedSyncCard(item, container);
           } else if (section.type === 'habits' || section.type === 'habits-done') {
             const daysUntil = getDaysUntilHabitDue(item);
@@ -25935,13 +26824,20 @@
 
     function renderBriefFocusCard(brief) {
       const top = brief.doFirst[0];
+      const parkedN = (brief.parked || []).length;
       if (!top) {
+        const clearHint = parkedN
+          ? `${parkedN} heavier job${parkedN === 1 ? '' : 's'} in When You Can`
+          : 'No priority tasks right now';
         return `
-          <div class="summary-focus is-clear">
+          <div class="summary-focus is-clear" role="button" tabindex="0"
+            onclick="closeSummaryModal(); switchTab('today')"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeSummaryModal();switchTab('today');}">
             <div class="summary-focus-eyebrow"><i class="fa-solid fa-check"></i> Focus</div>
             <div class="summary-focus-title">You’re clear</div>
             <div class="summary-focus-meta">
-              <span class="summary-chip">No priority tasks right now</span>
+              <span class="summary-chip">${escapeBriefHtml(clearHint)}</span>
+              <span class="summary-chip">Open Today</span>
             </div>
           </div>`;
       }
@@ -25949,14 +26845,18 @@
       const dueLabel = top.daysUntil <= 0 ? 'Due today' : top.daysUntil === 1 ? 'Tomorrow' : formatBriefDateLabel(top.date);
       const dueHot = top.daysUntil <= 0;
       const diff = getDifficultyLabel(h.difficulty);
+      const safeId = escapeBriefHtml(h.id || '');
       return `
-        <div class="summary-focus">
+        <div class="summary-focus" role="button" tabindex="0"
+          onclick="closeSummaryModal(); switchTab('today')"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeSummaryModal();switchTab('today');}">
           <div class="summary-focus-eyebrow"><i class="fa-solid fa-bolt"></i> ${summaryFocusEyebrow(brief.mode)}</div>
           <div class="summary-focus-title">${escapeBriefHtml(h.title)}</div>
           <div class="summary-focus-meta">
             <span class="summary-chip${dueHot ? ' is-due' : ''}">${escapeBriefHtml(dueLabel)}</span>
             <span class="summary-chip">${h.est_minutes || 10} min</span>
             <span class="summary-chip">${escapeBriefHtml(diff)} energy</span>
+            ${safeId ? `<span class="summary-chip">On Today</span>` : ''}
           </div>
         </div>`;
     }
@@ -25965,15 +26865,20 @@
       const rest = brief.doFirst.slice(1);
       if (!rest.length) return '';
       return `
-        <div class="summary-upnext" aria-label="Up next">
+        <div class="summary-upnext" aria-label="Up next after focus">
           ${rest.map((item, i) => {
             const h = item.habit;
             const mins = h.est_minutes || 10;
+            const due = (item.daysUntil ?? 0) <= 0
+              ? 'Today'
+              : item.daysUntil === 1
+                ? 'Tomorrow'
+                : (item.date ? formatBriefDateLabel(item.date) : '');
             return `
               <div class="summary-upnext-row">
                 <div class="summary-upnext-rank">${i + 2}</div>
                 <div class="summary-upnext-title">${escapeBriefHtml(h.title)}</div>
-                <div class="summary-upnext-meta">${mins}m</div>
+                <div class="summary-upnext-meta">${due ? `${escapeBriefHtml(due)} · ` : ''}${mins}m</div>
               </div>`;
           }).join('')}
         </div>`;
@@ -26073,7 +26978,7 @@
           <div class="summary-month-cal-hint">
             <strong>Today</strong> is outlined · days with a <strong>•</strong> have plans · <strong>tap a day</strong> to open it
           </div>
-          <div class="summary-jump" onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('schedule'); setScheduleView('week')">Open full schedule <i class="fa-solid fa-arrow-right text-[9px]"></i></div>
+          <div class="summary-jump" onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('schedule'); setScheduleView('week')">Open Schedule <i class="fa-solid fa-arrow-right text-[9px]"></i></div>
         </div>`;
     }
 
@@ -26168,149 +27073,123 @@
       });
     }
 
+    /**
+     * Overview is not a second Schedule.
+     * Day/week: 1–2 next events + jump. Month: planning map only.
+     */
+    function collectBriefNextUpEvents(brief, limit = 2) {
+      const today = todayStr();
+      const mode = brief?.mode || 'day';
+      const flat = [];
+
+      if (mode === 'day') {
+        (brief.events || []).forEach(e => {
+          const onDate = e.date || getEventDate(e) || today;
+          flat.push({ event: e, onDate, dayLabel: null });
+        });
+      } else {
+        (brief.events || []).forEach(day => {
+          (day.events || []).forEach(e => {
+            const onDate = e.date || day.date || getEventDate(e) || today;
+            flat.push({ event: e, onDate, dayLabel: day.label || null });
+          });
+        });
+      }
+
+      const withDisp = flat.map(item => {
+        const disp = resolveCalendarEventDisplay(item.event, { onDate: item.onDate });
+        return { ...item, disp };
+      });
+      const upcoming = withDisp.filter(item => !item.disp.isPast);
+      const pool = upcoming.length ? upcoming : [];
+      return {
+        items: pool.slice(0, limit),
+        total: withDisp.length,
+        upcoming: upcoming.length
+      };
+    }
+
+    function renderBriefNextUpEventRow(item) {
+      const e = item.event;
+      const person = getHouseholdPerson(e.personId);
+      const style = person ? ` style="--person-color:${escapeBriefHtml(person.color)}"` : '';
+      const disp = item.disp;
+      const cls = [
+        'summary-timeline-row',
+        person ? 'summary-timeline-row--person' : '',
+        disp.isPast ? 'is-past' : '',
+        disp.isNow ? 'is-now' : ''
+      ].filter(Boolean).join(' ');
+      const dayBit = item.dayLabel
+        ? `<span class="summary-time-meta">${escapeBriefHtml(item.dayLabel)}</span>`
+        : '';
+      return `
+        <div class="${cls}"${style}>
+          <div class="summary-time">${escapeBriefHtml(disp.timeLabel)}</div>
+          <div class="min-w-0">
+            <div class="summary-time-title flex items-center gap-1.5 flex-wrap">
+              ${person ? `<span class="person-swatch" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
+              <span class="truncate">${escapeBriefHtml(e.title)}</span>
+              ${disp.phasePill || ''}
+            </div>
+            <div class="summary-time-meta flex items-center gap-1.5 flex-wrap">
+              ${dayBit}
+              ${person ? renderPersonChipHtml(person.id) : ''}
+              <span>${e.durationMin || 30} min</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
     function renderBriefSchedulePanel(brief) {
       const mode = brief.mode;
 
-      // Month view: visual calendar instead of a long event list
+      // Month view: visual planning map (not a Schedule clone)
       if (mode === 'month') {
         return renderSummaryMonthCalendar(brief);
       }
 
-      let body = '';
-      let count = 0;
+      // Day / week: thin "next up" only — full list lives in Schedule
+      const next = collectBriefNextUpEvents(brief, 2);
+      const jumpView = mode === 'week' ? 'week' : 'today';
+      const openSchedule = `closeSummaryModal(); switchTab('life'); switchLifePanel('schedule'); setScheduleView('${jumpView}')`;
 
-      if (mode === 'day') {
-        const evs = brief.events || [];
-        count = evs.length;
-        body = evs.length
-          ? evs.slice(0, 5).map(e => {
-              const person = getHouseholdPerson(e.personId);
-              const style = person ? ` style="--person-color:${escapeBriefHtml(person.color)}"` : '';
-              const disp = resolveCalendarEventDisplay(e, { onDate: getEventDate(e) || todayStr() });
-              const cls = [
-                'summary-timeline-row',
-                person ? 'summary-timeline-row--person' : '',
-                disp.isPast ? 'is-past' : '',
-                disp.isNow ? 'is-now' : ''
-              ].filter(Boolean).join(' ');
-              return `
-              <div class="${cls}"${style}>
-                <div class="summary-time">${escapeBriefHtml(disp.timeLabel)}</div>
-                <div class="min-w-0">
-                  <div class="summary-time-title flex items-center gap-1.5 flex-wrap">
-                    ${person ? `<span class="person-swatch" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
-                    <span>${escapeBriefHtml(e.title)}</span>
-                    ${disp.phasePill}
-                  </div>
-                  <div class="summary-time-meta flex items-center gap-1.5 flex-wrap">
-                    ${person ? renderPersonChipHtml(person.id) : ''}
-                    <span>${e.durationMin || 30} min</span>
-                  </div>
-                </div>
-              </div>`;
-            }).join('')
-          : '<div class="summary-empty">Open calendar — free block for chores or rest.</div>';
+      let body;
+      if (next.items.length) {
+        body = next.items.map(renderBriefNextUpEventRow).join('');
+        if (next.upcoming > next.items.length) {
+          const more = next.upcoming - next.items.length;
+          body += `<div class="summary-empty" style="padding-top:0.35rem">+${more} more on Schedule</div>`;
+        }
+      } else if (next.total > 0) {
+        body = `<div class="summary-empty">${mode === 'day' ? 'Nothing left on the clock today.' : 'Nothing left this week on the clock.'}</div>`;
       } else {
-        const multiEvs = brief.events || [];
-        count = multiEvs.reduce((n, d) => n + (d.events?.length || 0), 0);
-        body = multiEvs.length
-          ? multiEvs.slice(0, 4).map(day => `
-              <div class="mb-1.5">
-                <div class="text-[10px] font-bold uppercase tracking-wider text-harbor-primary-light/90 mb-0.5">${escapeBriefHtml(day.label)}</div>
-                ${(day.events || []).slice(0, 3).map(e => {
-                  const person = getHouseholdPerson(e.personId);
-                  const style = person ? ` style="--person-color:${escapeBriefHtml(person.color)}"` : '';
-                  const onDate = e.date || day.date || getEventDate(e) || todayStr();
-                  const disp = resolveCalendarEventDisplay(e, { onDate });
-                  const cls = [
-                    'summary-timeline-row',
-                    person ? 'summary-timeline-row--person' : '',
-                    disp.isPast ? 'is-past' : '',
-                    disp.isNow ? 'is-now' : ''
-                  ].filter(Boolean).join(' ');
-                  return `
-                  <div class="${cls}"${style}>
-                    <div class="summary-time">${escapeBriefHtml(disp.timeLabel)}</div>
-                    <div class="summary-time-title flex items-center gap-1.5 min-w-0 flex-wrap">
-                      ${person ? `<span class="person-swatch" style="background:${escapeBriefHtml(person.color)}"></span>` : ''}
-                      <span class="truncate">${escapeBriefHtml(e.title)}</span>
-                      ${disp.phasePill}
-                    </div>
-                  </div>`;
-                }).join('')}
-              </div>`).join('')
-          : '<div class="summary-empty">No events loaded this week.</div>';
+        body = `<div class="summary-empty">${mode === 'day' ? 'No events today — open Schedule to add one.' : 'No events this week — open Schedule to plan.'}</div>`;
       }
 
+      const countLabel = next.upcoming
+        ? String(next.upcoming)
+        : (next.total ? String(next.total) : '');
+
       return `
-        <div class="summary-panel">
+        <div class="summary-panel" aria-label="Next on the calendar">
           <div class="summary-panel-hdr">
-            <div class="summary-panel-title"><i class="fa-regular fa-calendar text-sky-400"></i> Schedule</div>
-            ${count ? `<span class="summary-panel-count">${count}</span>` : ''}
+            <div class="summary-panel-title"><i class="fa-regular fa-clock text-sky-400"></i> Next up</div>
+            ${countLabel ? `<span class="summary-panel-count">${escapeBriefHtml(countLabel)}</span>` : ''}
           </div>
           ${body}
-          <div class="summary-jump" onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('schedule')">Full schedule <i class="fa-solid fa-arrow-right text-[9px]"></i></div>
+          <div class="summary-jump" onclick="${openSchedule}">Open Schedule <i class="fa-solid fa-arrow-right text-[9px]"></i></div>
         </div>`;
     }
 
     /**
-     * Harbor Pulse — Overview companion to Schedule.
-     * Free time + Harbor Day progress + only urgent life alerts (not a Life dump).
+     * Harbor Pulse — decisions & alerts only.
+     * Free time / open water lives in Schedule (not restated here).
      */
     function renderBriefPulsePanel(brief) {
-      const mode = brief.mode || 'day';
-      const ctx = brief.ctx || (typeof getContext === 'function' ? getContext() : {});
-      // Prefer remaining free time, then largest gap, then full-day free (not “packed” from future events)
-      const remainingFree = Math.max(0, Number(ctx.freeTime) || 0);
-      const bestGapMin = Math.max(0, Number(ctx.bestGap?.minutes) || 0);
-      const dayFree = Math.max(0, Number(ctx.dayFreeMinutes) || remainingFree);
-      const freeMin = Math.max(remainingFree, bestGapMin);
-      const lateEvening = (() => {
-        try {
-          const now = new Date();
-          return (now.getHours() * 60 + now.getMinutes()) >= 20 * 60;
-        } catch (_) { return false; }
-      })();
-
-      let freeTitle;
-      let freeMeta;
-      if (freeMin >= 20) {
-        freeTitle = typeof formatFreeTimeHours === 'function' ? formatFreeTimeHours(freeMin) : `${freeMin} min`;
-        freeMeta = ctx.bestGap?.beforeEvent
-          ? `open before ${escapeBriefHtml(String(ctx.bestGap.beforeEvent))}`
-          : (mode === 'day' ? 'open in your day · room for Today tasks' : 'open blocks between events');
-      } else if (lateEvening && dayFree >= 60) {
-        // Near bedtime the remaining window is tiny even on a light calendar
-        freeTitle = 'Day was open';
-        freeMeta = typeof formatFreeTimeHours === 'function'
-          ? `about ${formatFreeTimeHours(dayFree)} free overall · evening winding down`
-          : 'evening winding down · light calendar today';
-      } else if (dayFree >= 45 && (Number(ctx.eventBusyMinutes) || 0) < 90) {
-        freeTitle = typeof formatFreeTimeHours === 'function' ? formatFreeTimeHours(dayFree) : `${dayFree} min`;
-        freeMeta = 'light calendar · plenty of open water';
-      } else if (freeMin > 0 || dayFree > 0) {
-        freeTitle = 'A little open water';
-        freeMeta = mode === 'day' ? 'short gaps between things' : 'check Schedule for blocks';
-      } else {
-        freeTitle = mode === 'day' ? 'Little open water left' : 'Scan the schedule';
-        freeMeta = mode === 'day'
-          ? (lateEvening ? 'evening is full · rest or wrap up light tasks' : 'few gaps right now — keep Today light')
-          : 'open Life → Schedule for free blocks';
-      }
-
       const rows = [];
-      rows.push(`
-        <div class="summary-pulse-row" role="button" tabindex="0"
-          onclick="closeSummaryModal(); switchTab('life'); switchLifePanel('schedule')">
-          <div class="summary-pulse-icon" aria-hidden="true"><i class="fa-solid fa-water"></i></div>
-          <div class="summary-pulse-main">
-            <div class="summary-pulse-label">Open water</div>
-            <div class="summary-pulse-title">${escapeBriefHtml(freeTitle)}</div>
-            <div class="summary-pulse-meta">${freeMeta}</div>
-          </div>
-        </div>`);
 
-      // Harbor Day meter — always useful if the fund is on
+      // Harbor Day + urgent alerts only (Schedule lives in Next up / Life → Schedule)
       if (typeof isCheatDayFundEnabled === 'function' && isCheatDayFundEnabled()) {
         const bank = typeof ensureRewardBank === 'function' ? ensureRewardBank() : null;
         if (bank) {
@@ -26393,12 +27272,12 @@
       chips.push(`<button type="button" class="summary-pulse-chip" onclick="event.stopPropagation(); closeSummaryModal(); switchTab('streaks')">Streaks</button>`);
 
       return `
-        <div class="summary-panel" aria-label="Harbor Pulse — free time, rest fund, and urgent alerts">
+        <div class="summary-panel" aria-label="Harbor Pulse — rest fund and urgent alerts">
           <div class="summary-panel-hdr">
             <div class="summary-panel-title"><i class="fa-solid fa-water text-sky-400"></i> Harbor Pulse</div>
           </div>
-          <div class="summary-pulse-blurb">The state of your harbor — not a second Life tab.</div>
-          ${rows.join('')}
+          <div class="summary-pulse-blurb">Rest fund and urgent alerts — calendar is Next up / Schedule.</div>
+          ${rows.length ? rows.join('') : '<div class="summary-empty py-2">Nothing urgent right now.</div>'}
           <div class="summary-pulse-chips">${chips.join('')}</div>
         </div>`;
     }
@@ -26476,14 +27355,15 @@
         isParkedForSummary(t.habit) && !isPulledToToday(t.habit)
       );
       if (!parked.length) return '';
-      const PREVIEW = 5;
+      // Keep thin: Overview decides; full list is Tasks KPI
+      const PREVIEW = 3;
       const show = parked.slice(0, PREVIEW);
       const more = parked.length - show.length;
       const moreFooter = more > 0
         ? `<button type="button" class="summary-when-more"
             onclick="event.preventDefault(); event.stopPropagation(); showSummaryKpiDetail('tasks')"
             aria-label="Open full task list">
-            Showing ${PREVIEW} of ${parked.length}. For the complete list, tap <strong>Tasks</strong> at the top left of Summary.
+            +${more} more · open Tasks
           </button>`
         : '';
       return `
@@ -26493,7 +27373,7 @@
             <span class="summary-panel-count">${parked.length}</span>
           </div>
           <div class="summary-when-blurb">
-            Heavier work stays here so Today stays light. Add one when you have the time and energy.
+            Optional heavier jobs — not on Today until you add them.
           </div>
           ${show.map(item => {
             const h = item.habit;
@@ -26502,7 +27382,7 @@
               ? (formatWeekdayShortList(getHabitWeekdays(h) || []) ? `Daily · ${formatWeekdayShortList(getHabitWeekdays(h))}` : 'Daily')
               : isOneOffTask(h) ? 'One-time' : formatIntervalLabel(h.interval_days, h);
             const due = (item.daysUntil ?? 0) <= 0
-              ? 'Ready when you are'
+              ? 'Ready'
               : item.daysUntil === 1
                 ? 'Tomorrow'
                 : formatBriefDateLabel(item.date);
@@ -26512,7 +27392,7 @@
             const actionHtml = canPull
               ? `<button type="button" class="summary-pull-today-btn" data-pull-habit="${escapeBriefHtml(h.id)}"
                   onclick="event.preventDefault(); event.stopPropagation(); pullHabitToToday('${escapeBriefHtml(h.id)}')">
-                  Add to Task
+                  Add to Today
                 </button>`
               : `<span class="summary-kpi-detail-side text-harbor-muted text-[10px] whitespace-nowrap">${escapeBriefHtml(due)}</span>`;
             return `
@@ -29131,7 +30011,7 @@
       {
         id: 'life-intro',
         title: 'Life menu',
-        body: 'Tap <strong>Life</strong> on the dock. The menu opens above the dock — pick <strong>Plan</strong>, <strong>Shop</strong>, <strong>Bills</strong>, or <strong>Subs</strong>.',
+        body: 'Tap <strong>Life</strong> on the dock. The menu opens above the dock — pick <strong>Schedule</strong>, <strong>Grocery</strong>, <strong>Bills</strong>, or <strong>Subscriptions</strong>.',
         target: () => document.getElementById('tab-life'),
         // Keep coachmark high so the Life flyout stays fully visible
         cardPlacement: 'top',
@@ -33693,26 +34573,31 @@
 
     // ==================== CALENDAR MOCK + SIMULATOR ====================
     function getMockCalendar() {
-      const imported = state.settings.importedCalendarEvents?.length
+      const importedRaw = state.settings.importedCalendarEvents?.length
         ? state.settings.importedCalendarEvents
         : [];
+      const imported = filterSuppressedCalendarEvents(importedRaw);
+      const mockRaw = state.settings.mockCalendar?.events || [];
+      const mockEvents = filterSuppressedCalendarEvents(mockRaw);
+      const all = [...imported, ...mockEvents];
+      const feeds = typeof getCalendarFeeds === 'function' ? getCalendarFeeds() : [];
+      const localNote = feeds.length || imported.length
+        ? `On this device · ${all.length} event${all.length === 1 ? '' : 's'} · edits stay in Harbor`
+        : (state.settings.mockCalendar?.note || '');
 
       if (state.settings.mockCalendar) {
-        const mockEvents = state.settings.mockCalendar.events || [];
         return {
-          events: [...imported, ...mockEvents],
+          events: all,
           freeMinutes: state.settings.mockCalendar.freeMinutes ?? 0,
-          note: imported.length
-            ? `Imported calendar — ${imported.length} event${imported.length === 1 ? '' : 's'} today`
-            : (state.settings.mockCalendar.note || ''),
+          note: localNote || state.settings.mockCalendar.note || '',
           weekAhead: state.settings.mockCalendar.weekAhead || []
         };
       }
 
       return {
-        events: imported,
+        events: all,
         freeMinutes: 0,
-        note: imported.length ? `Imported calendar — ${imported.length} event${imported.length === 1 ? '' : 's'} today` : '',
+        note: localNote,
         weekAhead: []
       };
     }
@@ -36037,15 +36922,18 @@
         calendarSource: sourceId,
         calendarSourceLabel: sourceLabel
       }));
-      state.settings.importedCalendarEvents = normalizeCalendarEvents([...kept, ...tagged]);
+      // Drop soft-deleted feed events so refresh/import does not resurrect them
+      const merged = filterSuppressedCalendarEvents(normalizeCalendarEvents([...kept, ...tagged]));
+      const suppressedN = tagged.length - filterSuppressedCalendarEvents(tagged).length;
+      state.settings.importedCalendarEvents = merged;
       if (!state.settings.mockCalendar) {
         state.settings.mockCalendar = { events: [], freeMinutes: 0, note: '', weekAhead: [] };
       }
       const n = state.settings.importedCalendarEvents.length;
       state.settings.mockCalendar.note = n
-        ? `Calendar · ${n} event${n === 1 ? '' : 's'} loaded`
+        ? `On this device · ${n} event${n === 1 ? '' : 's'}${suppressedN ? ` · ${suppressedN} hidden` : ''}`
         : '';
-      return tagged.length;
+      return filterSuppressedCalendarEvents(tagged).length;
     }
 
     function importCalendarICSFromText(text, sourceLabel = 'iCalendar file', options = {}) {
@@ -36805,16 +37693,27 @@
       if (!badge) return;
       const feeds = getCalendarFeeds();
       const n = getAllCalendarEvents().length;
+      const hiddenN = Math.min(99, getSuppressedCalendarEventCount());
+      const hiddenBit = hiddenN
+        ? ` · <button type="button" onclick="showSuppressedCalendarEventsModal()" class="text-harbor-primary-light">${hiddenN} hidden</button>`
+        : '';
       // Only surface status when something is connected/imported — no empty-state CTA under work hours
       if (feeds.length) {
         const err = feeds.find(f => f.lastError);
         badge.innerHTML = err
           ? `<i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1"></i> Calendar feed issue · <button type="button" onclick="showCalendarFeedModal()" class="text-harbor-primary-light">fix</button>`
-          : `<i class="fa-solid fa-link text-harbor-primary mr-1"></i> ${escapeBriefHtml(getCalendarStatusLabel())} · <button type="button" onclick="refreshAllCalendarFeeds()" class="text-harbor-primary-light">refresh</button>`;
-      } else if (n) {
-        badge.innerHTML = `<i class="fa-regular fa-calendar text-harbor-primary-light mr-1"></i> ${n} event${n === 1 ? '' : 's'}`;
+          : `<i class="fa-solid fa-link text-harbor-primary mr-1"></i> ${escapeBriefHtml(getCalendarStatusLabel())} · on this device · <button type="button" onclick="refreshAllCalendarFeeds()" class="text-harbor-primary-light">refresh</button>${hiddenBit}`;
+      } else if (n || hiddenN) {
+        badge.innerHTML = n
+          ? `<i class="fa-regular fa-calendar text-harbor-primary-light mr-1"></i> ${n} event${n === 1 ? '' : 's'} · this device only${hiddenBit}`
+          : `<i class="fa-regular fa-eye-slash text-harbor-muted mr-1"></i>${hiddenBit.replace(/^ · /, '')}`;
       } else {
         badge.innerHTML = '';
+      }
+      const hiddenMenu = document.getElementById('schedule-manage-hidden');
+      if (hiddenMenu) {
+        hiddenMenu.querySelector('span') && (hiddenMenu.querySelector('span').textContent =
+          hiddenN ? `Hidden events (${hiddenN})` : 'Hidden events');
       }
     }
 
