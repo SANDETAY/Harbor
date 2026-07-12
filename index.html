@@ -10421,7 +10421,12 @@
         <div id="life-panel-subscriptions" class="life-panel hidden" role="tabpanel" aria-labelledby="life-flyout-subscriptions">
           <div class="panel-head panel-head--toolbar-only mb-2">
             <div class="panel-toolbar panel-toolbar-cluster schedule-toolbar" style="width:100%">
-              <div class="schedule-toolbar-end" style="margin-left:auto">
+              <label class="student-pricing-toggle student-pricing-chip flex items-center gap-1.5 px-2 py-1 rounded-xl bg-harbor-raised border border-harbor-border cursor-pointer select-none flex-shrink-0" title="Show student rates when browsing popular services">
+                <span class="text-[11px] font-semibold text-harbor-text whitespace-nowrap">Student</span>
+                <input id="student-pricing-toggle" type="checkbox" class="student-pricing-switch flex-shrink-0"
+                  onchange="toggleStudentPricing(this.checked)" aria-label="Student status pricing">
+              </label>
+              <div class="schedule-toolbar-end">
                 <button type="button" onclick="showAddSubscriptionModal()" class="chip-add-btn" id="subs-add-btn" aria-label="Add Subscription">
                   <i class="fa-solid fa-plus" aria-hidden="true"></i>
                   <span>Add</span>
@@ -10432,17 +10437,9 @@
                     <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showSubscriptionImportModal()">
                       <i class="fa-solid fa-file-import" aria-hidden="true"></i><span>Import CSV</span>
                     </button>
-                    <button type="button" role="menuitem" onclick="closeLifeManageMenus(); document.getElementById('student-pricing-toggle')?.click()">
-                      <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i><span id="subs-manage-student-label">Student rates</span>
-                    </button>
                   </div>
                 </div>
               </div>
-              <label class="student-pricing-toggle student-pricing-chip hidden" title="Show student rates when browsing popular services">
-                <span class="text-[11px] font-semibold text-harbor-text whitespace-nowrap">Student</span>
-                <input id="student-pricing-toggle" type="checkbox" class="student-pricing-switch flex-shrink-0"
-                  onchange="toggleStudentPricing(this.checked)" aria-label="Student status pricing">
-              </label>
             </div>
           </div>
           <button type="button" id="subs-browse-btn" class="chip-tool-btn w-full mb-2" onclick="toggleSubsBrowse()"
@@ -10637,7 +10634,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 315;
+    const HARBOR_BUILD_NUMBER = 316;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -20692,10 +20689,6 @@
     function syncStudentPricingToggleUi() {
       const el = document.getElementById('student-pricing-toggle');
       if (el) el.checked = isStudentPricingEnabled();
-      const label = document.getElementById('subs-manage-student-label');
-      if (label) {
-        label.textContent = isStudentPricingEnabled() ? 'Student rates: On' : 'Student rates: Off';
-      }
     }
 
     function getSubscriptionsMonthlyTotal() {
