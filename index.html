@@ -10637,7 +10637,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 313;
+    const HARBOR_BUILD_NUMBER = 314;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -21882,24 +21882,51 @@
         const active = sub.active !== false;
         const preset = resolveSubscriptionPreset(sub);
         const cycleLabel = formatSubscriptionCycleLabel(sub.cycle || 'monthly');
-        const safeId = String(sub.id || '').replace(/'/g, "\\'");
-        const card = document.createElement('div');
-        card.className = `sub-tracked-card harbor-card bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 ${active ? '' : 'opacity-55'}`;
-        card.innerHTML = `
-          <div class="flex-shrink-0" onclick="editSubscriptionFromList('${safeId}')">${subscriptionBrandLogoHtml(preset || sub, 'md')}</div>
-          <div class="flex-1 min-w-0" onclick="editSubscriptionFromList('${safeId}')" role="button" tabindex="0" aria-label="Edit ${escapeSubscriptionHtml(sub.name)}">
+        const safeId = escapeBriefHtml(String(sub.id || ''));
+        const row = document.createElement('div');
+        row.className = 'swipe-row';
+        row.dataset.swipeId = sub.id;
+        row.dataset.swipeType = 'subscription';
+        row.style.setProperty('--swipe-reveal', '8.75rem');
+        const actionsHtml = `
+          <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit subscription"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove subscription"><i class="fa-solid fa-trash-can"></i> Remove</button>
+        `;
+        const contentHtml = `
+          <div class="flex-shrink-0" data-sub-edit="${safeId}">${subscriptionBrandLogoHtml(preset || sub, 'md')}</div>
+          <div class="flex-1 min-w-0" data-sub-edit="${safeId}" role="button" tabindex="0" aria-label="Edit ${escapeSubscriptionHtml(sub.name)}">
             <div class="font-medium truncate text-[0.9rem]">${escapeSubscriptionHtml(sub.name)}</div>
             <div class="text-[11px] text-harbor-muted truncate">${sub.tierLabel ? `${escapeSubscriptionHtml(sub.tierLabel)} · ` : ''}${cycleLabel} · renews ${ordinalDay(sub.renewalDay || 1)}</div>
-            <button type="button" onclick="event.stopPropagation(); editSubscriptionFromList('${safeId}')" class="text-[10px] text-harbor-primary-light font-medium mt-0.5">Edit</button>
           </div>
-          <div class="text-right flex-shrink-0">
+          <div class="text-right flex-shrink-0 flex flex-col items-end gap-0.5">
             <div class="text-sm font-semibold tabular-nums">${formatSubscriptionAmount(sub.amount)}</div>
-            <button type="button" onclick="event.stopPropagation(); ${active ? `showCancelSubscriptionModal('${safeId}')` : `resumeSubscription('${safeId}')`}" class="sub-tracked-cancel mt-0.5">${active ? 'Cancel' : 'Resume'}</button>
+            <div class="row-inline-actions flex items-center gap-1.5">
+              <button type="button" data-sub-edit="${safeId}" class="text-[10px] px-2 py-1 rounded-xl border border-harbor-border text-harbor-primary-light font-semibold">Edit</button>
+              <button type="button" data-sub-cancel="${safeId}" class="sub-tracked-cancel text-[10px] px-2 py-1">${active ? 'Cancel' : 'Resume'}</button>
+            </div>
           </div>
-          <button type="button" onclick="event.stopPropagation(); removeSubscription('${safeId}')" class="text-harbor-muted hover:text-rose-400 text-base leading-none px-0.5" aria-label="Remove subscription">×</button>
         `;
-        container.appendChild(card);
+        row.innerHTML = buildSwipeRowHtml(
+          actionsHtml,
+          contentHtml,
+          `sub-tracked-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 ${active ? '' : 'opacity-55'}`
+        );
+        row.querySelectorAll('[data-sub-edit]').forEach(el => {
+          el.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            editSubscriptionFromList(sub.id);
+          });
+        });
+        row.querySelector('[data-sub-cancel]')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (active) showCancelSubscriptionModal(sub.id);
+          else resumeSubscription(sub.id);
+        });
+        container.appendChild(row);
       });
+      bindSwipeRows(container);
     }
 
     const LIFE_PANEL_META = {
@@ -24729,6 +24756,9 @@
         } else if (action === 'delete') {
           removeBill(id);
         }
+      } else if (type === 'subscription') {
+        if (action === 'edit') editSubscriptionFromList(id);
+        else if (action === 'delete') removeSubscription(id);
       } else if (type === 'event') {
         if (action === 'edit') {
           const ev = getCalendarEventById(id);
@@ -29170,7 +29200,7 @@
       return `${s.type || ''}:${(s.reason || '').slice(0, 40)}`;
     }
 
-    // Session-only: rotate away from recently dismissed / acted suggestions
+    // Session + same-day sticky dismiss for empty-state banners that otherwise reappear
     let smartSuggestionHistory = [];
     function rememberSmartSuggestion(key) {
       if (!key) return;
@@ -29178,6 +29208,28 @@
     }
     function wasRecentSmartSuggestion(key) {
       return key && smartSuggestionHistory.includes(key);
+    }
+
+    /** Empty / no-today banners must stay gone for the rest of the day after × */
+    function isStickySmartDismissed(type) {
+      if (!type) return false;
+      if (wasRecentSmartSuggestion(type)) return true;
+      const bag = state.settings?.smartStickyDismiss;
+      if (!bag || bag.date !== todayStr()) return false;
+      return Array.isArray(bag.keys) && bag.keys.includes(type);
+    }
+
+    function stickyDismissSmart(type) {
+      if (!type) return;
+      rememberSmartSuggestion(type);
+      if (!state.settings) return;
+      if (!state.settings.smartStickyDismiss || state.settings.smartStickyDismiss.date !== todayStr()) {
+        state.settings.smartStickyDismiss = { date: todayStr(), keys: [] };
+      }
+      const keys = new Set(state.settings.smartStickyDismiss.keys || []);
+      keys.add(type);
+      state.settings.smartStickyDismiss.keys = [...keys];
+      try { saveState(); } catch (_) { /* ignore */ }
     }
 
     function getAfternoonRainRisk() {
@@ -29426,15 +29478,24 @@
 
     function buildSmartSuggestion(ctx) {
       if (state.settings.showWelcomeBanner && !state.settings.tutorialCompleted) {
-        return buildWelcomeSuggestion();
+        if (isStickySmartDismissed('welcome')) {
+          // fall through after welcome was dismissed
+        } else {
+          return buildWelcomeSuggestion();
+        }
       }
 
       if (!state.habits.length) {
+        if (isStickySmartDismissed('empty')) return null;
         return buildEmptyTasksSuggestion();
       }
 
+      // “Nothing on Today” — dismiss once and keep it hidden the rest of the day
       if (getTodayVisibleTaskCount() === 0) {
-        return buildNoTodayTasksSuggestion();
+        if (!isStickySmartDismissed('no-today')) {
+          return buildNoTodayTasksSuggestion();
+        }
+        // Dismissed: still allow bills / tips below, not the same empty banner again
       }
 
       const due = state.habits.filter(h => isDueToday(h));
@@ -31580,18 +31641,33 @@
       const type = banner?.dataset.suggestionType;
       const habitId = banner?.dataset.suggestionHabit;
       const billId = banner?.dataset.suggestionBill;
-      rememberSmartSuggestion(
-        habitId ? `habit:${habitId}:${type || ''}`
-          : billId ? `bill:${billId}`
-          : banner?.dataset.suggestionTip ? `tip:${banner.dataset.suggestionTip}`
-          : `${type || ''}`
-      );
+      const tipId = banner?.dataset.suggestionTip;
+      const dismissKey = habitId
+        ? `habit:${habitId}:${type || ''}`
+        : billId
+          ? `bill:${billId}`
+          : tipId
+            ? `tip:${tipId}`
+            : (type || '');
+      rememberSmartSuggestion(dismissKey);
 
-      if (state.settings.showWelcomeBanner) {
+      if (state.settings.showWelcomeBanner || type === 'welcome') {
+        stickyDismissSmart('welcome');
         hideWelcomeSpotlight();
         state.settings.showWelcomeBanner = false;
         state.settings.welcomeBannerDismissed = true;
         saveState();
+        banner?.classList.add('hidden');
+        resetSmartBannerDatasets(banner);
+        updateSmartBanner();
+        return;
+      }
+
+      // Empty-list banners used to reappear immediately — sticky dismiss for the day
+      if (type === 'empty' || type === 'no-today') {
+        stickyDismissSmart(type);
+        banner?.classList.add('hidden');
+        resetSmartBannerDatasets(banner);
         updateSmartBanner();
         return;
       }
