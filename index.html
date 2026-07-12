@@ -10232,17 +10232,17 @@
             <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
             <span>Bills</span>
           </button>
-          <button type="button" role="tab" class="life-web-tab" id="life-web-tab-budget"
-            data-life-panel="budget" aria-selected="false" aria-controls="life-panel-budget"
-            onclick="selectLifeSection('budget')">
-            <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
-            <span>Budget</span>
-          </button>
           <button type="button" role="tab" class="life-web-tab" id="life-web-tab-subscriptions"
             data-life-panel="subscriptions" aria-selected="false" aria-controls="life-panel-subscriptions"
             onclick="selectLifeSection('subscriptions')">
             <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
             <span>Subscriptions</span>
+          </button>
+          <button type="button" role="tab" class="life-web-tab" id="life-web-tab-budget"
+            data-life-panel="budget" aria-selected="false" aria-controls="life-panel-budget"
+            onclick="selectLifeSection('budget')">
+            <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+            <span>Budget</span>
           </button>
         </nav>
         <div class="life-panels-scroll">
@@ -10579,15 +10579,15 @@
         <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
         <span>Bills</span>
       </button>
-      <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-budget"
-        data-life-panel="budget" onclick="selectLifeSection('budget')">
-        <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
-        <span>Budget</span>
-      </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-subscriptions"
         data-life-panel="subscriptions" onclick="selectLifeSection('subscriptions')">
         <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
         <span>Subscriptions</span>
+      </button>
+      <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-budget"
+        data-life-panel="budget" onclick="selectLifeSection('budget')">
+        <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+        <span>Budget</span>
       </button>
       <span class="life-flyout-caret" aria-hidden="true"></span>
     </div>
@@ -10634,7 +10634,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 316;
+    const HARBOR_BUILD_NUMBER = 317;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -11008,7 +11008,7 @@
     let currentTab = 'today';
     let currentLifePanel = 'schedule';
     const MAIN_TAB_ORDER = ['today', 'life', 'streaks', 'library'];
-    const LIFE_PANEL_ORDER = ['schedule', 'grocery', 'bills', 'budget', 'subscriptions'];
+    const LIFE_PANEL_ORDER = ['schedule', 'grocery', 'bills', 'subscriptions', 'budget'];
     let currentLibraryFilter = 'all';
     let librarySearchQuery = '';
     let subscriptionSearchQuery = '';
