@@ -10637,7 +10637,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 314;
+    const HARBOR_BUILD_NUMBER = 315;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -14064,6 +14064,10 @@
       return countCompletionsInPeriod(habit, dateStr) >= need;
     }
 
+    /**
+     * “Done for the current period” (day / week / month) — drives due logic & isDueToday.
+     * For weekly/monthly this stays true for the whole period after you finish.
+     */
     function isCompletedToday(habitId) {
       const habit = state.habits?.find(h => h.id === habitId);
       if (!habit) {
@@ -14071,6 +14075,11 @@
         return countCompletionsOnDate(habitId, todayStr()) >= 1;
       }
       return isPeriodFullyComplete(habit, todayStr());
+    }
+
+    /** True if this habit has at least one completion logged on the calendar day (not just “period done”). */
+    function hasCompletionOnCalendarDay(habitId, dateStr = todayStr()) {
+      return countCompletionsOnDate(habitId, dateStr) >= 1;
     }
 
     function hasSyncedToday(habitId) {
@@ -24258,15 +24267,17 @@
         .sort((a, b) => a.days - b.days);
     }
 
-    /** Completed today and worth showing under active Task items */
+    /**
+     * Show under “Completed today” only if logged on this calendar day.
+     * Weekly/monthly period-complete does NOT keep them listed after midnight —
+     * at day roll they leave this strip (and reappear when next due).
+     */
     function shouldShowCompletedOnTaskTab(habit) {
-      if (!habit || !isCompletedToday(habit.id)) return false;
-      if (getHabitSkips(habit.id).includes(todayStr())) return false;
-      // Keep parked long-block chores out unless they were pulled onto Task
-      if (typeof isParkedForSummary === 'function' && isParkedForSummary(habit) && !isPulledToToday(habit) && !isOneOffTask(habit)) {
-        // Still show if user completed it somehow today
-        return true;
-      }
+      if (!habit) return false;
+      const today = todayStr();
+      // Must have a completion timestamp for *today* — not just “period done”
+      if (!hasCompletionOnCalendarDay(habit.id, today)) return false;
+      if (getHabitSkips(habit.id).includes(today)) return false;
       return true;
     }
 
@@ -24331,10 +24342,14 @@
       const completed = [];
 
       state.habits.forEach(h => {
-        if (isCompletedToday(h.id)) {
-          if (shouldShowCompletedOnTaskTab(h)) completed.push(h);
-          return;
+        // Dimmed strip: only habits actually finished *today* (wipes at midnight day roll)
+        if (shouldShowCompletedOnTaskTab(h)) {
+          completed.push(h);
+          // Still due if period isn’t fully done (e.g. 1/2 multi-log) — rare; usually fully done
+          if (isCompletedToday(h.id)) return;
         }
+        // Period fully done (weekly/monthly earlier this period) → not active, not “completed today”
+        if (isCompletedToday(h.id)) return;
         // Multi-log (times_per_day > 1): stay until all completions for today are done
         if (getHabitSkips(h.id).includes(today)) return;
         if (!belongsOnTodayTab(h)) return;
@@ -36080,7 +36095,9 @@
         if (key === harborDayKey) return false;
         harborDayKey = key;
         if (typeof clearExpiredPullToTodayFlags === 'function') clearExpiredPullToTodayFlags();
+        // New calendar day: rebuild Task (clears “Completed today”), streaks, schedule, chrome
         if (typeof renderTasks === 'function') renderTasks();
+        else if (typeof renderTodayFeed === 'function') renderTodayFeed();
         if (typeof renderStreaks === 'function') renderStreaks();
         if (typeof renderSchedule === 'function') renderSchedule();
         if (typeof updateHeaderContext === 'function') updateHeaderContext();
