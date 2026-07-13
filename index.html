@@ -2814,6 +2814,37 @@
       color: rgb(var(--harbor-text));
     }
 
+    .qt-recur-more-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.45rem;
+      padding: 0.35rem 0.65rem;
+      border: 1px dashed rgb(var(--harbor-primary) / 0.4);
+      border-radius: 999px;
+      background: rgb(var(--harbor-primary) / 0.08);
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.68rem;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .qt-recur-more-btn.is-open {
+      color: rgb(var(--harbor-text));
+      border-style: solid;
+      border-color: rgb(var(--harbor-primary));
+      background: rgb(var(--harbor-primary) / 0.15);
+    }
+    .qt-recur-more-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.45rem;
+    }
+    .qt-recur-more-row.hidden {
+      display: none;
+    }
+
     .qt-kind-chip {
       padding: 0.55rem 0.4rem;
       border-radius: 0.9rem;
@@ -10634,7 +10665,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 317;
+    const HARBOR_BUILD_NUMBER = 318;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -15607,8 +15638,8 @@
       else if (days === 14) base = 'Every 2 weeks';
       else if (days >= 28 && days <= 31) base = 'Monthly';
       else if (days >= 85 && days <= 95) base = 'Quarterly';
-      else if (days >= 175 && days <= 185) base = 'Twice a year';
-      else if (days >= 360) base = 'Yearly';
+      else if (days >= 170 && days <= 190) base = 'Semi-Annually';
+      else if (days >= 350) base = 'Annually';
       else base = `Every ${days} days`;
 
       const weekdays = Array.isArray(habitOrWeekdays)
@@ -15621,13 +15652,20 @@
       return base;
     }
 
-    /** Snap freeform / legacy intervals onto Daily · Weekly · Monthly chips. */
+    /**
+     * Snap freeform / legacy intervals onto cadence chips
+     * (Daily · Weekly · Monthly · Quarterly · Semi-Annually · Annually).
+     */
     function snapIntervalToSimple(days) {
       if (days === 0) return 0;
       if (days == null || days === 1) return null; // Daily
       // 2×/3× a week, biweekly, etc. → Weekly (use Preferred days for specific days)
       if (days <= 20) return 7;
-      // Monthly and longer rare cadences → Monthly
+      if (days >= 28 && days <= 35) return 30; // Monthly
+      if (days >= 85 && days <= 95) return 90; // Quarterly
+      if (days >= 170 && days <= 190) return 182; // Semi-Annually
+      if (days >= 350) return 365; // Annually
+      // Other multi-week lengths → Monthly as a calm default
       return 30;
     }
 
@@ -16009,19 +16047,24 @@
       document.getElementById('quick-task-modal')?.remove();
     }
 
-    // How often chips — habits & chores (keep simple: Daily / Weekly / Monthly)
-    // Prefer specific days under Preferred day(s) for multi-day-week patterns.
+    // How often chips — primary row stays short; longer cadences under “More options”
     const SIMPLE_RECURRENCE_OPTIONS = [
       { key: 'daily', label: 'Daily', days: null },
       { key: '7', label: 'Weekly', days: 7 },
       { key: '30', label: 'Monthly', days: 30 }
     ];
+    const RECURRENCE_MORE_OPTIONS = [
+      { key: '90', label: 'Quarterly', days: 90 },
+      { key: '182', label: 'Semi-Annually', days: 182 },
+      { key: '365', label: 'Annually', days: 365 }
+    ];
+    const ALL_RECURRENCE_OPTIONS = [...SIMPLE_RECURRENCE_OPTIONS, ...RECURRENCE_MORE_OPTIONS];
     const TASK_RECURRENCE_OPTIONS = SIMPLE_RECURRENCE_OPTIONS;
-    const HABIT_RECURRENCE_OPTIONS = SIMPLE_RECURRENCE_OPTIONS;
+    const HABIT_RECURRENCE_OPTIONS = ALL_RECURRENCE_OPTIONS;
     const CHORE_RECURRENCE_PRIMARY = SIMPLE_RECURRENCE_OPTIONS;
-    const CHORE_RECURRENCE_MORE = [];
-    const CHORE_RECURRENCE_ORDERED = SIMPLE_RECURRENCE_OPTIONS;
-    const CHORE_RECURRENCE_OPTIONS = SIMPLE_RECURRENCE_OPTIONS;
+    const CHORE_RECURRENCE_MORE = RECURRENCE_MORE_OPTIONS;
+    const CHORE_RECURRENCE_ORDERED = ALL_RECURRENCE_OPTIONS;
+    const CHORE_RECURRENCE_OPTIONS = ALL_RECURRENCE_OPTIONS;
 
     function resolveQuickTaskInterval(title, intervalUserPicked, selectedInterval) {
       if (isSchedulingTaskTitle(title)) return 0;
@@ -16226,6 +16269,10 @@
               <span id="qt-recur-caption" class="text-[9px] text-harbor-muted/80"></span>
             </div>
             <div id="qt-recurrence-row" class="qt-recurrence-row" role="group" aria-label="How often"></div>
+            <button type="button" id="qt-recur-more-btn" class="qt-recur-more-btn" aria-expanded="false">
+              More options <i class="fa-solid fa-chevron-down text-[9px]" aria-hidden="true"></i>
+            </button>
+            <div id="qt-recurrence-more-row" class="qt-recur-more-row hidden" role="group" aria-label="More how often options"></div>
             <div id="qt-weekday-section" class="qt-weekday-section hidden">
               <label class="block text-[10px] uppercase tracking-wider text-harbor-muted font-semibold mb-1.5 mt-2.5">Preferred day(s)</label>
               <div id="qt-weekday-row" class="qt-weekday-row" role="group" aria-label="Preferred days of the week"></div>
@@ -16378,8 +16425,13 @@
         if (selectedInterval == null || selectedInterval === 1) return 'day';
         if (selectedInterval === 7) return 'week';
         if (selectedInterval === 30) return 'month';
+        if (selectedInterval === 90) return 'quarter';
+        if (selectedInterval === 182) return 'half-year';
+        if (selectedInterval === 365) return 'year';
         return 'cycle';
       }
+
+      let moreRecurrenceOpen = false;
 
       function preferredDaysHint() {
         if (selectedInterval == null || selectedInterval === 1) {
@@ -16390,6 +16442,9 @@
         }
         if (selectedInterval === 30) {
           return 'Preferred weekday each month (when it comes due) · optional';
+        }
+        if (selectedInterval === 90 || selectedInterval === 182 || selectedInterval === 365) {
+          return 'Preferred weekday when it comes due · optional';
         }
         return 'Pick which day(s) it should land on · leave empty for any day';
       }
@@ -16423,17 +16478,50 @@
         });
       }
 
+      function findRecurrenceOptByKey(key) {
+        return ALL_RECURRENCE_OPTIONS.find(o => o.key === key)
+          || TASK_RECURRENCE_OPTIONS.find(o => o.key === key)
+          || null;
+      }
+
+      function isLongCadenceSelected() {
+        return selectedInterval === 90 || selectedInterval === 182 || selectedInterval === 365;
+      }
+
       function renderRecurrenceChips() {
         if (!recurrenceRow) return;
-        const opts = recurrenceOptionsForKind();
-        recurrenceRow.innerHTML = opts.map(opt =>
+        const moreBtn = modal.querySelector('#qt-recur-more-btn');
+        const moreRow = modal.querySelector('#qt-recurrence-more-row');
+        // Keep primary row short; longer cadences live under More options
+        recurrenceRow.innerHTML = SIMPLE_RECURRENCE_OPTIONS.map(opt =>
           `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
         ).join('');
 
+        if (moreRow) {
+          moreRow.innerHTML = RECURRENCE_MORE_OPTIONS.map(opt =>
+            `<button type="button" class="qt-recur-chip" data-interval-key="${opt.key}" aria-pressed="false">${opt.label}</button>`
+          ).join('');
+        }
+
+        // Auto-expand More options when editing a quarterly / semi-annual / annual item
+        if (isLongCadenceSelected()) moreRecurrenceOpen = true;
+
+        if (moreBtn && moreRow) {
+          moreBtn.classList.toggle('is-open', moreRecurrenceOpen);
+          moreBtn.setAttribute('aria-expanded', moreRecurrenceOpen ? 'true' : 'false');
+          moreBtn.innerHTML = moreRecurrenceOpen
+            ? 'Less options <i class="fa-solid fa-chevron-up text-[9px]" aria-hidden="true"></i>'
+            : 'More options <i class="fa-solid fa-chevron-down text-[9px]" aria-hidden="true"></i>';
+          moreRow.classList.toggle('hidden', !moreRecurrenceOpen);
+          moreBtn.onclick = () => {
+            moreRecurrenceOpen = !moreRecurrenceOpen;
+            renderRecurrenceChips();
+          };
+        }
+
         modal.querySelectorAll('.qt-recur-chip').forEach(btn => {
           btn.onclick = () => {
-            const opt = SIMPLE_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey)
-              || TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
+            const opt = findRecurrenceOptByKey(btn.dataset.intervalKey);
             pickRecurrenceOpt(opt);
           };
         });
@@ -16443,14 +16531,17 @@
       }
 
       function updateIntervalButtons() {
-        const opts = recurrenceOptionsForKind();
         modal.querySelectorAll('.qt-recur-chip').forEach(btn => {
-          const opt = opts.find(o => o.key === btn.dataset.intervalKey)
-            || TASK_RECURRENCE_OPTIONS.find(o => o.key === btn.dataset.intervalKey);
+          const opt = findRecurrenceOptByKey(btn.dataset.intervalKey);
           const active = opt && recurrenceOptionMatches(opt);
           btn.classList.toggle('is-active', active);
           btn.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
+        // Reflect long cadence on the More options control
+        const moreBtn = modal.querySelector('#qt-recur-more-btn');
+        if (moreBtn && isLongCadenceSelected()) {
+          moreBtn.classList.add('is-open');
+        }
       }
 
       function renderTimesPerDay() {
@@ -16458,9 +16549,10 @@
         const row = modal.querySelector('#qt-times-row');
         const hint = modal.querySelector('#qt-freq-hint');
         if (!sec || !row) return;
-        // Frequency applies to Daily, Weekly, and Monthly (not one-off Task)
+        // Frequency applies to Daily through Annually (not one-off Task)
         const hasCadence = selectedInterval == null || selectedInterval === 1
           || selectedInterval === 7 || selectedInterval === 30
+          || selectedInterval === 90 || selectedInterval === 182 || selectedInterval === 365
           || (selectedInterval > 1 && selectedKind === 'chore');
         const show = (selectedKind === 'habit' || selectedKind === 'chore') && hasCadence
           && selectedInterval !== 0;
@@ -16474,6 +16566,12 @@
             hint.innerHTML = `How many times <strong class="text-harbor-text font-semibold">each week</strong> — e.g. swim <strong class="text-harbor-text font-semibold">3×</strong> a week.`;
           } else if (period === 'month') {
             hint.innerHTML = `How many times <strong class="text-harbor-text font-semibold">each month</strong> — e.g. deep clean <strong class="text-harbor-text font-semibold">2×</strong> a month.`;
+          } else if (period === 'quarter') {
+            hint.innerHTML = `How many times <strong class="text-harbor-text font-semibold">each quarter</strong> (about every 3 months).`;
+          } else if (period === 'half-year') {
+            hint.innerHTML = `How many times <strong class="text-harbor-text font-semibold">each half-year</strong> (semi-annually).`;
+          } else if (period === 'year') {
+            hint.innerHTML = `How many times <strong class="text-harbor-text font-semibold">each year</strong>.`;
           } else {
             hint.textContent = `How many times each ${period}.`;
           }
