@@ -53,12 +53,20 @@ That is a browser security rule — not a Harbor bug.
 
 ---
 
+## Device calendars (TestFlight / store — build 319+)
+
+| Method | Notes |
+|--------|--------|
+| **On this phone** | Reads calendars already on the device (EventKit). Permission required. No Google OAuth. |
+| Works in | Native Harbor app only — not the browser PWA |
+| Scope | Read events into Schedule (~2 weeks back → ~4 months ahead). Hide in Harbor does not delete from Apple Calendar. |
+
 ## Future (not v1)
 
 | Later | Notes |
 |-------|--------|
-| Google Calendar API / Microsoft Graph | Real sync; needs account + backend |
-| Capacitor native calendar plugin | Device calendars; store shell |
+| Google Calendar API / Microsoft Graph | Real account sync; needs OAuth + backend |
+| Write-back to device calendar | Optional later |
 | Your own CORS proxy | Still a middleman — document it; better if you operate it |
 
 ---

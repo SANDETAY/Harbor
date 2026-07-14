@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "Harbor \u2014 calm life management. PWA + Capacitor (App Store / Play).",
+  "description": "Harbor — calm life management. PWA + Capacitor (App Store / Play).",
   "scripts": {
     "start": "powershell -ExecutionPolicy Bypass -File scripts/start-server.ps1",
     "preview": "powershell -ExecutionPolicy Bypass -File scripts/start-server.ps1",
@@ -22,7 +22,8 @@
     "@capacitor/geolocation": "^6.1.1",
     "@capacitor/ios": "^6.2.0",
     "@capacitor/splash-screen": "^6.0.4",
-    "@capacitor/status-bar": "^6.0.3"
+    "@capacitor/status-bar": "^6.0.3",
+    "@ebarooni/capacitor-calendar": "^6.7.2"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.2.0"

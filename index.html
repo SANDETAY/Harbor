@@ -10296,6 +10296,10 @@
                     <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showCalendarFeedModal()">
                       <i class="fa-solid fa-link" aria-hidden="true"></i><span>Connect calendar</span>
                     </button>
+                    <button type="button" role="menuitem" id="schedule-manage-device-cal"
+                      onclick="closeLifeManageMenus(); connectDeviceCalendars()">
+                      <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i><span>iPhone calendars</span>
+                    </button>
                     <button type="button" role="menuitem" onclick="closeLifeManageMenus(); triggerCalendarICSImport()">
                       <i class="fa-solid fa-file-import" aria-hidden="true"></i><span>Import .ics file</span>
                     </button>
@@ -10665,7 +10669,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 318;
+    const HARBOR_BUILD_NUMBER = 319;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -10995,6 +10999,10 @@
         suppressedCalendarEventKeys: [],
         suppressedCalendarEvents: [], // snapshots for restore UI
         calendarFeeds: [], // { id, url, label, lastSyncedAt, lastEventCount, lastError }
+        // Native device calendars (EventKit / Android CalendarContract) — TestFlight / store app only
+        deviceCalendarEnabled: false,
+        deviceCalendarEvents: [],
+        deviceCalendarLastSyncedAt: null,
         workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
         eventTimeFormat: '12h',
         scheduleView: 'today',
@@ -11700,6 +11708,9 @@
           suppressedCalendarEventKeys: [],
           suppressedCalendarEvents: [],
           calendarFeeds: [],
+          deviceCalendarEnabled: false,
+          deviceCalendarEvents: [],
+          deviceCalendarLastSyncedAt: null,
           workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
           eventTimeFormat: '12h',
           scheduleView: 'today',
@@ -11946,6 +11957,12 @@
       }
       if (!Array.isArray(state.settings.suppressedCalendarEvents)) {
         state.settings.suppressedCalendarEvents = [];
+      }
+      if (!Array.isArray(state.settings.deviceCalendarEvents)) {
+        state.settings.deviceCalendarEvents = [];
+      }
+      if (state.settings.deviceCalendarEnabled !== true && state.settings.deviceCalendarEnabled !== false) {
+        state.settings.deviceCalendarEnabled = false;
       }
       // Ensure household profiles exist and always include a "Me" entry
       state.settings.householdProfiles = ensureHouseholdProfiles(state.settings.householdProfiles);
@@ -19279,6 +19296,167 @@
         .sort((a, b) => `${getEventDate(a)} ${a.time}`.localeCompare(`${getEventDate(b)} ${b.time}`));
     }
 
+    // ==================== DEVICE CALENDARS (native TestFlight / store) ====================
+    // Reads calendars already on the phone (iCloud, Google signed into iOS Settings, etc.)
+    // Does NOT require Google OAuth. Web/PWA cannot use this — show a clear message.
+
+    function isHarborNativeApp() {
+      try {
+        const Cap = window.Capacitor;
+        return !!(Cap && typeof Cap.isNativePlatform === 'function' && Cap.isNativePlatform());
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function getDeviceCalendarPlugin() {
+      try {
+        const Cap = window.Capacitor;
+        if (!Cap) return null;
+        return Cap.Plugins?.CapacitorCalendar
+          || window.CapacitorCalendar
+          || null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function mapNativeDeviceEvent(ev) {
+      if (!ev) return null;
+      const startMs = Number(ev.startDate);
+      if (!Number.isFinite(startMs)) return null;
+      const start = new Date(startMs);
+      const endMs = Number(ev.endDate);
+      const end = Number.isFinite(endMs) ? new Date(endMs) : start;
+      const date = dateStrLocal(start);
+      let endDate = dateStrLocal(end);
+      if (endDate < date) endDate = date;
+      const pad = (n) => String(n).padStart(2, '0');
+      const time = ev.isAllDay
+        ? '09:00'
+        : `${pad(start.getHours())}:${pad(start.getMinutes())}`;
+      let durationMin = Math.max(15, Math.round((end.getTime() - start.getTime()) / 60000) || 30);
+      if (ev.isAllDay) durationMin = 1440;
+      durationMin = Math.min(durationMin, 24 * 60);
+      const nativeId = String(ev.id || `${date}-${time}-${ev.title || 'event'}`);
+      return {
+        id: 'ev-device-' + nativeId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48),
+        title: String(ev.title || 'Event').trim() || 'Event',
+        date,
+        endDate: endDate !== date ? endDate : undefined,
+        time,
+        durationMin,
+        calendarSource: 'device',
+        calendarSourceLabel: 'On this phone',
+        readOnly: true,
+        nativeEventId: nativeId,
+        location: ev.location || undefined
+      };
+    }
+
+    /**
+     * Ask for calendar permission and pull events from device calendars into Schedule.
+     * @returns {Promise<number>} count of events loaded (0 if cancelled / unavailable)
+     */
+    async function syncDeviceCalendarEvents(options = {}) {
+      const { silent = false } = options;
+      if (!isHarborNativeApp()) {
+        if (!silent) {
+          showToast('Phone calendars work in the TestFlight / store app — not in the browser', 'info');
+        }
+        return 0;
+      }
+      const plugin = getDeviceCalendarPlugin();
+      if (!plugin || typeof plugin.listEventsInRange !== 'function') {
+        if (!silent) {
+          showToast('Calendar plugin missing — rebuild the iOS app (pod install + Archive)', 'warn');
+        }
+        return 0;
+      }
+
+      try {
+        // Permission — read only
+        if (typeof plugin.requestPermission === 'function') {
+          const { result } = await plugin.requestPermission({ alias: 'readCalendar' });
+          const ok = result === 'granted' || result === 'limited';
+          if (!ok) {
+            if (!silent) {
+              showToast('Calendar access denied — enable in iOS Settings → Harbor', 'warn');
+            }
+            return 0;
+          }
+        } else if (typeof plugin.requestAllPermissions === 'function') {
+          await plugin.requestAllPermissions();
+        }
+
+        const dayMs = 24 * 60 * 60 * 1000;
+        const startDate = Date.now() - 14 * dayMs;
+        const endDate = Date.now() + 120 * dayMs;
+        const { result } = await plugin.listEventsInRange({ startDate, endDate });
+        const raw = Array.isArray(result) ? result : [];
+        const mapped = raw.map(mapNativeDeviceEvent).filter(Boolean);
+        const cleaned = filterSuppressedCalendarEvents(normalizeCalendarEvents(mapped));
+
+        state.settings.deviceCalendarEnabled = true;
+        state.settings.deviceCalendarEvents = cleaned;
+        state.settings.deviceCalendarLastSyncedAt = new Date().toISOString();
+        if (!state.settings.mockCalendar) {
+          state.settings.mockCalendar = { events: [], freeMinutes: 0, note: '', weekAhead: [] };
+        }
+        saveState();
+        refreshCalendarCache();
+        if (typeof renderSchedule === 'function') renderSchedule();
+        if (typeof renderTodayFeed === 'function') renderTodayFeed();
+        if (typeof updateSmartBanner === 'function') updateSmartBanner();
+        if (typeof updateCalendarStatusUI === 'function') updateCalendarStatusUI();
+        if (!silent) {
+          showToast(cleaned.length
+            ? `Loaded ${cleaned.length} event${cleaned.length === 1 ? '' : 's'} from this phone`
+            : 'Connected — no events in the next few months');
+        }
+        return cleaned.length;
+      } catch (err) {
+        console.error('[Harbor] device calendar sync failed', err);
+        if (!silent) {
+          const msg = String(err?.message || err || '');
+          if (/permission|denied|authoriz/i.test(msg)) {
+            showToast('Calendar permission needed — check iOS Settings → Harbor', 'warn');
+          } else {
+            showToast('Could not read phone calendars', 'warn');
+          }
+        }
+        return 0;
+      }
+    }
+
+    async function connectDeviceCalendars() {
+      if (!isHarborNativeApp()) {
+        showToast('Open Harbor in TestFlight to use calendars on this phone', 'info');
+        showCalendarFeedModal();
+        return;
+      }
+      showToast('Requesting calendar access…', 'info');
+      await syncDeviceCalendarEvents({ silent: false });
+      // Stay on schedule so they see events
+      if (typeof switchTab === 'function') switchTab('life');
+      if (typeof switchLifePanel === 'function') switchLifePanel('schedule');
+    }
+
+    function disconnectDeviceCalendars() {
+      state.settings.deviceCalendarEnabled = false;
+      state.settings.deviceCalendarEvents = [];
+      state.settings.deviceCalendarLastSyncedAt = null;
+      saveState();
+      refreshCalendarCache();
+      if (typeof renderSchedule === 'function') renderSchedule();
+      if (typeof updateCalendarStatusUI === 'function') updateCalendarStatusUI();
+      showToast('Phone calendars disconnected from Harbor');
+    }
+
+    function isDeviceCalendarConnected() {
+      return !!(state.settings?.deviceCalendarEnabled);
+    }
+
     function formatScheduleEventTime(time24) {
       if (!time24) return '—';
       const [h, m] = time24.split(':').map(Number);
@@ -19701,7 +19879,11 @@
     }
 
     function isImportedOrFeedCalendarEvent(e) {
-      return !!(e && (e.calendarSource || (e.id && String(e.id).startsWith('ev-ics-'))));
+      return !!(e && (
+        e.calendarSource
+        || (e.id && String(e.id).startsWith('ev-ics-'))
+        || (e.id && String(e.id).startsWith('ev-device-'))
+      ));
     }
 
     function getSuppressedCalendarEventCount() {
@@ -34761,10 +34943,15 @@
       const imported = filterSuppressedCalendarEvents(importedRaw);
       const mockRaw = state.settings.mockCalendar?.events || [];
       const mockEvents = filterSuppressedCalendarEvents(mockRaw);
-      const all = [...imported, ...mockEvents];
+      const deviceRaw = (state.settings.deviceCalendarEnabled && state.settings.deviceCalendarEvents?.length)
+        ? state.settings.deviceCalendarEvents
+        : [];
+      const device = filterSuppressedCalendarEvents(deviceRaw);
+      const all = [...imported, ...mockEvents, ...device];
       const feeds = typeof getCalendarFeeds === 'function' ? getCalendarFeeds() : [];
-      const localNote = feeds.length || imported.length
-        ? `On this device · ${all.length} event${all.length === 1 ? '' : 's'} · edits stay in Harbor`
+      const deviceOn = !!(state.settings.deviceCalendarEnabled && device.length);
+      const localNote = feeds.length || imported.length || deviceOn
+        ? `On this device · ${all.length} event${all.length === 1 ? '' : 's'}${deviceOn ? ' · includes iPhone calendars' : ' · edits stay in Harbor'}`
         : (state.settings.mockCalendar?.note || '');
 
       if (state.settings.mockCalendar) {
@@ -37558,19 +37745,47 @@
         subEl.textContent = 'Pick what you use — Harbor walks you through it.';
         const feeds = getCalendarFeeds();
         const imported = state.settings.importedCalendarEvents?.length || 0;
+        const deviceOn = isDeviceCalendarConnected();
+        const deviceN = (state.settings.deviceCalendarEvents || []).length;
+        const native = isHarborNativeApp();
         body.innerHTML = `
-          ${feeds.length || imported ? `
+          ${feeds.length || imported || deviceOn ? `
             <div class="mb-3">
               <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1.5">Already connected</div>
+              ${deviceOn ? `
+                <div class="mb-2 px-3 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border flex items-center gap-2">
+                  <i class="fa-solid fa-mobile-screen text-harbor-primary-light" aria-hidden="true"></i>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-xs font-semibold text-harbor-text">On this phone</div>
+                    <div class="text-[10px] text-harbor-muted">${deviceN} event${deviceN === 1 ? '' : 's'} · iPhone / device calendars</div>
+                  </div>
+                  <button type="button" data-device-refresh class="text-[10px] font-semibold text-harbor-primary-light">Refresh</button>
+                  <button type="button" data-device-disconnect class="text-[10px] text-harbor-muted">Off</button>
+                </div>
+              ` : ''}
               <div id="schedule-calendar-feeds" class="space-y-2"></div>
               ${feeds.length ? `
                 <button type="button" data-cal-url-refresh class="mt-2 w-full py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-medium text-harbor-text">
-                  <i class="fa-solid fa-rotate mr-1 text-harbor-primary-light" aria-hidden="true"></i>Refresh calendars
+                  <i class="fa-solid fa-rotate mr-1 text-harbor-primary-light" aria-hidden="true"></i>Refresh feeds
                 </button>
               ` : ''}
             </div>
           ` : ''}
           <div class="space-y-2">
+            ${native ? `
+            <button type="button" class="cal-connect-provider" data-device-connect>
+              <span class="cal-connect-provider-icon is-apple" aria-hidden="true"><i class="fa-solid fa-mobile-screen"></i></span>
+              <span class="min-w-0">
+                <span class="cal-connect-provider-title block">On this phone</span>
+                <span class="cal-connect-provider-desc block">Use calendars already on this iPhone (iCloud, Google in Settings…)</span>
+              </span>
+              <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
+            </button>
+            ` : `
+            <div class="px-3 py-2.5 rounded-2xl bg-harbor-raised border border-dashed border-harbor-border text-[11px] text-harbor-muted leading-snug">
+              <strong class="text-harbor-text">On this phone</strong> calendars work in the <strong class="text-harbor-text">TestFlight app</strong>, not the browser.
+            </div>
+            `}
             <button type="button" class="cal-connect-provider" data-cal-view="google">
               <span class="cal-connect-provider-icon is-google" aria-hidden="true"><i class="fa-brands fa-google"></i></span>
               <span class="min-w-0">
@@ -37582,8 +37797,8 @@
             <button type="button" class="cal-connect-provider" data-cal-view="apple">
               <span class="cal-connect-provider-icon is-apple" aria-hidden="true"><i class="fa-brands fa-apple"></i></span>
               <span class="min-w-0">
-                <span class="cal-connect-provider-title block">Apple Calendar</span>
-                <span class="cal-connect-provider-desc block">iPhone, iPad, or Mac — file is easiest</span>
+                <span class="cal-connect-provider-title block">Apple Calendar (file / link)</span>
+                <span class="cal-connect-provider-desc block">Import a file or paste a share link</span>
               </span>
               <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
             </button>
@@ -37605,7 +37820,7 @@
             </button>
           </div>
           <p class="text-[10px] text-harbor-muted mt-3 leading-relaxed">
-            Your calendar data stays on this device. Harbor never stores passwords — only a feed link you choose, or a one-time file.
+            Your calendar data stays on this device. Harbor never stores passwords — only a feed link you choose, a file, or calendars this phone already has.
           </p>
         `;
         if (feeds.length || imported) {
@@ -37619,6 +37834,18 @@
             };
           }
         }
+        body.querySelector('[data-device-connect]')?.addEventListener('click', async () => {
+          modal.remove();
+          await connectDeviceCalendars();
+        });
+        body.querySelector('[data-device-refresh]')?.addEventListener('click', async () => {
+          await syncDeviceCalendarEvents({ silent: false });
+          renderHome();
+        });
+        body.querySelector('[data-device-disconnect]')?.addEventListener('click', () => {
+          disconnectDeviceCalendars();
+          renderHome();
+        });
         body.querySelectorAll('[data-cal-view]').forEach(btn => {
           btn.addEventListener('click', () => renderView(btn.dataset.calView));
         });
@@ -37877,16 +38104,22 @@
       if (!badge) return;
       const feeds = getCalendarFeeds();
       const n = getAllCalendarEvents().length;
+      const deviceOn = isDeviceCalendarConnected();
       const hiddenN = Math.min(99, getSuppressedCalendarEventCount());
       const hiddenBit = hiddenN
         ? ` · <button type="button" onclick="showSuppressedCalendarEventsModal()" class="text-harbor-primary-light">${hiddenN} hidden</button>`
+        : '';
+      const deviceBit = deviceOn
+        ? ` · <button type="button" onclick="syncDeviceCalendarEvents()" class="text-harbor-primary-light">phone</button>`
         : '';
       // Only surface status when something is connected/imported — no empty-state CTA under work hours
       if (feeds.length) {
         const err = feeds.find(f => f.lastError);
         badge.innerHTML = err
           ? `<i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1"></i> Calendar feed issue · <button type="button" onclick="showCalendarFeedModal()" class="text-harbor-primary-light">fix</button>`
-          : `<i class="fa-solid fa-link text-harbor-primary mr-1"></i> ${escapeBriefHtml(getCalendarStatusLabel())} · on this device · <button type="button" onclick="refreshAllCalendarFeeds()" class="text-harbor-primary-light">refresh</button>${hiddenBit}`;
+          : `<i class="fa-solid fa-link text-harbor-primary mr-1"></i> ${escapeBriefHtml(getCalendarStatusLabel())} · on this device · <button type="button" onclick="refreshAllCalendarFeeds()" class="text-harbor-primary-light">refresh</button>${deviceBit}${hiddenBit}`;
+      } else if (deviceOn) {
+        badge.innerHTML = `<i class="fa-solid fa-mobile-screen text-harbor-primary-light mr-1"></i> Phone calendars · ${n} event${n === 1 ? '' : 's'} · <button type="button" onclick="syncDeviceCalendarEvents()" class="text-harbor-primary-light">refresh</button>${hiddenBit}`;
       } else if (n || hiddenN) {
         badge.innerHTML = n
           ? `<i class="fa-regular fa-calendar text-harbor-primary-light mr-1"></i> ${n} event${n === 1 ? '' : 's'} · this device only${hiddenBit}`
@@ -37898,6 +38131,10 @@
       if (hiddenMenu) {
         hiddenMenu.querySelector('span') && (hiddenMenu.querySelector('span').textContent =
           hiddenN ? `Hidden events (${hiddenN})` : 'Hidden events');
+      }
+      const deviceMenu = document.getElementById('schedule-manage-device-cal');
+      if (deviceMenu?.querySelector('span')) {
+        deviceMenu.querySelector('span').textContent = deviceOn ? 'Refresh phone calendars' : 'iPhone calendars';
       }
     }
 

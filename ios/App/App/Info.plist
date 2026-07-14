@@ -48,6 +48,13 @@
 	<!-- Privacy — required for App Store review when features use these APIs -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Harbor uses your location to show a local weather forecast for outdoor task timing. Location stays on your device and is not used for ads.</string>
+	<!-- Device calendars (EventKit) — read events already on this iPhone -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>Harbor shows events from calendars on this iPhone so you can plan tasks around real appointments. Calendar data stays on your device.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Harbor shows events from calendars on this iPhone so you can plan tasks around real appointments. Calendar data stays on your device.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Harbor can add events you create in Schedule to your device calendar when you choose. Calendar data stays on your device.</string>
 	<!-- Export compliance: no custom encryption beyond HTTPS -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
