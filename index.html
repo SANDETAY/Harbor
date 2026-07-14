@@ -10898,7 +10898,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 325;
+    const HARBOR_BUILD_NUMBER = 326;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -38810,7 +38810,14 @@
           await StatusBar.setBackgroundColor({ color: solid });
         }
         const Splash = Cap.Plugins?.SplashScreen;
-        if (Splash?.hide) await Splash.hide();
+        // Fade native splash into the web app (mint launch art already matches Harbor)
+        if (Splash?.hide) {
+          try {
+            await Splash.hide({ fadeOutDuration: 280 });
+          } catch (_) {
+            await Splash.hide();
+          }
+        }
       } catch (e) {
         console.warn('Native shell init', e?.message || e);
       }
