@@ -10898,7 +10898,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 324;
+    const HARBOR_BUILD_NUMBER = 325;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -30039,7 +30039,7 @@
       { id: 'life-bills', reason: 'The <strong>Life</strong> tab tracks bills with due dates and overdue states — Harbor can nudge you when something needs attention.', cta: 'View bills', action: 'life-bills' },
       { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> — your shopping list first, with optional dinner lists and <strong>Add</strong> / mic for staples.', cta: 'Open grocery', action: 'life-grocery' },
       { id: 'life-schedule', reason: '<strong>Life → Schedule</strong> holds appointments and events — block time so suggestions can find gaps between meetings.', cta: 'View schedule', action: 'life-schedule' },
-      { id: 'calendar-sync', reason: 'Sync calendars from <strong>Life → Schedule → Manage → Sync calendars</strong> so Harbor can show what’s already on this phone.', cta: 'Sync calendars', action: 'connect-calendar' },
+      { id: 'calendar-sync', reason: 'Sync calendars already on this phone from <strong>Life → Schedule → Manage → Sync calendars</strong> — one tap, then Harbor can plan around your real day.', cta: 'Sync calendars', action: 'connect-calendar' },
       { id: 'work-schedule', reason: 'On <strong>Life → Schedule</strong>, open <strong>Manage → Work hours</strong> so free-time estimates match your real day.', cta: 'Open schedule', action: 'life-schedule' },
       { id: 'weather-strip', reason: 'The hourly weather strip at the top forecasts the next 24 hours — tap it for the full pane through tomorrow when planning yard work or a walk.', cta: 'See forecast', action: 'weather' },
       { id: 'outdoor-rain', reason: 'Outdoor tasks get rain warnings when afternoon showers are likely — reschedule before you get caught in the weather.', cta: 'Check weather', action: 'weather' },
@@ -32016,6 +32016,8 @@
     }
 
     function hasAnyCalendarData() {
+      if (typeof isDeviceCalendarConnected === 'function' && isDeviceCalendarConnected()) return true;
+      if (typeof hasAnyCalendarConnected === 'function' && hasAnyCalendarConnected()) return true;
       const feeds = state.settings?.calendarFeeds || [];
       if (feeds.length) return true;
       const imported = state.settings?.importedCalendarEvents || [];
@@ -32045,11 +32047,11 @@
       card.id = 'calendar-nudge';
       card.className = 'calendar-nudge-card';
       card.innerHTML = `
-        <div class="nudge-title">Connect a calendar?</div>
-        <div class="nudge-body">Harbor works better with your real schedule. We’ll walk you through Google or Apple — or just import a file.</div>
+        <div class="nudge-title">Sync your calendars?</div>
+        <div class="nudge-body">Pull in what’s already on this phone so Harbor can plan around your real schedule — one permission, no hunting for secret links.</div>
         <div class="nudge-actions">
           <button type="button" class="chip-add-btn" onclick="dismissCalendarNudge(); switchTab('life'); switchLifePanel('schedule'); showCalendarFeedModal();">
-            Connect calendar
+            Sync calendars
           </button>
           <button type="button" class="chip-tool-btn" onclick="dismissCalendarNudge();">
             Not now
