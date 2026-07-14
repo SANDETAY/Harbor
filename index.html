@@ -618,8 +618,9 @@
       padding: 0;
       min-height: 100%;
       height: 100%;
-      /* iOS: fill the real screen edge-to-edge (viewport-fit=cover) */
+      /* iOS: fill the real screen edge-to-edge (viewport-fit=cover + StatusBar overlay) */
       min-height: 100dvh;
+      min-height: 100svh;
       min-height: -webkit-fill-available;
       overflow-x: hidden;
       overscroll-behavior-x: none;
@@ -629,6 +630,10 @@
       /* Hex tokens — reliable under iOS status bar / safe-area (no slash-alpha) */
       background-color: var(--harbor-body-solid) !important;
       height: -webkit-fill-available;
+      /* Paint into Dynamic Island / home indicator regions (no black letterbox) */
+      min-height: 100%;
+      min-height: 100dvh;
+      min-height: 100svh;
     }
 
     body {
@@ -645,10 +650,18 @@
         var(--harbor-body-g4) 100%
       ) !important;
       background-attachment: fixed;
+      /* Extend wash into safe areas so notch/home indicator never show bare black */
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
       color: rgb(var(--harbor-text));
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
+      /* Full viewport including areas under status bar when overlaysWebView is true */
+      min-height: 100%;
+      min-height: 100dvh;
+      min-height: 100svh;
+      min-height: -webkit-fill-available;
     }
 
     /* Transparent shell so mint wash shows (floating cradle dock paints itself) */
@@ -688,7 +701,7 @@
       border-radius: var(--harbor-radius-xl);
       margin-bottom: 0.5rem;
       --swipe-reveal: 8.5rem;
-      /* Contain paints so action colors don't flash during scroll */
+      /* Paint-only containment: avoid layout/size quirks that desync touch vs visual on iOS */
       contain: paint;
       /*
         Critical: overflow:hidden makes flex min-size 0, so a tall Today list was
@@ -697,12 +710,21 @@
       flex-shrink: 0;
       min-height: min-content;
       align-self: stretch;
+      /* Explicit stacking context so absolute actions stay glued to this row's box */
+      isolation: isolate;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
     }
 
     .swipe-row-actions {
       position: absolute;
-      inset: 0 0 0 auto;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: auto;
       width: var(--swipe-reveal);
+      height: 100%;
+      max-height: 100%;
       display: none;
       align-items: stretch;
       z-index: 0;
@@ -710,6 +732,10 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity var(--harbor-duration-fast) ease;
+      /* Match row clip so Edit/Delete never paint into the row above/below */
+      border-radius: inherit;
+      overflow: hidden;
+      box-sizing: border-box;
     }
 
     .swipe-action {
@@ -2044,6 +2070,21 @@
       gap: 0.45rem;
     }
 
+    /* Grocery: single gap source (avoid space-y + swipe-row margin stacking) */
+    #grocery-list.space-y-2,
+    #grocery-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.32rem;
+    }
+    #grocery-list .swipe-row {
+      margin-bottom: 0;
+    }
+    #grocery-list .swipe-row-content.habit-row {
+      padding-top: 0.65rem;
+      padding-bottom: 0.65rem;
+    }
+
     .grocery-quick-add {
       display: flex;
       align-items: center;
@@ -3093,7 +3134,7 @@
       white-space: nowrap;
     }
 
-    /* Stylish small close control (replaces × on sheets) */
+    /* Stylish small close control — pill shape on every theme (Harbor Mint standard) */
     .modal-close-chip {
       display: inline-flex;
       align-items: center;
@@ -3101,7 +3142,12 @@
       flex-shrink: 0;
       padding: 0.3rem 0.75rem;
       min-height: 1.55rem;
-      border-radius: var(--harbor-radius-pill);
+      /* Hard pill — some themes/UA styles were squaring the corners */
+      border-radius: 999px !important;
+      -webkit-border-radius: 999px !important;
+      appearance: none;
+      -webkit-appearance: none;
+      overflow: hidden;
       font-size: 0.62rem;
       font-weight: 700;
       letter-spacing: 0.05em;
@@ -3130,10 +3176,6 @@
 
     .modal-close-chip:active {
       transform: scale(0.97);
-    }
-
-    .modal-close-chip:active {
-      transform: scale(0.97);
       background: rgb(var(--harbor-primary) / 0.22);
     }
 
@@ -3141,6 +3183,16 @@
       color: rgba(232, 242, 238, 0.82);
       background: rgb(var(--harbor-primary) / 0.1);
       border-color: rgb(var(--harbor-primary) / 0.22);
+      border-radius: 999px !important;
+    }
+
+    /* Keep Close pills pill-shaped on every palette (colors still theme tokens) */
+    html[data-theme="lilac"] .modal-close-chip,
+    html[data-theme="blush"] .modal-close-chip,
+    html[data-theme="wood"] .modal-close-chip,
+    html[data-theme="lagoon"] .modal-close-chip,
+    html[data-theme="harbor"] .modal-close-chip {
+      border-radius: 999px !important;
     }
 
     /* Sheet swipe-to-dismiss */
@@ -4654,6 +4706,11 @@
     /* Text-only chip (no inner swatch — title already has the color dot) */
     .person-chip--text {
       padding: 0.14rem 0.52rem;
+      gap: 0;
+    }
+    /* Never show a second color circle inside the name chip */
+    .person-chip .person-swatch {
+      display: none !important;
     }
     .person-chip span {
       overflow: hidden;
@@ -9306,34 +9363,43 @@
 
     /* ── Mobile-first: phone layout (default + small screens) ── */
     @media (max-width: 767px) {
+      /* Safe-area only under status bar — keep date / tasks / menu tight to the top */
       .site-header {
         padding-top: env(safe-area-inset-top, 0px);
+        padding-left: env(safe-area-inset-left, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
       }
 
       .site-header-inner {
-        padding: 0.45rem 1rem;
-        gap: 0.5rem;
+        padding: 0.28rem 0.95rem 0.38rem;
+        gap: 0.4rem;
+        min-height: 0;
+      }
+
+      .header-day-stack {
+        line-height: 1.15;
       }
 
       .header-date-line {
-        font-size: 0.82rem;
+        font-size: 0.8rem;
         white-space: normal;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
-        line-height: 1.2;
+        line-height: 1.15;
       }
 
       .header-task-line {
-        font-size: 0.68rem;
+        font-size: 0.66rem;
+        margin-top: 0.08rem;
         white-space: normal;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        line-height: 1.25;
+        line-height: 1.2;
       }
 
       /* Habit rows: don't let side actions crush titles on narrow phones */
@@ -10394,6 +10460,12 @@
                 <div class="life-manage-wrap">
                   <button type="button" class="chip-tool-btn" onclick="toggleLifeManageMenu('budget')" aria-haspopup="menu" aria-expanded="false">Manage</button>
                   <div id="budget-manage-menu" class="life-manage-menu hidden" role="menu">
+                    <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showBudgetImportModal()">
+                      <i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i><span>Import / re-import CSV</span>
+                    </button>
+                    <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showBudgetHowItWorks()">
+                      <i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>How budget works</span>
+                    </button>
                     <button type="button" role="menuitem" onclick="closeLifeManageMenus(); clearBudgetData()">
                       <i class="fa-solid fa-trash-can" aria-hidden="true"></i><span>Clear budget data</span>
                     </button>
@@ -10407,15 +10479,17 @@
             <div class="text-sm font-medium text-harbor-text">See where money went</div>
             <div class="text-xs text-harbor-muted mt-1.5 leading-relaxed max-w-xs mx-auto">
               Import a bank CSV to see this month vs last — dining, shopping, utilities, and habits that stack up.
-              Import stays on this device.
+              Stays on this device. Tap a pie slice or legend row to filter, swipe a transaction to recategorize.
             </div>
             <div class="harbor-empty-actions mt-3">
               <button type="button" class="chip-add-btn" onclick="showBudgetImportModal()">
                 <i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i>Import CSV
               </button>
+              <button type="button" class="chip-tool-btn" onclick="showBudgetHowItWorks()">How it works</button>
             </div>
           </div>
           <div id="budget-content" class="hidden">
+            <div id="budget-mom-compare" class="hidden mb-2.5 text-[11px] text-harbor-muted px-0.5 leading-snug" aria-live="polite"></div>
             <div class="budget-filter-bar mb-2.5" id="budget-filter-bar">
               <div class="harbor-pill-row" id="budget-range-filters" role="tablist" aria-label="Budget month">
                 <button type="button" class="cal-format-chip is-active" data-budget-range="current" onclick="setBudgetMonthRange('current')">This month</button>
@@ -10669,7 +10743,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 319;
+    const HARBOR_BUILD_NUMBER = 320;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -13277,18 +13351,13 @@
     function renderPersonChipHtml(personId, options = {}) {
       const person = getHouseholdPerson(personId);
       if (!person) return '';
-      const { showName = true, size = 'sm', showSwatch = false } = options;
+      // showSwatch ignored for name chips — event title already has the color dot
+      const { showName = true, size = 'sm' } = options;
       const sw = size === 'lg' ? 'person-swatch person-swatch--lg' : 'person-swatch';
       if (!showName) {
         return `<span class="${sw}" style="background:${escapeBriefHtml(person.color)}" title="${escapeBriefHtml(person.name)}" aria-label="${escapeBriefHtml(person.name)}"></span>`;
       }
-      // Name chip uses color via border/text only — event title already has the person swatch
-      if (showSwatch) {
-        return `<span class="person-chip" style="border-color:${escapeBriefHtml(person.color)}55;color:${escapeBriefHtml(person.color)}">
-          <span class="${sw}" style="background:${escapeBriefHtml(person.color)}"></span>
-          <span>${escapeBriefHtml(person.name)}</span>
-        </span>`;
-      }
+      // Name only — colored border/text/fill; no inner circle
       return `<span class="person-chip person-chip--text" style="border-color:${escapeBriefHtml(person.color)}55;color:${escapeBriefHtml(person.color)};background:${escapeBriefHtml(person.color)}1a">
         <span>${escapeBriefHtml(person.name)}</span>
       </span>`;
@@ -18082,25 +18151,87 @@
       showAddMealPresetModal();
     }
 
-    function showAddMealPresetModal() {
+    /** Read a recipe photo into a small data URL (keeps localStorage light). */
+    function readRecipePhotoFile(file) {
+      return new Promise((resolve, reject) => {
+        if (!file || !file.type || !file.type.startsWith('image/')) {
+          reject(new Error('Pick a photo of your recipe'));
+          return;
+        }
+        if (file.size > 12 * 1024 * 1024) {
+          reject(new Error('Photo is too large — try a clearer, smaller shot'));
+          return;
+        }
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          try {
+            const maxW = 960;
+            const scale = Math.min(1, maxW / (img.naturalWidth || maxW));
+            const w = Math.max(1, Math.round((img.naturalWidth || maxW) * scale));
+            const h = Math.max(1, Math.round((img.naturalHeight || maxW) * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            // JPEG keeps size modest for device storage
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+            URL.revokeObjectURL(url);
+            resolve(dataUrl);
+          } catch (err) {
+            URL.revokeObjectURL(url);
+            reject(err || new Error('Could not read photo'));
+          }
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error('Could not open that photo'));
+        };
+        img.src = url;
+      });
+    }
+
+    function showAddMealPresetModal(seed = {}) {
       if (ensureMealPresets().length >= MAX_MEAL_PRESETS) {
         showMealPresetLimitModal();
         return;
       }
 
+      let photoDataUrl = seed.photoDataUrl || '';
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm">
-          <div class="font-semibold text-lg text-harbor-text mb-1">Add Custom Recipe</div>
-          <div class="text-[10px] text-harbor-muted mb-3">Up to ${MAX_MEAL_PRESETS} recipes · assume spices on hand</div>
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[min(92dvh,100%)] overflow-y-auto">
+          <div class="flex items-start justify-between gap-3 mb-1">
+            <div class="font-semibold text-lg text-harbor-text">Add Custom Recipe</div>
+            <button type="button" class="modal-close-chip flex-shrink-0" onclick="this.closest('.fixed')?.remove()" aria-label="Close">Close</button>
+          </div>
+          <div class="text-[10px] text-harbor-muted mb-3">Up to ${MAX_MEAL_PRESETS} recipes · snap a card or type ingredients</div>
+          <div id="mp-photo-preview-wrap" class="mb-3 ${photoDataUrl ? '' : 'hidden'}">
+            <img id="mp-photo-preview" alt="Recipe photo" class="w-full max-h-40 object-cover rounded-2xl border border-harbor-border bg-harbor-raised"
+              ${photoDataUrl ? `src="${photoDataUrl}"` : ''}/>
+            <button type="button" id="mp-photo-clear" class="mt-1.5 text-[11px] font-semibold text-harbor-muted">Remove photo</button>
+          </div>
+          <div class="flex gap-2 mb-3">
+            <label class="chip-tool-btn flex-1 text-center cursor-pointer" style="display:inline-flex;align-items:center;justify-content:center;gap:0.35rem">
+              <i class="fa-solid fa-camera" aria-hidden="true"></i>
+              <span>Photo</span>
+              <input id="mp-photo-input" type="file" accept="image/*" capture="environment" class="sr-only" aria-label="Take or choose recipe photo">
+            </label>
+            <button type="button" id="mp-photo-pick" class="chip-tool-btn flex-1" style="display:inline-flex;align-items:center;justify-content:center;gap:0.35rem">
+              <i class="fa-regular fa-image" aria-hidden="true"></i>
+              <span>Library</span>
+            </button>
+          </div>
+          <p class="text-[10px] text-harbor-muted mb-3 leading-snug">Photo is saved with the recipe for reference. Auto-reading ingredients from a picture is coming later — for now, type the list below.</p>
           <label class="block text-xs text-harbor-muted mb-1">Recipe name</label>
-          <input id="mp-name" type="text" placeholder="e.g. Sheet Pan Chicken"
+          <input id="mp-name" type="text" placeholder="e.g. Sheet Pan Chicken" value="${escapeBriefHtml(seed.name || '')}"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-3 outline-none text-harbor-text">
           <label class="block text-xs text-harbor-muted mb-1">Ingredients (comma-separated)</label>
           <textarea id="mp-items" rows="3" placeholder="Chicken thighs, Potatoes, Olive oil, Green beans"
-            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-3 outline-none text-harbor-text resize-none"></textarea>
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-3 outline-none text-harbor-text resize-none">${escapeBriefHtml(seed.itemsText || '')}</textarea>
           <label class="block text-xs text-harbor-muted mb-1.5">Cooking effort</label>
           <div class="flex gap-1.5 mb-4">
             <button type="button" data-effort="1" class="mp-effort flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-primary bg-harbor-primary/15 text-harbor-text">Easy</button>
@@ -18112,14 +18243,64 @@
       `;
       document.body.appendChild(modal);
 
-      let selectedEffort = 1;
+      const previewWrap = modal.querySelector('#mp-photo-preview-wrap');
+      const previewImg = modal.querySelector('#mp-photo-preview');
+      const setPhoto = (dataUrl) => {
+        photoDataUrl = dataUrl || '';
+        if (photoDataUrl) {
+          previewImg.src = photoDataUrl;
+          previewWrap.classList.remove('hidden');
+        } else {
+          previewImg.removeAttribute('src');
+          previewWrap.classList.add('hidden');
+        }
+      };
+      const handlePhotoFile = async (file) => {
+        if (!file) return;
+        try {
+          showToast('Reading photo…');
+          const dataUrl = await readRecipePhotoFile(file);
+          setPhoto(dataUrl);
+          showToast('Photo attached — add name & ingredients');
+        } catch (err) {
+          showToast(err?.message || 'Could not use that photo');
+        }
+      };
+      const photoInput = modal.querySelector('#mp-photo-input');
+      photoInput?.addEventListener('change', () => {
+        const f = photoInput.files && photoInput.files[0];
+        handlePhotoFile(f);
+        photoInput.value = '';
+      });
+      modal.querySelector('#mp-photo-pick')?.addEventListener('click', () => {
+        // Library picker (no capture attribute) via temporary input
+        const pick = document.createElement('input');
+        pick.type = 'file';
+        pick.accept = 'image/*';
+        pick.className = 'sr-only';
+        pick.onchange = () => {
+          handlePhotoFile(pick.files && pick.files[0]);
+          pick.remove();
+        };
+        document.body.appendChild(pick);
+        pick.click();
+      });
+      modal.querySelector('#mp-photo-clear')?.addEventListener('click', () => setPhoto(''));
+
+      let selectedEffort = Number(seed.effort) || 1;
+      const paintEffort = () => {
+        modal.querySelectorAll('.mp-effort').forEach(b => {
+          const on = parseInt(b.dataset.effort, 10) === selectedEffort;
+          b.className = on
+            ? 'mp-effort flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-primary bg-harbor-primary/15 text-harbor-text'
+            : 'mp-effort flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-border bg-harbor-raised text-harbor-muted';
+        });
+      };
+      paintEffort();
       modal.querySelectorAll('.mp-effort').forEach(btn => {
         btn.onclick = () => {
-          modal.querySelectorAll('.mp-effort').forEach(b => {
-            b.className = 'mp-effort flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-border bg-harbor-raised text-harbor-muted';
-          });
-          btn.className = 'mp-effort flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-primary bg-harbor-primary/15 text-harbor-text';
           selectedEffort = parseInt(btn.dataset.effort, 10);
+          paintEffort();
         };
       });
 
@@ -18135,17 +18316,19 @@
           return;
         }
         const id = 'meal-custom-' + Date.now();
-        state.mealPresets.push({
+        const recipe = {
           id,
           label: String(name || '').replace(/^🍽\s*/, ''),
           effort: selectedEffort,
           items,
           isCustom: true
-        });
+        };
+        if (photoDataUrl) recipe.photoDataUrl = photoDataUrl;
+        state.mealPresets.push(recipe);
         saveState();
         modal.remove();
         renderGrocery();
-        showToast(`"${name}" added to recipes`);
+        showToast(photoDataUrl ? `"${name}" saved with photo` : `"${name}" added to recipes`);
       };
     }
 
@@ -18291,10 +18474,14 @@
       presets.forEach(p => {
         const row = document.createElement('div');
         row.className = 'bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 flex items-center gap-2';
+        const thumb = p.photoDataUrl
+          ? `<img src="${p.photoDataUrl}" alt="" class="w-10 h-10 rounded-xl object-cover border border-harbor-border flex-shrink-0" loading="lazy"/>`
+          : '';
         row.innerHTML = `
+          ${thumb}
           <div class="flex-1 min-w-0">
             <div class="font-medium text-sm truncate">${p.dayShort ? `${escapeBriefHtml(p.dayShort)} · ` : ''}${escapeBriefHtml(p.label)}</div>
-            <div class="text-[10px] text-harbor-muted">${p.recipe ? `${escapeBriefHtml(p.recipe)} · ` : ''}${getMealEffortLabel(p.effort)} · ${(p.items || []).length} items</div>
+            <div class="text-[10px] text-harbor-muted">${p.recipe ? `${escapeBriefHtml(p.recipe)} · ` : ''}${getMealEffortLabel(p.effort)} · ${(p.items || []).length} items${p.photoDataUrl ? ' · photo' : ''}</div>
           </div>
           <button type="button" data-id="${p.id}" class="mp-edit text-[10px] font-semibold text-harbor-primary-light px-2 py-1.5 rounded-lg bg-harbor-primary/10">Edit</button>
           <button type="button" data-id="${p.id}" class="mp-delete text-rose-400 text-xs font-medium px-2">Delete</button>
@@ -18454,13 +18641,11 @@
 
       if (typeof updateGroceryDinnersButton === 'function') updateGroceryDinnersButton();
 
+      // Dinner chips only — Shopping list is the default surface when dinners are hidden
+      // (no "Shopping list" chip here; Hide dinners returns you to the master list).
       container.classList.remove('hidden');
       container.innerHTML = `
         <div class="library-filters">
-          <button type="button" onclick="selectMealGroceryList(null)"
-            class="meal-grocery-chip px-3 py-1.5 rounded-full border text-xs font-semibold ${!activeMeal ? 'is-active border-harbor-primary text-harbor-text' : 'border-harbor-border bg-harbor-raised text-harbor-muted'}">
-            Shopping list
-          </button>
           ${visible.map(p => `
             <button type="button" onclick="selectMealGroceryList('${p.id}')"
               class="meal-grocery-chip px-3 py-1.5 rounded-full border text-xs font-semibold whitespace-nowrap ${activeMeal === p.id ? 'is-active border-harbor-primary text-harbor-text' : 'border-harbor-border bg-harbor-raised text-harbor-muted'}"
@@ -23588,6 +23773,30 @@
       });
     }
 
+    function showBudgetHowItWorks() {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-harbor-bg/70 flex items-end sm:items-center justify-center z-[70] p-0 sm:p-6';
+      modal.innerHTML = `
+        <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full max-w-md bg-harbor-surface border border-harbor-border rounded-t-3xl sm:rounded-3xl p-5 text-sm shadow-2xl">
+          <div class="flex items-start justify-between gap-3 mb-2">
+            <div class="font-semibold text-lg text-harbor-text">How budget works</div>
+            <button type="button" class="modal-close-chip" onclick="this.closest('.fixed')?.remove()" aria-label="Close">Close</button>
+          </div>
+          <ul class="text-xs text-harbor-muted space-y-2.5 leading-relaxed list-none p-0 m-0">
+            <li><strong class="text-harbor-text">Import CSV</strong> from your bank (download “transactions” / export). Harbor never uploads it — everything stays on this phone.</li>
+            <li><strong class="text-harbor-text">Full picture</strong> is all money out for the month. Lenses (Spending, Bills, Income…) zoom into one slice of the pie.</li>
+            <li><strong class="text-harbor-text">Tap a legend row</strong> or pie category to filter the transaction list. Swipe a row left to change category or delete a bad line.</li>
+            <li><strong class="text-harbor-text">Merchant memory</strong> — when you recategorize “STARBUCKS”, next import keeps that choice.</li>
+            <li><strong class="text-harbor-text">Wants that stack</strong> highlight coffee, dining, and shopping habits — not rent or transfers.</li>
+            <li><strong class="text-harbor-text">Re-import</strong> anytime from Manage; learned categories stick across files.</li>
+          </ul>
+          <button type="button" class="w-full mt-4 py-3 rounded-2xl bg-harbor-primary text-white font-semibold"
+            onclick="this.closest('.fixed')?.remove(); showBudgetImportModal()">Import CSV</button>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+
     function clearBudgetData() {
       const budget = ensureBudgetState();
       if (!(budget.transactions || []).length) {
@@ -24057,6 +24266,57 @@
           countEl.textContent = `${txs.length} transaction${txs.length === 1 ? '' : 's'}${extra} · by posting date`;
         } else {
           countEl.textContent = `${txs.length} transaction${txs.length === 1 ? '' : 's'} · ${kindOpt.short || kindOpt.label} · by posting date`;
+        }
+      }
+
+      // Month-over-month compare (current lens · this vs last calendar month)
+      const momEl = document.getElementById('budget-mom-compare');
+      if (momEl) {
+        try {
+          if (budgetMonthRange === 'current' || budgetMonthRange === 'last') {
+            const curTxs = getBudgetViewTransactions('current', budgetKindFilter);
+            const lastTxs = getBudgetViewTransactions('last', budgetKindFilter);
+            const sumList = (list) => (list || []).reduce((s, t) => s + (Number(t?.amount) || 0), 0);
+            const curSum = sumList(curTxs);
+            const lastSum = sumList(lastTxs);
+            if (curSum > 0.005 || lastSum > 0.005) {
+              const delta = curSum - lastSum;
+              const pct = lastSum > 0.005 ? Math.round((delta / lastSum) * 100) : null;
+              // For income, higher is better (green up); for spend lenses, higher is worse (rose up)
+              const incomeLens = budgetKindFilter === 'income';
+              let deltaText = '';
+              if (lastSum > 0.005) {
+                const sign = delta > 0.005 ? '+' : delta < -0.005 ? '−' : '';
+                const abs = formatBudgetMoney(Math.abs(delta));
+                const pctBit = pct != null && Math.abs(pct) >= 1 ? ` (${sign}${Math.abs(pct)}%)` : '';
+                const upGood = incomeLens;
+                const isUp = delta > 0.005;
+                const isDown = delta < -0.005;
+                const tone = isUp
+                  ? (upGood ? 'text-emerald-500/90' : 'text-rose-400/90')
+                  : isDown
+                    ? (upGood ? 'text-rose-400/90' : 'text-emerald-500/90')
+                    : '';
+                deltaText = (isUp || isDown)
+                  ? ` · <span class="${tone} font-semibold">${sign}${abs} vs last${pctBit}</span>`
+                  : ' · about even with last month';
+              } else {
+                deltaText = ' · no last-month total to compare';
+              }
+              const lensBit = budgetKindFilter === 'overview' ? '' : ` · ${escapeBriefHtml(kindOpt.short || kindOpt.label)}`;
+              momEl.classList.remove('hidden');
+              momEl.innerHTML = `This month <strong class="text-harbor-text">${formatBudgetMoney(curSum)}</strong> · last <strong class="text-harbor-text">${formatBudgetMoney(lastSum)}</strong>${deltaText}${lensBit}`;
+            } else {
+              momEl.classList.add('hidden');
+              momEl.innerHTML = '';
+            }
+          } else {
+            momEl.classList.add('hidden');
+            momEl.innerHTML = '';
+          }
+        } catch (_) {
+          momEl.classList.add('hidden');
+          momEl.innerHTML = '';
         }
       }
 
@@ -33529,6 +33789,17 @@
 
       // Re-paint after layout (Safari sometimes paints header before vars stick)
       requestAnimationFrame(() => applyThemeCssVars(t));
+
+      // Keep native status bar icons + under-bar color in sync with theme
+      try {
+        const Cap = window.Capacitor;
+        if (Cap?.isNativePlatform?.()) {
+          const StatusBar = Cap.Plugins?.StatusBar;
+          StatusBar?.setStyle?.({ style: t === 'dark' ? 'LIGHT' : 'DARK' });
+          StatusBar?.setBackgroundColor?.({ color: solid });
+          StatusBar?.setOverlaysWebView?.({ overlay: true });
+        }
+      } catch (_) { /* ignore */ }
     }
 
     function refreshFunTheme() {
@@ -38489,9 +38760,15 @@
         const Cap = window.Capacitor;
         if (!Cap || typeof Cap.isNativePlatform !== 'function' || !Cap.isNativePlatform()) return;
         const StatusBar = Cap.Plugins?.StatusBar;
+        // Edge-to-edge: web paints under status bar / home indicator (CSS safe-area pads chrome).
+        // contentInset:never + overlay avoids black bars AND touch/hit-target offset on swipe rows.
+        if (StatusBar?.setOverlaysWebView) {
+          await StatusBar.setOverlaysWebView({ overlay: true });
+        }
         if (StatusBar?.setStyle) {
-          // Light chrome under dark status-bar icons on light themes
-          await StatusBar.setStyle({ style: 'DARK' });
+          const theme = document.documentElement.getAttribute('data-theme') || 'harbor';
+          // DARK = dark status icons (for light themes); LIGHT = light icons (dark theme)
+          await StatusBar.setStyle({ style: theme === 'dark' ? 'LIGHT' : 'DARK' });
         }
         if (StatusBar?.setBackgroundColor) {
           const solid = getComputedStyle(document.documentElement)

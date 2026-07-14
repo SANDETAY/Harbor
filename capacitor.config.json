@@ -7,7 +7,7 @@
     "iosScheme": "capacitor"
   },
   "ios": {
-    "contentInset": "automatic",
+    "contentInset": "never",
     "preferredContentMode": "mobile",
     "scheme": "Harbor",
     "allowsLinkPreview": false,
@@ -24,7 +24,8 @@
     },
     "StatusBar": {
       "style": "DARK",
-      "backgroundColor": "#D6E8E2"
+      "backgroundColor": "#D6E8E2",
+      "overlaysWebView": true
     },
     "CapacitorHttp": {
       "enabled": true
