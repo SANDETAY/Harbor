@@ -10898,7 +10898,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 326;
+    const HARBOR_BUILD_NUMBER = 327;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -11251,6 +11251,10 @@
         // v1 locked: network helper OFF by default (no surprise third-party proxy).
         // User may opt in under Settings. File import never needs a helper.
         calendarAllowCorsHelper: false,
+        // Local notifications (device only — no push server)
+        notificationsEnabled: false,
+        notifyBills: true,
+        notifyMorningTasks: false,
         mealPresetsVersion: MEAL_PRESETS_VERSION,
         // Household members for color-coded schedule events (spouse, kids, etc.)
         householdProfiles: [
@@ -11961,6 +11965,9 @@
           routineLevel: null,
           cheatDayFundEnabled: true,
           calendarAllowCorsHelper: false,
+          notificationsEnabled: false,
+          notifyBills: true,
+          notifyMorningTasks: false,
           mealPresetsVersion: MEAL_PRESETS_VERSION,
           studentPricing: false,
           householdProfiles: [
@@ -12242,6 +12249,15 @@
       }
       if (state.settings.cheatDayFundEnabled === undefined) {
         state.settings.cheatDayFundEnabled = true;
+      }
+      if (state.settings.notificationsEnabled !== true && state.settings.notificationsEnabled !== false) {
+        state.settings.notificationsEnabled = false;
+      }
+      if (state.settings.notifyBills !== true && state.settings.notifyBills !== false) {
+        state.settings.notifyBills = true;
+      }
+      if (state.settings.notifyMorningTasks !== true && state.settings.notifyMorningTasks !== false) {
+        state.settings.notifyMorningTasks = false;
       }
       // Migrate existing items: weekly+ chores no longer build streaks by default
       (state.habits || []).forEach(h => {
@@ -17780,6 +17796,7 @@
       renderBills();
       renderTodayFeed();
       updateSmartBanner();
+      if (typeof syncHarborNotifications === 'function') syncHarborNotifications({ silent: true });
       if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('bills');
       const dueLabel = formatBillDueDaysList(days);
       const recLabel = formatBillRecurrenceLabel(rec);
@@ -17813,6 +17830,7 @@
       renderBills();
       renderTodayFeed();
       updateSmartBanner();
+      if (typeof syncHarborNotifications === 'function') syncHarborNotifications({ silent: true });
       if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('bills');
       showToast(`Updated ${bill.name}`);
       return bill;
@@ -18008,6 +18026,7 @@
       renderBills();
       renderTodayFeed();
       updateSmartBanner();
+      if (typeof syncHarborNotifications === 'function') syncHarborNotifications({ silent: true });
       if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('bills');
       showToast(`${bill.name} marked paid`);
     }
@@ -18020,6 +18039,7 @@
       renderBills();
       renderTodayFeed();
       updateSmartBanner();
+      if (typeof syncHarborNotifications === 'function') syncHarborNotifications({ silent: true });
       if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('bills');
       showToast(`${bill.name} marked unpaid`);
     }
@@ -18052,6 +18072,7 @@
       renderBills();
       renderTodayFeed();
       updateSmartBanner();
+      if (typeof syncHarborNotifications === 'function') syncHarborNotifications({ silent: true });
       if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('bills');
     }
 
@@ -19839,6 +19860,295 @@
 
     function isDeviceCalendarConnected() {
       return !!(state.settings?.deviceCalendarEnabled);
+    }
+
+    // ==================== LOCAL NOTIFICATIONS (device reminders) ====================
+    // Uses @capacitor/local-notifications on TestFlight/App Store.
+    // No push server / no Xcode “Push Notifications” capability required.
+    // Schedules bill due reminders + optional morning task check-in on this phone only.
+
+    const HARBOR_NOTIF_ID = {
+      MORNING: 900001,
+      BILL_BASE: 100000
+    };
+
+    function getLocalNotificationsPlugin() {
+      try {
+        const Cap = window.Capacitor;
+        if (!Cap) return null;
+        return Cap.Plugins?.LocalNotifications || null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function notificationsSupported() {
+      return !!(getLocalNotificationsPlugin() || (typeof Notification !== 'undefined'));
+    }
+
+    function isNotificationsEnabled() {
+      return !!(state.settings?.notificationsEnabled);
+    }
+
+    /** Stable positive int id from a string (bills, etc.) */
+    function harborNotifIdFromKey(key) {
+      const s = String(key || '');
+      let h = 2166136261;
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      const n = (h >>> 0) % 800000;
+      return HARBOR_NOTIF_ID.BILL_BASE + n;
+    }
+
+    async function getNotificationPermissionStatus() {
+      const LN = getLocalNotificationsPlugin();
+      if (LN?.checkPermissions) {
+        try {
+          const r = await LN.checkPermissions();
+          return r?.display || r?.receive || 'prompt';
+        } catch (_) { /* fall through */ }
+      }
+      if (typeof Notification !== 'undefined') {
+        return Notification.permission; // granted | denied | default
+      }
+      return 'unavailable';
+    }
+
+    async function requestNotificationPermission() {
+      const LN = getLocalNotificationsPlugin();
+      if (LN?.requestPermissions) {
+        try {
+          const r = await LN.requestPermissions();
+          const status = r?.display || r?.receive || 'denied';
+          return status === 'granted' || status === 'limited';
+        } catch (e) {
+          console.warn('LocalNotifications permission', e);
+          return false;
+        }
+      }
+      if (typeof Notification !== 'undefined' && Notification.requestPermission) {
+        const p = await Notification.requestPermission();
+        return p === 'granted';
+      }
+      return false;
+    }
+
+    /**
+     * Upcoming bill due instants in the next `horizonDays` days (local midnight → 9:00 AM fire).
+     * Skips autopay and already-paid-this-period charges when we can tell.
+     */
+    function collectUpcomingBillDueDates(horizonDays = 45) {
+      const out = [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const end = new Date(today);
+      end.setDate(end.getDate() + horizonDays);
+
+      (state.bills || []).forEach(bill => {
+        if (!bill || bill.autopay) return;
+        if (typeof isBillPaidThisPeriod === 'function' && isBillPaidThisPeriod(bill)) {
+          // Still schedule next cycle if within horizon — getDaysUntil handles shift
+        }
+        const dueDays = typeof getBillDueDays === 'function' ? getBillDueDays(bill) : [bill.dueDay || 1];
+        const rec = bill.recurrence || 'monthly';
+        // Walk months covered by horizon
+        const cursor = new Date(today.getFullYear(), today.getMonth(), 1);
+        const last = new Date(end.getFullYear(), end.getMonth(), 1);
+        while (cursor <= last) {
+          const y = cursor.getFullYear();
+          const m = cursor.getMonth();
+          const lastDom = new Date(y, m + 1, 0).getDate();
+          dueDays.forEach(d => {
+            const day = Math.min(Math.max(1, d), lastDom);
+            const due = new Date(y, m, day);
+            due.setHours(0, 0, 0, 0);
+            if (due < today || due > end) return;
+            // Weekly/biweekly: only emit if day-of-month path is our model (Harbor bills use DOM)
+            if (rec === 'weekly' || rec === 'biweekly') {
+              // Still fire on due days of month for those rare setups
+            }
+            out.push({
+              bill,
+              due,
+              key: `${bill.id}|${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+            });
+          });
+          cursor.setMonth(cursor.getMonth() + 1);
+        }
+      });
+      return out;
+    }
+
+    function buildHarborNotificationPayloads() {
+      const list = [];
+      if (!isNotificationsEnabled()) return list;
+
+      if (state.settings.notifyBills !== false) {
+        collectUpcomingBillDueDates(45).forEach(({ bill, due, key }) => {
+          // Fire at 9:00 local on due day
+          const at = new Date(due);
+          at.setHours(9, 0, 0, 0);
+          if (at.getTime() <= Date.now() + 60_000) return; // already past
+          const amt = typeof getBillPerPaymentAmount === 'function' && getBillPerPaymentAmount(bill)
+            ? ` · ${formatBillAmount(getBillPerPaymentAmount(bill))}`
+            : '';
+          list.push({
+            id: harborNotifIdFromKey(key),
+            title: 'Bill due today',
+            body: `${bill.name || 'Bill'}${amt} — open Harbor when you’re ready.`,
+            schedule: { at },
+            extra: { type: 'bill', billId: bill.id, dueKey: key }
+          });
+          // Day-before reminder at 6pm
+          const eve = new Date(due);
+          eve.setDate(eve.getDate() - 1);
+          eve.setHours(18, 0, 0, 0);
+          if (eve.getTime() > Date.now() + 60_000) {
+            list.push({
+              id: harborNotifIdFromKey(key + '|eve'),
+              title: 'Bill tomorrow',
+              body: `${bill.name || 'Bill'} is due tomorrow${amt}.`,
+              schedule: { at: eve },
+              extra: { type: 'bill-eve', billId: bill.id, dueKey: key }
+            });
+          }
+        });
+      }
+
+      if (state.settings.notifyMorningTasks) {
+        // Next 14 mornings at 8:30 local (body is fixed at schedule time — keep generic)
+        for (let i = 0; i < 14; i++) {
+          const at = new Date();
+          at.setHours(8, 30, 0, 0);
+          at.setDate(at.getDate() + i);
+          if (at.getTime() <= Date.now() + 60_000) continue;
+          list.push({
+            id: HARBOR_NOTIF_ID.MORNING + i,
+            title: 'Your Harbor day',
+            body: 'Open Harbor to set energy and plan your tasks.',
+            schedule: { at },
+            extra: { type: 'morning' }
+          });
+        }
+      }
+
+      // Cap to keep iOS happy (pending notification limits)
+      return list.slice(0, 48);
+    }
+
+    async function cancelHarborNotifications() {
+      const LN = getLocalNotificationsPlugin();
+      if (!LN) return;
+      try {
+        if (LN.getPending) {
+          const pending = await LN.getPending();
+          const ids = (pending?.notifications || []).map(n => ({ id: n.id }));
+          if (ids.length && LN.cancel) await LN.cancel({ notifications: ids });
+        }
+      } catch (e) {
+        console.warn('cancelHarborNotifications', e);
+      }
+    }
+
+    /**
+     * Rebuild all Harbor local notifications from current bills/settings.
+     * Safe to call often (after bill edits, settings, boot).
+     */
+    async function syncHarborNotifications(options = {}) {
+      const { silent = true } = options;
+      if (!isNotificationsEnabled()) {
+        await cancelHarborNotifications();
+        return { scheduled: 0 };
+      }
+
+      const LN = getLocalNotificationsPlugin();
+      if (!LN?.schedule) {
+        if (!silent) {
+          showToast(
+            isHarborNativeApp()
+              ? 'Notifications need a TestFlight rebuild with the Local Notifications plugin'
+              : 'Reminders work in the Harbor iPhone app (TestFlight / App Store)',
+            'info'
+          );
+        }
+        return { scheduled: 0 };
+      }
+
+      const perm = await getNotificationPermissionStatus();
+      if (perm !== 'granted' && perm !== 'limited') {
+        if (!silent) showToast('Turn on notifications for Harbor in iPhone Settings', 'warn');
+        return { scheduled: 0 };
+      }
+
+      await cancelHarborNotifications();
+      const payloads = buildHarborNotificationPayloads();
+      if (!payloads.length) {
+        if (!silent) showToast('No upcoming bill dates to remind yet');
+        return { scheduled: 0 };
+      }
+
+      try {
+        // Android 8+ channel (ignored on iOS)
+        if (LN.createChannel) {
+          try {
+            await LN.createChannel({
+              id: 'harbor-reminders',
+              name: 'Harbor reminders',
+              description: 'Bills and gentle day check-ins',
+              importance: 4,
+              visibility: 1
+            });
+          } catch (_) { /* ignore */ }
+        }
+
+        await LN.schedule({
+          notifications: payloads.map(p => ({
+            id: p.id,
+            title: p.title,
+            body: p.body,
+            schedule: p.schedule,
+            extra: p.extra || {},
+            channelId: 'harbor-reminders',
+            sound: undefined
+          }))
+        });
+        if (!silent) {
+          showToast(`Reminders on · ${payloads.length} scheduled`);
+        }
+        return { scheduled: payloads.length };
+      } catch (e) {
+        console.warn('schedule notifications', e);
+        if (!silent) showToast('Could not schedule reminders', 'warn');
+        return { scheduled: 0 };
+      }
+    }
+
+    async function enableHarborNotifications() {
+      if (!notificationsSupported() && !isHarborNativeApp()) {
+        showToast('Reminders work in the Harbor iPhone app', 'info');
+        return false;
+      }
+      const ok = await requestNotificationPermission();
+      if (!ok) {
+        showToast('Permission denied — enable Harbor in iPhone Settings → Notifications', 'warn');
+        state.settings.notificationsEnabled = false;
+        saveState();
+        return false;
+      }
+      state.settings.notificationsEnabled = true;
+      if (state.settings.notifyBills !== false) state.settings.notifyBills = true;
+      saveState();
+      await syncHarborNotifications({ silent: false });
+      return true;
+    }
+
+    async function disableHarborNotifications() {
+      state.settings.notificationsEnabled = false;
+      saveState();
+      await cancelHarborNotifications();
+      showToast('Reminders off');
     }
 
     function formatScheduleEventTime(time24) {
@@ -36067,6 +36377,9 @@
       const currentTheme = getAppTheme();
       const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
       const corsHelperOn = state.settings.calendarAllowCorsHelper === true;
+      const notificationsOn = state.settings.notificationsEnabled === true;
+      const notifyBillsOn = state.settings.notifyBills !== false;
+      const notifyMorningOn = state.settings.notifyMorningTasks === true;
       const themeSwatches = HARBOR_THEMES.map(th => `
         <button type="button" role="option" class="theme-swatch${currentTheme === th.id ? ' is-active' : ''}"
           data-theme-id="${th.id}" aria-selected="${currentTheme === th.id ? 'true' : 'false'}"
@@ -36128,6 +36441,51 @@
                     aria-label="Harbor Day" class="smart-suggestions-toggle harbor-switch">
                     <span></span>
                   </button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Reminders (local notifications — on this phone only) -->
+            <section class="settings-section" aria-labelledby="settings-sec-notify">
+              <div class="settings-section-head">
+                <h3 id="settings-sec-notify" class="settings-section-title">Reminders</h3>
+              </div>
+              <div class="settings-card">
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Notifications</div>
+                    <div class="settings-row-desc">Bills &amp; gentle check-ins on this phone</div>
+                  </div>
+                  <button type="button" id="notifications-toggle" role="switch" aria-checked="${notificationsOn ? 'true' : 'false'}"
+                    aria-label="Notifications" class="smart-suggestions-toggle harbor-switch">
+                    <span></span>
+                  </button>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Bill reminders</div>
+                    <div class="settings-row-desc">Day before + morning of due date</div>
+                  </div>
+                  <button type="button" id="notify-bills-toggle" role="switch" aria-checked="${notifyBillsOn ? 'true' : 'false'}"
+                    aria-label="Bill reminders" class="smart-suggestions-toggle harbor-switch">
+                    <span></span>
+                  </button>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Morning check-in</div>
+                    <div class="settings-row-desc">Soft nudge around 8:30 · Task list</div>
+                  </div>
+                  <button type="button" id="notify-morning-toggle" role="switch" aria-checked="${notifyMorningOn ? 'true' : 'false'}"
+                    aria-label="Morning check-in" class="smart-suggestions-toggle harbor-switch">
+                    <span></span>
+                  </button>
+                </div>
+                <div class="settings-card-block pt-0">
+                  <p class="settings-help-text mt-0 mb-0">
+                    Works in the Harbor iPhone app. No account server — reminders stay on this device.
+                    After enabling, allow Harbor in the iOS permission prompt.
+                  </p>
                 </div>
               </div>
             </section>
@@ -36238,6 +36596,9 @@
       setSwitchChecked(modal.querySelector('#smart-suggestions-toggle'), smartSuggestionsOn);
       setSwitchChecked(modal.querySelector('#cheat-fund-toggle'), cheatFundOn);
       setSwitchChecked(modal.querySelector('#calendar-cors-helper-toggle'), corsHelperOn);
+      setSwitchChecked(modal.querySelector('#notifications-toggle'), notificationsOn);
+      setSwitchChecked(modal.querySelector('#notify-bills-toggle'), notifyBillsOn);
+      setSwitchChecked(modal.querySelector('#notify-morning-toggle'), notifyMorningOn);
 
       wireSwitchToggle(modal.querySelector('#smart-suggestions-toggle'));
       wireSwitchToggle(modal.querySelector('#cheat-fund-toggle'));
@@ -36250,6 +36611,25 @@
             : 'Network helper off — direct calendar fetch only',
           on ? 'warn' : 'info'
         );
+      });
+      wireSwitchToggle(modal.querySelector('#notifications-toggle'), async (on) => {
+        if (on) {
+          const ok = await enableHarborNotifications();
+          setSwitchChecked(modal.querySelector('#notifications-toggle'), ok);
+          if (!ok) return;
+        } else {
+          await disableHarborNotifications();
+        }
+      });
+      wireSwitchToggle(modal.querySelector('#notify-bills-toggle'), (on) => {
+        state.settings.notifyBills = on;
+        saveState();
+        if (isNotificationsEnabled()) syncHarborNotifications({ silent: true });
+      });
+      wireSwitchToggle(modal.querySelector('#notify-morning-toggle'), (on) => {
+        state.settings.notifyMorningTasks = on;
+        saveState();
+        if (isNotificationsEnabled()) syncHarborNotifications({ silent: true });
       });
       renderCalendarFeedsList(modal.querySelector('#settings-calendar-feeds'));
       modal.querySelector('#settings-ics-refresh')?.addEventListener('click', async () => {
@@ -36275,6 +36655,22 @@
       const corsHelperToggle = modal.querySelector('#calendar-cors-helper-toggle');
       if (corsHelperToggle) {
         state.settings.calendarAllowCorsHelper = corsHelperToggle.getAttribute('aria-checked') === 'true';
+      }
+      const notifyBillsToggle = modal.querySelector('#notify-bills-toggle');
+      if (notifyBillsToggle) {
+        state.settings.notifyBills = notifyBillsToggle.getAttribute('aria-checked') === 'true';
+      }
+      const notifyMorningToggle = modal.querySelector('#notify-morning-toggle');
+      if (notifyMorningToggle) {
+        state.settings.notifyMorningTasks = notifyMorningToggle.getAttribute('aria-checked') === 'true';
+      }
+      // Master notifications toggle is applied live (permission prompt); re-read
+      const notificationsToggle = modal.querySelector('#notifications-toggle');
+      if (notificationsToggle) {
+        state.settings.notificationsEnabled = notificationsToggle.getAttribute('aria-checked') === 'true';
+      }
+      if (typeof syncHarborNotifications === 'function') {
+        try { syncHarborNotifications({ silent: true }); } catch (_) { /* ignore */ }
       }
       // Theme already applied live from palette; re-assert selected swatch if present
       const activeSwatch = modal.querySelector('.theme-swatch.is-active');
@@ -38836,6 +39232,12 @@
         refreshCalendarCache();
         applyCalendarSync();
         updateCalendarStatusUI();
+        // Rebuild local reminders after bills/settings load (native app only)
+        setTimeout(() => {
+          if (typeof syncHarborNotifications === 'function') {
+            try { syncHarborNotifications({ silent: true }); } catch (_) { /* ignore */ }
+          }
+        }, 1200);
         // Refresh ICS URL feeds in the background (GitHub Pages web + mobile)
         setTimeout(() => {
           if (getCalendarFeeds().length) {
