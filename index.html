@@ -10898,7 +10898,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 327;
+    const HARBOR_BUILD_NUMBER = 328;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -11254,6 +11254,8 @@
         // Local notifications (device only — no push server)
         notificationsEnabled: false,
         notifyBills: true,
+        notifyEvents: true,
+        notifyEventLeadMin: 30,
         notifyMorningTasks: false,
         mealPresetsVersion: MEAL_PRESETS_VERSION,
         // Household members for color-coded schedule events (spouse, kids, etc.)
@@ -11967,6 +11969,8 @@
           calendarAllowCorsHelper: false,
           notificationsEnabled: false,
           notifyBills: true,
+          notifyEvents: true,
+          notifyEventLeadMin: 30,
           notifyMorningTasks: false,
           mealPresetsVersion: MEAL_PRESETS_VERSION,
           studentPricing: false,
@@ -12258,6 +12262,12 @@
       }
       if (state.settings.notifyMorningTasks !== true && state.settings.notifyMorningTasks !== false) {
         state.settings.notifyMorningTasks = false;
+      }
+      if (state.settings.notifyEvents !== true && state.settings.notifyEvents !== false) {
+        state.settings.notifyEvents = true;
+      }
+      if (state.settings.notifyEventLeadMin == null || isNaN(Number(state.settings.notifyEventLeadMin))) {
+        state.settings.notifyEventLeadMin = 30;
       }
       // Migrate existing items: weekly+ chores no longer build streaks by default
       (state.habits || []).forEach(h => {
@@ -19813,6 +19823,10 @@
         if (typeof renderTodayFeed === 'function') renderTodayFeed();
         if (typeof updateSmartBanner === 'function') updateSmartBanner();
         if (typeof updateCalendarStatusUI === 'function') updateCalendarStatusUI();
+        // Schedule appointment alerts for newly synced events
+        if (typeof syncHarborNotifications === 'function') {
+          try { syncHarborNotifications({ silent: true }); } catch (_) { /* ignore */ }
+        }
         if (!silent) {
           showToast(cleaned.length
             ? `Loaded ${cleaned.length} event${cleaned.length === 1 ? '' : 's'} from this phone`
@@ -19981,9 +19995,125 @@
       return out;
     }
 
+    /** Local Date for an event start (date YYYY-MM-DD + time HH:MM). */
+    function getEventStartDateTime(e) {
+      if (!e) return null;
+      const date = typeof getEventDate === 'function' ? getEventDate(e) : (e.date || '');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+      const time = String(e.time || '09:00').trim();
+      const m = time.match(/^(\d{1,2}):(\d{2})$/);
+      const hh = m ? Math.min(23, Math.max(0, parseInt(m[1], 10))) : 9;
+      const mm = m ? Math.min(59, Math.max(0, parseInt(m[2], 10))) : 0;
+      const d = new Date(
+        `${date}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`
+      );
+      if (Number.isNaN(d.getTime())) return null;
+      return d;
+    }
+
+    function isAllDayLikeEvent(e) {
+      if (!e) return false;
+      if (e.isAllDay || e.allDay) return true;
+      const dur = Number(e.durationMin) || 0;
+      return dur >= 24 * 60;
+    }
+
+    function formatEventLeadLabel(mins) {
+      const n = Number(mins) || 0;
+      if (n <= 0) return 'now';
+      if (n < 60) return `in ${n} min`;
+      if (n === 60) return 'in 1 hour';
+      if (n % 60 === 0) return `in ${n / 60} hours`;
+      return `in ${n} min`;
+    }
+
+    /**
+     * Calendar appointment alerts for the next ~21 days (phone calendars + Harbor events).
+     * These fire with the app closed — same idea as Apple Calendar alerts (local, not a server).
+     */
+    function collectUpcomingEventReminders(horizonDays = 21) {
+      const out = [];
+      const now = Date.now();
+      const horizonMs = horizonDays * 86400000;
+      const lead = Math.max(0, Math.min(24 * 60, Number(state.settings?.notifyEventLeadMin) || 30));
+      const events = typeof getAllCalendarEvents === 'function' ? getAllCalendarEvents() : [];
+
+      events.forEach(ev => {
+        if (!ev) return;
+        const start = getEventStartDateTime(ev);
+        if (!start) return;
+        const allDay = isAllDayLikeEvent(ev);
+        const startMs = start.getTime();
+        if (startMs > now + horizonMs) return;
+
+        const title = String(ev.title || 'Event').trim() || 'Event';
+        const timeLabel = allDay
+          ? 'All day'
+          : (typeof formatScheduleEventTime === 'function' ? formatScheduleEventTime(ev.time) : (ev.time || ''));
+        const idBase = ev.id || `${getEventDate(ev)}-${ev.time}-${title}`;
+
+        if (allDay) {
+          // 8:00 morning of the day
+          const at = new Date(start);
+          at.setHours(8, 0, 0, 0);
+          if (at.getTime() > now + 45_000) {
+            out.push({
+              key: `${idBase}|allday`,
+              at,
+              title: 'Today’s event',
+              body: `${title} · all day`,
+              eventId: ev.id
+            });
+          }
+          return;
+        }
+
+        // Lead-time alert (e.g. 30 min before)
+        if (lead > 0) {
+          const atLead = new Date(startMs - lead * 60_000);
+          if (atLead.getTime() > now + 45_000 && startMs > now) {
+            out.push({
+              key: `${idBase}|lead${lead}`,
+              at: atLead,
+              title: `Starting ${formatEventLeadLabel(lead)}`,
+              body: `${title}${timeLabel ? ` · ${timeLabel}` : ''}`,
+              eventId: ev.id
+            });
+          }
+        }
+        // At-start alert
+        if (startMs > now + 45_000) {
+          out.push({
+            key: `${idBase}|start`,
+            at: start,
+            title: 'Starting now',
+            body: `${title}${timeLabel ? ` · ${timeLabel}` : ''}`,
+            eventId: ev.id
+          });
+        }
+      });
+
+      // Soonest first so the iOS pending cap keeps the most urgent alerts
+      out.sort((a, b) => a.at - b.at);
+      return out;
+    }
+
     function buildHarborNotificationPayloads() {
       const list = [];
       if (!isNotificationsEnabled()) return list;
+
+      // 1) Calendar appointments first (the reason people miss things)
+      if (state.settings.notifyEvents !== false) {
+        collectUpcomingEventReminders(21).forEach(r => {
+          list.push({
+            id: harborNotifIdFromKey('ev|' + r.key),
+            title: r.title,
+            body: r.body,
+            schedule: { at: r.at },
+            extra: { type: 'event', eventId: r.eventId || '', dueKey: r.key }
+          });
+        });
+      }
 
       if (state.settings.notifyBills !== false) {
         collectUpcomingBillDueDates(45).forEach(({ bill, due, key }) => {
@@ -20034,8 +20164,8 @@
         }
       }
 
-      // Cap to keep iOS happy (pending notification limits)
-      return list.slice(0, 48);
+      // Cap pending alerts (iOS limit) — events already sorted first
+      return list.slice(0, 60);
     }
 
     async function cancelHarborNotifications() {
@@ -20115,7 +20245,14 @@
           }))
         });
         if (!silent) {
-          showToast(`Reminders on · ${payloads.length} scheduled`);
+          const eventN = payloads.filter(p => p.extra?.type === 'event').length;
+          const billN = payloads.filter(p => String(p.extra?.type || '').startsWith('bill')).length;
+          const parts = [];
+          if (eventN) parts.push(`${eventN} appointment`);
+          if (billN) parts.push(`${billN} bill`);
+          showToast(parts.length
+            ? `Alerts on · ${parts.join(' · ')}`
+            : `Reminders on · ${payloads.length} scheduled`);
         }
         return { scheduled: payloads.length };
       } catch (e) {
@@ -20139,6 +20276,8 @@
       }
       state.settings.notificationsEnabled = true;
       if (state.settings.notifyBills !== false) state.settings.notifyBills = true;
+      if (state.settings.notifyEvents !== false) state.settings.notifyEvents = true;
+      if (state.settings.notifyEventLeadMin == null) state.settings.notifyEventLeadMin = 30;
       saveState();
       await syncHarborNotifications({ silent: false });
       return true;
@@ -21288,6 +21427,7 @@
         saveState();
         renderTodayFeed();
         updateSmartBanner();
+        if (typeof syncHarborNotifications === 'function') syncHarborNotifications({ silent: true });
         modal.remove();
         const when = formatEventDateRangeLabel(startDate, endDate);
         if (calState.editingId) {
@@ -36379,7 +36519,9 @@
       const corsHelperOn = state.settings.calendarAllowCorsHelper === true;
       const notificationsOn = state.settings.notificationsEnabled === true;
       const notifyBillsOn = state.settings.notifyBills !== false;
+      const notifyEventsOn = state.settings.notifyEvents !== false;
       const notifyMorningOn = state.settings.notifyMorningTasks === true;
+      const eventLeadMin = Number(state.settings.notifyEventLeadMin) || 30;
       const themeSwatches = HARBOR_THEMES.map(th => `
         <button type="button" role="option" class="theme-swatch${currentTheme === th.id ? ' is-active' : ''}"
           data-theme-id="${th.id}" aria-selected="${currentTheme === th.id ? 'true' : 'false'}"
@@ -36445,7 +36587,7 @@
               </div>
             </section>
 
-            <!-- Reminders (local notifications — on this phone only) -->
+            <!-- Reminders (local alerts — fire with app closed; no push server needed) -->
             <section class="settings-section" aria-labelledby="settings-sec-notify">
               <div class="settings-section-head">
                 <h3 id="settings-sec-notify" class="settings-section-title">Reminders</h3>
@@ -36454,12 +36596,33 @@
                 <div class="settings-row">
                   <div class="settings-row-copy">
                     <div class="settings-row-title">Notifications</div>
-                    <div class="settings-row-desc">Bills &amp; gentle check-ins on this phone</div>
+                    <div class="settings-row-desc">Appointments, bills · phone buzzes even if Harbor is closed</div>
                   </div>
                   <button type="button" id="notifications-toggle" role="switch" aria-checked="${notificationsOn ? 'true' : 'false'}"
                     aria-label="Notifications" class="smart-suggestions-toggle harbor-switch">
                     <span></span>
                   </button>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Appointment alerts</div>
+                    <div class="settings-row-desc">Before each event + when it starts (from Schedule / phone calendars)</div>
+                  </div>
+                  <button type="button" id="notify-events-toggle" role="switch" aria-checked="${notifyEventsOn ? 'true' : 'false'}"
+                    aria-label="Appointment alerts" class="smart-suggestions-toggle harbor-switch">
+                    <span></span>
+                  </button>
+                </div>
+                <div class="settings-card-block py-2">
+                  <label class="block text-[10px] text-harbor-muted mb-1" for="notify-event-lead">Alert me before events</label>
+                  <select id="notify-event-lead" class="w-full bg-harbor-raised border border-harbor-border rounded-xl px-3 py-2 text-xs text-harbor-text outline-none">
+                    <option value="5" ${eventLeadMin === 5 ? 'selected' : ''}>5 minutes before</option>
+                    <option value="10" ${eventLeadMin === 10 ? 'selected' : ''}>10 minutes before</option>
+                    <option value="15" ${eventLeadMin === 15 ? 'selected' : ''}>15 minutes before</option>
+                    <option value="30" ${eventLeadMin === 30 ? 'selected' : ''}>30 minutes before</option>
+                    <option value="60" ${eventLeadMin === 60 ? 'selected' : ''}>1 hour before</option>
+                    <option value="120" ${eventLeadMin === 120 ? 'selected' : ''}>2 hours before</option>
+                  </select>
                 </div>
                 <div class="settings-row">
                   <div class="settings-row-copy">
@@ -36483,8 +36646,8 @@
                 </div>
                 <div class="settings-card-block pt-0">
                   <p class="settings-help-text mt-0 mb-0">
-                    Works in the Harbor iPhone app. No account server — reminders stay on this device.
-                    After enabling, allow Harbor in the iOS permission prompt.
+                    Turn <strong class="text-harbor-text">Notifications</strong> on, then allow Harbor when iOS asks.
+                    Sync calendars so appointments on this phone get alerts too. Alerts are scheduled on-device (like Apple Calendar) — no extra server.
                   </p>
                 </div>
               </div>
@@ -36598,6 +36761,7 @@
       setSwitchChecked(modal.querySelector('#calendar-cors-helper-toggle'), corsHelperOn);
       setSwitchChecked(modal.querySelector('#notifications-toggle'), notificationsOn);
       setSwitchChecked(modal.querySelector('#notify-bills-toggle'), notifyBillsOn);
+      setSwitchChecked(modal.querySelector('#notify-events-toggle'), notifyEventsOn);
       setSwitchChecked(modal.querySelector('#notify-morning-toggle'), notifyMorningOn);
 
       wireSwitchToggle(modal.querySelector('#smart-suggestions-toggle'));
@@ -36621,6 +36785,12 @@
           await disableHarborNotifications();
         }
       });
+      wireSwitchToggle(modal.querySelector('#notify-events-toggle'), (on) => {
+        state.settings.notifyEvents = on;
+        saveState();
+        if (isNotificationsEnabled()) syncHarborNotifications({ silent: true });
+        showToast(on ? 'Appointment alerts on' : 'Appointment alerts off');
+      });
       wireSwitchToggle(modal.querySelector('#notify-bills-toggle'), (on) => {
         state.settings.notifyBills = on;
         saveState();
@@ -36630,6 +36800,13 @@
         state.settings.notifyMorningTasks = on;
         saveState();
         if (isNotificationsEnabled()) syncHarborNotifications({ silent: true });
+      });
+      modal.querySelector('#notify-event-lead')?.addEventListener('change', (e) => {
+        const v = parseInt(e.target.value, 10);
+        state.settings.notifyEventLeadMin = Number.isFinite(v) ? v : 30;
+        saveState();
+        if (isNotificationsEnabled()) syncHarborNotifications({ silent: true });
+        showToast(`Alert ${formatEventLeadLabel(state.settings.notifyEventLeadMin)} before events`);
       });
       renderCalendarFeedsList(modal.querySelector('#settings-calendar-feeds'));
       modal.querySelector('#settings-ics-refresh')?.addEventListener('click', async () => {
@@ -36659,6 +36836,15 @@
       const notifyBillsToggle = modal.querySelector('#notify-bills-toggle');
       if (notifyBillsToggle) {
         state.settings.notifyBills = notifyBillsToggle.getAttribute('aria-checked') === 'true';
+      }
+      const notifyEventsToggle = modal.querySelector('#notify-events-toggle');
+      if (notifyEventsToggle) {
+        state.settings.notifyEvents = notifyEventsToggle.getAttribute('aria-checked') === 'true';
+      }
+      const eventLeadSel = modal.querySelector('#notify-event-lead');
+      if (eventLeadSel) {
+        const v = parseInt(eventLeadSel.value, 10);
+        state.settings.notifyEventLeadMin = Number.isFinite(v) ? v : 30;
       }
       const notifyMorningToggle = modal.querySelector('#notify-morning-toggle');
       if (notifyMorningToggle) {
