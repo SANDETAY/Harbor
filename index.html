@@ -3805,6 +3805,15 @@
       position: relative;
       z-index: 5;
       pointer-events: auto;
+      touch-action: none; /* allow vertical swipe-to-dismiss from header */
+    }
+    .weather-sheet-head .sheet-dismiss-hint {
+      display: block;
+      margin: -0.15rem 0 0.45rem;
+    }
+    @media (min-width: 768px) {
+      .weather-sheet-head .sheet-dismiss-hint { display: none; }
+      .weather-sheet-head { touch-action: auto; }
     }
     .weather-sheet-head .modal-close-chip {
       position: relative;
@@ -10889,7 +10898,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 323;
+    const HARBOR_BUILD_NUMBER = 324;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -28688,12 +28697,7 @@
       if (!overlay || overlay.nodeType !== 1) return;
       if (overlay.dataset.sheetSwipeBound === '1') return;
       if (!overlay.classList.contains('fixed') && overlay.id !== 'summary-modal') return;
-      // Weather pane uses its own dismiss wiring — swipe capture steals Close taps on iOS
-      if (overlay.id === 'weather-forecast-modal' || overlay.id === 'weather-access-modal' ||
-          overlay.classList.contains('weather-access-modal')) {
-        return;
-      }
-      // Metric log stays a compact sheet; swipe-dismiss still allowed, no special skip
+      // Weather forecast / access: swipe-to-dismiss enabled; Close stays excluded via modal-close-chip
 
       const sheet = findSheetPanel(overlay);
       if (!sheet) return;
@@ -28769,7 +28773,7 @@
             cleanup();
             return;
           }
-          if (getScrollTop() > 2 && !e.target.closest('.modal-grab-pill, .summary-dash-head')) {
+          if (getScrollTop() > 2 && !e.target.closest('.modal-grab-pill, .summary-dash-head, .weather-sheet-head, .sheet-dismiss-hint, [data-sheet-grab]')) {
             cleanup();
             return;
           }
@@ -28809,12 +28813,17 @@
         if (e.target.closest('input, textarea, select, button, a, [role="switch"], [role="tab"], .person-pick-btn, .modal-close-chip, .summary-toggle, .summary-month-cal')) {
           return;
         }
-        // Start dismiss from grab / title / top band — larger band for full-screen sheets
-        const grab = e.target.closest('.modal-grab-pill, .summary-dash-head, .app-menu-sheet-title, .sheet-dismiss-hint, [data-sheet-grab]');
+        // Start dismiss from grab / title / weather head / top band — never from Close
+        if (e.target.closest('.modal-close-chip, [data-weather-dismiss], button, a, input, textarea, select')) {
+          return;
+        }
+        const grab = e.target.closest(
+          '.modal-grab-pill, .summary-dash-head, .app-menu-sheet-title, .weather-sheet-head, .sheet-dismiss-hint, [data-sheet-grab]'
+        );
         const rect = sheet.getBoundingClientRect();
         const topBand = sheet.classList.contains('summary-sheet') || sheet.classList.contains('harbor-full-sheet')
-          || sheet.hasAttribute('data-sheet-panel')
-          ? 88
+          || sheet.hasAttribute('data-sheet-panel') || sheet.hasAttribute('data-weather-sheet')
+          ? 96
           : 56;
         const nearTop = e.clientY <= rect.top + topBand;
         const scrollTop = getScrollTop();
@@ -29488,6 +29497,11 @@
           if (e.pointerType === 'touch' || e.pointerType === 'pen') dismiss(e);
         });
       });
+
+      // Swipe down on grab / header to close (same system as other sheets)
+      if (typeof wireSheetSwipeToDismiss === 'function') {
+        try { wireSheetSwipeToDismiss(modal); } catch (_) { /* ignore */ }
+      }
     }
 
     function showWeatherAccessPrompt() {
@@ -29501,8 +29515,9 @@
       modal.innerHTML = `
         <div class="absolute inset-0" data-weather-backdrop="1" data-weather-dismiss="1" aria-hidden="true"></div>
         <div class="relative w-full sm:max-w-md" data-weather-sheet="1" role="dialog" aria-modal="true" aria-label="Weather access">
-          <div class="weather-sheet-head">
+          <div class="weather-sheet-head" data-sheet-grab="1">
             <div class="modal-grab-pill" aria-hidden="true"></div>
+            <div class="sheet-dismiss-hint">Swipe down to close</div>
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 pr-2">
                 <div class="text-xs uppercase tracking-wider text-harbor-muted font-semibold">Weather</div>
@@ -29577,8 +29592,9 @@
       modal.innerHTML = `
         <div class="absolute inset-0" data-weather-backdrop="1" data-weather-dismiss="1" aria-hidden="true"></div>
         <div data-weather-sheet="1" role="dialog" aria-modal="true" aria-label="${paneTitle}">
-          <div class="weather-sheet-head">
+          <div class="weather-sheet-head" data-sheet-grab="1">
             <div class="modal-grab-pill" aria-hidden="true"></div>
+            <div class="sheet-dismiss-hint">Swipe down to close</div>
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 pr-2">
                 <div class="text-xs uppercase tracking-wider text-harbor-muted font-semibold">${paneTitle}</div>
