@@ -2084,6 +2084,21 @@
       padding-top: 0.65rem;
       padding-bottom: 0.65rem;
     }
+    /* Grocery check controls — real buttons so iOS delivers the tap (not swallowed by swipe) */
+    .grocery-check-hit {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .grocery-check-hit--label {
+      font: inherit;
+      color: inherit;
+      line-height: inherit;
+    }
+    .grocery-check-hit:active {
+      opacity: 0.88;
+    }
 
     .grocery-quick-add {
       display: flex;
@@ -9847,22 +9862,28 @@
         box-shadow: none !important;
       }
 
-      /* Desktop: restore subtle sliding underline pill */
+      /*
+        Desktop active tab: ONE soft underline pill only.
+        Mobile uses ::before on the tab; that + the sliding indicator looked like a box around a pill.
+      */
+      .main-nav-tab.nav-active::before {
+        content: none !important;
+        display: none !important;
+      }
       .main-nav-indicator {
         opacity: 1;
-        top: 0.2rem;
-        bottom: 0.35rem;
-        border-radius: var(--harbor-radius-md) var(--harbor-radius-md) 0.35rem 0.35rem;
-        background: linear-gradient(180deg, rgb(var(--harbor-primary) / 0.22) 0%, rgb(var(--harbor-primary) / 0.06) 100%);
-        box-shadow: inset 0 -2px 0 rgb(var(--harbor-primary));
+        top: auto;
+        bottom: 0;
+        height: 0.2rem;
+        border-radius: 999px;
+        background: rgb(var(--harbor-primary)) !important;
+        box-shadow: none !important;
+        border: none !important;
       }
-      html[data-theme="dark"] .main-nav-indicator {
-        background: linear-gradient(180deg, rgb(var(--harbor-primary) / 0.28) 0%, rgb(var(--harbor-primary) / 0.1) 100%);
-        box-shadow: inset 0 -2px 0 rgb(var(--harbor-primary));
-      }
+      html[data-theme="dark"] .main-nav-indicator,
       html[data-theme="harbor"] .main-nav-indicator {
-        background: linear-gradient(180deg, rgba(60, 181, 166, 0.28) 0%, rgb(var(--harbor-primary) / 0.08) 100%);
-        box-shadow: inset 0 -2px 0 rgb(var(--harbor-primary-light));
+        background: rgb(var(--harbor-primary-light)) !important;
+        box-shadow: none !important;
       }
 
       /* Desktop tab order: Task · Life · Streaks · Library (classic) */
@@ -9875,14 +9896,26 @@
       .main-nav-tab {
         flex-direction: row;
         gap: 0;
-        padding: 0.7rem 0.3rem 0.65rem;
+        padding: 0.7rem 0.85rem 0.7rem;
         min-height: 0;
         font-size: 0.88rem;
         font-weight: 650;
         letter-spacing: -0.015em;
-        border-radius: var(--harbor-radius-md) var(--harbor-radius-md) 0 0;
+        border-radius: 0;
+        border: none !important;
+        border-bottom: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+        background: transparent !important;
         color: rgb(var(--harbor-muted) / 0.88);
         justify-content: center;
+      }
+      .main-nav-tab:hover,
+      .main-nav-tab:focus-visible,
+      .main-nav-tab:active {
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
       }
       /* Icons are mobile-only */
       .main-nav-tab .nav-tab-icon {
@@ -9894,6 +9927,10 @@
       }
       .main-nav-tab.nav-active {
         font-weight: 750;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-bottom: none !important;
       }
 
       /* Collapse FAB slot in the top bar; float orb bottom-right */
@@ -10796,7 +10833,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 321;
+    const HARBOR_BUILD_NUMBER = 322;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -18934,19 +18971,62 @@
              <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove item"><i class="fa-solid fa-trash-can"></i> Remove</button>`
           : `<button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove item"><i class="fa-solid fa-trash-can"></i> Remove</button>`;
         const safeName = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(item.name) : item.name;
+        const safeId = String(item.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        // grocery-check-hit is a swipe passthrough so taps aren't eaten by swipe-axis lock on iOS
         const contentHtml = `
-          <div onclick="toggleGroceryItem('${item.id}')" class="w-8 h-8 flex-shrink-0 rounded-xl border-2 ${item.checked ? 'border-harbor-primary bg-harbor-primary' : 'border-harbor-border'} flex items-center justify-center">
-            ${item.checked ? '<i class="fa-solid fa-check text-white text-sm"></i>' : ''}
-          </div>
-          <div class="flex-1 min-w-0" onclick="toggleGroceryItem('${item.id}')">
-            <div class="font-medium ${item.checked ? 'line-through text-harbor-muted' : ''}">${safeName}</div>
+          <button type="button" class="grocery-check-hit w-9 h-9 flex-shrink-0 rounded-xl border-2 ${item.checked ? 'border-harbor-primary bg-harbor-primary' : 'border-harbor-border'} flex items-center justify-center touch-target" data-grocery-toggle="${escapeBriefHtml(String(item.id))}" aria-label="${item.checked ? 'Uncheck' : 'Check'} ${safeName}" aria-pressed="${item.checked ? 'true' : 'false'}">
+            ${item.checked ? '<i class="fa-solid fa-check text-white text-sm" aria-hidden="true"></i>' : ''}
+          </button>
+          <button type="button" class="grocery-check-hit grocery-check-hit--label flex-1 min-w-0 text-left bg-transparent border-0 p-0 m-0 cursor-pointer touch-target" data-grocery-toggle="${escapeBriefHtml(String(item.id))}" aria-label="${item.checked ? 'Uncheck' : 'Check'} ${safeName}">
+            <div class="font-medium ${item.checked ? 'line-through text-harbor-muted' : 'text-harbor-text'}">${safeName}</div>
             ${item.qty ? `<div class="text-xs text-harbor-muted">${escapeBriefHtml(item.qty)}</div>` : ''}
-          </div>
-          ${isMeal ? `<button type="button" onclick="event.stopImmediatePropagation(); renameGroceryItem('${item.id}')" class="row-inline-actions text-[10px] text-harbor-primary-light font-semibold px-1">Edit</button>` : ''}
-          <button onclick="event.stopImmediatePropagation(); removeGroceryItem('${item.id}')" class="row-inline-actions text-harbor-muted hover:text-rose-400 text-sm">×</button>
+          </button>
+          ${isMeal ? `<button type="button" class="row-inline-actions text-[10px] text-harbor-primary-light font-semibold px-1" data-grocery-rename="${safeId}">Edit</button>` : ''}
+          <button type="button" class="row-inline-actions text-harbor-muted hover:text-rose-400 text-sm" data-grocery-remove="${safeId}" aria-label="Remove item">×</button>
         `;
         row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
           `habit-row bg-harbor-surface border border-harbor-border rounded-2xl px-4 py-3 flex items-center gap-x-3 cursor-pointer ${item.checked ? 'opacity-50' : ''}`);
+
+        let lastToggleAt = 0;
+        const fireToggle = (e) => {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          if (row.dataset.swipeSuppressClick === '1') return;
+          if (row.classList.contains('is-open') || row.classList.contains('is-swiping')) return;
+          // Debounce so pointerup + click on iOS don't double-toggle back to unchecked
+          const now = Date.now();
+          if (now - lastToggleAt < 400) return;
+          lastToggleAt = now;
+          toggleGroceryItem(item.id);
+        };
+        row.querySelectorAll('[data-grocery-toggle]').forEach(el => {
+          el.addEventListener('click', fireToggle);
+          // iOS: fire on pointerup when click is flaky after sibling swipe handlers
+          el.addEventListener('pointerup', (e) => {
+            if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+            fireToggle(e);
+          });
+        });
+        row.querySelector('[data-grocery-rename]')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          renameGroceryItem(item.id);
+        });
+        row.querySelector('[data-grocery-remove]')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          removeGroceryItem(item.id);
+        });
+        // Whole-row tap (padding gaps) also toggles when not swiping — mirrors tasks
+        const content = row.querySelector('.swipe-row-content');
+        content?.addEventListener('click', (e) => {
+          if (e.target.closest('.row-inline-actions, .swipe-action, button, a, .grocery-check-hit')) return;
+          if (row.dataset.swipeSuppressClick === '1') return;
+          if (row.classList.contains('is-open') || row.classList.contains('is-swiping')) return;
+          toggleGroceryItem(item.id);
+        });
         return row;
       };
 
@@ -25392,9 +25472,9 @@
     function isSwipePassthroughTarget(e) {
       const t = e.target;
       if (!(t instanceof Element)) return false;
-      // Don't start a swipe on real controls or the complete-tap circle (title text still swipes).
+      // Don't start a swipe on real controls or the complete/check hit (title text still swipes).
       return !!t.closest(
-        'button, a, input, textarea, select, [data-sync-health], .row-inline-actions, .swipe-action, .task-complete-hit, .budget-tx-edit-btn, [data-budget-edit]'
+        'button, a, input, textarea, select, [data-sync-health], .row-inline-actions, .swipe-action, .task-complete-hit, .grocery-check-hit, .budget-tx-edit-btn, [data-budget-edit]'
       );
     }
 
