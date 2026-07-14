@@ -10898,7 +10898,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 328;
+    const HARBOR_BUILD_NUMBER = 329;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -39519,12 +39519,19 @@
       const appWrap = document.querySelector('.app-content-wrap');
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      // Dual-preview / iframe: skip splash so both panes boot instantly
+      // Dual-preview / iframe: skip splash so both panes boot instantly.
+      // Native TestFlight/App Store: skip the HTML splash — iOS LaunchScreen + Capacitor
+      // already showed mint; a second animated splash made it feel like “icon then splash”.
       let skipSplash = document.documentElement.classList.contains('preview-skip-splash');
       try {
         skipSplash = skipSplash
           || window.self !== window.top
           || /(?:\?|&)preview=/.test(location.search || '');
+        if (!skipSplash && typeof isHarborNativeApp === 'function' && isHarborNativeApp()) {
+          skipSplash = true;
+        } else if (!skipSplash && window.Capacitor?.isNativePlatform?.()) {
+          skipSplash = true;
+        }
       } catch (_) {
         skipSplash = true;
       }
