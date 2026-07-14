@@ -21497,6 +21497,7 @@
       renderSchedule();
       renderTodayFeed();
       updateSmartBanner();
+      if (typeof syncHarborNotifications === 'function') syncHarborNotifications({ silent: true });
       showToast(fromFeed
         ? 'Removed in Harbor · stays off if the feed refreshes'
         : 'Event removed · local only');
