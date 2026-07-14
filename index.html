@@ -6000,10 +6000,10 @@
       inset: 0;
       z-index: 260;
       display: flex;
-      align-items: flex-end;
+      align-items: stretch;
       justify-content: center;
-      background: rgba(18, 40, 37, 0.42);
-      /* solid fallback so underlying weather/tabs never “bleed” into the sheet */
+      /* Sheet fills the screen — no dark letterbox strip above */
+      background: rgb(var(--harbor-surface));
     }
 
     #summary-modal .summary-modal-backdrop {
@@ -6011,23 +6011,36 @@
       inset: 0;
       background: transparent;
       z-index: 0;
+      pointer-events: none;
     }
 
     .summary-sheet {
       position: relative;
       z-index: 1;
       width: 100%;
-      max-height: 92vh;
-      min-height: 42vh;
+      height: 100%;
+      max-height: 100%;
+      max-height: 100dvh;
+      max-height: 100svh;
+      min-height: 100%;
+      min-height: 100dvh;
+      min-height: 100svh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      border-radius: var(--harbor-radius-xl) var(--harbor-radius-xl) 0 0;
-      border-top: 1px solid rgb(var(--harbor-primary) / 0.14);
+      box-sizing: border-box;
+      /* Full-bleed under status bar; grab + “Swipe down” sit in safe-area padding */
+      border-radius: 0;
+      border-top: none;
+      /* Safe area keeps pill + dismiss hint clear of Dynamic Island / notch */
+      padding-top: max(0.4rem, env(safe-area-inset-top, 0px));
+      padding-left: max(1.15rem, env(safe-area-inset-left, 0px));
+      padding-right: max(1.15rem, env(safe-area-inset-right, 0px));
+      padding-bottom: 0.75rem;
       background:
         radial-gradient(ellipse 90% 50% at 50% -10%, rgb(var(--harbor-primary) / 0.1) 0%, transparent 55%),
         rgb(var(--harbor-surface));
-      box-shadow: var(--harbor-shadow-md), 0 -8px 32px rgb(var(--harbor-text) / 0.1);
+      box-shadow: none;
       isolation: isolate;
       animation: sheetUp var(--harbor-duration-slow) var(--harbor-ease-out) forwards;
     }
@@ -6076,8 +6089,9 @@
       font-size: 0.62rem;
       font-weight: 600;
       color: rgb(var(--harbor-muted));
-      margin: -0.15rem 0 0.45rem;
+      margin: -0.05rem 0 0.5rem;
       letter-spacing: 0.01em;
+      flex-shrink: 0;
     }
     @media (max-width: 767px) {
       .summary-sheet-foot {
@@ -6089,16 +6103,51 @@
       .summary-sheet .modal-grab-pill {
         width: 2.75rem;
         height: 0.28rem;
-        margin-bottom: 0.35rem;
-        opacity: 0.85;
+        margin-top: 0.1rem;
+        margin-bottom: 0.4rem;
+        opacity: 0.9;
+        flex-shrink: 0;
+      }
+    }
+    /* Desktop / wide: keep a floating sheet look (not full-bleed) */
+    @media (min-width: 768px) {
+      #summary-modal {
+        align-items: center;
+        background: rgba(18, 40, 37, 0.42);
+        padding: 1.25rem;
+      }
+      #summary-modal .summary-modal-backdrop {
+        pointer-events: auto;
+        background: transparent;
+      }
+      .summary-sheet {
+        height: auto;
+        min-height: 42vh;
+        max-height: min(92vh, 920px);
+        max-width: 28rem;
+        border-radius: var(--harbor-radius-xl);
+        border-top: 1px solid rgb(var(--harbor-primary) / 0.14);
+        padding-top: 1.15rem !important;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+        box-shadow: var(--harbor-shadow-md), 0 16px 48px rgb(var(--harbor-text) / 0.14);
       }
     }
     html[data-theme="dark"] .summary-sheet {
-      border-top-color: rgb(var(--harbor-primary) / 0.16);
+      border-top-color: transparent;
       background:
         radial-gradient(ellipse 90% 50% at 50% -10%, rgb(var(--harbor-primary) / 0.1) 0%, transparent 55%),
         rgb(var(--harbor-surface));
-      box-shadow: var(--harbor-shadow-md), 0 -10px 36px rgba(0, 10, 8, 0.45);
+      box-shadow: none;
+    }
+    @media (min-width: 768px) {
+      html[data-theme="dark"] #summary-modal {
+        background: rgba(6, 16, 14, 0.78);
+      }
+      html[data-theme="dark"] .summary-sheet {
+        border-top-color: rgb(var(--harbor-primary) / 0.16);
+        box-shadow: var(--harbor-shadow-md), 0 -10px 36px rgba(0, 10, 8, 0.45);
+      }
     }
     html[data-theme="dark"] .summary-sheet-done {
       background: rgba(24, 42, 38, 0.95);
@@ -6111,10 +6160,6 @@
     body.summary-open .summary-orb {
       visibility: hidden !important;
       pointer-events: none !important;
-    }
-
-    html[data-theme="dark"] #summary-modal {
-      background: rgba(6, 16, 14, 0.78);
     }
 
     /* Must sit ABOVE #summary-modal (z-index 260) or day taps appear to do nothing */
@@ -9690,12 +9735,20 @@
         order: -1;
       }
 
-      .fixed.inset-0 .rounded-t-3xl,
-      .summary-sheet {
+      .fixed.inset-0 .rounded-t-3xl {
         max-height: 92vh !important;
       }
+      /* Summary is full-bleed on phone — do not re-cap at 92vh (that left the black top strip) */
       .summary-sheet {
+        max-height: 100% !important;
+        max-height: 100dvh !important;
+        max-height: 100svh !important;
+        height: 100% !important;
+        min-height: 100% !important;
+        min-height: 100dvh !important;
+        min-height: 100svh !important;
         padding-bottom: 0.75rem !important;
+        border-radius: 0 !important;
       }
       .summary-sheet-foot {
         padding-bottom: max(0.55rem, env(safe-area-inset-bottom, 0px)) !important;
@@ -10743,7 +10796,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 320;
+    const HARBOR_BUILD_NUMBER = 321;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -28750,7 +28803,7 @@
       const ignoreBackdropUntil = Date.now() + 400;
       modal.innerHTML = `
         <div class="summary-modal-backdrop" data-summary-backdrop="1"></div>
-        <div class="summary-sheet p-5 text-sm" data-sheet-panel="1">
+        <div class="summary-sheet text-sm" data-sheet-panel="1">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="summary-sheet-dismiss-hint">Swipe down or tap Done below</div>
           <div class="summary-dash-head">
