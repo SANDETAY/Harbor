@@ -1092,6 +1092,14 @@
       padding: 0.85rem 0.9rem;
       margin-top: 0.5rem;
     }
+    .cal-connect-advanced summary::-webkit-details-marker { display: none; }
+    .cal-connect-advanced summary::after {
+      content: '▾';
+      font-size: 0.7rem;
+      color: rgb(var(--harbor-muted));
+      opacity: 0.85;
+    }
+    .cal-connect-advanced[open] summary::after { content: '▴'; }
 
     #tab-content-today {
       padding-top: 0.65rem;
@@ -2927,13 +2935,13 @@
       border-radius: var(--harbor-radius-xl) var(--harbor-radius-xl) 0 0 !important;
       box-shadow: var(--harbor-shadow-md);
       border-top: 1px solid rgb(var(--harbor-border) / 0.85);
-      /* Leave room for iPhone status bar / Dynamic Island when sheet is tall */
       max-height: min(92vh, calc(100dvh - env(safe-area-inset-top, 0px) - 0.5rem));
       max-height: min(92svh, calc(100svh - env(safe-area-inset-top, 0px) - 0.5rem));
       overflow-x: hidden;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
+      box-sizing: border-box;
     }
 
     .modal-grab-pill {
@@ -2945,6 +2953,80 @@
       flex-shrink: 0;
       touch-action: none;
       opacity: 0.9;
+    }
+
+    /*
+      Phone: most sheets are full-screen with swipe-down-to-close.
+      Compact exception: metric log (miles / steps / pages / savings).
+    */
+    @media (max-width: 767px) {
+      /* Full-screen sheet hosts (exclude compact metric log) */
+      body > .fixed.inset-0:not(#metric-input-modal):has(> .modal-sheet:not(.metric-sheet)),
+      body > .fixed.inset-0:not(#metric-input-modal):has(> [data-sheet-panel]),
+      body > .fixed.inset-0:not(#metric-input-modal):has(> .harbor-full-sheet),
+      body > .fixed.inset-0.flex.items-end:not(#metric-input-modal):has(> .relative.w-full) {
+        align-items: stretch !important;
+        justify-content: stretch !important;
+      }
+      body > .fixed.inset-0:not(#metric-input-modal) > .modal-sheet:not(.metric-sheet):not(.harbor-sheet-compact),
+      body > .fixed.inset-0:not(#metric-input-modal) > [data-sheet-panel],
+      body > .fixed.inset-0:not(#metric-input-modal) > .harbor-full-sheet,
+      body > .fixed.inset-0.flex.items-end:not(#metric-input-modal) > .relative.w-full.bg-harbor-surface,
+      body > .fixed.inset-0.flex.items-end:not(#metric-input-modal) > .relative.w-full[class*="rounded-t"] {
+        height: 100% !important;
+        min-height: 100% !important;
+        min-height: 100dvh !important;
+        min-height: 100svh !important;
+        max-height: 100% !important;
+        max-height: 100dvh !important;
+        max-height: 100svh !important;
+        border-radius: 0 !important;
+        border-top: none !important;
+        box-shadow: none !important;
+        padding-top: max(0.4rem, env(safe-area-inset-top, 0px)) !important;
+        padding-left: max(1.15rem, env(safe-area-inset-left, 0px));
+        padding-right: max(1.15rem, env(safe-area-inset-right, 0px));
+        padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 0px)) !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+      }
+      /* Metric entry stays a short bottom sheet (not full-screen) */
+      #metric-input-modal {
+        align-items: flex-end !important;
+        justify-content: center !important;
+      }
+      #metric-input-modal .metric-sheet {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: min(72dvh, 32rem) !important;
+        border-radius: 1.35rem 1.35rem 0 0 !important;
+        border-top: 1px solid rgb(var(--harbor-border)) !important;
+        box-shadow: 0 -10px 36px rgb(var(--harbor-text) / 0.1) !important;
+        padding-top: 0.5rem !important;
+        padding-left: 1.15rem !important;
+        padding-right: 1.15rem !important;
+        margin-bottom: max(0.25rem, env(keyboard-inset-height, 0px)) !important;
+      }
+      .sheet-dismiss-hint {
+        display: block;
+        text-align: center;
+        font-size: 0.62rem;
+        font-weight: 600;
+        color: rgb(var(--harbor-muted));
+        margin: -0.35rem 0 0.55rem;
+        letter-spacing: 0.01em;
+        flex-shrink: 0;
+      }
+    }
+    @media (min-width: 768px) {
+      .sheet-dismiss-hint { display: none; }
     }
 
     /* Metric log sheet — clean distance / steps / pages entry */
@@ -10340,26 +10422,6 @@
         </div>
       </div>
 
-      <!-- Add to Home Screen — mobile browser only; hidden when launched as installed app -->
-      <div id="install-home-banner" class="install-home-banner hidden" role="status" aria-live="polite">
-        <div class="flex items-start gap-x-2.5 min-w-0">
-          <div class="install-home-banner-icon" aria-hidden="true">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="install-home-banner-title">Add Harbor to your Home Screen</div>
-            <div id="install-home-how" class="install-home-banner-how"></div>
-            <div class="install-home-banner-cta">Works on iPhone, Pixel, Samsung &amp; more</div>
-            <button type="button" class="install-home-banner-link" id="install-home-tutorial-link"
-              onclick="event.stopImmediatePropagation(); openInstallHomeTutorialFromBanner()">
-              See tutorial <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-            </button>
-          </div>
-          <button type="button" class="install-home-banner-dismiss" onclick="dismissInstallHomeBanner()"
-            aria-label="Dismiss">×</button>
-        </div>
-      </div>
-
       <!-- Smart Suggestion — quiet one-liner -->
       <div id="smart-banner" onclick="handleSmartSuggestion()"
         class="mx-5 smart-banner-quiet suggestion-card cursor-pointer active:opacity-90 hidden relative">
@@ -10449,15 +10511,9 @@
                     <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showWorkScheduleModal()">
                       <i class="fa-regular fa-clock" aria-hidden="true"></i><span>Work hours</span>
                     </button>
-                    <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showCalendarFeedModal()">
-                      <i class="fa-solid fa-link" aria-hidden="true"></i><span>Connect calendar</span>
-                    </button>
                     <button type="button" role="menuitem" id="schedule-manage-device-cal"
-                      onclick="closeLifeManageMenus(); connectDeviceCalendars()">
-                      <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i><span>iPhone calendars</span>
-                    </button>
-                    <button type="button" role="menuitem" onclick="closeLifeManageMenus(); triggerCalendarICSImport()">
-                      <i class="fa-solid fa-file-import" aria-hidden="true"></i><span>Import .ics file</span>
+                      onclick="closeLifeManageMenus(); showCalendarFeedModal()">
+                      <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i><span>Sync calendars</span>
                     </button>
                     <button type="button" role="menuitem" id="schedule-manage-hidden"
                       onclick="closeLifeManageMenus(); showSuppressedCalendarEventsModal()">
@@ -10833,7 +10889,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 322;
+    const HARBOR_BUILD_NUMBER = 323;
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
     const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
 
@@ -11034,7 +11090,7 @@
             items: [
               'Step 2 always has a task (restores starters if Today empty)',
               'Steps 7–8: coachmark above Summary without greying the sheet',
-              'Tasks tile ringed; full list opens; Install says Add Harbor to Your Home Screen'
+              'Tasks tile ringed; full list opens; tour ends without Home Screen install'
             ]
           },
           {
@@ -19749,8 +19805,8 @@
 
     async function connectDeviceCalendars() {
       if (!isHarborNativeApp()) {
-        showToast('Open Harbor in TestFlight to use calendars on this phone', 'info');
-        showCalendarFeedModal();
+        showToast('Open Harbor on your iPhone to sync calendars', 'info');
+        if (!document.getElementById('connect-calendar-modal')) showCalendarFeedModal();
         return;
       }
       showToast('Requesting calendar access…', 'info');
@@ -19758,6 +19814,7 @@
       // Stay on schedule so they see events
       if (typeof switchTab === 'function') switchTab('life');
       if (typeof switchLifePanel === 'function') switchLifePanel('schedule');
+      if (typeof updateCalendarStatusUI === 'function') updateCalendarStatusUI();
     }
 
     function disconnectDeviceCalendars() {
@@ -19830,18 +19887,15 @@
 
     function scheduleEmptyActionsHtml() {
       return `<div class="harbor-empty-actions">
-        <button type="button" class="chip-add-btn" onclick="showAddCalendarEventModal()">
+        <button type="button" class="chip-add-btn" onclick="showCalendarFeedModal()">
+          <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i><span>Sync calendars</span>
+        </button>
+        <button type="button" class="chip-tool-btn" onclick="showAddCalendarEventModal()">
           <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add event</span>
-        </button>
-        <button type="button" class="chip-tool-btn" onclick="showCalendarFeedModal()">
-          <i class="fa-solid fa-link" aria-hidden="true"></i><span>Connect calendar</span>
-        </button>
-        <button type="button" class="chip-tool-btn" onclick="triggerCalendarICSImport()">
-          <i class="fa-solid fa-file-import" aria-hidden="true"></i><span>Import file</span>
         </button>
       </div>
       <div class="text-[10px] text-harbor-muted text-center mt-2.5 leading-snug px-2">
-        Schedule lives on this device. Imports don’t change Google, Apple, or Outlook.
+        Sync brings in calendars already on this phone. You can also add a one-off event.
       </div>`;
     }
 
@@ -28522,7 +28576,7 @@
       if (!overlay) return null;
       // Prefer explicit sheet panels — never treat a full-screen backdrop as the sheet
       return overlay.querySelector(
-        '.summary-sheet, .summary-day-events-sheet, .modal-sheet, .app-menu-sheet-panel, [data-weather-sheet], [data-sheet-panel]'
+        '.summary-sheet, .summary-day-events-sheet, .modal-sheet, .app-menu-sheet-panel, .harbor-full-sheet, [data-weather-sheet], [data-sheet-panel]'
       ) || null;
     }
 
@@ -28639,6 +28693,7 @@
           overlay.classList.contains('weather-access-modal')) {
         return;
       }
+      // Metric log stays a compact sheet; swipe-dismiss still allowed, no special skip
 
       const sheet = findSheetPanel(overlay);
       if (!sheet) return;
@@ -28648,9 +28703,10 @@
         sheet.classList.contains('modal-sheet') ||
         sheet.classList.contains('summary-day-events-sheet') ||
         sheet.classList.contains('app-menu-sheet-panel') ||
+        sheet.classList.contains('harbor-full-sheet') ||
         sheet.hasAttribute('data-weather-sheet') ||
         sheet.hasAttribute('data-sheet-panel') ||
-        /rounded-t-3xl|border-t/.test(sheet.className || '');
+        /rounded-t-3xl|border-t|harbor-full-sheet/.test(sheet.className || '');
       if (!looksLikeSheet) return;
 
       overlay.dataset.sheetSwipeBound = '1';
@@ -28753,10 +28809,14 @@
         if (e.target.closest('input, textarea, select, button, a, [role="switch"], [role="tab"], .person-pick-btn, .modal-close-chip, .summary-toggle, .summary-month-cal')) {
           return;
         }
-        // Only start dismiss from grab area / top of sheet — avoids eating content scroll
-        const grab = e.target.closest('.modal-grab-pill, .summary-dash-head, .app-menu-sheet-title');
+        // Start dismiss from grab / title / top band — larger band for full-screen sheets
+        const grab = e.target.closest('.modal-grab-pill, .summary-dash-head, .app-menu-sheet-title, .sheet-dismiss-hint, [data-sheet-grab]');
         const rect = sheet.getBoundingClientRect();
-        const nearTop = e.clientY <= rect.top + 56;
+        const topBand = sheet.classList.contains('summary-sheet') || sheet.classList.contains('harbor-full-sheet')
+          || sheet.hasAttribute('data-sheet-panel')
+          ? 88
+          : 56;
+        const nearTop = e.clientY <= rect.top + topBand;
         const scrollTop = getScrollTop();
         if (!grab && !(nearTop && scrollTop <= 2)) return;
 
@@ -29963,7 +30023,7 @@
       { id: 'life-bills', reason: 'The <strong>Life</strong> tab tracks bills with due dates and overdue states — Harbor can nudge you when something needs attention.', cta: 'View bills', action: 'life-bills' },
       { id: 'life-grocery', reason: 'Grocery lives under <strong>Life</strong> — your shopping list first, with optional dinner lists and <strong>Add</strong> / mic for staples.', cta: 'Open grocery', action: 'life-grocery' },
       { id: 'life-schedule', reason: '<strong>Life → Schedule</strong> holds appointments and events — block time so suggestions can find gaps between meetings.', cta: 'View schedule', action: 'life-schedule' },
-      { id: 'calendar-sync', reason: 'Connect Google or Apple from <strong>Life → Schedule → Connect calendar</strong> — short steps, or import a private file. Harbor refreshes live links when you open the app.', cta: 'Connect calendar', action: 'connect-calendar' },
+      { id: 'calendar-sync', reason: 'Sync calendars from <strong>Life → Schedule → Manage → Sync calendars</strong> so Harbor can show what’s already on this phone.', cta: 'Sync calendars', action: 'connect-calendar' },
       { id: 'work-schedule', reason: 'On <strong>Life → Schedule</strong>, open <strong>Manage → Work hours</strong> so free-time estimates match your real day.', cta: 'Open schedule', action: 'life-schedule' },
       { id: 'weather-strip', reason: 'The hourly weather strip at the top forecasts the next 24 hours — tap it for the full pane through tomorrow when planning yard work or a walk.', cta: 'See forecast', action: 'weather' },
       { id: 'outdoor-rain', reason: 'Outdoor tasks get rain warnings when afternoon showers are likely — reschedule before you get caught in the weather.', cta: 'Check weather', action: 'weather' },
@@ -30805,21 +30865,8 @@
         cardPlacement: 'below',
         aboveSummary: true,
         prepare: () => prepareTutorialSummaryTasksStep()
-      },
-      {
-        id: 'install-home',
-        title: 'Home Screen',
-        body: '<button type="button" class="tutorial-install-cta" style="margin:0" onclick="event.stopPropagation(); openInstallGuideFromTutorial()">Add Harbor to Home Screen</button>',
-        target: null,
-        noHighlight: true,
-        cardPlacement: 'center',
-        prepare: () => {
-          switchTab('today');
-          if (typeof closeSummaryKpiDetail === 'function') closeSummaryKpiDetail();
-          if (typeof closeSummaryModal === 'function') closeSummaryModal();
-          document.getElementById('install-guide-modal')?.remove();
-        }
       }
+      // Note: no “Add to Home Screen” step — Harbor is a native app.
     ];
 
     function getTutorialSummaryTasksKpi() {
@@ -35626,9 +35673,6 @@
 
     function getAppMenuContentHtml({ sheet = false } = {}) {
       const titleClass = sheet ? 'app-menu-sheet-title' : 'app-menu-dropdown-title';
-      const installHint = (typeof detectInstallDeviceProfile === 'function')
-        ? detectInstallDeviceProfile().menuHint
-        : 'Keep Harbor one tap away';
       const title = `
         <div class="${titleClass}">
           <div class="min-w-0">
@@ -35640,7 +35684,7 @@
       return `
         ${title}
         <div class="app-menu-group">
-          ${appMenuItemHtml('settings', 'fa-solid fa-sliders', 'Settings', 'Theme, calendar, and home screen', { primary: true })}
+          ${appMenuItemHtml('settings', 'fa-solid fa-sliders', 'Settings', 'Theme, calendar, and preferences', { primary: true })}
         </div>
 
         <div class="app-menu-section-label">You</div>
@@ -35656,7 +35700,6 @@
           ${appMenuItemHtml('whats-new', 'fa-solid fa-gift', "What's New", 'Patch notes — what changed and what to check')}
           ${appMenuItemHtml('tutorial', 'fa-solid fa-graduation-cap', 'Quick tour', 'A short walkthrough')}
           ${appMenuItemHtml('overview', 'fa-solid fa-book-open', 'Feature guide', 'What each tab is for')}
-          ${appMenuItemHtml('install', 'fa-solid fa-mobile-screen-button', 'Add to Home Screen', installHint)}
           ${appMenuItemHtml('feedback', 'fa-regular fa-comment-dots', 'Send feedback', 'Bugs, ideas, or kind notes')}
         </div>
 
@@ -35702,11 +35745,6 @@
       else if (action === 'whats-new') showReleaseNotes();
       else if (action === 'household') showHouseholdProfilesModal();
       else if (action === 'overview') showFeatureOverview();
-      else if (action === 'install') {
-        returnToAppMenuAfterModal = false;
-        if (typeof promptPwaInstall === 'function') promptPwaInstall({ forceGuide: true });
-        else if (typeof showAddToHomeScreenGuide === 'function') showAddToHomeScreenGuide();
-      }
       else if (action === 'tutorial') {
         startAppTutorial();
         showToast('Starting quick tour');
@@ -35733,8 +35771,8 @@
               <p>Your daily list. Complete tasks with a tap. Set energy to Low, Medium, or High so heavier work softens when you’re tired.</p>
             </div>
             <div class="privacy-block">
-              <h4><i class="fa-solid fa-calendar-days text-sky-400 mr-1.5"></i>Life → Plan</h4>
-              <p>Day and week events. Connect Google or Apple, or import a private .ics file. Family colors live under Household.</p>
+              <h4><i class="fa-solid fa-calendar-days text-sky-400 mr-1.5"></i>Life → Schedule</h4>
+              <p>Day and week events. Sync calendars already on this phone, or add a one-off event. Family colors live under Household.</p>
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-cart-shopping text-emerald-400 mr-1.5"></i>Life → Shop, Bills, Budget, Subs</h4>
@@ -35754,7 +35792,7 @@
             </div>
             <div class="privacy-block">
               <h4><i class="fa-solid fa-bars text-harbor-muted mr-1.5"></i>Menu</h4>
-              <p>Settings, backups, Privacy, patch notes, tour, and Add to Home Screen.</p>
+              <p>Settings, backups, Privacy, patch notes, and the quick tour.</p>
             </div>
           </div>
 
@@ -36073,15 +36111,6 @@
                     <span></span>
                   </button>
                 </div>
-                <div class="settings-row">
-                  <div class="settings-row-copy">
-                    <div class="settings-row-title">Add to Home Screen</div>
-                    <div class="settings-row-desc">iPhone, Pixel, Samsung, and more</div>
-                  </div>
-                  <button type="button" class="settings-row-action" onclick="this.closest('.fixed')?.remove(); openInstallHomeTutorialFromBanner()">
-                    How to <i class="fa-solid fa-chevron-right text-[0.55rem] opacity-70" aria-hidden="true"></i>
-                  </button>
-                </div>
               </div>
             </section>
 
@@ -36094,18 +36123,14 @@
                 <div class="settings-card-block">
                   <div class="settings-inline-actions mb-0">
                     <button type="button" class="settings-btn-primary" onclick="this.closest('.fixed')?.remove(); showCalendarFeedModal()">
-                      <i class="fa-solid fa-link mr-1" aria-hidden="true"></i>Connect
-                    </button>
-                    <button type="button" class="settings-btn-secondary" onclick="triggerCalendarICSImport()">
-                      <i class="fa-solid fa-file-import mr-1 text-harbor-primary-light" aria-hidden="true"></i>Import file
+                      <i class="fa-solid fa-mobile-screen mr-1" aria-hidden="true"></i>Sync calendars
                     </button>
                     <button type="button" id="settings-ics-refresh" class="settings-btn-secondary">
                       <i class="fa-solid fa-rotate mr-1 text-harbor-primary-light" aria-hidden="true"></i>Refresh
                     </button>
                   </div>
                   <p class="settings-help-text mt-2 mb-0">
-                    Paste an iCloud <strong>webcal://</strong> or https share link, Google secret .ics, or import a file.
-                    Apple calendars need the network helper (Harbor turns it on automatically when needed).
+                    Sync pulls in calendars already on this phone. Optional file/link import lives under More options on that screen.
                   </p>
                   <div id="settings-calendar-feeds" class="space-y-2 mt-2"></div>
                 </div>
@@ -38083,19 +38108,21 @@
       modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[60]';
       modal.innerHTML = `
         <div class="absolute inset-0" data-cal-connect-close></div>
-        <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[88vh] overflow-y-auto">
+        <div onclick="event.stopImmediatePropagation()" class="modal-sheet harbor-full-sheet relative w-full bg-harbor-surface text-sm" data-sheet-panel="1">
           <div class="modal-grab-pill" aria-hidden="true"></div>
-          <div class="flex items-center justify-between mb-1">
+          <div class="sheet-dismiss-hint">Swipe down to close</div>
+          <div class="flex items-center justify-between mb-1 gap-2" data-sheet-grab="1">
             <div class="min-w-0">
-              <div class="font-semibold text-lg" id="cal-connect-title">Connect Calendar</div>
-              <div class="text-[11px] text-harbor-muted mt-0.5" id="cal-connect-subtitle">Google, Apple, or a simple file — no jargon hunt.</div>
+              <div class="font-semibold text-lg text-harbor-text" id="cal-connect-title">Calendars</div>
+              <div class="text-[11px] text-harbor-muted mt-0.5" id="cal-connect-subtitle">Sync what’s already on this phone</div>
             </div>
             <button type="button" data-cal-connect-close class="modal-close-chip" aria-label="Close">Close</button>
           </div>
-          <div id="cal-connect-body" class="mt-3"></div>
+          <div id="cal-connect-body" class="mt-3 flex-1 min-h-0 overflow-y-auto" data-sheet-scroll="1"></div>
         </div>
       `;
       document.body.appendChild(modal);
+      if (typeof wireSheetSwipeToDismiss === 'function') wireSheetSwipeToDismiss(modal);
 
       const body = modal.querySelector('#cal-connect-body');
       const titleEl = modal.querySelector('#cal-connect-title');
@@ -38125,10 +38152,6 @@
               if (ok && input) input.value = '';
               if (list) renderCalendarFeedsList(list);
               updateCalendarStatusUI();
-              // If connected successfully, soft celebrate on home
-              if (ok && getCalendarFeeds().length) {
-                /* stay on this view so they see the feed list */
-              }
             } finally {
               addBtn.disabled = false;
               addBtn.textContent = 'Add & sync';
@@ -38145,87 +38168,98 @@
       };
 
       const renderHome = () => {
-        titleEl.textContent = 'Connect Calendar';
-        subEl.textContent = 'Pick what you use — Harbor walks you through it.';
+        titleEl.textContent = 'Calendars';
+        subEl.textContent = 'One tap to sync what’s on this phone.';
         const feeds = getCalendarFeeds();
         const imported = state.settings.importedCalendarEvents?.length || 0;
         const deviceOn = isDeviceCalendarConnected();
         const deviceN = (state.settings.deviceCalendarEvents || []).length;
         const native = isHarborNativeApp();
+        const lastSync = state.settings.deviceCalendarLastSyncedAt
+          ? (() => {
+              try {
+                const d = new Date(state.settings.deviceCalendarLastSyncedAt);
+                return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+              } catch (_) { return ''; }
+            })()
+          : '';
         body.innerHTML = `
-          ${feeds.length || imported || deviceOn ? `
-            <div class="mb-3">
-              <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1.5">Already connected</div>
-              ${deviceOn ? `
-                <div class="mb-2 px-3 py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border flex items-center gap-2">
-                  <i class="fa-solid fa-mobile-screen text-harbor-primary-light" aria-hidden="true"></i>
-                  <div class="flex-1 min-w-0">
-                    <div class="text-xs font-semibold text-harbor-text">On this phone</div>
-                    <div class="text-[10px] text-harbor-muted">${deviceN} event${deviceN === 1 ? '' : 's'} · iPhone / device calendars</div>
+          ${deviceOn ? `
+            <div class="mb-4 px-3.5 py-3 rounded-2xl bg-harbor-raised border border-harbor-border">
+              <div class="flex items-start gap-2.5">
+                <span class="cal-connect-provider-icon is-apple flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-harbor-text">Phone calendars connected</div>
+                  <div class="text-[11px] text-harbor-muted mt-0.5 leading-snug">
+                    ${deviceN} event${deviceN === 1 ? '' : 's'} in Harbor${lastSync ? ` · updated ${escapeBriefHtml(lastSync)}` : ''}
                   </div>
-                  <button type="button" data-device-refresh class="text-[10px] font-semibold text-harbor-primary-light">Refresh</button>
-                  <button type="button" data-device-disconnect class="text-[10px] text-harbor-muted">Off</button>
+                  <div class="flex flex-wrap gap-2 mt-2.5">
+                    <button type="button" data-device-refresh class="chip-tool-btn text-[11px]">
+                      <i class="fa-solid fa-rotate mr-1" aria-hidden="true"></i>Refresh
+                    </button>
+                    <button type="button" data-device-disconnect class="chip-tool-btn text-[11px] text-harbor-muted">Turn off</button>
+                  </div>
                 </div>
-              ` : ''}
+              </div>
+            </div>
+          ` : `
+            <div class="mb-4">
+              ${native ? `
+                <button type="button" data-device-connect
+                  class="w-full py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm flex items-center justify-center gap-2 active:opacity-90">
+                  <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i>
+                  Sync iPhone calendars
+                </button>
+                <p class="text-[11px] text-harbor-muted mt-2.5 leading-relaxed text-center px-1">
+                  Harbor asks for calendar permission, then shows events from calendars already on this phone — iCloud, Google, work, and more. Nothing leaves your device.
+                </p>
+              ` : `
+                <div class="px-3.5 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-[12px] text-harbor-muted leading-relaxed">
+                  <strong class="text-harbor-text">Sync iPhone calendars</strong> works in the Harbor app on your phone (TestFlight / App Store). Open this screen there and tap Sync.
+                </div>
+              `}
+            </div>
+          `}
+
+          ${(feeds.length || imported) ? `
+            <div class="mb-4">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1.5">Also on this device</div>
               <div id="schedule-calendar-feeds" class="space-y-2"></div>
               ${feeds.length ? `
                 <button type="button" data-cal-url-refresh class="mt-2 w-full py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-xs font-medium text-harbor-text">
-                  <i class="fa-solid fa-rotate mr-1 text-harbor-primary-light" aria-hidden="true"></i>Refresh feeds
+                  <i class="fa-solid fa-rotate mr-1 text-harbor-primary-light" aria-hidden="true"></i>Refresh links
                 </button>
               ` : ''}
             </div>
           ` : ''}
-          <div class="space-y-2">
-            ${native ? `
-            <button type="button" class="cal-connect-provider" data-device-connect>
-              <span class="cal-connect-provider-icon is-apple" aria-hidden="true"><i class="fa-solid fa-mobile-screen"></i></span>
-              <span class="min-w-0">
-                <span class="cal-connect-provider-title block">On this phone</span>
-                <span class="cal-connect-provider-desc block">Use calendars already on this iPhone (iCloud, Google in Settings…)</span>
-              </span>
-              <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
-            </button>
-            ` : `
-            <div class="px-3 py-2.5 rounded-2xl bg-harbor-raised border border-dashed border-harbor-border text-[11px] text-harbor-muted leading-snug">
-              <strong class="text-harbor-text">On this phone</strong> calendars work in the <strong class="text-harbor-text">TestFlight app</strong>, not the browser.
+
+          <details class="cal-connect-advanced mt-1 rounded-2xl border border-harbor-border bg-harbor-raised/60 overflow-hidden">
+            <summary class="px-3.5 py-3 text-xs font-semibold text-harbor-text cursor-pointer list-none flex items-center justify-between gap-2">
+              <span>More options</span>
+              <span class="text-[10px] font-medium text-harbor-muted">File or link</span>
+            </summary>
+            <div class="px-3 pb-3 space-y-2 border-t border-harbor-border/70 pt-2.5">
+              <p class="text-[10px] text-harbor-muted leading-relaxed px-0.5">
+                Optional. Most people only need Sync above — if calendars are already on this iPhone, you’re done.
+              </p>
+              <button type="button" class="cal-connect-provider" data-cal-view="file">
+                <span class="cal-connect-provider-icon is-file" aria-hidden="true"><i class="fa-solid fa-file-import"></i></span>
+                <span class="min-w-0">
+                  <span class="cal-connect-provider-title block">Import a file</span>
+                  <span class="cal-connect-provider-desc block">Choose a .ics calendar export</span>
+                </span>
+                <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="cal-connect-provider" data-cal-view="other">
+                <span class="cal-connect-provider-icon is-other" aria-hidden="true"><i class="fa-solid fa-link"></i></span>
+                <span class="min-w-0">
+                  <span class="cal-connect-provider-title block">Paste a link</span>
+                  <span class="cal-connect-provider-desc block">If you already have a private .ics URL</span>
+                </span>
+                <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
+              </button>
             </div>
-            `}
-            <button type="button" class="cal-connect-provider" data-cal-view="google">
-              <span class="cal-connect-provider-icon is-google" aria-hidden="true"><i class="fa-brands fa-google"></i></span>
-              <span class="min-w-0">
-                <span class="cal-connect-provider-title block">Google Calendar</span>
-                <span class="cal-connect-provider-desc block">Most common — short steps, then paste or import</span>
-              </span>
-              <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
-            </button>
-            <button type="button" class="cal-connect-provider" data-cal-view="apple">
-              <span class="cal-connect-provider-icon is-apple" aria-hidden="true"><i class="fa-brands fa-apple"></i></span>
-              <span class="min-w-0">
-                <span class="cal-connect-provider-title block">Apple Calendar (file / link)</span>
-                <span class="cal-connect-provider-desc block">Import a file or paste a share link</span>
-              </span>
-              <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
-            </button>
-            <button type="button" class="cal-connect-provider" data-cal-view="file">
-              <span class="cal-connect-provider-icon is-file" aria-hidden="true"><i class="fa-solid fa-file-import"></i></span>
-              <span class="min-w-0">
-                <span class="cal-connect-provider-title block">Import a file</span>
-                <span class="cal-connect-provider-desc block">Private &amp; simple — works with any calendar app</span>
-              </span>
-              <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
-            </button>
-            <button type="button" class="cal-connect-provider" data-cal-view="other">
-              <span class="cal-connect-provider-icon is-other" aria-hidden="true"><i class="fa-solid fa-link"></i></span>
-              <span class="min-w-0">
-                <span class="cal-connect-provider-title block">I already have a link</span>
-                <span class="cal-connect-provider-desc block">Outlook, work calendar, or any .ics / webcal URL</span>
-              </span>
-              <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
-            </button>
-          </div>
-          <p class="text-[10px] text-harbor-muted mt-3 leading-relaxed">
-            Your calendar data stays on this device. Harbor never stores passwords — only a feed link you choose, a file, or calendars this phone already has.
-          </p>
+          </details>
         `;
         if (feeds.length || imported) {
           renderCalendarFeedsList(modal.querySelector('#schedule-calendar-feeds'));
@@ -38239,8 +38273,8 @@
           }
         }
         body.querySelector('[data-device-connect]')?.addEventListener('click', async () => {
-          modal.remove();
           await connectDeviceCalendars();
+          renderHome();
         });
         body.querySelector('[data-device-refresh]')?.addEventListener('click', async () => {
           await syncDeviceCalendarEvents({ silent: false });
@@ -38255,134 +38289,23 @@
         });
       };
 
-      const renderGoogle = () => {
-        titleEl.textContent = 'Google Calendar';
-        subEl.textContent = 'Two easy paths — pick one.';
-        body.innerHTML = `
-          <button type="button" class="cal-connect-back" data-cal-back><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All calendars</button>
-
-          <div class="cal-connect-path-card is-recommended">
-            <div class="cal-connect-path-label">Recommended · Private</div>
-            <div class="cal-connect-path-title">Import a calendar file</div>
-            ${calConnectStepsHtml([
-              'On a <strong>computer</strong>, open <strong>Google Calendar</strong> in your browser.',
-              'Click the <strong>gear</strong> → <strong>Settings</strong>.',
-              'Left side: <strong>Import &amp; export</strong> → <strong>Export</strong>.',
-              'Unzip the download, then tap below and choose a <strong>.ics</strong> file.'
-            ])}
-            <button type="button" data-cal-import-file class="w-full mt-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">
-              Choose .ics file
-            </button>
-          </div>
-
-          <div class="cal-connect-path-card">
-            <div class="cal-connect-path-label">Keeps updating</div>
-            <div class="cal-connect-path-title">Paste your private calendar link</div>
-            ${calConnectStepsHtml([
-              'On a <strong>computer</strong>, open Google Calendar → <strong>gear</strong> → <strong>Settings</strong>.',
-              'On the left, click the <strong>name of your calendar</strong> (not “Settings for my calendars”).',
-              'Scroll to <strong>Integrate calendar</strong>.',
-              'Copy <strong>Secret address in iCal format</strong> — it should end with <strong>basic.ics</strong>.'
-            ])}
-            <a href="https://calendar.google.com/calendar/u/0/r/settings" target="_blank" rel="noopener noreferrer"
-              class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-harbor-primary-light mb-2">
-              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i> Open Google Calendar settings
-            </a>
-            <label class="block text-[10px] text-harbor-muted mb-1">Paste the secret link here</label>
-            <input id="schedule-ics-url" type="url" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
-              class="w-full bg-harbor-surface border border-harbor-border rounded-2xl px-3 py-2.5 text-xs mb-2 outline-none focus:border-harbor-primary text-harbor-text"
-              autocomplete="off" spellcheck="false">
-            <button type="button" data-cal-url-add class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-semibold text-harbor-text">
-              Add &amp; sync
-            </button>
-            <p class="text-[10px] text-harbor-muted mt-2 leading-relaxed">
-              Don’t paste the normal calendar.google.com page link — that won’t work. If Google blocks the download, Harbor will offer a one-tap helper.
-            </p>
-            <div id="schedule-calendar-feeds" class="space-y-2 mt-3"></div>
-          </div>
-        `;
-        body.querySelector('[data-cal-back]')?.addEventListener('click', renderHome);
-        body.querySelector('[data-cal-import-file]')?.addEventListener('click', () => {
-          modal.remove();
-          triggerCalendarICSImport();
-        });
-        wireUrlAdd('#schedule-ics-url', '#schedule-calendar-feeds', 'Google Calendar');
-      };
-
-      const renderApple = () => {
-        titleEl.textContent = 'Apple Calendar';
-        subEl.textContent = 'File import is the simple, private path.';
-        body.innerHTML = `
-          <button type="button" class="cal-connect-back" data-cal-back><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All calendars</button>
-
-          <div class="cal-connect-path-card is-recommended">
-            <div class="cal-connect-path-label">Recommended · Private</div>
-            <div class="cal-connect-path-title">Import a calendar file</div>
-            ${calConnectStepsHtml([
-              '<strong>On Mac:</strong> open the Calendar app → <strong>File</strong> → <strong>Export</strong> → <strong>Export…</strong> → save the <strong>.ics</strong> file.',
-              '<strong>On iPhone:</strong> easiest if you already have a <strong>.ics</strong> in Files (from Mac, email, or AirDrop).',
-              'Come back here and choose that file.'
-            ])}
-            <button type="button" data-cal-import-file class="w-full mt-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">
-              Choose .ics file
-            </button>
-          </div>
-
-          <div class="cal-connect-path-card">
-            <div class="cal-connect-path-label">Optional · Auto-update</div>
-            <div class="cal-connect-path-title">Public calendar link (iCloud)</div>
-            ${calConnectStepsHtml([
-              'Open the <strong>Calendar</strong> app → tap <strong>Calendars</strong> at the bottom.',
-              'Tap the <strong>ⓘ</strong> next to the calendar you want.',
-              'Turn on <strong>Public Calendar</strong>, then <strong>Share Link</strong> → Copy.',
-              'Paste the link below.'
-            ])}
-            <p class="text-[10px] text-amber-700/90 dark:text-amber-300/90 leading-relaxed mb-2">
-              Public means <strong>anyone with the link</strong> can see that calendar. Prefer Import a file for private schedules.
-            </p>
-            <label class="block text-[10px] text-harbor-muted mb-1">Paste the webcal / https link</label>
-            <input id="schedule-ics-url" type="url" placeholder="webcal://… or https://…"
-              class="w-full bg-harbor-surface border border-harbor-border rounded-2xl px-3 py-2.5 text-xs mb-2 outline-none focus:border-harbor-primary text-harbor-text"
-              autocomplete="off" spellcheck="false">
-            <button type="button" data-cal-url-add class="w-full py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-semibold text-harbor-text">
-              Add &amp; sync
-            </button>
-            <div id="schedule-calendar-feeds" class="space-y-2 mt-3"></div>
-          </div>
-        `;
-        body.querySelector('[data-cal-back]')?.addEventListener('click', renderHome);
-        body.querySelector('[data-cal-import-file]')?.addEventListener('click', () => {
-          modal.remove();
-          triggerCalendarICSImport();
-        });
-        wireUrlAdd('#schedule-ics-url', '#schedule-calendar-feeds', 'Apple Calendar');
-      };
-
       const renderFile = () => {
         titleEl.textContent = 'Import a file';
-        subEl.textContent = 'Private, one-time import from any calendar app.';
+        subEl.textContent = 'Optional — only if you have a .ics export.';
         body.innerHTML = `
-          <button type="button" class="cal-connect-back" data-cal-back><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All calendars</button>
-          <div class="cal-connect-path-card is-recommended">
-            <div class="cal-connect-path-title mb-2">Choose an iCalendar file</div>
-            <p class="text-xs text-harbor-muted leading-relaxed mb-3">
-              Look for a file ending in <strong class="text-harbor-text">.ics</strong> (sometimes inside a zip from Google).
-              Events load onto this device only — no account login required.
-            </p>
-            <button type="button" data-cal-import-file class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm mb-2">
-              Choose .ics file
-            </button>
-            <button type="button" data-cal-import-advanced class="w-full py-2.5 rounded-2xl text-xs font-medium text-harbor-primary-light">
-              Paste file contents or CSV instead
-            </button>
-          </div>
-          <p class="text-[10px] text-harbor-muted leading-relaxed">
-            Tip: after a big schedule change in Google or Apple, export again and re-import to refresh Harbor.
+          <button type="button" class="cal-connect-back" data-cal-back><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back</button>
+          <p class="text-xs text-harbor-muted leading-relaxed mb-3">
+            Choose a calendar export ending in <strong class="text-harbor-text">.ics</strong>. Events stay on this device.
           </p>
+          <button type="button" data-cal-import-file class="w-full py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm mb-2">
+            Choose .ics file
+          </button>
+          <button type="button" data-cal-import-advanced class="w-full py-2.5 rounded-2xl text-xs font-medium text-harbor-primary-light">
+            Paste contents instead
+          </button>
         `;
         body.querySelector('[data-cal-back]')?.addEventListener('click', renderHome);
         body.querySelector('[data-cal-import-file]')?.addEventListener('click', () => {
-          modal.remove();
           triggerCalendarICSImport();
         });
         body.querySelector('[data-cal-import-advanced]')?.addEventListener('click', () => {
@@ -38392,38 +38315,28 @@
       };
 
       const renderOther = () => {
-        titleEl.textContent = 'Paste a calendar link';
-        subEl.textContent = 'Outlook, work calendars, or any .ics / webcal URL.';
+        titleEl.textContent = 'Paste a link';
+        subEl.textContent = 'Optional — only if you already have a private feed URL.';
         body.innerHTML = `
-          <button type="button" class="cal-connect-back" data-cal-back><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All calendars</button>
+          <button type="button" class="cal-connect-back" data-cal-back><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back</button>
           <div id="schedule-calendar-feeds" class="space-y-2 mb-3"></div>
-          <label class="block text-[10px] text-harbor-muted mb-1">Calendar feed URL</label>
-          <input id="schedule-ics-url" type="url" placeholder="https://…/calendar.ics or webcal://…"
+          <label class="block text-[10px] text-harbor-muted mb-1">Calendar link (.ics or webcal)</label>
+          <input id="schedule-ics-url" type="url" placeholder="https://…/basic.ics"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 text-xs mb-2 outline-none focus:border-harbor-primary text-harbor-text"
             autocomplete="off" spellcheck="false">
-          <div class="flex gap-2 mb-2">
-            <button type="button" data-cal-url-add class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">Add &amp; sync</button>
-            <button type="button" data-cal-url-refresh class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-medium">Refresh</button>
-          </div>
-          <p class="text-[10px] text-harbor-muted leading-relaxed mb-2">
-            Links stay on this device and are masked in the list. If the host blocks browsers, Harbor will offer a one-tap network helper — or use Import a file.
+          <button type="button" data-cal-url-add class="w-full py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm mb-2">Add &amp; sync</button>
+          <button type="button" data-cal-url-refresh class="w-full py-2.5 rounded-2xl bg-harbor-raised border border-harbor-border text-sm font-medium">Refresh links</button>
+          <p class="text-[10px] text-harbor-muted leading-relaxed mt-3">
+            Prefer Sync iPhone calendars on the previous screen when you can — no secret links to hunt for.
           </p>
-          <button type="button" data-cal-import-file class="w-full py-2.5 rounded-2xl text-xs text-harbor-primary-light font-medium">
-            Prefer a file? Import .ics instead
-          </button>
         `;
         body.querySelector('[data-cal-back]')?.addEventListener('click', renderHome);
-        body.querySelector('[data-cal-import-file]')?.addEventListener('click', () => {
-          modal.remove();
-          triggerCalendarICSImport();
-        });
         wireUrlAdd('#schedule-ics-url', '#schedule-calendar-feeds');
       };
 
       const renderView = (view) => {
-        if (view === 'google') return renderGoogle();
-        if (view === 'apple') return renderApple();
-        if (view === 'file') return renderFile();
+        // google/apple deep-links collapse into simple file/link helpers
+        if (view === 'file' || view === 'google' || view === 'apple') return renderFile();
         if (view === 'other') return renderOther();
         return renderHome();
       };
@@ -38454,7 +38367,9 @@
     }
 
     function hasAnyCalendarConnected() {
-      return getCalendarFeeds().length > 0 || !!(state.settings.importedCalendarEvents?.length);
+      return getCalendarFeeds().length > 0
+        || !!(state.settings.importedCalendarEvents?.length)
+        || isDeviceCalendarConnected();
     }
 
     function getCalendarStatusLabel() {
@@ -38538,7 +38453,7 @@
       }
       const deviceMenu = document.getElementById('schedule-manage-device-cal');
       if (deviceMenu?.querySelector('span')) {
-        deviceMenu.querySelector('span').textContent = deviceOn ? 'Refresh phone calendars' : 'iPhone calendars';
+        deviceMenu.querySelector('span').textContent = deviceOn ? 'Calendars (connected)' : 'Sync calendars';
       }
     }
 
@@ -38826,12 +38741,8 @@
     }
 
     function shouldShowInstallHomeBanner() {
-      if (typeof isUserOnboarded === 'function' && !isUserOnboarded()) return false;
-      if (isRunningAsInstalledPwa()) return false;
-      if (!isMobileWebClient()) return false;
-      if (state?.settings?.installHomeBannerDismissed) return false;
-      if (state?.settings?.tutorialActive) return false;
-      return true;
+      // Native app — no “Add to Home Screen” prompt
+      return false;
     }
 
     /** Open the full Add to Home Screen tutorial (steps + one-tap when available). */
@@ -38846,35 +38757,7 @@
 
     function updateInstallHomeBanner() {
       const el = document.getElementById('install-home-banner');
-      if (!el) return;
-
-      // If they relaunched from the Home Screen icon, permanently clear the caution
-      if (isRunningAsInstalledPwa()) {
-        if (state?.settings && !state.settings.installHomeBannerDismissed) {
-          state.settings.installHomeBannerDismissed = true;
-          try { saveState(); } catch (_) { /* ignore */ }
-        }
-        el.classList.add('hidden');
-        return;
-      }
-
-      const show = shouldShowInstallHomeBanner();
-      el.classList.toggle('hidden', !show);
-      if (show) {
-        const how = document.getElementById('install-home-how');
-        if (how) how.textContent = getInstallHomeHowText();
-        // Whole banner opens the tutorial (except dismiss / dedicated link)
-        if (el.dataset.igWired !== '1') {
-          el.dataset.igWired = '1';
-          el.style.cursor = 'pointer';
-          el.addEventListener('click', (e) => {
-            if (e.target.closest('.install-home-banner-dismiss')) return;
-            if (e.target.closest('#install-home-tutorial-link, .install-home-banner-link')) return;
-            e.preventDefault();
-            openInstallHomeTutorialFromBanner();
-          });
-        }
-      }
+      if (el) el.classList.add('hidden');
     }
 
     function dismissInstallHomeBanner() {
