@@ -12,7 +12,7 @@ This machine (Windows) can **scaffold** the project; **building and uploading re
 | Bundle ID | `com.sandetay.harbor` |
 | Display name | Harbor |
 | Marketing version | `1.0.0` |
-| Build number | `260` (bump each upload) |
+| Build number | `350` (bump each upload) |
 | Capacitor | 6.x + SplashScreen, StatusBar, App, Geolocation |
 | Native HTTP | `CapacitorHttp` enabled (needed for iCloud calendar URLs) |
 | Privacy policy | https://sandetay.github.io/Harbor/privacy.html |
