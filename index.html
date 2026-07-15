@@ -376,8 +376,12 @@
     }
 
     html[data-theme="dark"] .swipe-action-edit {
-      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
+      background:
+        linear-gradient(165deg, rgb(var(--harbor-primary-light) / 0.95) 0%, rgb(var(--harbor-primary)) 100%);
       color: #FFFFFF;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.14) inset,
+        0 6px 14px rgb(var(--harbor-primary) / 0.28);
     }
 
     /* Light themes share day controls (tokens drive the hue) */
@@ -413,8 +417,12 @@
     }
 
     html:not([data-theme="dark"]) .swipe-action-edit {
-      background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
+      background:
+        linear-gradient(165deg, rgb(var(--harbor-primary-light)) 0%, rgb(var(--harbor-primary)) 100%);
       color: #FFFFFF;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.42) inset,
+        0 6px 14px rgb(var(--harbor-primary) / 0.22);
     }
 
     html:not([data-theme="dark"]) body > .fixed.inset-0.modal-overlay-blur,
@@ -700,7 +708,8 @@
       overflow: hidden;
       border-radius: var(--harbor-radius-xl);
       margin-bottom: 0.5rem;
-      --swipe-reveal: 8.5rem;
+      /* Two action tiles + gaps + padding — keep JS SWIPE_REVEAL_PX roughly in sync */
+      --swipe-reveal: 9.75rem;
       /* Paint-only containment: avoid layout/size quirks that desync touch vs visual on iOS */
       contain: paint;
       /*
@@ -727,43 +736,104 @@
       max-height: 100%;
       display: none;
       align-items: stretch;
+      justify-content: flex-end;
+      gap: 0.38rem;
+      padding: 0.38rem 0.4rem 0.38rem 0.2rem;
       z-index: 0;
       /* Hidden until a real horizontal swipe — prevents flash while scrolling */
       opacity: 0;
       pointer-events: none;
-      transition: opacity var(--harbor-duration-fast) ease;
+      transition: opacity 0.18s ease;
       /* Match row clip so Edit/Delete never paint into the row above/below */
       border-radius: inherit;
       overflow: hidden;
       box-sizing: border-box;
+      /* Soft well behind action tiles */
+      background:
+        linear-gradient(90deg,
+          transparent 0%,
+          rgb(var(--harbor-raised) / 0.55) 28%,
+          rgb(var(--harbor-raised) / 0.85) 100%);
     }
 
     .swipe-action {
-      flex: 1;
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: 4.4rem;
       border: none;
+      border-radius: 0.9rem;
       color: #fff;
       font-family: var(--harbor-font);
-      font-size: 0.7rem;
-      font-weight: 650;
-      letter-spacing: 0.02em;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 0.28rem;
-      padding: 0 0.35rem;
+      padding: 0.35rem 0.2rem;
       -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+      transition: transform 0.14s var(--harbor-ease-out), filter 0.14s ease, box-shadow 0.14s ease;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.18) inset,
+        0 4px 12px rgba(0, 0, 0, 0.14);
+    }
+
+    .swipe-action i {
+      font-size: 0.95rem;
+      line-height: 1;
+      opacity: 0.96;
+      filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
+    }
+
+    .swipe-action-label {
+      display: block;
+      line-height: 1.1;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .swipe-action:active {
+      transform: scale(0.96);
+      filter: brightness(1.06);
+    }
+
+    /* Single action (e.g. Remove only) fills the reveal cleanly */
+    .swipe-row-actions:has(.swipe-action:only-child) .swipe-action {
+      max-width: none;
+      flex: 1 1 auto;
     }
 
     .swipe-action-edit {
-      background: linear-gradient(180deg, #6BBFB0 0%, rgb(var(--harbor-primary)) 100%);
+      background:
+        linear-gradient(165deg, #7ecfc0 0%, rgb(var(--harbor-primary)) 55%, rgb(var(--harbor-primary)) 100%);
+      color: #fff;
     }
 
     .swipe-action-delete {
-      background: linear-gradient(180deg, #e35d6a 0%, #be123c 100%);
+      background:
+        linear-gradient(165deg, #fb7185 0%, #e11d48 55%, #be123c 100%);
+      color: #fff;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.16) inset,
+        0 4px 12px rgba(190, 18, 60, 0.28);
     }
 
     .swipe-action-view {
-      background: linear-gradient(180deg, #5b8fd9 0%, #3d6eb5 100%);
+      background:
+        linear-gradient(165deg, #7dd3fc 0%, #0ea5e9 50%, #0369a1 100%);
+      color: #fff;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.18) inset,
+        0 4px 12px rgba(3, 105, 161, 0.26);
     }
 
     .swipe-row-content {
@@ -1140,6 +1210,27 @@
         touch-action: manipulation;
         -webkit-user-select: none;
         user-select: none;
+      }
+
+      .swipe-row.is-open .swipe-action,
+      .swipe-row.is-swiping .swipe-action {
+        animation: swipeActionIn 0.28s var(--harbor-ease-out) both;
+      }
+
+      .swipe-row.is-open .swipe-action:nth-child(2),
+      .swipe-row.is-swiping .swipe-action:nth-child(2) {
+        animation-delay: 0.04s;
+      }
+
+      @keyframes swipeActionIn {
+        from {
+          opacity: 0.55;
+          transform: scale(0.92) translateX(6px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateX(0);
+        }
       }
 
       .swipe-row-hint {
@@ -3583,6 +3674,11 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
+      .swipe-row.is-open .swipe-action,
+      .swipe-row.is-swiping .swipe-action {
+        animation: none !important;
+      }
+
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
@@ -11075,7 +11171,7 @@
           </button>
         </div>
 
-        <div id="task-swipe-hint" class="swipe-row-hint">Tap a task to complete · swipe left to Edit or Delete</div>
+        <div id="task-swipe-hint" class="swipe-row-hint">Tap to finish · swipe left to edit or delete</div>
         <!-- Task List -->
         <div id="task-list"></div>
         <div id="app-version-foot" class="app-version-foot" aria-label="App version">
@@ -11292,7 +11388,7 @@
               <div id="budget-tx-heading" class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted min-w-0">Transactions</div>
               <button type="button" id="budget-filter-all" class="text-[10px] font-semibold text-harbor-primary-light hidden flex-shrink-0" onclick="setBudgetCategoryFilter(null)">Show all</button>
             </div>
-            <div id="budget-tx-swipe-hint" class="swipe-row-hint text-[10px] text-harbor-muted mb-1.5 px-0.5 hidden">Swipe left to change category or delete</div>
+            <div id="budget-tx-swipe-hint" class="swipe-row-hint text-[10px] text-harbor-muted mb-1.5 px-0.5 hidden">Swipe left to edit or delete</div>
             <div id="budget-tx-list" class="mb-3"></div>
           </div>
         </div>
@@ -11477,7 +11573,7 @@
   <div id="welcome-spotlight-overlay" class="welcome-spotlight-overlay" aria-hidden="true">
     <div id="welcome-spotlight-highlight" class="hidden"></div>
     <div id="welcome-spotlight-card" class="welcome-spotlight-card hidden" role="dialog" aria-modal="true">
-      <div class="text-xs text-harbor-muted leading-relaxed mb-2.5">Your starters are on <strong class="text-harbor-text">Task</strong>. Tap <strong class="text-harbor-primary-light">Quick tour</strong> for a 30-second walkthrough — or skip and explore anytime from Menu.</div>
+      <div class="text-xs text-harbor-muted leading-relaxed mb-2.5">Your first tasks are ready. Tap <strong class="text-harbor-primary-light">Quick tour</strong> for a short walkthrough — or skip and explore from Menu anytime.</div>
       <button type="button" onclick="skipWelcomeSpotlight()" class="w-full py-2 rounded-xl bg-harbor-raised border border-harbor-border text-[11px] font-medium text-harbor-muted">Maybe later</button>
     </div>
   </div>
@@ -11514,7 +11610,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 344;
+    const HARBOR_BUILD_NUMBER = 345;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11569,21 +11665,27 @@
       {
         version: '0.9',
         date: '2026-07-14',
-        title: 'Onboarding · Daily Brief · build 344',
-        intro: 'First-run wizard and a 30-second optional tour, plus Daily Brief and Today groups.',
+        title: 'Onboarding · swipe polish · build 345',
+        intro: 'First-run wizard, simpler tour copy, and refined swipe-left actions.',
         sections: [
           {
             heading: 'Onboarding & tour',
             items: [
               'First-run: Welcome → name → starters → day rhythm → done (tour or dive in)',
               'Name + bedtime/morning window power greetings and smart timing',
-              'Optional 3-beat coachmarks: Task · Daily Brief · Library (always skippable; Menu anytime)'
+              'Optional 3 tips in plain language: tasks · Daily Brief · Library'
+            ]
+          },
+          {
+            heading: 'Swipe actions',
+            items: [
+              'Swipe left shows rounded Edit / Delete tiles (icon + label) across Task, Life, Streaks, and Brief lists'
             ]
           },
           {
             heading: 'Feedback fixes',
             items: [
-              'Tap a task card to complete · swipe left for Edit/Delete (no complete circle; edit never auto-completes)',
+              'Tap a task to finish · swipe left to edit or delete (no complete circle; edit never auto-completes)',
               'Recipe Save button spacing under cooking effort',
               'Outdoor weather “best window” prefers daylight (no more 1AM patio wash)',
               '2×/3× week or month tasks reappear when the next rep is due',
@@ -19026,10 +19128,10 @@
         row.dataset.billId = bill.id;
         row.dataset.swipeId = bill.id;
         row.dataset.swipeType = 'bill';
-        row.style.setProperty('--swipe-reveal', '8.75rem');
+        row.style.setProperty('--swipe-reveal', '9.75rem');
         const actionsHtml = `
-          <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit bill"><i class="fa-solid fa-pen"></i> Edit</button>
-          <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete bill"><i class="fa-solid fa-trash-can"></i> Delete</button>
+          <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit bill"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>
+          <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete bill"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Delete</span></button>
         `;
         const contentHtml = `
           <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-harbor-border flex items-center justify-center text-lg" onclick="editBillFromList('${safeId}')">
@@ -19903,11 +20005,11 @@
         row.dataset.groceryId = item.id;
         row.dataset.swipeId = item.id;
         row.dataset.swipeType = 'grocery';
-        row.style.setProperty('--swipe-reveal', isMeal ? '8.5rem' : '4.5rem');
+        row.style.setProperty('--swipe-reveal', isMeal ? '9.75rem' : '5.1rem');
         const actionsHtml = isMeal
-          ? `<button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Rename item"><i class="fa-solid fa-pen"></i> Edit</button>
-             <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove item"><i class="fa-solid fa-trash-can"></i> Remove</button>`
-          : `<button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove item"><i class="fa-solid fa-trash-can"></i> Remove</button>`;
+          ? `<button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Rename item"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>
+             <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove item"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Remove</span></button>`
+          : `<button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove item"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Remove</span></button>`;
         const safeName = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(item.name) : item.name;
         const safeId = String(item.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         // grocery-check-hit is a swipe passthrough so taps aren't eaten by swipe-axis lock on iOS
@@ -22731,11 +22833,11 @@
       row.dataset.swipeType = 'event';
       row.dataset.feedType = 'schedule';
       row.dataset.eventPhase = phase;
-      row.style.setProperty('--swipe-reveal', '8.75rem');
+      row.style.setProperty('--swipe-reveal', '9.75rem');
 
       const actionsHtml = `
-        <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit event"><i class="fa-solid fa-pen"></i> Edit</button>
-        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete event"><i class="fa-solid fa-trash-can"></i> Delete</button>
+        <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit event"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>
+        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete event"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Delete</span></button>
       `;
       const person = getHouseholdPerson(ev.personId);
       const personColor = person?.color || '';
@@ -24210,10 +24312,10 @@
         row.className = 'swipe-row';
         row.dataset.swipeId = sub.id;
         row.dataset.swipeType = 'subscription';
-        row.style.setProperty('--swipe-reveal', '8.75rem');
+        row.style.setProperty('--swipe-reveal', '9.75rem');
         const actionsHtml = `
-          <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit subscription"><i class="fa-solid fa-pen"></i> Edit</button>
-          <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove subscription"><i class="fa-solid fa-trash-can"></i> Remove</button>
+          <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit subscription"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>
+          <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove subscription"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Remove</span></button>
         `;
         const contentHtml = `
           <div class="flex-shrink-0" data-sub-edit="${safeId}">${subscriptionBrandLogoHtml(preset || sub, 'md')}</div>
@@ -26326,10 +26428,10 @@
             row.dataset.swipeId = txId;
             row.dataset.swipeType = 'budget';
             row.dataset.budgetTxId = txId;
-            row.style.setProperty('--swipe-reveal', '8.75rem');
+            row.style.setProperty('--swipe-reveal', '9.75rem');
             const actionsHtml = `
-              <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit transaction"><i class="fa-solid fa-pen"></i> Edit</button>
-              <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete transaction"><i class="fa-solid fa-trash-can"></i> Delete</button>
+              <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit transaction"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>
+              <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete transaction"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Delete</span></button>
             `;
             const contentHtml = `
               <div class="budget-tx-cat-dot" style="background:${cat.color}" aria-hidden="true"></div>
@@ -27116,7 +27218,7 @@
 
     // ==================== MOBILE SWIPE ROWS ====================
     let swipeRowDocListenerBound = false;
-    const SWIPE_REVEAL_PX = 140;
+    const SWIPE_REVEAL_PX = 156;
 
     function isSwipeMobile() {
       return window.innerWidth < 768;
@@ -27483,12 +27585,12 @@
 
       const actionsHtml = completed
         ? `
-        <button type="button" class="swipe-action swipe-action-edit" data-action="undo" aria-label="Undo complete"><i class="fa-solid fa-rotate-left"></i> Undo</button>
-        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove task"><i class="fa-solid fa-trash-can"></i> Delete</button>
+        <button type="button" class="swipe-action swipe-action-edit" data-action="undo" aria-label="Undo complete"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i><span class="swipe-action-label">Undo</span></button>
+        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove task"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Delete</span></button>
       `
         : `
-        <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit task"><i class="fa-solid fa-pen"></i> Edit</button>
-        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove task"><i class="fa-solid fa-trash-can"></i> Delete</button>
+        <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit task"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>
+        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove task"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Delete</span></button>
       `;
 
       const timesNeed = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
@@ -27514,7 +27616,7 @@
         <div class="flex-1 min-w-0 habit-main-tap">
           <div class="font-medium leading-tight habit-title-text${showMuted || completed ? ' text-harbor-muted' : ''}${completed ? ' line-through decoration-harbor-muted/40' : ''}"
             data-habit-title="1"
-            title="${completed ? 'Completed today' : (isBudgetReview ? 'Tap to open Budget' : 'Tap to complete · swipe left to Edit or Delete')}">${safeTitle}</div>
+            title="${completed ? 'Completed today' : (isBudgetReview ? 'Tap to open Budget' : 'Tap to finish · swipe left to edit or delete')}">${safeTitle}</div>
           <div class="flex items-center gap-x-2 mt-0.5 flex-wrap">
             ${completedPill}
             ${habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))
@@ -27596,7 +27698,7 @@
       row.dataset.swipeId = habit.id;
       row.dataset.feedType = 'sync-pending';
       row.dataset.swipeType = 'sync';
-      const actionsHtml = `<button type="button" class="swipe-action swipe-action-view" data-action="sync" aria-label="Sync activity"><i class="fa-solid fa-rotate"></i> Sync</button>`;
+      const actionsHtml = `<button type="button" class="swipe-action swipe-action-view" data-action="sync" aria-label="Sync activity"><i class="fa-solid fa-rotate" aria-hidden="true"></i><span class="swipe-action-label">Sync</span></button>`;
       const contentHtml = `
         <div class="w-11 h-11 flex-shrink-0 rounded-2xl border-2 border-harbor-primary/50 bg-harbor-primary/15 flex items-center justify-center text-lg">
           <i class="fa-solid fa-check text-harbor-primary-light"></i>
@@ -27610,7 +27712,7 @@
           class="row-inline-actions text-[10px] px-3 py-1.5 rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white font-semibold">Sync</button>
       `;
 
-      row.style.setProperty('--swipe-reveal', '4.5rem');
+      row.style.setProperty('--swipe-reveal', '5.1rem');
       row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
         'habit-card harbor-card habit-row bg-harbor-surface/80 border border-sky-500/30 rounded-3xl px-3.5 py-3 flex items-center gap-x-3');
       const syncBtn = row.querySelector('[data-sync-health]');
@@ -29593,7 +29695,7 @@
           </div>
           <div id="summary-day-events-list" class="summary-day-events-list mb-2"></div>
           <p id="summary-day-swipe-hint" class="text-[10px] text-harbor-muted mb-2 ${events.length ? '' : 'hidden'}">
-            ${isSwipeMobile() ? 'Swipe left on an event to Edit or Delete' : 'Use Edit / Delete on each event'}
+            ${isSwipeMobile() ? 'Swipe left to edit or delete an event' : 'Use Edit or Delete on each event'}
           </p>
           <button type="button" id="summary-day-add-event"
             class="w-full py-2.5 rounded-2xl ${events.length ? 'bg-harbor-raised border border-harbor-border text-xs font-semibold text-harbor-primary-light active:bg-harbor-border' : 'bg-harbor-primary text-white font-semibold active:opacity-90 py-3'}">
@@ -30509,8 +30611,8 @@
 
     function renderSummaryKpiDetailRows(kind, brief) {
       const swipeActions = (editLabel = 'Edit', deleteLabel = 'Delete') => `
-        <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="${editLabel}"><i class="fa-solid fa-pen"></i> Edit</button>
-        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="${deleteLabel}"><i class="fa-solid fa-trash-can"></i> ${deleteLabel}</button>
+        <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="${editLabel}"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>
+        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="${deleteLabel}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">${deleteLabel}</span></button>
       `;
 
       if (kind === 'tasks') {
@@ -30566,7 +30668,7 @@
               <button type="button" class="text-[10px] text-harbor-muted hover:text-rose-400" onclick="event.stopImmediatePropagation(); deleteHabitFromToday('${escapeBriefHtml(h.id)}', null); refreshSummaryKpiDetail('tasks')">Delete</button>
             </div>
           `;
-          return `<div class="swipe-row" data-swipe-type="habit" data-swipe-id="${escapeBriefHtml(h.id)}" style="--swipe-reveal:8.75rem">${buildSwipeRowHtml(
+          return `<div class="swipe-row" data-swipe-type="habit" data-swipe-id="${escapeBriefHtml(h.id)}" style="--swipe-reveal:9.75rem">${buildSwipeRowHtml(
             swipeActions('Edit task', 'Delete'),
             contentHtml,
             'summary-kpi-detail-row flex items-center gap-x-2'
@@ -30607,7 +30709,7 @@
               <button type="button" class="text-[10px] text-harbor-muted hover:text-rose-400" onclick="event.stopImmediatePropagation(); deleteCalendarEvent('${escapeBriefHtml(eventId)}'); refreshSummaryKpiDetail('events')">Delete</button>
             </div>
           `;
-          return `<div class="swipe-row" data-swipe-type="event" data-swipe-id="${escapeBriefHtml(eventId)}" data-event-phase="${disp.phase}"${style} style="--swipe-reveal:8.75rem">${buildSwipeRowHtml(
+          return `<div class="swipe-row" data-swipe-type="event" data-swipe-id="${escapeBriefHtml(eventId)}" data-event-phase="${disp.phase}"${style} style="--swipe-reveal:9.75rem">${buildSwipeRowHtml(
             swipeActions('Edit event', 'Delete'),
             contentHtml,
             `summary-kpi-detail-row flex items-center gap-x-2${person ? ' summary-kpi-detail-row--person' : ''}${disp.isPast ? ' is-event-past' : ''}`
@@ -30644,7 +30746,7 @@
               <button type="button" class="text-[10px] text-harbor-muted hover:text-rose-400" onclick="event.stopImmediatePropagation(); removeBill('${escapeBriefHtml(b.id)}')">Delete</button>
             </div>
           `;
-          return `<div class="swipe-row" data-swipe-type="bill" data-swipe-id="${escapeBriefHtml(b.id)}" style="--swipe-reveal:8.75rem">${buildSwipeRowHtml(
+          return `<div class="swipe-row" data-swipe-type="bill" data-swipe-id="${escapeBriefHtml(b.id)}" style="--swipe-reveal:9.75rem">${buildSwipeRowHtml(
             swipeActions('Edit bill', 'Delete'),
             contentHtml,
             'summary-kpi-detail-row flex items-center gap-x-2'
@@ -30668,7 +30770,7 @@
               <button type="button" class="text-[10px] text-harbor-muted hover:text-rose-400" onclick="event.stopImmediatePropagation(); removeGroceryItem('${escapeBriefHtml(g.id)}'); refreshSummaryKpiDetail('grocery')">Delete</button>
             </div>
           `;
-          return `<div class="swipe-row" data-swipe-type="grocery" data-swipe-id="${escapeBriefHtml(g.id)}" style="--swipe-reveal:8.75rem">${buildSwipeRowHtml(
+          return `<div class="swipe-row" data-swipe-type="grocery" data-swipe-id="${escapeBriefHtml(g.id)}" style="--swipe-reveal:9.75rem">${buildSwipeRowHtml(
             swipeActions('Rename', 'Remove'),
             contentHtml,
             'summary-kpi-detail-row flex items-center gap-x-2'
@@ -30738,7 +30840,7 @@
             ${count} item${count === 1 ? '' : 's'} · ${escapeBriefHtml(rangeLabel)}
           </div>
           <p id="summary-kpi-detail-swipe-hint" class="summary-kpi-detail-swipe-hint ${count && isSwipeMobile() ? '' : 'hidden'}">
-            Swipe left to Edit or Delete
+            Swipe left to edit or delete
           </p>
           <div class="summary-kpi-detail-list" id="summary-kpi-detail-list" data-sheet-scroll="1">
             ${rowsHtml}
@@ -32353,7 +32455,7 @@
       { id: 'voice-commands', reason: 'Voice works on supported browsers — try “add milk to grocery”, “mark rent paid”, “complete walk”, or “set energy low”.', cta: 'Try voice', action: 'voice' },
       { id: 'simulate-day', reason: 'Use <strong>Simulate day</strong> at the bottom (or in Settings) to preview how suggestions change with different weather and calendar load.', cta: 'Simulate day', action: 'simulate' },
       { id: 'real-weather', reason: 'Enable <strong>real location + weather</strong> in Settings for live Open-Meteo data — temperatures show in °F on the header strip.', cta: 'Use real weather', action: 'real-weather' },
-      { id: 'task-complete', reason: 'Tap a Today card to complete a task — that gently feeds streaks and your Harbor Day meter. Swipe left to Edit or Delete.', cta: 'Got it', action: 'none' },
+      { id: 'task-complete', reason: 'Tap a task when it’s done. That builds streaks and your Harbor Day meter. Swipe left to edit or delete.', cta: 'Got it', action: 'none' },
       { id: 'task-difficulty', reason: 'Each task has a difficulty (1–3). Harbor weighs it against your energy so you are not steered toward heavy work on a low day.', cta: 'Adjust energy', action: 'energy' },
       { id: 'flexible-tasks', reason: 'Tasks without a fixed due date stay flexible — they appear when energy and calendar gaps align, not only on a rigid schedule.', cta: 'Got it', action: 'none' },
       { id: 'meal-presets', reason: 'Life grocery includes meal presets — stock a recipe’s ingredients to your list in one tap when meal planning.', cta: 'Grocery list', action: 'life-grocery' },
@@ -32495,7 +32597,7 @@
         score: 100,
         type: 'welcome',
         cta: 'Quick tour',
-        reason: `${who}. A <strong>30-second tour</strong> covers Task, Daily Brief, and Library — or skip and poke around.`
+        reason: `${who}. Try a <strong>short tour</strong> of tasks, Daily Brief, and Library — or skip and explore.`
       };
     }
 
@@ -33232,8 +33334,8 @@
     const APP_TUTORIAL_STEPS = [
       {
         id: 'today-intro',
-        title: 'Task',
-        body: 'This is <strong>now</strong>. <strong>Tap a card</strong> to complete · <strong>swipe left</strong> for Edit or Delete. Set energy (Low / Med / High) and Harbor reorders so lighter work rises when you’re drained.',
+        title: 'Your tasks',
+        body: '<strong>Tap</strong> a task when it’s done.<br><strong>Swipe left</strong> to edit or delete it.<br>Set energy to Low, Med, or High — easier tasks move up when you’re tired.',
         target: () => getTutorialTaskCard() || document.getElementById('tab-today'),
         cardPlacement: 'above',
         prepare: () => {
@@ -33246,7 +33348,7 @@
       {
         id: 'summary',
         title: 'Daily Brief',
-        body: 'The glowing center button is your <strong>Daily Brief</strong> — calendar, what to do first, and bigger jobs for later. Orient here, then execute on Task.',
+        body: 'Tap the <strong>glowing button</strong> in the middle.<br>It shows what’s coming up and what to do next — a quick look at your day.',
         target: () => document.getElementById('summary-launcher'),
         cardPlacement: 'bottom',
         prepare: () => {
@@ -33263,7 +33365,7 @@
       {
         id: 'library-intro',
         title: 'Library',
-        body: 'Habits, chores, and maintenance live here — daily through annual. Tap a card to add it to Harbor. Monthly and yearly work stays here until it’s due.',
+        body: 'Ready-made habits and chores live here.<br><strong>Tap</strong> one to add it.<br>Bigger monthly or yearly jobs stay here until they’re due.',
         target: () => document.getElementById('tab-library'),
         cardPlacement: 'above',
         prepare: () => {
@@ -37455,9 +37557,10 @@
       row.dataset.swipeId = habit.id;
       row.dataset.swipeType = 'streak';
 
+      row.style.setProperty('--swipe-reveal', '9.75rem');
       const actionsHtml = `
-        <button type="button" class="swipe-action swipe-action-view" data-action="view" aria-label="View outlook"><i class="fa-solid fa-chart-line"></i> Outlook</button>
-        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Stop streak"><i class="fa-solid fa-trash-can"></i> Remove</button>
+        <button type="button" class="swipe-action swipe-action-view" data-action="view" aria-label="View outlook"><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span class="swipe-action-label">Look</span></button>
+        <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Stop streak"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Remove</span></button>
       `;
 
       // No inline onclick — single listener below (avoids open-then-close double fire)
@@ -38109,7 +38212,7 @@
         <div class="app-menu-section-label">Help</div>
         <div class="app-menu-group">
           ${appMenuItemHtml('whats-new', 'fa-solid fa-gift', "What's New", 'Patch notes — what changed and what to check')}
-          ${appMenuItemHtml('tutorial', 'fa-solid fa-graduation-cap', 'Quick tour', 'A short walkthrough')}
+          ${appMenuItemHtml('tutorial', 'fa-solid fa-graduation-cap', 'Quick tour', '3 short tips')}
           ${appMenuItemHtml('overview', 'fa-solid fa-book-open', 'Feature guide', 'What each tab is for')}
           ${appMenuItemHtml('feedback', 'fa-regular fa-comment-dots', 'Send feedback', 'Bugs, ideas, or kind notes')}
         </div>
@@ -41434,8 +41537,8 @@
             <div class="onboarding-feature">
               <div class="onboarding-feature-icon"><i class="fa-solid fa-hand-pointer"></i></div>
               <div class="min-w-0">
-                <div class="text-sm font-semibold text-harbor-text">Tap to complete</div>
-                <div class="text-xs text-harbor-muted leading-snug mt-0.5">Swipe left on any card for Edit or Delete.</div>
+                <div class="text-sm font-semibold text-harbor-text">Tap when done</div>
+                <div class="text-xs text-harbor-muted leading-snug mt-0.5">Swipe left on a task to edit or delete it.</div>
               </div>
             </div>
             <div class="onboarding-feature">
