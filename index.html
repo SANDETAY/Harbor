@@ -11407,21 +11407,21 @@
             <div class="panel-toolbar panel-toolbar-cluster schedule-toolbar" style="width:100%">
               <span class="chip-tool-btn chip-tool-static text-[11px] font-semibold text-harbor-muted" id="budget-range-label" role="status">Spending</span>
               <div class="schedule-toolbar-end">
-                <button type="button" onclick="showBudgetImportModal()" class="chip-add-btn" id="budget-import-btn" aria-label="Import bank CSV">
+                <button type="button" onclick="showBudgetImportModal()" class="chip-add-btn" id="budget-import-btn" aria-label="Add budget CSV">
                   <i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i>
-                  <span>Import</span>
+                  <span>Add CSV</span>
                 </button>
                 <div class="life-manage-wrap">
                   <button type="button" class="chip-tool-btn" onclick="toggleLifeManageMenu('budget')" aria-haspopup="menu" aria-expanded="false">Manage</button>
                   <div id="budget-manage-menu" class="life-manage-menu hidden" role="menu">
                     <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showBudgetImportModal()">
-                      <i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i><span>Import / re-import CSV</span>
+                      <i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i><span>Add CSV (stack accounts)</span>
                     </button>
                     <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showBudgetHowItWorks()">
                       <i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>How budget works</span>
                     </button>
                     <button type="button" role="menuitem" onclick="closeLifeManageMenus(); clearBudgetData()">
-                      <i class="fa-solid fa-trash-can" aria-hidden="true"></i><span>Clear budget data</span>
+                      <i class="fa-solid fa-trash-can" aria-hidden="true"></i><span>Clear all budget data</span>
                     </button>
                   </div>
                 </div>
@@ -11432,12 +11432,12 @@
             <div class="harbor-empty-icon" aria-hidden="true">📊</div>
             <div class="text-sm font-medium text-harbor-text">Money at a glance</div>
             <div class="text-xs text-harbor-muted mt-1.5 leading-relaxed max-w-xs mx-auto">
-              Import a bank CSV once. Harbor sorts spending automatically — you only fix a line if it looks wrong.
-              Everything stays on this device.
+              Stack CSVs from checking, credit cards, and savings. Harbor sorts automatically — you only fix a line if it looks wrong.
+              Clear everything anytime. Stays on this device.
             </div>
             <div class="harbor-empty-actions mt-3">
               <button type="button" class="chip-add-btn" onclick="showBudgetImportModal()">
-                <i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i>Import CSV
+                <i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i>Add CSV
               </button>
               <button type="button" class="chip-tool-btn" onclick="showBudgetHowItWorks()">How it works</button>
             </div>
@@ -11699,7 +11699,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 349;
+    const HARBOR_BUILD_NUMBER = 350;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11754,8 +11754,8 @@
       {
         version: '0.9',
         date: '2026-07-15',
-        title: 'Energy · calendar · budget · build 349',
-        intro: 'Low-energy ranking, calendar edit/refresh fixes, schedule load truthfulness, When You Can list, budget UX.',
+        title: 'Energy · calendar · budget · build 350',
+        intro: 'Low-energy ranking, calendar edit/refresh, budget stacking, When You Can, schedule truthfulness.',
         sections: [
           {
             heading: 'Today energy',
@@ -11781,16 +11781,16 @@
           {
             heading: 'Budget',
             items: [
-              'Snapshot: money out / in / net at a glance',
-              'Categories first — expand only if something looks wrong',
-              'Clearer copy: Harbor auto-sorts; edit is optional'
+              'Stack multiple CSVs (checking + credit card + savings) — duplicates skipped',
+              'Remove one stacked file or clear all anytime',
+              'Snapshot: money out / in / net; categories first'
             ]
           }
         ],
         highlights: [
+          'Stack budget CSVs',
           'Low energy ranking',
-          'Calendar edit + iPhone refresh',
-          'Budget snapshot'
+          'Calendar edit + iPhone refresh'
         ]
       },
       {
@@ -12844,7 +12844,7 @@
         groceryView: { mode: 'master' },
         mealPresets: JSON.parse(JSON.stringify(BUILTIN_MEAL_PRESETS)),
         subscriptions: [],
-        budget: { transactions: [], importedAt: null, merchantRules: {} },
+        budget: { transactions: [], importedAt: null, merchantRules: {}, importSources: [] },
         metricLogs: {},
         rewardBank: { points: 0, totalEarned: 0, cheatDownsUsed: 0, lastCheatDate: null },
         challenges: [],
@@ -24937,13 +24937,49 @@
 
     function ensureBudgetState() {
       if (!state.budget || typeof state.budget !== 'object') {
-        state.budget = { transactions: [], importedAt: null, merchantRules: {} };
+        state.budget = { transactions: [], importedAt: null, merchantRules: {}, importSources: [] };
       }
       if (!Array.isArray(state.budget.transactions)) state.budget.transactions = [];
       if (!state.budget.merchantRules || typeof state.budget.merchantRules !== 'object') {
         state.budget.merchantRules = {};
       }
+      if (!Array.isArray(state.budget.importSources)) state.budget.importSources = [];
       return state.budget;
+    }
+
+    /** Stable de-dupe key so stacking the same CSV twice doesn’t double-count. */
+    function getBudgetTransactionDedupeKey(t) {
+      if (!t) return '';
+      const dateStr = t.date || '';
+      const bankDesc = String(t.bankDescription || t.description || '').trim().toLowerCase().slice(0, 140);
+      const amt = (Math.round((Number(t.amount) || 0) * 100) / 100).toFixed(2);
+      const cd = (t.isCredit || t.creditDebitIndicator === 'credit') ? 'C' : 'D';
+      return `${dateStr}|${bankDesc}|${amt}|${cd}`;
+    }
+
+    function getBudgetImportSources() {
+      const budget = ensureBudgetState();
+      return Array.isArray(budget.importSources) ? budget.importSources : [];
+    }
+
+    function removeBudgetImportSource(sourceId) {
+      const budget = ensureBudgetState();
+      const id = String(sourceId || '');
+      if (!id) return;
+      const src = (budget.importSources || []).find(s => s && s.id === id);
+      const label = src?.label || 'this CSV';
+      if (!confirm(`Remove all transactions from “${label}”?\n\nOther stacked CSVs stay. Category memory is kept.`)) return;
+      budget.transactions = (budget.transactions || []).filter(t => t && t.sourceId !== id);
+      budget.importSources = (budget.importSources || []).filter(s => s && s.id !== id);
+      if (!(budget.transactions || []).length) {
+        budget.importedAt = null;
+      } else {
+        budget.importedAt = new Date().toISOString();
+      }
+      saveState();
+      renderBudget();
+      showToast(`Removed ${label}`);
+      if (typeof renderTasks === 'function') renderTasks();
     }
 
     /** Stable merchant key so “Transfer To Savings -9982” and “-8061” share one rule */
@@ -25844,7 +25880,15 @@
         .slice(0, limit);
     }
 
-    function importBudgetFromBankCsv(text) {
+    /**
+     * Import a bank / credit-card / savings CSV.
+     * Default: stack onto existing transactions (checking + card + savings…).
+     * options.replace = true → wipe transactions first (user opt-in).
+     * options.label → display name for this file in Manage.
+     */
+    function importBudgetFromBankCsv(text, options = {}) {
+      const opts = options && typeof options === 'object' ? options : {};
+      const replace = opts.replace === true;
       let parsed = parseBudgetCsv(text);
       // Fallback to generic bank parser if dedicated parser finds nothing
       if (!parsed.length && typeof parseBankCsv === 'function') {
@@ -25859,22 +25903,42 @@
       }
       if (!parsed.length) {
         showToast('Could not read transactions — check your CSV format', 'warn');
-        return { added: 0, ok: false };
+        return { added: 0, ok: false, skipped: 0 };
       }
       const budget = ensureBudgetState();
-      // Keep merchantRules — user category/name edits survive CSV replace
+      // Keep merchantRules — user category/name edits survive re-import
       ensureBudgetMerchantRules();
       harvestBudgetMerchantRulesFromTransactions();
 
-      // Each successful import fully replaces transaction rows (not your memory)
+      if (replace) {
+        budget.transactions = [];
+        budget.importSources = [];
+      }
+
+      const sourceId = 'bsrc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      const sourceLabel = String(opts.label || opts.fileName || 'CSV import')
+        .replace(/\.csv$/i, '')
+        .trim()
+        .slice(0, 48) || 'CSV import';
+
+      // De-dupe against already-stacked rows + within this file
+      const seen = new Set((budget.transactions || []).map(getBudgetTransactionDedupeKey).filter(Boolean));
       const next = [];
-      const seen = new Set();
       let remembered = 0;
+      let skipped = 0;
       parsed.forEach(tx => {
         const dateStr = tx.date && !isNaN(tx.date.getTime()) ? dateStrLocal(tx.date) : null;
         const bankDesc = String(tx.description || '').trim().slice(0, 140);
-        const key = `${dateStr || ''}|${bankDesc.toLowerCase()}|${Number(tx.amount).toFixed(2)}|${tx.isCredit ? 'C' : 'D'}`;
-        if (seen.has(key)) return; // de-dupe within this file only
+        const key = getBudgetTransactionDedupeKey({
+          date: dateStr,
+          bankDescription: bankDesc,
+          amount: tx.amount,
+          isCredit: tx.isCredit
+        });
+        if (!key || seen.has(key)) {
+          skipped++;
+          return;
+        }
         seen.add(key);
         const autoCat = tx.category || categorizeBudgetDescription(bankDesc, tx.bankCategory, {
           type: tx.bankType,
@@ -25909,17 +25973,36 @@
           category: finalCat,
           categoryAuto: truePay ? 'income' : applied.categoryAuto,
           categoryFromRule: fromRule,
-          source: 'csv'
+          source: 'csv',
+          sourceId,
+          sourceLabel
         });
       });
       if (!next.length) {
+        if (skipped > 0) {
+          showToast(`No new transactions — ${skipped} already in Harbor`, 'info');
+          return { added: 0, ok: true, skipped, stacked: !replace };
+        }
         showToast('Could not read transactions — check your CSV format', 'warn');
-        return { added: 0, ok: false };
+        return { added: 0, ok: false, skipped: 0 };
       }
-      next.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
-      budget.transactions = next;
+
+      budget.transactions = [...(budget.transactions || []), ...next]
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
       budget.importedAt = new Date().toISOString();
-      // Fresh file: re-run auto category migrations on next render (won't override rules)
+      if (!Array.isArray(budget.importSources)) budget.importSources = [];
+      budget.importSources.unshift({
+        id: sourceId,
+        label: sourceLabel,
+        importedAt: budget.importedAt,
+        count: next.length
+      });
+      // Cap source history (transactions stay; this is just the Manage list)
+      if (budget.importSources.length > 40) {
+        budget.importSources = budget.importSources.slice(0, 40);
+      }
+
+      // Re-run auto category migrations on next render (won't override user rules)
       delete budget._otherRecatV2;
       delete budget._fixedBillMigrated;
       delete budget._incomeRepairedV1;
@@ -25936,7 +26019,16 @@
         markBudgetReviewCompleteFromImport({ silent: true });
       }
       saveState();
-      return { added: next.length, ok: true, replaced: true, remembered };
+      return {
+        added: next.length,
+        ok: true,
+        skipped,
+        stacked: !replace,
+        replaced: replace,
+        remembered,
+        sourceLabel,
+        total: budget.transactions.length
+      };
     }
 
     // ── Monthly budget review task (auto on Today near month-end) ──
@@ -26147,15 +26239,15 @@
             <button type="button" class="modal-close-chip" onclick="this.closest('.fixed')?.remove()" aria-label="Close">Close</button>
           </div>
           <ul class="text-xs text-harbor-muted space-y-2.5 leading-relaxed list-none p-0 m-0">
-            <li><strong class="text-harbor-text">Import once</strong> — download a transactions CSV from your bank. Harbor never uploads it; it stays on this phone.</li>
+            <li><strong class="text-harbor-text">Stack CSVs</strong> — add checking, credit card, and savings exports. Each file adds on; duplicates are skipped. Harbor never uploads them.</li>
+            <li><strong class="text-harbor-text">Clear anytime</strong> — Manage → Clear all, or remove one stacked file from the import screen.</li>
             <li><strong class="text-harbor-text">Auto-sorted</strong> — categories fill in from bank labels + smart rules. You should not need to edit every line.</li>
             <li><strong class="text-harbor-text">Snapshot</strong> shows money out, money in, and net for the month at a glance.</li>
-            <li><strong class="text-harbor-text">Categories first</strong> — expand a group only if something looks wrong. Tap a line only to fix category or name.</li>
+            <li><strong class="text-harbor-text">Categories first</strong> — expand a group only if something looks wrong.</li>
             <li><strong class="text-harbor-text">Memory</strong> — fix “STARBUCKS” once and future imports keep that choice.</li>
-            <li><strong class="text-harbor-text">Habits</strong> — “Where wants compound” spots coffee, dining, and shopping patterns (not rent or bills).</li>
           </ul>
           <button type="button" class="w-full mt-4 py-3 rounded-2xl bg-harbor-primary text-white font-semibold"
-            onclick="this.closest('.fixed')?.remove(); showBudgetImportModal()">Import CSV</button>
+            onclick="this.closest('.fixed')?.remove(); showBudgetImportModal()">Add CSV</button>
         </div>`;
       document.body.appendChild(modal);
     }
@@ -26166,19 +26258,25 @@
         showToast('Nothing to clear');
         return;
       }
-      if (!confirm('Clear all imported budget transactions from this device?\n\nYour remembered categories (e.g. treating a transfer as Savings) are kept for the next import.')) return;
+      const n = (budget.transactions || []).length;
+      const srcN = (budget.importSources || []).length;
+      const srcBit = srcN ? ` (${srcN} stacked CSV${srcN === 1 ? '' : 's'})` : '';
+      if (!confirm(`Clear all ${n} budget transaction${n === 1 ? '' : 's'}${srcBit} from this device?\n\nYou can import CSVs again anytime. Remembered categories (e.g. treating a transfer as Savings) are kept.`)) return;
       const rules = ensureBudgetMerchantRules();
       state.budget = {
         transactions: [],
         importedAt: null,
+        importSources: [],
         merchantRules: rules && typeof rules === 'object' ? { ...rules } : {}
       };
       budgetCategoryFilter = null;
       budgetMonthRange = 'current';
       budgetKindFilter = 'overview';
+      if (window.__harborBudgetOpenCats) window.__harborBudgetOpenCats.clear();
       saveState();
       renderBudget();
       showToast('Budget cleared · category memory kept');
+      if (typeof renderTasks === 'function') renderTasks();
     }
 
     function setBudgetCategoryFilter(catId) {
@@ -26303,67 +26401,183 @@
     }
 
     function showBudgetImportModal() {
+      const budget = ensureBudgetState();
+      const existingN = (budget.transactions || []).length;
+      const sources = getBudgetImportSources();
+      const sourcesHtml = sources.length
+        ? `<div class="mb-3 rounded-2xl border border-harbor-border bg-harbor-raised/50 px-3 py-2.5">
+            <div class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted mb-1.5">Stacked so far · ${existingN} lines</div>
+            <div class="space-y-1.5 max-h-28 overflow-y-auto">
+              ${sources.slice(0, 12).map(s => `
+                <div class="flex items-center justify-between gap-2 text-[11px]">
+                  <span class="text-harbor-text font-medium truncate min-w-0">${escapeBriefHtml(s.label || 'CSV')}</span>
+                  <span class="text-harbor-muted flex-shrink-0">${s.count || 0} · <button type="button" class="text-rose-400/90 font-semibold" data-remove-src="${escapeBriefHtml(s.id)}">Remove</button></span>
+                </div>`).join('')}
+            </div>
+          </div>`
+        : '';
+
       const modal = document.createElement('div');
       modal.id = 'budget-import-modal';
       modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
-        <div onclick="event.stopImmediatePropagation()" class="relative w-full max-h-[82vh] bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm overflow-y-auto">
+        <div onclick="event.stopImmediatePropagation()" class="relative w-full max-h-[88vh] bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm overflow-y-auto">
           <div class="modal-grab-pill" aria-hidden="true"></div>
-          <div class="font-semibold text-lg mb-1">Import bank CSV</div>
+          <div class="font-semibold text-lg mb-1">Import CSV</div>
           <div class="text-xs text-harbor-muted mb-3 leading-relaxed">
-            Export transactions from your bank (CSV with posting date, amount, debit/credit, description, category).
-            Harbor uses the <strong class="text-harbor-text">posting date</strong>, identifies credits vs debits vs transfers,
-            and maps bank tags into clear categories.
-            <strong class="text-harbor-text">A new CSV replaces transactions</strong>, but categories and names you set
-            (like marking a transfer as Savings) are remembered for matching merchants next time.
+            Stack exports from <strong class="text-harbor-text">checking, credit cards, savings</strong>, and more.
+            Each file <strong class="text-harbor-text">adds</strong> to what you already have (duplicates are skipped).
+            Clear everything anytime from Manage. Categories you fix are remembered for next import.
           </div>
-          <label class="block w-full mb-3">
-            <input id="budget-csv-file" type="file" accept=".csv,text/csv" class="hidden">
+          ${sourcesHtml}
+          <label class="block w-full mb-2">
+            <input id="budget-csv-file" type="file" accept=".csv,text/csv" multiple class="hidden">
             <span class="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-harbor-raised border border-dashed border-harbor-border text-harbor-primary-light font-medium cursor-pointer">
-              <i class="fa-solid fa-file-arrow-up"></i> Choose CSV file
+              <i class="fa-solid fa-file-arrow-up"></i> Choose one or more CSVs
             </span>
           </label>
-          <textarea id="budget-csv-paste" rows="6" placeholder="Or paste CSV contents here..."
-            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-3 mb-3 outline-none text-harbor-text text-xs font-mono"></textarea>
+          <div id="budget-csv-file-names" class="text-[10px] text-harbor-muted mb-2 hidden"></div>
+          <textarea id="budget-csv-paste" rows="5" placeholder="Or paste one CSV here..."
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-3 mb-2 outline-none text-harbor-text text-xs font-mono"></textarea>
+          <label class="flex items-start gap-2 mb-3 text-[11px] text-harbor-muted leading-snug cursor-pointer select-none">
+            <input id="budget-csv-replace" type="checkbox" class="mt-0.5 flex-shrink-0 rounded border-harbor-border">
+            <span><strong class="text-harbor-text">Replace all</strong> instead of stacking (clears current transactions first)</span>
+          </label>
           <div class="flex gap-2">
             <button type="button" onclick="this.closest('#budget-import-modal').remove()"
               class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold">Cancel</button>
             <button type="button" id="budget-csv-scan-btn"
-              class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Import</button>
+              class="flex-1 py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Add to budget</button>
           </div>
         </div>`;
       document.body.appendChild(modal);
+
       const fileInput = modal.querySelector('#budget-csv-file');
       const pasteEl = modal.querySelector('#budget-csv-paste');
-      fileInput.onchange = () => {
-        const file = fileInput.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => { pasteEl.value = String(reader.result || ''); };
-        reader.readAsText(file);
+      const namesEl = modal.querySelector('#budget-csv-file-names');
+      let pendingFiles = []; // File[]
+
+      const updateFileNames = () => {
+        if (!namesEl) return;
+        if (!pendingFiles.length) {
+          namesEl.classList.add('hidden');
+          namesEl.textContent = '';
+          return;
+        }
+        namesEl.classList.remove('hidden');
+        namesEl.textContent = pendingFiles.map(f => f.name).join(' · ');
       };
-      modal.querySelector('#budget-csv-scan-btn').onclick = () => {
-        const text = pasteEl.value.trim();
+
+      fileInput.onchange = () => {
+        pendingFiles = Array.from(fileInput.files || []);
+        updateFileNames();
+        // Single file: also fill paste for preview/edit; multi: paste stays empty
+        if (pendingFiles.length === 1) {
+          const reader = new FileReader();
+          reader.onload = () => { pasteEl.value = String(reader.result || ''); };
+          reader.readAsText(pendingFiles[0]);
+        } else if (pendingFiles.length > 1) {
+          pasteEl.value = '';
+        }
+      };
+
+      modal.querySelectorAll('[data-remove-src]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = btn.getAttribute('data-remove-src');
+          modal.remove();
+          removeBudgetImportSource(id);
+        });
+      });
+
+      const finishImportUi = (totals) => {
+        modal.remove();
+        budgetCategoryFilter = null;
+        budgetMonthRange = 'current';
+        budgetKindFilter = 'overview';
+        renderBudget();
+        if (typeof renderTasks === 'function') renderTasks();
+        const { added, skipped, remembered, stacked, fileCount, total } = totals;
+        if (!added && !skipped) return;
+        const parts = [];
+        if (added) parts.push(`+${added} new`);
+        if (skipped) parts.push(`${skipped} already had`);
+        if (remembered) parts.push(`${remembered} remembered categories`);
+        if (fileCount > 1) parts.push(`${fileCount} files`);
+        if (total != null) parts.push(`${total} total`);
+        const verb = stacked === false ? 'Budget replaced' : 'Budget stacked';
+        showToast(`${verb} · ${parts.join(' · ')}`);
+      };
+
+      modal.querySelector('#budget-csv-scan-btn').onclick = async () => {
+        const replace = !!modal.querySelector('#budget-csv-replace')?.checked;
+        const paste = pasteEl.value.trim();
+
+        // Multi-file path
+        if (pendingFiles.length > 1 || (pendingFiles.length === 1 && !paste)) {
+          const files = pendingFiles.length ? pendingFiles : [];
+          if (!files.length) {
+            showToast('Choose CSV files first');
+            return;
+          }
+          let added = 0;
+          let skipped = 0;
+          let remembered = 0;
+          let anyOk = false;
+          let total = 0;
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const text = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(String(reader.result || ''));
+              reader.onerror = () => reject(reader.error);
+              reader.readAsText(file);
+            });
+            const result = importBudgetFromBankCsv(text, {
+              replace: replace && i === 0, // only wipe once, then stack the rest
+              label: file.name,
+              fileName: file.name
+            });
+            if (result && result.ok) {
+              anyOk = true;
+              added += result.added || 0;
+              skipped += result.skipped || 0;
+              remembered += result.remembered || 0;
+              total = result.total || total;
+            }
+          }
+          if (anyOk) {
+            finishImportUi({
+              added,
+              skipped,
+              remembered,
+              stacked: !replace,
+              fileCount: files.length,
+              total
+            });
+          }
+          return;
+        }
+
+        // Paste / single-file text path
+        const text = paste;
         if (!text) {
           showToast('Upload or paste a CSV first');
           return;
         }
-        const result = importBudgetFromBankCsv(text);
-        modal.remove();
-        const added = typeof result === 'object' ? (result.added || 0) : (result || 0);
-        const ok = typeof result === 'object' ? !!result.ok : added > 0;
-        if (ok) {
-          budgetCategoryFilter = null;
-          budgetMonthRange = 'current';
-          budgetKindFilter = 'overview';
-          renderBudget();
-          const remembered = typeof result === 'object' ? (result.remembered || 0) : 0;
-          const mem = remembered > 0
-            ? ` · ${remembered} matched your saved categories`
-            : '';
-          showToast(`Budget replaced · ${added} transaction${added === 1 ? '' : 's'}${mem}`);
-          if (typeof renderTasks === 'function') renderTasks();
+        const label = pendingFiles[0]?.name || 'Pasted CSV';
+        const result = importBudgetFromBankCsv(text, { replace, label, fileName: label });
+        if (result && result.ok) {
+          finishImportUi({
+            added: result.added || 0,
+            skipped: result.skipped || 0,
+            remembered: result.remembered || 0,
+            stacked: !replace,
+            fileCount: 1,
+            total: result.total
+          });
         }
       };
     }
@@ -26592,10 +26806,13 @@
       }
       const autoNote = document.getElementById('budget-auto-note');
       if (autoNote) {
-        const n = (ensureBudgetState().transactions || []).length;
+        const b = ensureBudgetState();
+        const n = (b.transactions || []).length;
+        const srcN = (b.importSources || []).length;
+        const srcBit = srcN > 1 ? ` from ${srcN} stacked CSVs` : srcN === 1 ? ' from 1 CSV' : '';
         autoNote.textContent = n
-          ? `Harbor auto-sorted ${n} line${n === 1 ? '' : 's'}. Expand a category only if something looks off.`
-          : 'Import a CSV to see your month.';
+          ? `Harbor auto-sorted ${n} line${n === 1 ? '' : 's'}${srcBit}. Expand a category only if something looks off · Manage to clear.`
+          : 'Add checking, card, or savings CSVs to see your month.';
       }
 
       // Totals by category for current view
