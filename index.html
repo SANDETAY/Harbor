@@ -11610,7 +11610,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 345;
+    const HARBOR_BUILD_NUMBER = 346;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11665,8 +11665,8 @@
       {
         version: '0.9',
         date: '2026-07-14',
-        title: 'Onboarding · swipe polish · build 345',
-        intro: 'First-run wizard, simpler tour copy, and refined swipe-left actions.',
+        title: 'Onboarding · splash · build 346',
+        intro: 'First-run wizard, swipe polish, and native splash brand sequence restored.',
         sections: [
           {
             heading: 'Onboarding & tour',
@@ -11674,6 +11674,12 @@
               'First-run: Welcome → name → starters → day rhythm → done (tour or dive in)',
               'Name + bedtime/morning window power greetings and smart timing',
               'Optional 3 tips in plain language: tasks · Daily Brief · Library'
+            ]
+          },
+          {
+            heading: 'Native splash',
+            items: [
+              'TestFlight shows the full brand splash again (anchor + slogan) after LaunchScreen handoff'
             ]
           },
           {
@@ -41812,15 +41818,8 @@
             .getPropertyValue('--harbor-body-solid').trim() || '#D6E8E2';
           await StatusBar.setBackgroundColor({ color: solid });
         }
-        const Splash = Cap.Plugins?.SplashScreen;
-        // Fade native splash into the web app (mint launch art already matches Harbor)
-        if (Splash?.hide) {
-          try {
-            await Splash.hide({ fadeOutDuration: 280 });
-          } catch (_) {
-            await Splash.hide();
-          }
-        }
+        // Splash hide is owned by runSplashSequence (after HTML splash paints).
+        // Do not hide here — early hide caused a flash and skipped the brand moment.
       } catch (e) {
         console.warn('Native shell init', e?.message || e);
       }
@@ -41945,6 +41944,17 @@
         }
     }
 
+    /** Hide Capacitor’s native splash once the HTML splash is on screen (seamless handoff). */
+    async function hideNativeSplashOverlay(fadeMs = 220) {
+      try {
+        const Cap = window.Capacitor;
+        if (!Cap || typeof Cap.isNativePlatform !== 'function' || !Cap.isNativePlatform()) return;
+        const Splash = Cap.Plugins?.SplashScreen;
+        if (!Splash?.hide) return;
+        await Splash.hide({ fadeOutDuration: fadeMs });
+      } catch (_) { /* ignore */ }
+    }
+
     function runSplashSequence(onComplete) {
       const splash = document.getElementById('splash-screen');
       const markEl = document.getElementById('splash-mark');
@@ -41954,19 +41964,14 @@
       const appWrap = document.querySelector('.app-content-wrap');
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      // Dual-preview / iframe: skip splash so both panes boot instantly.
-      // Native TestFlight/App Store: skip the HTML splash — iOS LaunchScreen + Capacitor
-      // already showed mint; a second animated splash made it feel like “icon then splash”.
+      // Dual-preview / iframe only: skip so panes boot instantly.
+      // Native (TestFlight): KEEP the HTML splash — LaunchScreen is a static stand-in until
+      // WebView paints; then we show the real brand sequence (anchor + slogan) and hide native.
       let skipSplash = document.documentElement.classList.contains('preview-skip-splash');
       try {
         skipSplash = skipSplash
           || window.self !== window.top
           || /(?:\?|&)preview=/.test(location.search || '');
-        if (!skipSplash && typeof isHarborNativeApp === 'function' && isHarborNativeApp()) {
-          skipSplash = true;
-        } else if (!skipSplash && window.Capacitor?.isNativePlatform?.()) {
-          skipSplash = true;
-        }
       } catch (_) {
         skipSplash = true;
       }
@@ -41982,6 +41987,7 @@
           appWrap.style.opacity = '';
           appWrap.classList.add('splash-app-reveal');
         }
+        hideNativeSplashOverlay(160);
         onComplete?.();
         return;
       }
@@ -42018,6 +42024,11 @@
       prepareSplashSlogan(sloganEl, 'One App For The Whole Day');
       appWrap?.classList.remove('splash-app-reveal');
       if (appWrap) appWrap.style.opacity = '0';
+
+      // Native: HTML splash is up — fade out LaunchScreen / Capacitor overlay underneath
+      requestAnimationFrame(() => {
+        hideNativeSplashOverlay(240);
+      });
 
       let booted = false;
       let revealed = false;

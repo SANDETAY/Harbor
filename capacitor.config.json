@@ -15,10 +15,10 @@
   },
   "plugins": {
     "SplashScreen": {
-      "launchAutoHide": true,
-      "launchShowDuration": 400,
-      "launchFadeOutDuration": 200,
-      "backgroundColor": "#D6E8E2",
+      "launchAutoHide": false,
+      "launchShowDuration": 8000,
+      "launchFadeOutDuration": 280,
+      "backgroundColor": "#0a3a38",
       "showSpinner": false,
       "splashFullScreen": true,
       "splashImmersive": true,
@@ -26,8 +26,8 @@
       "androidScaleType": "CENTER_CROP"
     },
     "StatusBar": {
-      "style": "DARK",
-      "backgroundColor": "#D6E8E2",
+      "style": "LIGHT",
+      "backgroundColor": "#0a3a38",
       "overlaysWebView": true
     },
     "CapacitorHttp": {
