@@ -2148,6 +2148,91 @@
       color: rgb(var(--harbor-text));
       font-weight: 650;
     }
+    .budget-snapshot {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .budget-snap-card {
+      background: rgb(var(--harbor-surface));
+      border: 1px solid rgb(var(--harbor-border));
+      border-radius: 1rem;
+      padding: 0.65rem 0.55rem;
+      text-align: center;
+      min-width: 0;
+    }
+    .budget-snap-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+      margin-bottom: 0.2rem;
+    }
+    .budget-snap-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: rgb(var(--harbor-text));
+      font-variant-numeric: tabular-nums;
+      line-height: 1.15;
+      word-break: break-word;
+    }
+    .budget-snap-value.is-in { color: rgb(16 185 129); }
+    .budget-snap-value.is-out { color: rgb(var(--harbor-text)); }
+    .budget-snap-value.is-net-pos { color: rgb(16 185 129); }
+    .budget-snap-value.is-net-neg { color: rgb(244 63 94 / 0.9); }
+    .budget-auto-note {
+      font-size: 0.68rem;
+      color: rgb(var(--harbor-muted));
+      line-height: 1.35;
+      margin: 0 0 0.65rem;
+      padding: 0.55rem 0.7rem;
+      border-radius: 0.75rem;
+      background: rgb(var(--harbor-raised) / 0.65);
+      border: 1px solid rgb(var(--harbor-border) / 0.7);
+    }
+    .budget-cat-group {
+      border: 1px solid rgb(var(--harbor-border));
+      border-radius: 1rem;
+      background: rgb(var(--harbor-surface));
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+    }
+    .budget-cat-group-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      width: 100%;
+      padding: 0.7rem 0.85rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--harbor-font);
+      color: rgb(var(--harbor-text));
+    }
+    .budget-cat-group-btn:active { background: rgb(var(--harbor-raised)); }
+    .budget-cat-group-meta {
+      font-size: 0.65rem;
+      color: rgb(var(--harbor-muted));
+      font-weight: 600;
+    }
+    .budget-cat-group-amt {
+      font-size: 0.8rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .budget-cat-group-body {
+      border-top: 1px solid rgb(var(--harbor-border) / 0.7);
+      padding: 0.4rem 0.5rem 0.55rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .budget-cat-group-body.is-collapsed { display: none; }
     .budget-insight-avg {
       font-size: 0.62rem;
       color: rgb(var(--harbor-muted));
@@ -11345,10 +11430,10 @@
           </div>
           <div id="budget-empty" class="harbor-empty py-6">
             <div class="harbor-empty-icon" aria-hidden="true">📊</div>
-            <div class="text-sm font-medium text-harbor-text">See where money went</div>
+            <div class="text-sm font-medium text-harbor-text">Money at a glance</div>
             <div class="text-xs text-harbor-muted mt-1.5 leading-relaxed max-w-xs mx-auto">
-              Import a bank CSV to see this month vs last — dining, shopping, utilities, and habits that stack up.
-              Stays on this device. Tap a pie slice or legend row to filter, swipe a transaction to recategorize.
+              Import a bank CSV once. Harbor sorts spending automatically — you only fix a line if it looks wrong.
+              Everything stays on this device.
             </div>
             <div class="harbor-empty-actions mt-3">
               <button type="button" class="chip-add-btn" onclick="showBudgetImportModal()">
@@ -11358,6 +11443,8 @@
             </div>
           </div>
           <div id="budget-content" class="hidden">
+            <div id="budget-snapshot" class="budget-snapshot" aria-label="Month snapshot"></div>
+            <p id="budget-auto-note" class="budget-auto-note">Harbor auto-sorted this import. Expand a category only if something looks off.</p>
             <div id="budget-mom-compare" class="hidden mb-2.5 text-[11px] text-harbor-muted px-0.5 leading-snug" aria-live="polite"></div>
             <div class="budget-filter-bar mb-2.5" id="budget-filter-bar">
               <div class="harbor-pill-row" id="budget-range-filters" role="tablist" aria-label="Budget month">
@@ -11368,10 +11455,10 @@
               <div class="budget-lens" id="budget-lens">
                 <button type="button" id="budget-lens-btn" class="cal-format-chip budget-lens-chip" aria-haspopup="listbox" aria-expanded="false" onclick="toggleBudgetLensMenu(event)">
                   <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-                  <span id="budget-lens-label">Spending</span>
+                  <span id="budget-lens-label">Full picture</span>
                   <i class="fa-solid fa-chevron-down budget-lens-caret" aria-hidden="true"></i>
                 </button>
-                <div id="budget-lens-menu" class="budget-lens-menu hidden" role="listbox" aria-label="Spending lens"></div>
+                <div id="budget-lens-menu" class="budget-lens-menu hidden" role="listbox" aria-label="Budget view"></div>
               </div>
             </div>
             <div class="budget-summary-card harbor-card bg-harbor-surface border border-harbor-border rounded-3xl p-4 mb-3">
@@ -11387,10 +11474,10 @@
             </div>
             <div id="budget-insights" class="mb-3 hidden"></div>
             <div class="flex items-center justify-between gap-2 mb-1.5 px-0.5">
-              <div id="budget-tx-heading" class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted min-w-0">Transactions</div>
+              <div id="budget-tx-heading" class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted min-w-0">By category</div>
               <button type="button" id="budget-filter-all" class="text-[10px] font-semibold text-harbor-primary-light hidden flex-shrink-0" onclick="setBudgetCategoryFilter(null)">Show all</button>
             </div>
-            <div id="budget-tx-swipe-hint" class="swipe-row-hint text-[10px] text-harbor-muted mb-1.5 px-0.5 hidden">Swipe left to edit or delete</div>
+            <div id="budget-tx-swipe-hint" class="swipe-row-hint text-[10px] text-harbor-muted mb-1.5 px-0.5 hidden">Only edit if a category is wrong · swipe left</div>
             <div id="budget-tx-list" class="mb-3"></div>
           </div>
         </div>
@@ -11612,7 +11699,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 348;
+    const HARBOR_BUILD_NUMBER = 349;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11664,6 +11751,48 @@
      * Product train stays on 0.9 until 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '0.9',
+        date: '2026-07-15',
+        title: 'Energy · calendar · budget · build 349',
+        intro: 'Low-energy ranking, calendar edit/refresh fixes, schedule load truthfulness, When You Can list, budget UX.',
+        sections: [
+          {
+            heading: 'Today energy',
+            items: [
+              'Low / High energy reorders the full list so the first card matches how you feel',
+              'Long high-effort jobs sink hard on Low energy (no more 60‑min first)'
+            ]
+          },
+          {
+            heading: 'Calendar',
+            items: [
+              'Edits to phone / imported events now save and survive refresh',
+              'Settings → Refresh also re-syncs iPhone calendars (not just URL feeds)',
+              'Schedule status uses free calendar time — one event no longer says Packed today'
+            ]
+          },
+          {
+            heading: 'Daily Brief',
+            items: [
+              'When You Can → full list opens the parked jobs sheet (not Today tasks)'
+            ]
+          },
+          {
+            heading: 'Budget',
+            items: [
+              'Snapshot: money out / in / net at a glance',
+              'Categories first — expand only if something looks wrong',
+              'Clearer copy: Harbor auto-sorts; edit is optional'
+            ]
+          }
+        ],
+        highlights: [
+          'Low energy ranking',
+          'Calendar edit + iPhone refresh',
+          'Budget snapshot'
+        ]
+      },
       {
         version: '0.9',
         date: '2026-07-14',
@@ -12034,6 +12163,8 @@
         deviceCalendarEnabled: false,
         deviceCalendarEvents: [],
         deviceCalendarLastSyncedAt: null,
+        // Harbor edits to imported/device events (survive phone calendar refresh)
+        calendarEventOverrides: {},
         workSchedule: { mode: 'flexible', start: '09:00', end: '17:00', label: 'Flexible', days: [1, 2, 3, 4, 5] },
         eventTimeFormat: '12h',
         scheduleView: 'today',
@@ -13011,6 +13142,9 @@
       }
       if (state.settings.deviceCalendarEnabled !== true && state.settings.deviceCalendarEnabled !== false) {
         state.settings.deviceCalendarEnabled = false;
+      }
+      if (!state.settings.calendarEventOverrides || typeof state.settings.calendarEventOverrides !== 'object') {
+        state.settings.calendarEventOverrides = {};
       }
       // Ensure household profiles exist and always include a "Me" entry
       state.settings.householdProfiles = ensureHouseholdProfiles(state.settings.householdProfiles);
@@ -17085,10 +17219,16 @@
       // Lower score = higher priority (sorted ascending)
 
       if (energy === 1) {
-        return diff * 25 + est;
+        // Low energy: easy + short first. High effort / long blocks sink hard.
+        const hardPenalty = diff >= 3 ? 240 : diff >= 2 ? 60 : 0;
+        const longPenalty = est >= 50 ? 200 : est >= 30 ? 80 : est >= 20 ? 30 : 0;
+        return hardPenalty + longPenalty + diff * 18 + est;
       }
       if (energy === 3) {
-        return (4 - diff) * 25 + (90 - Math.min(est, 90));
+        // High energy: hard + longer first (still prefer real work over tiny fluff)
+        const easyPenalty = diff <= 1 ? 40 : 0;
+        const shortPenalty = est <= 8 ? 25 : 0;
+        return easyPenalty + shortPenalty + (4 - diff) * 28 + (100 - Math.min(est, 100));
       }
       return Math.abs(diff - 2) * 12 + Math.abs(est - 20);
     }
@@ -20769,7 +20909,15 @@
       const dayFreeMinutes = Math.max(0, dayWindow - committedMinutes);
       const factors = [];
       if (ws.mode === 'preset' || ws.mode === 'custom') factors.push('work');
-      const eventCount = (options.events || state.calendarCache?.events || []).length;
+      // Count only today's events for status (not the full multi-month store)
+      const today = todayStr();
+      const todayEvents = (options.events
+        || (typeof getAllCalendarEvents === 'function'
+          ? getAllCalendarEvents().filter(e => eventOccursOnDate(e, today))
+          : null)
+        || state.calendarCache?.events
+        || []);
+      const eventCount = todayEvents.length;
       if (eventCount > 0) factors.push('events');
       if (taskMinutes > 0) factors.push('tasks');
 
@@ -20779,20 +20927,41 @@
         committedMinutes,
         taskMinutes,
         timedBusyMinutes,
+        todayEventCount: eventCount,
         gaps,
         busy,
         workLabel: getWorkScheduleLabel(ws),
+        // Schedule chip uses remaining calendar free time — not task backlog
         summary: factors.length
-          ? formatScheduleLoadLabel({ dayFreeMinutes: dayFreeMinutes })
+          ? formatScheduleLoadLabel({
+              freeMinutes,
+              dayFreeMinutes,
+              timedBusyMinutes,
+              todayEventCount: eventCount,
+              gaps
+            })
           : 'Open day — set hours for smarter free-time'
       };
     }
 
     function formatScheduleLoadLabel(avail) {
-      const free = avail?.dayFreeMinutes ?? 0;
+      // Prefer live free gaps left today (work + calendar). Task backlog alone must not
+      // say “Packed today” when the schedule only has one short event.
+      const free = Number.isFinite(avail?.freeMinutes)
+        ? avail.freeMinutes
+        : (avail?.dayFreeMinutes ?? 0);
+      const timedBusy = avail?.timedBusyMinutes ?? 0;
+      const eventN = avail?.todayEventCount ?? 0;
+      const openGaps = Array.isArray(avail?.gaps) ? avail.gaps.length : 0;
+
       if (free >= 45) return `${formatFreeTimeHoursCompact(free)} free`;
       if (free > 0) return `${formatFreeTimeHoursCompact(free)} left`;
-      return 'Packed today';
+
+      // No remaining free minutes: only call it packed when the calendar/work block is heavy
+      if (timedBusy >= 3 * 60 || (openGaps === 0 && timedBusy >= 90)) return 'Packed today';
+      if (eventN <= 1 && timedBusy < 90) return eventN === 0 ? 'Open day' : 'Light day';
+      if (timedBusy >= 60) return 'Busy stretch';
+      return 'Open day';
     }
 
     function getCalendarGaps() {
@@ -21134,7 +21303,11 @@
         const { result } = await plugin.listEventsInRange({ startDate, endDate });
         const raw = Array.isArray(result) ? result : [];
         const mapped = raw.map(mapNativeDeviceEvent).filter(Boolean);
-        const cleaned = filterSuppressedCalendarEvents(normalizeCalendarEvents(mapped));
+        // Re-apply Harbor edits (title/time/duration) after a phone sync
+        const withEdits = typeof applyCalendarEventOverrides === 'function'
+          ? applyCalendarEventOverrides(mapped)
+          : mapped;
+        const cleaned = filterSuppressedCalendarEvents(normalizeCalendarEvents(withEdits));
 
         state.settings.deviceCalendarEnabled = true;
         state.settings.deviceCalendarEvents = cleaned;
@@ -22492,17 +22665,83 @@
     }
 
     function updateCalendarEventInStores(eventId, updated) {
-      const matches = (e) => e.id === eventId || getStableCalendarEventId(e) === eventId;
+      const matches = (e) => e && (e.id === eventId || getStableCalendarEventId(e) === eventId);
       const patchList = (list) => normalizeCalendarEvents(
-        (list || []).map(e => matches(e) ? { ...e, ...updated, id: e.id } : e)
+        (list || []).map(e => matches(e)
+          ? { ...e, ...updated, id: e.id || eventId, harborEdited: true, readOnly: false }
+          : e)
       );
 
+      let found = false;
       if (state.settings.mockCalendar?.events?.some(matches)) {
         state.settings.mockCalendar.events = patchList(state.settings.mockCalendar.events);
+        found = true;
       }
       if (state.settings.importedCalendarEvents?.some(matches)) {
         state.settings.importedCalendarEvents = patchList(state.settings.importedCalendarEvents);
+        found = true;
       }
+      // iPhone / device calendars live here — previously edits silently no-op'd
+      if (Array.isArray(state.settings.deviceCalendarEvents) && state.settings.deviceCalendarEvents.some(matches)) {
+        state.settings.deviceCalendarEvents = patchList(state.settings.deviceCalendarEvents);
+        found = true;
+      }
+
+      // Persist override so a phone calendar refresh doesn't wipe Harbor edits
+      if (!state.settings.calendarEventOverrides || typeof state.settings.calendarEventOverrides !== 'object') {
+        state.settings.calendarEventOverrides = {};
+      }
+      const prior = getCalendarEventById(eventId) || {};
+      const overrideId = prior.id || eventId;
+      state.settings.calendarEventOverrides[overrideId] = {
+        ...(state.settings.calendarEventOverrides[overrideId] || {}),
+        ...updated,
+        id: overrideId,
+        nativeEventId: prior.nativeEventId || updated.nativeEventId,
+        calendarSource: prior.calendarSource || updated.calendarSource,
+        harborEdited: true,
+        updatedAt: new Date().toISOString()
+      };
+
+      // Fallback: event visible in the merged list but not found in a store (edge IDs)
+      if (!found) {
+        const existing = prior.id ? prior : null;
+        if (existing) {
+          if (!state.settings.mockCalendar) {
+            state.settings.mockCalendar = { events: [], freeMinutes: 0, note: '', weekAhead: [] };
+          }
+          const local = { ...existing, ...updated, id: existing.id || eventId, harborEdited: true, readOnly: false };
+          const mock = state.settings.mockCalendar.events || [];
+          const idx = mock.findIndex(matches);
+          if (idx >= 0) mock[idx] = local;
+          else mock.push(local);
+          state.settings.mockCalendar.events = normalizeCalendarEvents(mock);
+        }
+      }
+    }
+
+    /** Apply user edits on top of device/feed events after a refresh. */
+    function applyCalendarEventOverrides(events) {
+      const overrides = state.settings?.calendarEventOverrides;
+      if (!overrides || typeof overrides !== 'object') return events || [];
+      return (events || []).map(e => {
+        if (!e) return e;
+        const id = e.id || getStableCalendarEventId(e);
+        const o = overrides[id]
+          || (e.nativeEventId && Object.values(overrides).find(x => x && x.nativeEventId && x.nativeEventId === e.nativeEventId));
+        if (!o) return e;
+        return {
+          ...e,
+          title: o.title != null ? o.title : e.title,
+          date: o.date || e.date,
+          endDate: o.endDate !== undefined ? o.endDate : e.endDate,
+          time: o.time || e.time,
+          durationMin: o.durationMin != null ? o.durationMin : e.durationMin,
+          personId: o.personId !== undefined ? o.personId : e.personId,
+          harborEdited: true,
+          readOnly: false
+        };
+      });
     }
 
     function wireEventTimeFormatToggle(modal, calState) {
@@ -24617,13 +24856,13 @@
     // Primary lenses: Overview = full money-out pie for the month range.
     // Fine-tune filters narrow that picture (Income → Spending → Bills → …).
     const BUDGET_KIND_OPTIONS = [
-      { id: 'overview', label: 'Full picture', short: 'Full picture', hint: 'All money out this period — every category on the pie', totalLabel: 'Total money out' },
+      { id: 'overview', label: 'Full picture', short: 'Full picture', hint: 'All money out — the simple default view', totalLabel: 'Total money out' },
       { id: 'income', label: 'Income', short: 'Income', hint: 'Paychecks, deposits & money in', totalLabel: 'Total income' },
-      { id: 'spending', label: 'Spending', short: 'Spending', hint: 'Groceries, dining, shopping, gas, everyday purchases', totalLabel: 'Total spending' },
-      { id: 'bills', label: 'Bills', short: 'Bills', hint: 'Mortgage, rent, electric, water, phone, internet, insurance, car…', totalLabel: 'Total bills' },
-      { id: 'subscriptions', label: 'Subscriptions', short: 'Subscriptions', hint: 'Streaming, software, memberships', totalLabel: 'Total subscriptions' },
-      { id: 'savings', label: 'Savings', short: 'Savings', hint: 'Transfers to savings & certificates', totalLabel: 'Total to savings' },
-      { id: 'expenses', label: 'Expenses', short: 'Expenses', hint: 'Debt payments, transfers, fees, ATM & other', totalLabel: 'Total expenses' }
+      { id: 'spending', label: 'Day-to-day', short: 'Day-to-day', hint: 'Groceries, dining, shopping, gas — everyday spending', totalLabel: 'Day-to-day spending' },
+      { id: 'bills', label: 'Bills', short: 'Bills', hint: 'Rent, utilities, phone, insurance, car…', totalLabel: 'Total bills' },
+      { id: 'subscriptions', label: 'Subscriptions', short: 'Subs', hint: 'Streaming, software, memberships', totalLabel: 'Total subscriptions' },
+      { id: 'savings', label: 'Savings', short: 'Savings', hint: 'Transfers to savings', totalLabel: 'Total to savings' },
+      { id: 'expenses', label: 'Other out', short: 'Other out', hint: 'Debt, transfers, fees, ATM & misc', totalLabel: 'Other money out' }
     ];
 
     // Bank “Category” column → Harbor ids (Navy Fed / similar exports)
@@ -25908,12 +26147,12 @@
             <button type="button" class="modal-close-chip" onclick="this.closest('.fixed')?.remove()" aria-label="Close">Close</button>
           </div>
           <ul class="text-xs text-harbor-muted space-y-2.5 leading-relaxed list-none p-0 m-0">
-            <li><strong class="text-harbor-text">Import CSV</strong> from your bank (download “transactions” / export). Harbor never uploads it — everything stays on this phone.</li>
-            <li><strong class="text-harbor-text">Full picture</strong> is all money out for the month. Lenses (Spending, Bills, Income…) zoom into one slice of the pie.</li>
-            <li><strong class="text-harbor-text">Tap a legend row</strong> or pie category to filter the transaction list. Swipe a row left to change category or delete a bad line.</li>
-            <li><strong class="text-harbor-text">Merchant memory</strong> — when you recategorize “STARBUCKS”, next import keeps that choice.</li>
-            <li><strong class="text-harbor-text">Wants that stack</strong> highlight coffee, dining, and shopping habits — not rent or transfers.</li>
-            <li><strong class="text-harbor-text">Re-import</strong> anytime from Manage; learned categories stick across files.</li>
+            <li><strong class="text-harbor-text">Import once</strong> — download a transactions CSV from your bank. Harbor never uploads it; it stays on this phone.</li>
+            <li><strong class="text-harbor-text">Auto-sorted</strong> — categories fill in from bank labels + smart rules. You should not need to edit every line.</li>
+            <li><strong class="text-harbor-text">Snapshot</strong> shows money out, money in, and net for the month at a glance.</li>
+            <li><strong class="text-harbor-text">Categories first</strong> — expand a group only if something looks wrong. Tap a line only to fix category or name.</li>
+            <li><strong class="text-harbor-text">Memory</strong> — fix “STARBUCKS” once and future imports keep that choice.</li>
+            <li><strong class="text-harbor-text">Habits</strong> — “Where wants compound” spots coffee, dining, and shopping patterns (not rent or bills).</li>
           </ul>
           <button type="button" class="w-full mt-4 py-3 rounded-2xl bg-harbor-primary text-white font-semibold"
             onclick="this.closest('.fixed')?.remove(); showBudgetImportModal()">Import CSV</button>
@@ -26323,6 +26562,42 @@
         else rangeLabel.textContent = 'All time';
       }
 
+      // Snapshot: money out / in / net for the selected month (always full picture, not lens)
+      const snapEl = document.getElementById('budget-snapshot');
+      if (snapEl) {
+        try {
+          const outTxs = getBudgetViewTransactions(budgetMonthRange, 'overview');
+          const inTxs = getBudgetViewTransactions(budgetMonthRange, 'income');
+          const outSum = outTxs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+          const inSum = inTxs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+          const net = inSum - outSum;
+          const netCls = net > 0.005 ? 'is-net-pos' : net < -0.005 ? 'is-net-neg' : '';
+          const netPrefix = net > 0.005 ? '+' : net < -0.005 ? '−' : '';
+          snapEl.innerHTML = `
+            <div class="budget-snap-card">
+              <div class="budget-snap-label">Out</div>
+              <div class="budget-snap-value is-out">${formatBudgetMoney(outSum)}</div>
+            </div>
+            <div class="budget-snap-card">
+              <div class="budget-snap-label">In</div>
+              <div class="budget-snap-value is-in">${formatBudgetMoney(inSum)}</div>
+            </div>
+            <div class="budget-snap-card">
+              <div class="budget-snap-label">Net</div>
+              <div class="budget-snap-value ${netCls}">${netPrefix}${formatBudgetMoney(Math.abs(net))}</div>
+            </div>`;
+        } catch (_) {
+          snapEl.innerHTML = '';
+        }
+      }
+      const autoNote = document.getElementById('budget-auto-note');
+      if (autoNote) {
+        const n = (ensureBudgetState().transactions || []).length;
+        autoNote.textContent = n
+          ? `Harbor auto-sorted ${n} line${n === 1 ? '' : 's'}. Expand a category only if something looks off.`
+          : 'Import a CSV to see your month.';
+      }
+
       // Totals by category for current view
       const totals = {};
       BUDGET_CATEGORIES.forEach(c => { totals[c.id] = 0; });
@@ -26540,11 +26815,11 @@
         }
       }
 
-      // Transaction list
+      // Category-first list — expand only when something looks wrong (minimal editing)
       let shown = txs;
       if (budgetCategoryFilter) {
         shown = txs.filter(t => {
-          const cat = t.isCredit ? 'income' : (t.category || 'other');
+          const cat = (detectBudgetIsCredit(t) || t.isCredit) ? 'income' : (t.category || 'other');
           return cat === budgetCategoryFilter;
         });
       }
@@ -26563,7 +26838,7 @@
               ${escapeBriefHtml(cat.label)} · ${shown.length} · ${formatBudgetMoney(filterSum)}
             </span>`;
         } else {
-          headingEl.textContent = kindOpt.label;
+          headingEl.textContent = 'By category';
         }
       }
       if (filterAllBtn) {
@@ -26574,82 +26849,146 @@
         swipeHint.classList.toggle('hidden', !showHint);
       }
 
+      const buildBudgetTxRow = (t) => {
+        const cat = getBudgetCategory(
+          (detectBudgetIsCredit(t) || t.isCredit) ? 'income' : (t.category || 'other')
+        );
+        const dateLabel = formatBudgetPostedDate(t.date);
+        const txId = String(t.id || '');
+        const amtPrefix = (detectBudgetIsCredit(t) || t.isCredit) ? '+' : '';
+        const row = document.createElement('div');
+        row.className = 'swipe-row';
+        row.dataset.swipeId = txId;
+        row.dataset.swipeType = 'budget';
+        row.dataset.budgetTxId = txId;
+        row.style.setProperty('--swipe-reveal', '9.75rem');
+        const actionsHtml = `
+          <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit transaction"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>
+          <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete transaction"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Delete</span></button>
+        `;
+        const contentHtml = `
+          <div class="budget-tx-cat-dot" style="background:${cat.color}" aria-hidden="true"></div>
+          <div class="budget-tx-main min-w-0 flex-1">
+            <div class="budget-tx-name">${escapeBriefHtml(t.description)}</div>
+            <div class="budget-tx-meta">Posted ${escapeBriefHtml(dateLabel)} · only edit if wrong</div>
+          </div>
+          <div class="flex flex-col items-end gap-1 flex-shrink-0">
+            <span class="budget-tx-amt${(detectBudgetIsCredit(t) || t.isCredit) ? ' text-emerald-500' : ''}">${amtPrefix}${formatBudgetMoney(t.amount)}</span>
+          </div>
+        `;
+        row.innerHTML = buildSwipeRowHtml(
+          actionsHtml,
+          contentHtml,
+          'budget-tx-card bg-harbor-surface border border-harbor-border rounded-2xl px-3.5 py-2.5 flex items-center gap-x-2.5'
+        );
+        const openEditor = (e) => {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          if (row.classList.contains('is-swiping') || row.dataset.swipeSuppressClick === '1') return;
+          showBudgetCategoryEditor(txId);
+        };
+        const contentEl = row.querySelector('.swipe-row-content');
+        if (contentEl) {
+          contentEl.setAttribute('role', 'button');
+          contentEl.setAttribute('tabindex', '0');
+          contentEl.setAttribute('aria-label', `Edit ${t.description || 'transaction'}`);
+          contentEl.addEventListener('click', (e) => {
+            if (e.target.closest('.swipe-action')) return;
+            openEditor(e);
+          });
+          contentEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openEditor(e);
+            }
+          });
+        }
+        return row;
+      };
+
       if (list) {
         list.innerHTML = '';
         if (!shown.length) {
           list.innerHTML = budgetCategoryFilter
             ? '<div class="text-[11px] text-harbor-muted px-1 py-3">No transactions in this category. <button type="button" class="text-harbor-primary-light font-semibold" onclick="setBudgetCategoryFilter(null)">Show all</button></div>'
             : `<div class="text-[11px] text-harbor-muted px-1 py-3">No ${escapeBriefHtml(kindOpt.label.toLowerCase())} in this period. Try another type or month.</div>`;
-        } else {
-          shown.slice(0, 120).forEach(t => {
-            const cat = getBudgetCategory(
-              (detectBudgetIsCredit(t) || t.isCredit) ? 'income' : (t.category || 'other')
-            );
-            const dateLabel = formatBudgetPostedDate(t.date);
-            const typeLabel = getBudgetTxTypeLabel(t);
-            const txId = String(t.id || '');
-            const amtPrefix = (detectBudgetIsCredit(t) || t.isCredit) ? '+' : '';
-            const row = document.createElement('div');
-            row.className = 'swipe-row';
-            row.dataset.swipeId = txId;
-            row.dataset.swipeType = 'budget';
-            row.dataset.budgetTxId = txId;
-            row.style.setProperty('--swipe-reveal', '9.75rem');
-            const actionsHtml = `
-              <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit transaction"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>
-              <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete transaction"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Delete</span></button>
-            `;
-            const contentHtml = `
-              <div class="budget-tx-cat-dot" style="background:${cat.color}" aria-hidden="true"></div>
-              <div class="budget-tx-main min-w-0 flex-1">
-                <div class="budget-tx-name">${escapeBriefHtml(t.description)}</div>
-                <div class="budget-tx-meta">Posted ${escapeBriefHtml(dateLabel)} · ${escapeBriefHtml(typeLabel)} · ${escapeBriefHtml(cat.label)} · tap to edit</div>
-              </div>
-              <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                <span class="budget-tx-amt${(detectBudgetIsCredit(t) || t.isCredit) ? ' text-emerald-500' : ''}">${amtPrefix}${formatBudgetMoney(t.amount)}</span>
-                <button type="button" class="budget-tx-edit-btn" data-budget-edit="1" aria-label="Edit transaction">Edit</button>
-              </div>
-            `;
-            row.innerHTML = buildSwipeRowHtml(
-              actionsHtml,
-              contentHtml,
-              'budget-tx-card bg-harbor-surface border border-harbor-border rounded-2xl px-3.5 py-2.5 flex items-center gap-x-2.5'
-            );
-            const openEditor = (e) => {
-              if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-              }
-              // Don't open if swipe is mid-gesture
-              if (row.classList.contains('is-swiping') || row.dataset.swipeSuppressClick === '1') return;
-              showBudgetCategoryEditor(txId);
-            };
-            const contentEl = row.querySelector('.swipe-row-content');
-            if (contentEl) {
-              contentEl.setAttribute('role', 'button');
-              contentEl.setAttribute('tabindex', '0');
-              contentEl.setAttribute('aria-label', `Edit ${t.description || 'transaction'}`);
-              contentEl.addEventListener('click', (e) => {
-                if (e.target.closest('.swipe-action')) return;
-                if (e.target.closest('[data-budget-delete]')) return;
-                openEditor(e);
-              });
-              contentEl.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  openEditor(e);
-                }
-              });
-            }
-            row.querySelector('[data-budget-edit]')?.addEventListener('click', openEditor);
-            list.appendChild(row);
-          });
-          if (shown.length > 120) {
+        } else if (budgetCategoryFilter) {
+          // Single category: flat list (already filtered)
+          shown
+            .slice()
+            .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
+            .slice(0, 80)
+            .forEach(t => list.appendChild(buildBudgetTxRow(t)));
+          if (shown.length > 80) {
             const more = document.createElement('div');
             more.className = 'text-[10px] text-harbor-muted text-center py-2';
-            more.textContent = `Showing 120 of ${shown.length}`;
+            more.textContent = `Showing 80 of ${shown.length}`;
             list.appendChild(more);
           }
+          if (typeof bindSwipeRows === 'function') bindSwipeRows(list);
+        } else {
+          // Group by category — collapsed by default for scanability
+          const groups = new Map();
+          shown.forEach(t => {
+            const catId = (detectBudgetIsCredit(t) || t.isCredit) ? 'income' : (t.category || 'other');
+            if (!groups.has(catId)) groups.set(catId, []);
+            groups.get(catId).push(t);
+          });
+          const groupList = [...groups.entries()]
+            .map(([catId, items]) => {
+              const cat = getBudgetCategory(catId);
+              const total = items.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+              return { catId, cat, items, total };
+            })
+            .sort((a, b) => b.total - a.total);
+
+          if (!window.__harborBudgetOpenCats) window.__harborBudgetOpenCats = new Set();
+
+          groupList.forEach(g => {
+            const wrap = document.createElement('div');
+            wrap.className = 'budget-cat-group';
+            wrap.dataset.budgetCat = g.catId;
+            const open = window.__harborBudgetOpenCats.has(g.catId);
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'budget-cat-group-btn';
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            btn.innerHTML = `
+              <span class="budget-legend-swatch" style="background:${g.cat.color}"></span>
+              <span class="min-w-0 flex-1">
+                <span class="block text-[13px] font-semibold text-harbor-text truncate">${escapeBriefHtml(g.cat.label)}</span>
+                <span class="budget-cat-group-meta">${g.items.length} transaction${g.items.length === 1 ? '' : 's'}</span>
+              </span>
+              <span class="budget-cat-group-amt">${formatBudgetMoney(g.total)}</span>
+              <i class="fa-solid fa-chevron-${open ? 'up' : 'down'} text-[10px] text-harbor-muted" aria-hidden="true"></i>
+            `;
+            const body = document.createElement('div');
+            body.className = `budget-cat-group-body${open ? '' : ' is-collapsed'}`;
+            if (open) {
+              g.items
+                .slice()
+                .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
+                .slice(0, 40)
+                .forEach(t => body.appendChild(buildBudgetTxRow(t)));
+              if (g.items.length > 40) {
+                const more = document.createElement('div');
+                more.className = 'text-[10px] text-harbor-muted text-center py-1';
+                more.textContent = `+${g.items.length - 40} more in this category`;
+                body.appendChild(more);
+              }
+            }
+            btn.addEventListener('click', () => {
+              const isOpen = window.__harborBudgetOpenCats.has(g.catId);
+              if (isOpen) window.__harborBudgetOpenCats.delete(g.catId);
+              else window.__harborBudgetOpenCats.add(g.catId);
+              renderBudget();
+            });
+            wrap.appendChild(btn);
+            wrap.appendChild(body);
+            list.appendChild(wrap);
+          });
           if (typeof bindSwipeRows === 'function') bindSwipeRows(list);
         }
       }
@@ -27016,6 +27355,11 @@
       active.sort((a, b) => {
         const pullDiff = (isPulledToToday(b) ? 1 : 0) - (isPulledToToday(a) ? 1 : 0);
         if (pullDiff !== 0) return pullDiff;
+        // Low/High energy: rank by energy fit first so the list actually reshuffles
+        if (currentEnergy === 1 || currentEnergy === 3) {
+          const eDiff = getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy);
+          if (eDiff !== 0) return eDiff;
+        }
         const overdueDiff = (isHabitOverdue(b) ? 1 : 0) - (isHabitOverdue(a) ? 1 : 0);
         if (overdueDiff !== 0) return overdueDiff;
         return getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy);
@@ -27039,24 +27383,36 @@
           variant: 'life'
         });
       }
-      // Group by type label (Habits / Chores / Tasks). Pulled items land in their kind — no separate strip.
-      const kindOrder = ['habit', 'chore', 'task'];
-      const kindLabels = { habit: 'Habits', chore: 'Chores', task: 'Tasks' };
-      const byKind = { habit: [], chore: [], task: [] };
-      active.forEach(h => {
-        const k = typeof getTaskListKind === 'function' ? getTaskListKind(h) : 'task';
-        (byKind[k] || byKind.task).push(h);
-      });
-      const kindsPresent = kindOrder.filter(k => byKind[k].length > 0);
-      const showKindHeaders = kindsPresent.length > 1 || (kindsPresent.length === 1 && active.length > 0);
-      kindsPresent.forEach(k => {
-        sections.push({
-          type: 'habits',
-          label: showKindHeaders ? kindLabels[k] : '',
-          items: byKind[k],
-          variant: 'active'
+      // Low/High: one energy-ranked list so the first card matches how you feel.
+      // Medium: group by type (Habits / Chores / Tasks).
+      if (currentEnergy === 1 || currentEnergy === 3) {
+        if (active.length) {
+          sections.push({
+            type: 'habits',
+            label: currentEnergy === 1 ? 'Right for low energy' : 'Right for high energy',
+            items: active,
+            variant: 'active'
+          });
+        }
+      } else {
+        const kindOrder = ['habit', 'chore', 'task'];
+        const kindLabels = { habit: 'Habits', chore: 'Chores', task: 'Tasks' };
+        const byKind = { habit: [], chore: [], task: [] };
+        active.forEach(h => {
+          const k = typeof getTaskListKind === 'function' ? getTaskListKind(h) : 'task';
+          (byKind[k] || byKind.task).push(h);
         });
-      });
+        const kindsPresent = kindOrder.filter(k => byKind[k].length > 0);
+        const showKindHeaders = kindsPresent.length > 1 || (kindsPresent.length === 1 && active.length > 0);
+        kindsPresent.forEach(k => {
+          sections.push({
+            type: 'habits',
+            label: showKindHeaders ? kindLabels[k] : '',
+            items: byKind[k],
+            variant: 'active'
+          });
+        });
+      }
       // Dimmed completed strip below active work for end-of-day review
       if (completed.length) {
         sections.push({
@@ -30516,8 +30872,8 @@
           <div class="hv-decide-label"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i> When you can</div>
           ${rows}
           ${more > 0
-            ? `<button type="button" class="hv-text-link" onclick="showSummaryKpiDetail('tasks')">+${more} more · open list</button>`
-            : ''}
+            ? `<button type="button" class="hv-text-link" onclick="showSummaryKpiDetail('when')">+${more} more · full list</button>`
+            : `<button type="button" class="hv-text-link" onclick="showSummaryKpiDetail('when')">See full list</button>`}
         </div>`;
     }
 
@@ -30634,11 +30990,15 @@
       const more = parked.length - show.length;
       const moreFooter = more > 0
         ? `<button type="button" class="summary-when-more"
-            onclick="event.preventDefault(); event.stopPropagation(); showSummaryKpiDetail('tasks')"
-            aria-label="Open full task list">
-            +${more} more · open Tasks
+            onclick="event.preventDefault(); event.stopPropagation(); showSummaryKpiDetail('when')"
+            aria-label="Open full When You Can list">
+            +${more} more · full list
           </button>`
-        : '';
+        : `<button type="button" class="summary-when-more"
+            onclick="event.preventDefault(); event.stopPropagation(); showSummaryKpiDetail('when')"
+            aria-label="Open full When You Can list">
+            See full list
+          </button>`;
       return `
         <div class="summary-panel summary-when-you-can" aria-label="Bigger tasks when you have time">
           <div class="summary-panel-hdr">
@@ -30781,17 +31141,25 @@
         <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="${deleteLabel}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">${deleteLabel}</span></button>
       `;
 
-      if (kind === 'tasks') {
-        // Day mode: only items on the Today tab (parked work is under When You Can)
-        const tasks = brief.mode === 'day' ? getBriefTodayTabTasks(brief) : (brief.tasks || []);
+      if (kind === 'tasks' || kind === 'when') {
+        // Day mode tasks: Today tab only. When: parked heavier jobs only.
+        const tasks = kind === 'when'
+          ? (brief.parked || (brief.tasks || []).filter(t =>
+              typeof isParkedForSummary === 'function'
+                && isParkedForSummary(t.habit)
+                && !isPulledToToday(t.habit)
+            ))
+          : (brief.mode === 'day' ? getBriefTodayTabTasks(brief) : (brief.tasks || []));
         if (!tasks.length) {
-          return `<div class="summary-empty py-4 text-center">No tasks in this range. Add one from Today or the Library.</div>`;
+          return kind === 'when'
+            ? `<div class="summary-empty py-4 text-center">Nothing parked for later — heavier jobs will show up here when due.</div>`
+            : `<div class="summary-empty py-4 text-center">No tasks in this range. Add one from Today or the Library.</div>`;
         }
         return tasks.map(item => {
           const h = item?.habit;
           if (!h) return '';
           const due = (item.daysUntil ?? 0) <= 0
-            ? 'Due now'
+            ? (kind === 'when' ? 'Ready' : 'Due now')
             : item.daysUntil === 1
               ? 'Tomorrow'
               : formatBriefDateLabel(item.date);
@@ -30807,17 +31175,20 @@
           let sideHtml = '';
           if (parked && !pulled && isDueToday(h)) {
             sideHtml = `<button type="button" class="summary-pull-today-btn" data-pull-habit="${escapeBriefHtml(h.id)}"
-              onclick="event.preventDefault(); event.stopPropagation(); pullHabitToToday('${escapeBriefHtml(h.id)}')">Add to Task</button>`;
+              onclick="event.preventDefault(); event.stopPropagation(); pullHabitToToday('${escapeBriefHtml(h.id)}')">Add to Today</button>`;
           } else if (pulled) {
             sideHtml = `<button type="button" class="summary-pull-today-btn is-on" data-release-habit="${escapeBriefHtml(h.id)}"
               onclick="event.preventDefault(); event.stopPropagation(); releaseHabitFromToday('${escapeBriefHtml(h.id)}')">On Today · Undo</button>`;
-          } else if (onToday) {
+          } else if (onToday && kind !== 'when') {
             sideHtml = `<span class="summary-kpi-detail-side text-harbor-muted">On Today</span>`;
+          } else if (kind === 'when' && !isDueToday(h)) {
+            sideHtml = `<span class="summary-kpi-detail-side text-harbor-muted text-[10px] whitespace-nowrap">${escapeBriefHtml(due)}</span>`;
           }
           const why = parked ? getTaskParkReasonLabel(h) : '';
           const badge = parked && !pulled
-            ? `<span class="summary-park-badge">${escapeBriefHtml(why || 'Summary')}</span>`
+            ? `<span class="summary-park-badge">${escapeBriefHtml(why || 'When you can')}</span>`
             : '';
+          const refreshKind = kind === 'when' ? 'when' : 'tasks';
           const contentHtml = `
             <div class="summary-kpi-detail-main flex-1 min-w-0">
               <div class="summary-kpi-detail-title">${escapeBriefHtml(h.title || 'Untitled')}${badge}</div>
@@ -30831,7 +31202,7 @@
             ${sideHtml}
             <div class="row-inline-actions flex flex-col gap-0.5 items-end flex-shrink-0">
               <button type="button" class="text-[10px] text-harbor-primary-light font-medium" onclick="event.stopImmediatePropagation(); closeSummaryKpiDetail(); editHabitFromToday('${escapeBriefHtml(h.id)}')">Edit</button>
-              <button type="button" class="text-[10px] text-harbor-muted hover:text-rose-400" onclick="event.stopImmediatePropagation(); deleteHabitFromToday('${escapeBriefHtml(h.id)}', null); refreshSummaryKpiDetail('tasks')">Delete</button>
+              <button type="button" class="text-[10px] text-harbor-muted hover:text-rose-400" onclick="event.stopImmediatePropagation(); deleteHabitFromToday('${escapeBriefHtml(h.id)}', null); refreshSummaryKpiDetail('${refreshKind}')">Delete</button>
             </div>
           `;
           return `<div class="swipe-row" data-swipe-type="habit" data-swipe-id="${escapeBriefHtml(h.id)}" style="--swipe-reveal:9.75rem">${buildSwipeRowHtml(
@@ -30953,13 +31324,15 @@
 
       const titles = {
         tasks: 'Tasks',
+        when: 'When You Can',
         events: 'Events',
         bills: 'Bills',
         grocery: 'Grocery'
       };
       const title = titles[kind] || 'Details';
       const jumpDefs = {
-        tasks: { label: 'Open Task', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('today'); } },
+        tasks: { label: 'Open Today', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('today'); } },
+        when: { label: 'Done', action: () => { closeSummaryKpiDetail(); } },
         events: { label: 'Full schedule', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('life'); switchLifePanel('schedule'); } },
         bills: { label: 'Open Bills', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('life'); switchLifePanel('bills'); } },
         grocery: { label: 'Open Grocery', action: () => { closeSummaryKpiDetail(); closeSummaryModal(); switchTab('life'); switchLifePanel('grocery'); } }
@@ -30972,8 +31345,14 @@
       try {
         const brief = buildSummary(summaryMode || 'day');
         rangeLabel = brief.mode === 'day' ? 'Today' : brief.mode === 'month' ? 'This month' : 'This week';
+        const whenList = brief.parked || (brief.tasks || []).filter(t =>
+          typeof isParkedForSummary === 'function'
+            && isParkedForSummary(t.habit)
+            && !isPulledToToday(t.habit)
+        );
         const counts = {
           tasks: brief.mode === 'day' ? getBriefTodayTabTasks(brief).length : (brief.tasks || []).length,
+          when: whenList.length,
           events: typeof countActiveBriefEvents === 'function'
             ? countActiveBriefEvents(brief)
             : flattenBriefEvents(brief).length,
@@ -38077,8 +38456,18 @@
       const deviceRaw = (state.settings.deviceCalendarEnabled && state.settings.deviceCalendarEvents?.length)
         ? state.settings.deviceCalendarEvents
         : [];
-      const device = filterSuppressedCalendarEvents(deviceRaw);
-      const all = [...imported, ...mockEvents, ...device];
+      const device = filterSuppressedCalendarEvents(
+        typeof applyCalendarEventOverrides === 'function'
+          ? applyCalendarEventOverrides(deviceRaw)
+          : deviceRaw
+      );
+      const importedWithEdits = typeof applyCalendarEventOverrides === 'function'
+        ? applyCalendarEventOverrides(imported)
+        : imported;
+      const mockWithEdits = typeof applyCalendarEventOverrides === 'function'
+        ? applyCalendarEventOverrides(mockEvents)
+        : mockEvents;
+      const all = [...importedWithEdits, ...mockWithEdits, ...device];
       const feeds = typeof getCalendarFeeds === 'function' ? getCalendarFeeds() : [];
       const deviceOn = !!(state.settings.deviceCalendarEnabled && device.length);
       const localNote = feeds.length || imported.length || deviceOn
@@ -41020,13 +41409,40 @@
 
     async function refreshAllCalendarFeeds(options = {}) {
       const feeds = getCalendarFeeds();
-      if (!feeds.length) {
-        if (!options.silent) showToast('No calendar URLs yet — add one in Settings');
+      const deviceOn = typeof isDeviceCalendarConnected === 'function' && isDeviceCalendarConnected();
+      const canDevice = typeof isHarborNativeApp === 'function' && isHarborNativeApp();
+
+      if (!feeds.length && !deviceOn && !canDevice) {
+        if (!options.silent) {
+          showToast('No calendars connected yet — tap Sync calendars');
+        }
         return { ok: true, count: 0 };
       }
-      if (!options.silent) showToast(`Refreshing ${feeds.length} calendar feed${feeds.length === 1 ? '' : 's'}…`);
+
+      if (!options.silent) {
+        if (deviceOn || canDevice) {
+          showToast(feeds.length
+            ? `Refreshing phone calendars + ${feeds.length} feed${feeds.length === 1 ? '' : 's'}…`
+            : 'Refreshing phone calendars…');
+        } else {
+          showToast(`Refreshing ${feeds.length} calendar feed${feeds.length === 1 ? '' : 's'}…`);
+        }
+      }
+
       let total = 0;
       let anyOk = false;
+
+      // iPhone / device calendars (TestFlight) — Settings Refresh used to skip these
+      if (deviceOn || canDevice) {
+        try {
+          const n = await syncDeviceCalendarEvents({ silent: true });
+          if (n > 0 || deviceOn) {
+            anyOk = true;
+            total += n || 0;
+          }
+        } catch (_) { /* toast handled inside sync */ }
+      }
+
       for (const feed of feeds) {
         const res = await syncCalendarFeed(feed, { silent: true });
         if (res.ok) {
@@ -41035,15 +41451,23 @@
         }
       }
       applyCalendarSync();
+      if (typeof updateCalendarStatusUI === 'function') updateCalendarStatusUI();
+      if (typeof renderSchedule === 'function') renderSchedule();
+
       if (!options.silent) {
-        const helperHint = !anyOk && !isCalendarCorsHelperAllowed()
-          ? ' — try Import file, or enable Allow network helper in Settings'
-          : !anyOk
-            ? ' — try file import'
-            : '';
-        showToast(anyOk
-          ? `Calendar updated · ${total} event${total === 1 ? '' : 's'} from feeds`
-          : `Calendar refresh failed${helperHint}`, anyOk ? 'success' : 'warn');
+        if (anyOk) {
+          const bits = [];
+          if (deviceOn || canDevice) bits.push('phone');
+          if (feeds.length) bits.push('feeds');
+          showToast(`Calendar updated · ${total} event${total === 1 ? '' : 's'}${bits.length ? ` (${bits.join(' + ')})` : ''}`);
+        } else if (feeds.length) {
+          const helperHint = !isCalendarCorsHelperAllowed()
+            ? ' — try Import file, or enable network helper in Settings'
+            : ' — try file import';
+          showToast(`Calendar refresh failed${helperHint}`, 'warn');
+        } else {
+          showToast('Could not refresh phone calendars — check iOS Settings → Harbor', 'warn');
+        }
       }
       return { ok: anyOk, count: total };
     }
