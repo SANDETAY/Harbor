@@ -11699,7 +11699,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 350;
+    const HARBOR_BUILD_NUMBER = 351;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11754,14 +11754,14 @@
       {
         version: '0.9',
         date: '2026-07-15',
-        title: 'Energy · calendar · budget · build 350',
-        intro: 'Low-energy ranking, calendar edit/refresh, budget stacking, When You Can, schedule truthfulness.',
+        title: 'Energy · calendar · budget · build 351',
+        intro: 'Energy sorts inside Habits/Chores/Tasks; calendar edit/refresh; budget stacking; When You Can.',
         sections: [
           {
             heading: 'Today energy',
             items: [
-              'Low / High energy reorders the full list so the first card matches how you feel',
-              'Long high-effort jobs sink hard on Low energy (no more 60‑min first)'
+              'Low / Medium / High keep Habits, Chores, and Tasks headers',
+              'Each category reorders for your energy (easy first on Low, bigger work first on High)'
             ]
           },
           {
@@ -27569,18 +27569,17 @@
         active.push(h);
       });
 
-      active.sort((a, b) => {
+      // Sort by energy fit (Low / Med / High). Categories stay; order changes inside each.
+      const energySort = (a, b) => {
         const pullDiff = (isPulledToToday(b) ? 1 : 0) - (isPulledToToday(a) ? 1 : 0);
         if (pullDiff !== 0) return pullDiff;
-        // Low/High energy: rank by energy fit first so the list actually reshuffles
-        if (currentEnergy === 1 || currentEnergy === 3) {
-          const eDiff = getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy);
-          if (eDiff !== 0) return eDiff;
-        }
+        const eDiff = getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy);
+        if (eDiff !== 0) return eDiff;
         const overdueDiff = (isHabitOverdue(b) ? 1 : 0) - (isHabitOverdue(a) ? 1 : 0);
         if (overdueDiff !== 0) return overdueDiff;
-        return getEffectiveDifficulty(a, currentEnergy) - getEffectiveDifficulty(b, currentEnergy);
-      });
+        return String(a.title || '').localeCompare(String(b.title || ''));
+      };
+      active.sort(energySort);
       // Most recently completed first within the done group (stable: by title if no timestamp)
       completed.sort((a, b) => String(a.title || '').localeCompare(String(b.title || '')));
 
@@ -27600,36 +27599,26 @@
           variant: 'life'
         });
       }
-      // Low/High: one energy-ranked list so the first card matches how you feel.
-      // Medium: group by type (Habits / Chores / Tasks).
-      if (currentEnergy === 1 || currentEnergy === 3) {
-        if (active.length) {
-          sections.push({
-            type: 'habits',
-            label: currentEnergy === 1 ? 'Right for low energy' : 'Right for high energy',
-            items: active,
-            variant: 'active'
-          });
-        }
-      } else {
-        const kindOrder = ['habit', 'chore', 'task'];
-        const kindLabels = { habit: 'Habits', chore: 'Chores', task: 'Tasks' };
-        const byKind = { habit: [], chore: [], task: [] };
-        active.forEach(h => {
-          const k = typeof getTaskListKind === 'function' ? getTaskListKind(h) : 'task';
-          (byKind[k] || byKind.task).push(h);
+      // Always keep Habits / Chores / Tasks. Energy only reorders cards inside each group.
+      const kindOrder = ['habit', 'chore', 'task'];
+      const kindLabels = { habit: 'Habits', chore: 'Chores', task: 'Tasks' };
+      const byKind = { habit: [], chore: [], task: [] };
+      active.forEach(h => {
+        const k = typeof getTaskListKind === 'function' ? getTaskListKind(h) : 'task';
+        (byKind[k] || byKind.task).push(h);
+      });
+      // Re-sort each category so Low/Med/High clearly reshuffles within the section
+      kindOrder.forEach(k => byKind[k].sort(energySort));
+      const kindsPresent = kindOrder.filter(k => byKind[k].length > 0);
+      const showKindHeaders = kindsPresent.length > 1 || (kindsPresent.length === 1 && active.length > 0);
+      kindsPresent.forEach(k => {
+        sections.push({
+          type: 'habits',
+          label: showKindHeaders ? kindLabels[k] : '',
+          items: byKind[k],
+          variant: 'active'
         });
-        const kindsPresent = kindOrder.filter(k => byKind[k].length > 0);
-        const showKindHeaders = kindsPresent.length > 1 || (kindsPresent.length === 1 && active.length > 0);
-        kindsPresent.forEach(k => {
-          sections.push({
-            type: 'habits',
-            label: showKindHeaders ? kindLabels[k] : '',
-            items: byKind[k],
-            variant: 'active'
-          });
-        });
-      }
+      });
       // Dimmed completed strip below active work for end-of-day review
       if (completed.length) {
         sections.push({
