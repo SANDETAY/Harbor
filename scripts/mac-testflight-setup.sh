@@ -8,10 +8,17 @@
 set -euo pipefail
 
 REPO_URL="https://github.com/SANDETAY/Harbor.git"
-REPO_DIR="${HOME}/Harbor"
+# Prefer Desktop (this machine); allow override via HARBOR_DIR
+if [ -n "${HARBOR_DIR:-}" ]; then
+  REPO_DIR="$HARBOR_DIR"
+elif [ -d "${HOME}/Desktop/Harbor/.git" ] || [ -d "${HOME}/Desktop/Harbor" ]; then
+  REPO_DIR="${HOME}/Desktop/Harbor"
+else
+  REPO_DIR="${HOME}/Harbor"
+fi
 
 echo ""
-echo "=== Harbor Mac → TestFlight setup ==="
+echo "=== Harbor Mac → TestFlight setup (splash-safe) ==="
 echo ""
 
 # --- checks ---
@@ -42,12 +49,18 @@ fi
 echo "git:  $(git --version)"
 echo "node: $(node -v)"
 echo "npm:  $(npm -v)"
+echo "dir:  ${REPO_DIR}"
 echo ""
 
-# --- clone or update ---
+# --- clone or update (never hard-reset splash without backup) ---
 if [ -d "${REPO_DIR}/.git" ]; then
   echo "Found existing repo at ${REPO_DIR}"
   cd "${REPO_DIR}"
+  # Prefer splash-safe updater if present
+  if [ -f scripts/mac-update-for-upload.sh ]; then
+    echo "Handing off to splash-safe updater..."
+    exec bash scripts/mac-update-for-upload.sh
+  fi
   git pull --ff-only origin main || git pull origin main
 else
   if [ -e "${REPO_DIR}" ]; then
@@ -71,7 +84,11 @@ echo "npm install ..."
 npm install
 
 echo "cap:prepare ..."
-npm run cap:prepare
+if [ -f scripts/cap-prepare.sh ]; then
+  bash scripts/cap-prepare.sh
+else
+  npm run cap:prepare
+fi
 
 echo "cap sync ios ..."
 npx cap sync ios
@@ -83,7 +100,7 @@ if ! command -v pod >/dev/null 2>&1; then
   echo "  brew install cocoapods"
   echo "  sudo gem install cocoapods"
   echo "Then run:"
-  echo "  cd ~/Harbor/ios/App && pod install && cd ~/Harbor && npx cap open ios"
+  echo "  cd \"${REPO_DIR}/ios/App\" && pod install && cd \"${REPO_DIR}\" && npx cap open ios"
   exit 1
 fi
 
@@ -94,6 +111,11 @@ cd ../..
 
 echo ""
 echo "=== Setup complete ==="
+echo "Splash tip: after tuning launch art on this Mac, run:"
+echo "  bash scripts/mac-push-splash.sh"
+echo "Later updates (web only, splash kept):"
+echo "  bash scripts/mac-update-for-upload.sh"
+echo ""
 echo "Next in Xcode:"
 echo "  1. Signing & Capabilities → your Team · Bundle ID com.sandetay.harbor"
 echo "  2. Destination: Any iOS Device (arm64)  [not Simulator]"

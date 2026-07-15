@@ -52,25 +52,38 @@ Without an active **Apple Developer Program** membership you cannot ship TestFli
 
 ## On a Mac (build + TestFlight)
 
+**Preferred folder on this machine:** `~/Desktop/Harbor`
+
+### Splash-safe workflow (do this)
+
 ```bash
-# 1) Clone / pull latest
-cd /path/to/Harbor   # or Rythm folder
+cd ~/Desktop/Harbor
+
+# One-time after you tune LaunchScreen / Splash.imageset on the Mac:
+bash scripts/mac-push-splash.sh
+
+# Every later upload — pulls origin/main but KEEPS Mac splash:
+bash scripts/mac-update-for-upload.sh
+```
+
+`mac-update-for-upload.sh` backs up splash assets, runs `git reset --hard origin/main`,
+then restores splash so launch art never regresses.
+
+### Manual (only if you know what you’re doing)
+
+```bash
+cd ~/Desktop/Harbor
 git pull
 npm install
-
-# 2) Copy latest web app into native shell
-npm run cap:prepare
+bash scripts/cap-prepare.sh   # or: npm run cap:prepare
 npx cap sync ios
-
-# 3) CocoaPods (once per machine / after plugin changes)
-cd ios/App
-pod install
-cd ../..
-
-# 4) Open Xcode
+cd ios/App && pod install && cd ../..
 npx cap open ios
 # opens ios/App/App.xcworkspace  ← use the .xcworkspace, not .xcodeproj
 ```
+
+**Avoid bare** `git reset --hard origin/main` **after local splash edits** unless you
+already ran `mac-push-splash.sh` (or use `mac-update-for-upload.sh`).
 
 ### In Xcode
 
