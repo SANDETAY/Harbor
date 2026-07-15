@@ -9803,9 +9803,11 @@
       min-height: 100vh;
       min-height: 100dvh;
       min-height: -webkit-fill-available;
-      z-index: 100;
+      /* Above app chrome, modals, and Capacitor web content */
+      z-index: 2147483000;
       padding: 0;
       margin: 0;
+      display: block;
     }
 
     .splash-screen-harbor.is-hidden {
@@ -11045,6 +11047,38 @@
   </style>
 </head>
 <body class="text-harbor-text is-splash-active">
+  <!-- Splash is a direct child of body so nothing in .app-frame can clip or cover it (critical on TestFlight). -->
+  <div id="splash-screen" class="splash-screen-harbor" aria-hidden="false">
+    <div class="splash-sky" aria-hidden="true"></div>
+    <div class="splash-waves" aria-hidden="true">
+      <div class="splash-wave-layer w1">
+        <svg viewBox="0 0 1440 220" preserveAspectRatio="none" aria-hidden="true">
+          <path fill="rgba(12,70,66,0.35)" d="M0,120 C240,160 480,70 720,110 C960,150 1200,90 1440,130 L1440,220 L0,220 Z"/>
+        </svg>
+      </div>
+      <div class="splash-wave-layer w2">
+        <svg viewBox="0 0 1440 220" preserveAspectRatio="none" aria-hidden="true">
+          <path fill="rgba(232,240,236,0.28)" d="M0,140 C200,100 400,170 720,140 C1040,110 1240,160 1440,120 L1440,220 L0,220 Z"/>
+        </svg>
+      </div>
+      <div class="splash-wave-layer w3">
+        <svg viewBox="0 0 1440 220" preserveAspectRatio="none" aria-hidden="true">
+          <path fill="rgba(20,90,84,0.22)" d="M0,150 C280,180 520,100 780,140 C1040,180 1260,120 1440,150 L1440,220 L0,220 Z"/>
+        </svg>
+      </div>
+    </div>
+    <div id="splash-inner">
+      <div id="splash-brand" class="splash-brand">
+        <div id="splash-mark" class="splash-mark is-in" aria-hidden="true">
+          <img class="splash-mark-img" src="harbor-splash-anchor.png" width="512" height="512" alt="" decoding="async" fetchpriority="high">
+        </div>
+        <div id="splash-wordmark" class="splash-wordmark is-in">Harbor</div>
+      </div>
+      <p id="splash-slogan" class="splash-slogan is-in" aria-label="One App For The Whole Day">One App For The Whole Day</p>
+      <div id="splash-slogan-rule" class="splash-slogan-rule is-in" aria-hidden="true"></div>
+    </div>
+  </div>
+
   <div id="site-root" class="site-root">
     <div class="app-frame">
 
@@ -11067,38 +11101,6 @@
           </div>
         </div>
       </header>
-
-      <!-- Splash — crisp vector mark + Outfit wordmark + letter-reveal slogan -->
-      <div id="splash-screen" class="absolute inset-0 z-[100] splash-screen-harbor" aria-hidden="true">
-        <div class="splash-sky" aria-hidden="true"></div>
-        <div class="splash-waves" aria-hidden="true">
-          <div class="splash-wave-layer w1">
-            <svg viewBox="0 0 1440 220" preserveAspectRatio="none" aria-hidden="true">
-              <path fill="rgba(12,70,66,0.35)" d="M0,120 C240,160 480,70 720,110 C960,150 1200,90 1440,130 L1440,220 L0,220 Z"/>
-            </svg>
-          </div>
-          <div class="splash-wave-layer w2">
-            <svg viewBox="0 0 1440 220" preserveAspectRatio="none" aria-hidden="true">
-              <path fill="rgba(232,240,236,0.28)" d="M0,140 C200,100 400,170 720,140 C1040,110 1240,160 1440,120 L1440,220 L0,220 Z"/>
-            </svg>
-          </div>
-          <div class="splash-wave-layer w3">
-            <svg viewBox="0 0 1440 220" preserveAspectRatio="none" aria-hidden="true">
-              <path fill="rgba(20,90,84,0.22)" d="M0,150 C280,180 520,100 780,140 C1040,180 1260,120 1440,150 L1440,220 L0,220 Z"/>
-            </svg>
-          </div>
-        </div>
-        <div id="splash-inner">
-          <div id="splash-brand" class="splash-brand">
-            <div id="splash-mark" class="splash-mark" aria-hidden="true">
-              <img class="splash-mark-img" src="harbor-splash-anchor.png" width="512" height="512" alt="" decoding="async">
-            </div>
-            <div id="splash-wordmark" class="splash-wordmark">Harbor</div>
-          </div>
-          <p id="splash-slogan" class="splash-slogan" aria-label="One App For The Whole Day"></p>
-          <div id="splash-slogan-rule" class="splash-slogan-rule" aria-hidden="true"></div>
-        </div>
-      </div>
 
       <!-- Onboarding (first-run wizard: welcome → name → starters → rhythm → done) -->
       <div id="onboarding" class="absolute inset-0 z-50 flex flex-col p-5 overflow-hidden hidden" role="dialog" aria-modal="true" aria-label="Welcome to Harbor">
@@ -11610,7 +11612,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 346;
+    const HARBOR_BUILD_NUMBER = 347;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -41944,8 +41946,8 @@
         }
     }
 
-    /** Hide Capacitor’s native splash once the HTML splash is on screen (seamless handoff). */
-    async function hideNativeSplashOverlay(fadeMs = 220) {
+    /** Hide Capacitor’s native splash once the HTML brand screen is painted. */
+    async function hideNativeSplashOverlay(fadeMs = 280) {
       try {
         const Cap = window.Capacitor;
         if (!Cap || typeof Cap.isNativePlatform !== 'function' || !Cap.isNativePlatform()) return;
@@ -41953,6 +41955,21 @@
         if (!Splash?.hide) return;
         await Splash.hide({ fadeOutDuration: fadeMs });
       } catch (_) { /* ignore */ }
+    }
+
+    function shouldSkipHtmlSplash() {
+      // Only skip in dual-preview tooling — never on TestFlight / native.
+      try {
+        if (document.documentElement.classList.contains('preview-skip-splash')) return true;
+        if (/(?:\?|&)preview=/.test(location.search || '')) return true;
+        const native = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function'
+          && window.Capacitor.isNativePlatform());
+        // Iframes (dual preview) only — Capacitor WebView is top-level
+        if (!native && window.self !== window.top) return true;
+      } catch (_) {
+        return false;
+      }
+      return false;
     }
 
     function runSplashSequence(onComplete) {
@@ -41963,19 +41980,10 @@
       const ruleEl = document.getElementById('splash-slogan-rule');
       const appWrap = document.querySelector('.app-content-wrap');
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const isNative = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function'
+        && window.Capacitor.isNativePlatform());
 
-      // Dual-preview / iframe only: skip so panes boot instantly.
-      // Native (TestFlight): KEEP the HTML splash — LaunchScreen is a static stand-in until
-      // WebView paints; then we show the real brand sequence (anchor + slogan) and hide native.
-      let skipSplash = document.documentElement.classList.contains('preview-skip-splash');
-      try {
-        skipSplash = skipSplash
-          || window.self !== window.top
-          || /(?:\?|&)preview=/.test(location.search || '');
-      } catch (_) {
-        skipSplash = true;
-      }
-      if (skipSplash) {
+      if (shouldSkipHtmlSplash()) {
         if (splash) {
           splash.classList.add('is-hidden');
           splash.style.display = 'none';
@@ -41992,14 +42000,11 @@
         return;
       }
 
-      // Mark draws in → wordmark → letter-stagger slogan → soft exit
-      // Longer slogan needs a beat more time before reveal so the last letters settle.
-      const MARK_MS = 80;
-      const WORD_MS = 520;
-      const SLOGAN_MS = 980;
-      const RULE_MS = 1280;
-      const EXIT_AT = 3600;
-      const REVEAL_MS = 560;
+      // Hold the brand moment long enough to read the slogan (native + web).
+      const EXIT_AT = reducedMotion ? 900 : (isNative ? 3200 : 3600);
+      const REVEAL_MS = reducedMotion ? 200 : 560;
+      // Keep native LaunchScreen until HTML splash is fully painted (avoids blank flash)
+      const NATIVE_HIDE_AT = reducedMotion ? 120 : 450;
 
       document.body.classList.add('is-splash-active');
       document.documentElement.classList.add('is-splash-active');
@@ -42015,20 +42020,26 @@
         splash.style.clipPath = '';
         splash.style.pointerEvents = 'auto';
         splash.setAttribute('aria-hidden', 'false');
+        // Ensure splash is on document.body (not trapped under .app-frame stacking)
+        if (splash.parentElement !== document.body) {
+          document.body.insertBefore(splash, document.body.firstChild);
+        }
       }
 
-      markEl?.classList.remove('is-in');
-      wordEl?.classList.remove('is-in');
-      sloganEl?.classList.remove('is-in');
-      ruleEl?.classList.remove('is-in');
-      prepareSplashSlogan(sloganEl, 'One App For The Whole Day');
+      // Visible immediately (HTML already has is-in + static slogan). Optional letter stagger polish.
+      markEl?.classList.add('is-in');
+      wordEl?.classList.add('is-in');
+      sloganEl?.classList.add('is-in');
+      ruleEl?.classList.add('is-in');
+      if (!reducedMotion && sloganEl && !sloganEl.querySelector('.splash-slogan-letter')) {
+        prepareSplashSlogan(sloganEl, 'One App For The Whole Day');
+        sloganEl.classList.add('is-in');
+      }
       appWrap?.classList.remove('splash-app-reveal');
       if (appWrap) appWrap.style.opacity = '0';
 
-      // Native: HTML splash is up — fade out LaunchScreen / Capacitor overlay underneath
-      requestAnimationFrame(() => {
-        hideNativeSplashOverlay(240);
-      });
+      // Fade native overlay after HTML brand is on screen (not instantly at 0ms)
+      setTimeout(() => hideNativeSplashOverlay(320), NATIVE_HIDE_AT);
 
       let booted = false;
       let revealed = false;
@@ -42050,7 +42061,6 @@
         document.body.classList.remove('is-splash-active');
         document.documentElement.classList.remove('is-splash-active');
         try {
-          // Re-paint header after splash — Safari often showed Mint until this
           if (typeof applyAppTheme === 'function') {
             applyAppTheme(typeof getAppTheme === 'function' ? getAppTheme() : (state?.settings?.theme || 'harbor'));
           } else {
@@ -42062,29 +42072,8 @@
       };
 
       const cleanupSplash = () => {
-        markEl?.classList.remove('is-in');
-        wordEl?.classList.remove('is-in');
-        sloganEl?.classList.remove('is-in');
-        ruleEl?.classList.remove('is-in');
         hideSplash();
       };
-
-      if (reducedMotion) {
-        markEl?.classList.add('is-in');
-        wordEl?.classList.add('is-in');
-        sloganEl?.classList.add('is-in');
-        ruleEl?.classList.add('is-in');
-        setTimeout(startReveal, 280);
-        setTimeout(cleanupSplash, 420);
-        return;
-      }
-
-      requestAnimationFrame(() => {
-        setTimeout(() => markEl?.classList.add('is-in'), MARK_MS);
-        setTimeout(() => wordEl?.classList.add('is-in'), WORD_MS);
-        setTimeout(() => sloganEl?.classList.add('is-in'), SLOGAN_MS);
-        setTimeout(() => ruleEl?.classList.add('is-in'), RULE_MS);
-      });
 
       setTimeout(startReveal, EXIT_AT);
       setTimeout(cleanupSplash, EXIT_AT + REVEAL_MS);
@@ -42120,16 +42109,21 @@
       if (!localStorage.getItem(FACTORY_RESET_VERSION)) {
         const hasExistingData = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('rhythm_state_v1');
         if (!hasExistingData) {
-          factoryResetApp({ reload: true });
-          return;
+          // Seed defaults without reload so splash still plays on first install
+          factoryResetApp({ reload: false });
+        } else {
+          localStorage.setItem(FACTORY_RESET_VERSION, '1');
         }
-        localStorage.setItem(FACTORY_RESET_VERSION, '1');
       }
       runSplashSequence(bootApp);
     }
 
-    // Boot
-    window.onload = init;
+    // Boot as soon as DOM is ready (don't wait for window.onload — that delayed splash on TestFlight)
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init, { once: true });
+    } else {
+      init();
+    }
 
     // PWA service worker — skip inside Capacitor native, dual-preview iframes, and ?preview=
     const isNativeCapacitor = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function'
