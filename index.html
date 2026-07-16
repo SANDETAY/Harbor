@@ -11154,13 +11154,13 @@
     </div>
     <div id="splash-inner">
       <div id="splash-brand" class="splash-brand">
-        <div id="splash-mark" class="splash-mark is-in" aria-hidden="true">
+        <div id="splash-mark" class="splash-mark" aria-hidden="true">
           <img class="splash-mark-img" src="harbor-splash-anchor.png" width="512" height="512" alt="" decoding="async" fetchpriority="high">
         </div>
-        <div id="splash-wordmark" class="splash-wordmark is-in">Harbor</div>
+        <div id="splash-wordmark" class="splash-wordmark">Harbor</div>
       </div>
-      <p id="splash-slogan" class="splash-slogan is-in" aria-label="One App For The Whole Day">One App For The Whole Day</p>
-      <div id="splash-slogan-rule" class="splash-slogan-rule is-in" aria-hidden="true"></div>
+      <p id="splash-slogan" class="splash-slogan" aria-label="One App For The Whole Day"></p>
+      <div id="splash-slogan-rule" class="splash-slogan-rule" aria-hidden="true"></div>
     </div>
   </div>
 
@@ -11699,7 +11699,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 351;
+    const HARBOR_BUILD_NUMBER = 352;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -42734,8 +42734,8 @@
         }
     }
 
-    /** Hide Capacitor’s native splash once the HTML brand screen is painted. */
-    async function hideNativeSplashOverlay(fadeMs = 280) {
+    /** Hide Capacitor’s native splash once HTML first frame is painted (seamless handoff). */
+    async function hideNativeSplashOverlay(fadeMs = 180) {
       try {
         const Cap = window.Capacitor;
         if (!Cap || typeof Cap.isNativePlatform !== 'function' || !Cap.isNativePlatform()) return;
@@ -42783,16 +42783,20 @@
           appWrap.style.opacity = '';
           appWrap.classList.add('splash-app-reveal');
         }
-        hideNativeSplashOverlay(160);
+        hideNativeSplashOverlay(0);
         onComplete?.();
         return;
       }
 
-      // Hold the brand moment long enough to read the slogan (native + web).
-      const EXIT_AT = reducedMotion ? 900 : (isNative ? 3200 : 3600);
+      // Mark → wordmark → letter-stagger slogan → soft exit.
+      // Native LaunchScreen is the SAME first frame (deep teal + glow, mark still hidden)
+      // so this feels like one continuous splash, not static then animated.
+      const MARK_MS = 80;
+      const WORD_MS = 520;
+      const SLOGAN_MS = 980;
+      const RULE_MS = 1280;
+      const EXIT_AT = reducedMotion ? 900 : 3600;
       const REVEAL_MS = reducedMotion ? 200 : 560;
-      // Keep native LaunchScreen until HTML splash is fully painted (avoids blank flash)
-      const NATIVE_HIDE_AT = reducedMotion ? 120 : 450;
 
       document.body.classList.add('is-splash-active');
       document.documentElement.classList.add('is-splash-active');
@@ -42814,20 +42818,26 @@
         }
       }
 
-      // Visible immediately (HTML already has is-in + static slogan). Optional letter stagger polish.
-      markEl?.classList.add('is-in');
-      wordEl?.classList.add('is-in');
-      sloganEl?.classList.add('is-in');
-      ruleEl?.classList.add('is-in');
-      if (!reducedMotion && sloganEl && !sloganEl.querySelector('.splash-slogan-letter')) {
-        prepareSplashSlogan(sloganEl, 'One App For The Whole Day');
-        sloganEl.classList.add('is-in');
-      }
+      // Start hidden — animations add is-in. Matches native first-frame LaunchScreen.
+      markEl?.classList.remove('is-in');
+      wordEl?.classList.remove('is-in');
+      sloganEl?.classList.remove('is-in');
+      ruleEl?.classList.remove('is-in');
+      prepareSplashSlogan(sloganEl, 'One App For The Whole Day');
       appWrap?.classList.remove('splash-app-reveal');
       if (appWrap) appWrap.style.opacity = '0';
 
-      // Fade native overlay after HTML brand is on screen (not instantly at 0ms)
-      setTimeout(() => hideNativeSplashOverlay(320), NATIVE_HIDE_AT);
+      // Native: crossfade LaunchScreen → HTML (identical first frame), then animate
+      if (isNative) {
+        try {
+          window.Capacitor?.Plugins?.StatusBar?.setStyle?.({ style: 'LIGHT' });
+        } catch (_) { /* ignore */ }
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            hideNativeSplashOverlay(180);
+          });
+        });
+      }
 
       let booted = false;
       let revealed = false;
@@ -42860,8 +42870,30 @@
       };
 
       const cleanupSplash = () => {
+        markEl?.classList.remove('is-in');
+        wordEl?.classList.remove('is-in');
+        sloganEl?.classList.remove('is-in');
+        ruleEl?.classList.remove('is-in');
         hideSplash();
       };
+
+      if (reducedMotion) {
+        markEl?.classList.add('is-in');
+        wordEl?.classList.add('is-in');
+        sloganEl?.classList.add('is-in');
+        ruleEl?.classList.add('is-in');
+        if (isNative) hideNativeSplashOverlay(0);
+        setTimeout(startReveal, 280);
+        setTimeout(cleanupSplash, 420);
+        return;
+      }
+
+      requestAnimationFrame(() => {
+        setTimeout(() => markEl?.classList.add('is-in'), MARK_MS);
+        setTimeout(() => wordEl?.classList.add('is-in'), WORD_MS);
+        setTimeout(() => sloganEl?.classList.add('is-in'), SLOGAN_MS);
+        setTimeout(() => ruleEl?.classList.add('is-in'), RULE_MS);
+      });
 
       setTimeout(startReveal, EXIT_AT);
       setTimeout(cleanupSplash, EXIT_AT + REVEAL_MS);

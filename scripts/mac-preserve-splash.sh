@@ -15,6 +15,11 @@ HARBOR_SPLASH_PATHS=(
   "harbor-splash-anchor.png"
   "harbor-splash-anchor-512.png"
   "capacitor.config.json"
+  # HTML + generator — first-frame handoff (mark/word/slogan animate after native)
+  "index.html"
+  "scripts/gen-ios-splash.py"
+  "sw.js"
+  "ios/App/App.xcodeproj/project.pbxproj"
 )
 
 harbor_splash_backup_dir() {
