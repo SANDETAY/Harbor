@@ -11699,7 +11699,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 352;
+    const HARBOR_BUILD_NUMBER = 353;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11751,6 +11751,22 @@
      * Product train stays on 0.9 until 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '0.9',
+        date: '2026-07-16',
+        title: 'Edit weekly & monthly · build 353',
+        intro: 'Find and edit routines that are not on Today without cluttering your day.',
+        sections: [
+          {
+            heading: 'Task tab',
+            items: [
+              'Not on Today · still in Harbor — collapsed list of weekly / monthly / later routines',
+              'Tap to expand, then Edit (or tap the row) — including done this week/month',
+              'Parked Summary tasks can still Add to Today from the same list'
+            ]
+          }
+        ]
+      },
       {
         version: '0.9',
         date: '2026-07-15',
@@ -12228,6 +12244,8 @@
     let currentEnergy = 2;
     let currentProjectionHabit = null;
     let commonTasks = [];
+    /** Collapsed by default so weekly/monthly “not due” list stays out of the way */
+    let laterRoutinesExpanded = false;
 
     const CHEAT_DAY_COOLDOWN_DAYS = 2;
     // Harbor Day should take real progress (tasks + habits + chores), not tiny dailies alone
@@ -27498,28 +27516,53 @@
      * Weekly/monthly chores and parked maintenance that don’t sit on Today.
      * Discoverability only — not a second full list.
      */
-    function collectDiscoverableLaterTasks(limit = 6) {
+    /**
+     * Weekly / monthly / parked habits not on the main Today list — so you can still
+     * find and edit them without cluttering the day (collapsed by default in the feed).
+     * Includes period-complete routines (done this week/month) so edit isn’t a scavenger hunt.
+     */
+    function collectDiscoverableLaterTasks(limit = 80) {
       const today = todayStr();
       const out = [];
       (state.habits || []).forEach(h => {
         if (!h || h.is_pro_reminder) return;
-        if (isCompletedToday(h.id)) return;
         if (getHabitSkips(h.id).includes(today)) return;
         if (getHabitPasses(h.id).includes(today)) return;
         // Already on the main Today list
         if (belongsOnTodayTab(h)) return;
 
-        const parkedReady = typeof isParkedForSummary === 'function'
+        const periodDone = typeof isCompletedToday === 'function' && isCompletedToday(h.id);
+        const parkedReady = !periodDone
+          && typeof isParkedForSummary === 'function'
           && isParkedForSummary(h)
           && isDueToday(h)
           && !isPulledToToday(h);
-        const laterWeekly = isNonDailyRecurring(h) && !isDueToday(h);
-        if (!parkedReady && !laterWeekly) return;
+        // Weekly / monthly / custom interval — not due right now, or resting after period complete
+        const laterWeekly = isNonDailyRecurring(h) && (!isDueToday(h) || periodDone);
+        // Preferred-day dailies (e.g. trash on Tue) when today isn’t their day
+        const preferredOffDay = !periodDone
+          && !isNonDailyRecurring(h)
+          && typeof getHabitWeekdays === 'function'
+          && getHabitWeekdays(h)
+          && !isDueToday(h)
+          && !isOneOffTask(h);
+        if (!parkedReady && !laterWeekly && !preferredOffDay) return;
 
         let nextLabel = '';
+        let kind = 'later';
         try {
           if (parkedReady) {
+            kind = 'parked';
             nextLabel = 'Ready when you can';
+          } else if (periodDone && isNonDailyRecurring(h)) {
+            kind = 'resting';
+            const next = typeof getNextDueDate === 'function' ? getNextDueDate(h) : null;
+            if (next && next !== today) {
+              const d = new Date(next + 'T12:00:00');
+              nextLabel = 'Done · next ' + d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+            } else {
+              nextLabel = 'Done this period';
+            }
           } else {
             const next = typeof getNextDueDate === 'function' ? getNextDueDate(h) : null;
             if (next && next === today) nextLabel = 'Due soon';
@@ -27531,21 +27574,28 @@
             }
           }
         } catch (_) {
-          nextLabel = parkedReady ? 'Ready when you can' : 'Later';
+          nextLabel = parkedReady ? 'Ready when you can' : (periodDone ? 'Done this period' : 'Later');
         }
 
         out.push({
           habit: h,
-          kind: parkedReady ? 'parked' : 'later',
+          kind,
           nextLabel
         });
       });
 
+      const kindRank = { parked: 0, later: 1, resting: 2 };
       out.sort((a, b) => {
-        if (a.kind !== b.kind) return a.kind === 'parked' ? -1 : 1;
+        const kr = (kindRank[a.kind] ?? 9) - (kindRank[b.kind] ?? 9);
+        if (kr !== 0) return kr;
         return String(a.habit.title || '').localeCompare(String(b.habit.title || ''));
       });
       return out.slice(0, limit);
+    }
+
+    function toggleLaterRoutinesExpanded() {
+      laterRoutinesExpanded = !laterRoutinesExpanded;
+      try { renderTodayFeed(); } catch (_) { /* ignore */ }
     }
 
     function buildTodayFeed() {
@@ -27628,7 +27678,7 @@
           variant: 'done'
         });
       }
-      // Weekly chores + parked jobs — so “where did mow the lawn go?” has an answer
+      // Weekly / monthly / preferred-day routines — find & edit without filling Today
       if (laterTasks.length) {
         sections.push({
           type: 'later-chores',
@@ -28519,44 +28569,81 @@
       const habit = item?.habit || item;
       if (!habit) return;
       const parked = item.kind === 'parked';
+      const resting = item.kind === 'resting';
       const mins = habit.est_minutes ? `${habit.est_minutes} min` : '';
       const freq = isOneOffTask(habit)
         ? 'One-time'
-        : (formatIntervalLabel(habit.interval_days, habit) || 'Chore');
+        : (formatIntervalLabel(habit.interval_days, habit) || 'Routine');
       const meta = [item.nextLabel || (parked ? 'Ready when you can' : 'Later'), freq, mins]
         .filter(Boolean)
         .join(' · ');
-      const safeId = String(habit.id || '').replace(/'/g, "\\'");
+      const icon = parked ? '🧰' : (resting ? '✓' : '🗓️');
       const card = document.createElement('div');
       card.className = 'habit-row bg-harbor-surface/80 border border-dashed border-harbor-border rounded-2xl px-3.5 py-2.5 flex items-center gap-x-3';
       card.dataset.feedType = 'later-chore';
+      card.dataset.habitId = String(habit.id || '');
       card.innerHTML = `
-        <div class="w-9 h-9 flex-shrink-0 rounded-2xl border border-harbor-border bg-harbor-raised flex items-center justify-center text-base" aria-hidden="true">${parked ? '🧰' : '🗓️'}</div>
+        <div class="w-9 h-9 flex-shrink-0 rounded-2xl border border-harbor-border bg-harbor-raised flex items-center justify-center text-base ${resting ? 'opacity-70' : ''}" aria-hidden="true">${icon}</div>
         <div class="flex-1 min-w-0">
-          <div class="font-medium text-sm truncate text-harbor-text">${escapeBriefHtml(habit.title || 'Chore')}</div>
+          <div class="font-medium text-sm truncate text-harbor-text ${resting ? 'opacity-80' : ''}">${escapeBriefHtml(habit.title || 'Routine')}</div>
           <div class="text-[11px] text-harbor-muted mt-0.5 truncate">${escapeBriefHtml(meta)}</div>
         </div>
-        <div class="flex flex-col items-end gap-1 flex-shrink-0">
+        <div class="flex items-center gap-1.5 flex-shrink-0">
           ${parked
-            ? `<button type="button" class="text-[10px] font-semibold text-harbor-primary-light px-2 py-1 rounded-xl bg-harbor-primary/15" data-pull="${safeId}">Add to Today</button>`
-            : `<button type="button" class="text-[10px] font-semibold text-harbor-primary-light" data-overview="1">Daily Brief</button>`}
+            ? `<button type="button" class="text-[10px] font-semibold text-harbor-primary-light px-2 py-1.5 rounded-xl bg-harbor-primary/15" data-pull="1">Add to Today</button>`
+            : ''}
+          <button type="button" class="text-[10px] font-semibold text-harbor-text px-2.5 py-1.5 rounded-xl border border-harbor-border bg-harbor-raised" data-edit="1" aria-label="Edit ${escapeBriefHtml(habit.title || 'routine')}">Edit</button>
         </div>
       `;
       card.querySelector('[data-pull]')?.addEventListener('click', (e) => {
         e.stopPropagation();
         if (typeof pullHabitToToday === 'function') pullHabitToToday(habit.id);
       });
-      card.querySelector('[data-overview]')?.addEventListener('click', (e) => {
+      card.querySelector('[data-edit]')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (typeof showSummaryModal === 'function') showSummaryModal('week');
-        else if (typeof openSummaryToTask === 'function') openSummaryToTask(habit.id);
+        if (typeof editHabitFromToday === 'function') editHabitFromToday(habit.id);
+        else if (typeof showQuickTaskModal === 'function') showQuickTaskModal({ mode: 'habit', editHabitId: habit.id });
       });
       card.addEventListener('click', (e) => {
         if (e.target.closest('button')) return;
-        if (typeof showHabitDetail === 'function') showHabitDetail(habit.id);
-        else if (typeof showSummaryModal === 'function') showSummaryModal('week');
+        // Tap row → edit (the whole point of this list)
+        if (typeof editHabitFromToday === 'function') editHabitFromToday(habit.id);
+        else if (typeof showQuickTaskModal === 'function') showQuickTaskModal({ mode: 'habit', editHabitId: habit.id });
       });
       container.appendChild(card);
+    }
+
+    /** Compact header + expand control for weekly/monthly list (avoids a second full task board). */
+    function renderLaterRoutinesSection(container, laterItems) {
+      if (!laterItems?.length) return;
+      const n = laterItems.length;
+      const wrap = document.createElement('div');
+      wrap.className = 'later-routines-block mt-3';
+      wrap.setAttribute('role', 'region');
+      wrap.setAttribute('aria-label', 'Routines not on Today');
+
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl border border-dashed border-harbor-border bg-harbor-surface/70 text-left';
+      toggle.setAttribute('aria-expanded', laterRoutinesExpanded ? 'true' : 'false');
+      toggle.innerHTML = `
+        <span class="text-base flex-shrink-0" aria-hidden="true">🗓️</span>
+        <span class="flex-1 min-w-0">
+          <span class="block text-xs font-semibold text-harbor-text">Not on Today · still in Harbor</span>
+          <span class="block text-[10px] text-harbor-muted mt-0.5">${n} weekly / monthly / later · tap to ${laterRoutinesExpanded ? 'hide' : 'edit'}</span>
+        </span>
+        <i class="fa-solid fa-chevron-${laterRoutinesExpanded ? 'up' : 'down'} text-[10px] text-harbor-muted flex-shrink-0" aria-hidden="true"></i>
+      `;
+      toggle.addEventListener('click', () => toggleLaterRoutinesExpanded());
+      wrap.appendChild(toggle);
+
+      if (laterRoutinesExpanded) {
+        const list = document.createElement('div');
+        list.className = 'mt-2 space-y-0';
+        laterItems.forEach(item => renderLaterChoreDiscoverCard(item, list));
+        wrap.appendChild(list);
+      }
+      container.appendChild(wrap);
     }
 
     function renderScheduleFeedCard(ev, container) {
@@ -28692,12 +28779,8 @@
           body,
           actions
         );
-        if (laterN) {
-          const hdr = document.createElement('div');
-          hdr.className = 'feed-section-label font-semibold mb-2 mt-4 text-[10px] uppercase tracking-wider text-harbor-muted/70';
-          hdr.textContent = 'Not on Today · still in Harbor';
-          container.appendChild(hdr);
-          laterItems.forEach(item => renderLaterChoreDiscoverCard(item, container));
+        if (laterN && typeof renderLaterRoutinesSection === 'function') {
+          renderLaterRoutinesSection(container, laterItems);
         }
         return;
       }
@@ -28715,6 +28798,8 @@
 
       sections.forEach(section => {
         if (section.items.length === 0) return;
+        // Collapsed “Not on Today” block — rendered once after primary sections
+        if (section.type === 'later-chores') return;
         if (section.label) {
           const hdr = document.createElement('div');
           hdr.className = `feed-section-label font-semibold mb-2 mt-3 first:mt-0 ${section.variant === 'upcoming' ? 'text-[10px] uppercase tracking-wider text-harbor-muted/70' : 'text-harbor-muted'}`;
@@ -28723,9 +28808,7 @@
         }
 
         section.items.forEach(item => {
-          if (section.type === 'later-chores') {
-            renderLaterChoreDiscoverCard(item, container);
-          } else if (section.type === 'sync-pending') {
+          if (section.type === 'sync-pending') {
             renderCompletedSyncCard(item, container);
           } else if (section.type === 'habits' || section.type === 'habits-done') {
             const daysUntil = getDaysUntilHabitDue(item);
@@ -28745,6 +28828,11 @@
           }
         });
       });
+
+      // Weekly / monthly / later routines — one compact expand control (not a second full list)
+      if (laterSection?.items?.length && typeof renderLaterRoutinesSection === 'function') {
+        renderLaterRoutinesSection(container, laterSection.items);
+      }
 
       const hint = document.getElementById('task-swipe-hint');
       if (hint) hint.style.display = hasAny && isSwipeMobile() ? 'block' : 'none';
