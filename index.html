@@ -11560,7 +11560,12 @@
       <div id="tab-content-library" class="tab-content px-4 pt-2.5 pb-0 bg-harbor-bg hidden">
         <div class="library-header">
           <div class="panel-head">
-            <div class="section-header font-semibold text-harbor-text">Task Library</div>
+            <div class="min-w-0 flex-1">
+              <div class="section-header font-semibold text-harbor-text">Task Library</div>
+              <p id="library-purpose" class="text-[11px] text-harbor-muted leading-snug mt-0.5 pr-2">
+                Browse ideas to add · your day list lives on <button type="button" class="text-harbor-primary-light font-semibold underline-offset-2 hover:underline" onclick="switchTab('today')">Task</button>
+              </p>
+            </div>
             <div class="panel-toolbar">
               <button type="button" onclick="addCustomToLibrary()" class="chip-add-btn" id="library-add-btn" aria-label="Add Personal Library Task">
                 <i class="fa-solid fa-plus"></i>Add
@@ -11573,7 +11578,7 @@
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-harbor-muted text-xs"></i>
             <input id="library-search" type="text" oninput="onLibrarySearch()"
               class="input-polish w-full bg-harbor-raised/90 border border-harbor-border focus:border-harbor-primary rounded-2xl py-2.5 pl-8 pr-3 text-sm placeholder:text-harbor-muted outline-none"
-              placeholder="Quick search…">
+              placeholder="Search habits, chores, home care…">
           </div>
           <div id="library-filters" class="library-filters mb-1.5" role="tablist" aria-label="Library categories"></div>
         </div>
@@ -11699,7 +11704,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 353;
+    const HARBOR_BUILD_NUMBER = 354;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11751,6 +11756,24 @@
      * Product train stays on 0.9 until 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '0.9',
+        date: '2026-07-16',
+        title: 'Library polish · build 354',
+        intro: 'Clearer Task Library for App Store polish — find what’s yours, edit, and jump to Task.',
+        sections: [
+          {
+            heading: 'Task Library',
+            items: [
+              'Purpose line: browse ideas to add · day list lives on Task',
+              'In Harbor filter — only items already on your list',
+              'Added items sort first; Personal section pins up on All',
+              'Edit + On Task on items already in Harbor',
+              'Smarter empty states and first-open default (Personal or In Harbor)'
+            ]
+          }
+        ]
+      },
       {
         version: '0.9',
         date: '2026-07-16',
@@ -12321,9 +12344,10 @@
     ];
 
     // Primary filters always shown; others behind “More”
-    const LIBRARY_FILTERS_PRIMARY = ['all', 'daily', 'weekly', 'personal'];
+    const LIBRARY_FILTERS_PRIMARY = ['all', 'in-harbor', 'daily', 'weekly', 'personal'];
     const LIBRARY_FILTERS = [
       { id: 'all', label: 'All', icon: 'fa-star', color: 'emerald', primary: true },
+      { id: 'in-harbor', label: 'In Harbor', icon: 'fa-anchor', color: 'teal', primary: true },
       { id: 'daily', label: 'Daily', icon: 'fa-sun', color: 'amber', primary: true },
       { id: 'weekly', label: 'Weekly', icon: 'fa-calendar-week', color: 'sky', primary: true },
       { id: 'personal', label: 'Personal', icon: 'fa-user', color: 'pink', primary: true },
@@ -13639,10 +13663,23 @@
       return true;
     }
 
+    /** True when this library card is already on the user's active list (or pro booking reminder). */
+    function isLibraryItemInHarbor(task) {
+      if (!task?.id) return false;
+      if ((state.habits || []).some(h => h.id === task.id)) return true;
+      const proOpt = typeof getTaskProOption === 'function' ? getTaskProOption(task) : null;
+      if (proOpt && (state.habits || []).some(h => h.id === 'pro-schedule-' + task.id)) return true;
+      return false;
+    }
+
     function getFilteredLibraryTasks() {
       let tasks = commonTasks.filter(t => {
         if (!matchesMaintenancePreference(t)) return false;
-        if (currentLibraryFilter !== 'all' && getTaskFilterType(t) !== currentLibraryFilter) return false;
+        if (currentLibraryFilter === 'in-harbor') {
+          if (!isLibraryItemInHarbor(t)) return false;
+        } else if (currentLibraryFilter !== 'all' && getTaskFilterType(t) !== currentLibraryFilter) {
+          return false;
+        }
         if (librarySearchQuery) {
           const q = librarySearchQuery.toLowerCase();
           const hay = `${t.title} ${t.librarySection || ''} ${t.note || ''}`.toLowerCase();
@@ -13650,16 +13687,50 @@
         }
         return true;
       });
+      // Added items float up so “what’s mine” is easy to scan without leaving All
+      tasks = tasks.slice().sort((a, b) => {
+        const ia = isLibraryItemInHarbor(a) ? 0 : 1;
+        const ib = isLibraryItemInHarbor(b) ? 0 : 1;
+        if (ia !== ib) return ia - ib;
+        const pa = isPersonalLibraryTask(a) ? 0 : 1;
+        const pb = isPersonalLibraryTask(b) ? 0 : 1;
+        if (pa !== pb) return pa - pb;
+        return String(a.title || '').localeCompare(String(b.title || ''));
+      });
       return tasks;
     }
 
     function getLibraryFilterCounts() {
-      const counts = { all: commonTasks.length };
+      const counts = { all: 0, 'in-harbor': 0 };
       commonTasks.forEach(t => {
+        if (!matchesMaintenancePreference(t)) return;
+        counts.all = (counts.all || 0) + 1;
+        if (isLibraryItemInHarbor(t)) counts['in-harbor'] = (counts['in-harbor'] || 0) + 1;
         const ft = getTaskFilterType(t);
         counts[ft] = (counts[ft] || 0) + 1;
       });
       return counts;
+    }
+
+    /** Once per session: if they have personal customs, land on Personal (easier re-edit). */
+    let librarySmartDefaultApplied = false;
+    function maybeApplyLibrarySmartDefault() {
+      if (librarySmartDefaultApplied) return;
+      librarySmartDefaultApplied = true;
+      try {
+        if (librarySearchQuery) return;
+        if (currentLibraryFilter !== 'all') return;
+        const customs = (state.customLibrary || []).length;
+        const inHarbor = (state.habits || []).filter(h =>
+          commonTasks.some(t => t.id === h.id)
+        ).length;
+        if (customs > 0) {
+          currentLibraryFilter = 'personal';
+        } else if (inHarbor >= 3) {
+          // Returning users with a fleet — show what’s already theirs first
+          currentLibraryFilter = 'in-harbor';
+        }
+      } catch (_) { /* ignore */ }
     }
 
     // ==================== STREAKS ====================
@@ -36113,6 +36184,7 @@
     // ==================== LIBRARY ====================
     const LIBRARY_FILTER_STYLES = {
       all: { active: 'bg-harbor-primary/90 border-harbor-primary text-white', idle: 'bg-harbor-raised border-harbor-border text-harbor-text' },
+      'in-harbor': { active: 'bg-harbor-primary/90 border-harbor-primary text-white', idle: 'bg-harbor-raised border-harbor-border text-harbor-primary-light' },
       daily: { active: 'bg-amber-600/90 border-amber-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-amber-800' },
       weekly: { active: 'bg-sky-600/90 border-sky-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-sky-800' },
       maintenance: { active: 'bg-orange-600/90 border-orange-500 text-white', idle: 'bg-harbor-raised border-harbor-border text-orange-800' },
@@ -36506,16 +36578,17 @@
 
       if (isPersonal) {
         const statusChip = alreadyAdded
-          ? `<span class="text-[10px] px-2.5 py-1.5 rounded-xl bg-harbor-primary/20 text-harbor-primary-light font-semibold">✓ Added</span>`
+          ? `<span class="text-[10px] px-2 py-1 rounded-xl bg-harbor-primary/20 text-harbor-primary-light font-semibold">✓ In Harbor</span>`
           : `<button type="button" class="lib-add-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl bg-harbor-primary hover:bg-harbor-primary-light text-white">+ Add</button>`;
         actionCol = `<div class="library-task-actions">
-            <button type="button" class="lib-edit-btn text-[10px] text-harbor-primary-light font-medium px-1">Edit</button>
+            <button type="button" class="lib-edit-btn text-[10px] text-harbor-primary-light font-semibold px-1.5 py-1">Edit</button>
+            ${alreadyAdded ? `<button type="button" class="lib-goto-task-btn text-[10px] font-semibold text-harbor-muted px-1.5 py-1">Task</button>` : ''}
             ${statusChip}
           </div>`;
       } else if (alreadyAdded) {
         actionCol = `<div class="library-task-actions">
-            <button type="button" class="lib-edit-btn text-[10px] text-harbor-primary-light font-medium px-1">Edit</button>
-            <span class="text-[10px] px-2.5 py-1.5 rounded-xl bg-harbor-primary/20 text-harbor-primary-light font-semibold">✓ Added</span>
+            <button type="button" class="lib-edit-btn text-[10px] font-semibold text-harbor-primary-light px-2 py-1.5 rounded-xl border border-harbor-border bg-harbor-raised">Edit</button>
+            <button type="button" class="lib-goto-task-btn text-[10px] font-semibold text-harbor-text px-2 py-1.5 rounded-xl bg-harbor-primary/15 text-harbor-primary-light">On Task</button>
           </div>`;
       } else if (proScheduled) {
         actionCol = `<div class="library-task-actions">
@@ -36573,6 +36646,23 @@
           showToast('Your pro booking task is on Today');
         };
       }
+      const gotoTaskBtn = div.querySelector('.lib-goto-task-btn');
+      if (gotoTaskBtn) {
+        gotoTaskBtn.onclick = (e) => {
+          e.stopPropagation();
+          switchTab('today');
+          // Expand “Not on Today” if this routine isn’t due so they can still find it
+          try {
+            if (typeof belongsOnTodayTab === 'function' && !belongsOnTodayTab(
+              (state.habits || []).find(h => h.id === task.id)
+            )) {
+              laterRoutinesExpanded = true;
+              if (typeof renderTodayFeed === 'function') renderTodayFeed();
+            }
+          } catch (_) { /* ignore */ }
+          showToast('On Task — edit weekly/monthly under “Not on Today” if it’s not due');
+        };
+      }
 
       container.appendChild(div);
     }
@@ -36584,24 +36674,50 @@
 
       const tasks = getFilteredLibraryTasks();
       container.innerHTML = '';
-      container.classList.toggle('library-filtered', currentLibraryFilter !== 'all');
+      container.classList.toggle('library-filtered', currentLibraryFilter !== 'all' && currentLibraryFilter !== 'in-harbor');
 
       if (statsEl) {
-        const added = state.habits.filter(h => commonTasks.some(t => t.id === h.id)).length;
-        const proCount = tasks.filter(t => getTaskProOption(t)).length;
-        statsEl.textContent = proCount
-          ? `${tasks.length} shown · ${added} in your Harbor · ${proCount} with Schedule Pro`
-          : `${tasks.length} shown · ${added} in your Harbor`;
+        const added = commonTasks.filter(t => isLibraryItemInHarbor(t)).length;
+        const total = commonTasks.filter(t => matchesMaintenancePreference(t)).length;
+        if (currentLibraryFilter === 'in-harbor') {
+          statsEl.textContent = added
+            ? `${tasks.length} in your Harbor · edit here or on Task`
+            : 'Nothing in Harbor yet — add ideas from All';
+        } else if (librarySearchQuery) {
+          statsEl.textContent = `${tasks.length} match${tasks.length === 1 ? '' : 'es'} · ${added} already in Harbor`;
+        } else {
+          statsEl.textContent = `${tasks.length} shown · ${added} of ${total} in your Harbor`;
+        }
       }
 
       if (tasks.length === 0) {
+        const searching = !!librarySearchQuery;
+        const inHarborEmpty = currentLibraryFilter === 'in-harbor';
+        const personalEmpty = currentLibraryFilter === 'personal';
+        let title = 'No matches';
+        let body = 'Try another filter or clear search.';
+        let actions = '';
+        if (searching) {
+          title = 'No matches';
+          body = 'Try a shorter word, or clear search to browse.';
+          actions = `<button type="button" class="mt-3 text-xs text-harbor-primary-light font-medium" onclick="librarySearchQuery='';document.getElementById('library-search').value='';renderLibraryFilters();renderLibrary();">Clear search</button>`;
+        } else if (inHarborEmpty) {
+          title = 'Nothing in Harbor yet';
+          body = 'Add habits and chores from All, Daily, or Weekly — they show up here once they’re yours.';
+          actions = `<button type="button" class="mt-3 chip-add-btn" onclick="switchLibraryFilter('all')"><i class="fa-solid fa-star"></i>Browse All</button>`;
+        } else if (personalEmpty) {
+          title = 'No personal items';
+          body = 'Save your own ideas with Add — they’re private on this device.';
+          actions = `<button type="button" class="mt-3 chip-add-btn" onclick="addCustomToLibrary()"><i class="fa-solid fa-plus"></i>Add personal</button>`;
+        } else {
+          actions = `<button type="button" class="mt-3 text-xs text-harbor-primary-light font-medium" onclick="switchLibraryFilter('all')">Show All</button>`;
+        }
         container.innerHTML = `
           <div class="library-column w-full max-w-none flex-none text-center py-10 px-4 rounded-2xl bg-harbor-raised/70 border border-harbor-border/50">
-            <div class="text-2xl mb-2">🔍</div>
-            <div class="text-sm text-harbor-text font-medium">No matches</div>
-            <div class="text-xs text-harbor-muted mt-1">Try clearing search</div>
-            <button onclick="librarySearchQuery=''; document.getElementById('library-search').value=''; renderLibrary();"
-              class="mt-3 text-xs text-harbor-primary-light font-medium">Clear search</button>
+            <div class="text-2xl mb-2">${inHarborEmpty ? '⚓' : (searching ? '🔍' : '📚')}</div>
+            <div class="text-sm text-harbor-text font-medium">${title}</div>
+            <div class="text-xs text-harbor-muted mt-1 leading-relaxed max-w-xs mx-auto">${body}</div>
+            ${actions}
           </div>`;
         return;
       }
@@ -36613,16 +36729,30 @@
         grouped[sec].push(task);
       });
 
+      // Personal first when browsing mixed lists (your stuff before the catalog)
       const sectionOrder = [...LIBRARY_SECTIONS];
       Object.keys(grouped).forEach(sec => {
         if (!sectionOrder.includes(sec)) sectionOrder.push(sec);
       });
+      const preferPersonal = currentLibraryFilter === 'all' || currentLibraryFilter === 'in-harbor';
+      if (preferPersonal) {
+        const pin = ['Personal', 'Your Custom Tasks'];
+        sectionOrder.sort((a, b) => {
+          const pa = pin.includes(a) ? 0 : 1;
+          const pb = pin.includes(b) ? 0 : 1;
+          if (pa !== pb) return pa - pb;
+          return sectionOrder.indexOf(a) - sectionOrder.indexOf(b);
+        });
+      }
 
       sectionOrder.forEach(sec => {
         const secTasks = grouped[sec];
         if (!secTasks || secTasks.length === 0) return;
 
         secTasks.sort((a, b) => {
+          const ia = isLibraryItemInHarbor(a) ? 0 : 1;
+          const ib = isLibraryItemInHarbor(b) ? 0 : 1;
+          if (ia !== ib) return ia - ib;
           const d = (a.difficulty || 2) - (b.difficulty || 2);
           if (d !== 0) return d;
           return (a.interval_days || 0) - (b.interval_days || 0);
@@ -40169,6 +40299,10 @@
       if (tab === 'library') {
         const list = document.getElementById('library-list');
         if (list) list.scrollTop = 0;
+        try {
+          if (typeof maybeApplyLibrarySmartDefault === 'function') maybeApplyLibrarySmartDefault();
+        } catch (_) { /* ignore */ }
+        renderLibraryFilters();
         renderLibrary();
       } else {
         const scroll = document.getElementById(`tab-content-${tab}`);
