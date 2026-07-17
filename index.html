@@ -3404,21 +3404,22 @@
       white-space: nowrap;
     }
 
-    /* Stylish small close control — pill shape on every theme (Harbor Mint standard) */
+    /* Close control — pill shape, ≥44px min hit target for App Store / iPhone */
     .modal-close-chip {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      padding: 0.3rem 0.75rem;
-      min-height: 1.55rem;
+      padding: 0.55rem 0.95rem;
+      min-height: 2.75rem;
+      min-width: 2.75rem;
       /* Hard pill — some themes/UA styles were squaring the corners */
       border-radius: 999px !important;
       -webkit-border-radius: 999px !important;
       appearance: none;
       -webkit-appearance: none;
       overflow: hidden;
-      font-size: 0.62rem;
+      font-size: 0.7rem;
       font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
@@ -11667,8 +11668,11 @@
   <div id="welcome-spotlight-overlay" class="welcome-spotlight-overlay" aria-hidden="true">
     <div id="welcome-spotlight-highlight" class="hidden"></div>
     <div id="welcome-spotlight-card" class="welcome-spotlight-card hidden" role="dialog" aria-modal="true">
-      <div class="text-xs text-harbor-muted leading-relaxed mb-2.5">Your first tasks are ready. Tap <strong class="text-harbor-primary-light">Quick tour</strong> for a short walkthrough — or skip and explore from Menu anytime.</div>
-      <button type="button" onclick="skipWelcomeSpotlight()" class="w-full py-2 rounded-xl bg-harbor-raised border border-harbor-border text-[11px] font-medium text-harbor-muted">Maybe later</button>
+      <div class="text-xs text-harbor-muted leading-relaxed mb-2.5">Your first tasks are ready. Take a short walkthrough — or skip and explore from Menu anytime.</div>
+      <div class="flex flex-col gap-1.5">
+        <button type="button" onclick="startWelcomeTourFromSpotlight()" class="w-full py-2.5 rounded-xl bg-harbor-primary text-white text-[11px] font-semibold">Start quick tour</button>
+        <button type="button" onclick="skipWelcomeSpotlight()" class="w-full py-2 rounded-xl bg-harbor-raised border border-harbor-border text-[11px] font-medium text-harbor-muted">Maybe later</button>
+      </div>
     </div>
   </div>
 
@@ -11704,7 +11708,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 356;
+    const HARBOR_BUILD_NUMBER = 357;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11756,6 +11760,38 @@
      * Product train stays on 0.9 until 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '0.9',
+        date: '2026-07-17',
+        title: 'Trust pack · build 357',
+        intro: 'Clearer empty states, honest Add feedback, safer Settings, and iPhone-friendly close buttons.',
+        sections: [
+          {
+            heading: 'Task & first run',
+            items: [
+              'Empty-list tips point at Add and Library (not a removed quick-add field)',
+              'Welcome card has Start quick tour; spotlight retries if the banner is late',
+              'Type chip is respected (no silent Task → Habit for Walk/Swim)',
+              'Parked / not-due adds expand Not on Today with a clear toast',
+              'Quick tour includes Energy (Low / Med / High reorders Today)'
+            ]
+          },
+          {
+            heading: 'Settings & chrome',
+            items: [
+              'Simulate day hidden unless harbor_dev_tools=1',
+              'Theme Cancel restores the previous palette',
+              'Calendar errors use plain language (no pod install)',
+              'Close chips meet ~44pt touch targets',
+              'Voice mic hidden when speech recognition is unavailable'
+            ]
+          },
+          {
+            heading: 'Daily Brief',
+            items: ['Subtitle: Plan the day, then do it on Task']
+          }
+        ]
+      },
       {
         version: '0.9',
         date: '2026-07-17',
@@ -13007,6 +13043,34 @@
       hourlyForecastCache = null;
       selectedStarterKeys = STARTER_ROUTINE_TASKS.map(t => t.key);
       selectedMaintenancePref = 'mixed';
+    }
+
+    /** Hidden tools (simulate day, etc.) — enable with localStorage.harbor_dev_tools = '1' */
+    function isHarborDevToolsEnabled() {
+      try {
+        return localStorage.getItem('harbor_dev_tools') === '1'
+          || /(?:\?|&)dev=1(?:&|$)/.test(location.search || '');
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function isSpeechRecognitionAvailable() {
+      try {
+        return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function updateVoiceAddButtonVisibility() {
+      const btn = document.getElementById('today-voice-btn');
+      if (!btn) return;
+      const ok = isSpeechRecognitionAvailable();
+      btn.classList.toggle('hidden', !ok);
+      btn.setAttribute('aria-hidden', ok ? 'false' : 'true');
+      if (!ok) btn.tabIndex = -1;
+      else btn.removeAttribute('tabindex');
     }
 
     function factoryResetApp(options = {}) {
@@ -18475,14 +18539,7 @@
         const inf = inferTaskDefaults(title);
         let minutes = parseInt(modal.querySelector('#qt-minutes').value, 10) || inf.est_minutes;
         let interval;
-        // Daily rhythm titles (Swim, Walk, Gym…) default to habit even if Type left on Task
-        const forceDailyHabit = selectedKind === 'task'
-          && !isSchedulingTaskTitle(title)
-          && typeof isDailyRhythmTitle === 'function'
-          && isDailyRhythmTitle(title);
-        if (forceDailyHabit) {
-          selectedKind = 'habit';
-        }
+        // Respect the Type chip the user picked (no silent Task → Habit override)
         if (selectedKind === 'task' || isSchedulingTaskTitle(title)) {
           interval = 0;
         } else if (selectedKind === 'habit') {
@@ -18655,15 +18712,21 @@
           renderStreaks();
           if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
           const kindLabel = selectedKind === 'habit' ? 'habit' : selectedKind === 'chore' ? 'chore' : 'task';
-          let where = '';
-          if (typeof isParkedForSummary === 'function' && isParkedForSummary(task) && !isPulledToToday(task)) {
-            where = ' · Daily Brief / “Not on Today” until you Add to Today';
-          } else if (selectedKind === 'chore' && !isDueToday(task)) {
-            where = ' · not due yet — find it under “Not on Today” or Daily Brief';
-          } else if (selectedKind === 'habit' || isRhythmTitle) {
-            where = ' · on Today';
+          const parked = typeof isParkedForSummary === 'function' && isParkedForSummary(task) && !isPulledToToday(task);
+          const notDue = !parked && typeof isDueToday === 'function' && !isDueToday(task) && !belongsOnTodayTab(task);
+          if (parked || notDue) {
+            try {
+              laterRoutinesExpanded = true;
+              if (typeof renderTodayFeed === 'function') renderTodayFeed();
+            } catch (_) { /* ignore */ }
+            showToast(
+              parked
+                ? `Saved “${title}” under Not on Today — tap Add to Today when you’re ready`
+                : `Saved “${title}” — not due yet; open Not on Today below to edit`
+            );
+          } else {
+            showToast(`Added ${kindLabel}: ${title}`);
           }
-          showToast(`Added ${kindLabel}: ${title}${where}`);
           return;
         }
         closeQuickTaskModal();
@@ -19448,11 +19511,14 @@
 
     function removeBill(billId) {
       if (!confirm('Remove this bill?')) return;
+      const bill = (state.bills || []).find(b => b.id === billId);
+      const name = bill?.name || bill?.title || 'Bill';
       state.bills = state.bills.filter(b => b.id !== billId);
       saveState();
       renderBills();
       renderTodayFeed();
       updateSmartBanner();
+      showToast(`Removed “${name}”`);
       if (typeof syncHarborNotifications === 'function') syncHarborNotifications({ silent: true });
       if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('bills');
     }
@@ -21400,7 +21466,7 @@
       const plugin = getDeviceCalendarPlugin();
       if (!plugin || typeof plugin.listEventsInRange !== 'function') {
         if (!silent) {
-          showToast('Calendar plugin missing — rebuild the iOS app (pod install + Archive)', 'warn');
+          showToast('Calendar access isn’t available right now. Try again, or reinstall Harbor from TestFlight.', 'warn');
         }
         return 0;
       }
@@ -24783,12 +24849,14 @@
     function removeSubscription(subId) {
       if (!confirm('Remove this subscription?')) return;
       const sub = state.subscriptions.find(s => s.id === subId);
+      const name = sub?.name || 'Subscription';
       if (sub) removeSubscriptionCancelTask(sub);
       state.subscriptions = state.subscriptions.filter(s => s.id !== subId);
       saveState();
       renderSubscriptions();
       renderTasks();
       updateSmartBanner();
+      showToast(`Removed “${name}”`);
     }
 
     function renderSubscriptions() {
@@ -28991,6 +29059,7 @@
       renderTodayFeed();
       updateHeaderContext();
       if (currentTab === 'today') updateSummaryLauncher();
+      try { updateVoiceAddButtonVisibility(); } catch (_) { /* ignore */ }
     }
 
     function skipRecurringHabit(habitId, event) {
@@ -32306,7 +32375,7 @@
               </div>
               <div class="min-w-0">
                 <div class="summary-dash-title">Daily Brief</div>
-                <div class="summary-dash-sub">Daily Brief · execute on Today</div>
+                <div class="summary-dash-sub">Plan the day, then do it on Task</div>
               </div>
             </div>
             <button type="button" class="modal-close-chip" data-summary-close="1" aria-label="Close">Close</button>
@@ -33584,7 +33653,7 @@
         score: 100,
         type: 'empty',
         cta: 'Add a task',
-        reason: `Your list is empty — I won't suggest chores you haven't added. Type a task below, tap the <strong>+</strong> on the empty card, or open the <strong>Library</strong> tab.`
+        reason: `Your list is empty — I won’t suggest chores you haven’t added. Tap <strong>Add</strong> up top, or open the <strong>Library</strong> tab for ready-made habits and chores.`
       };
     }
 
@@ -33593,7 +33662,7 @@
         score: 100,
         type: 'no-today',
         cta: 'Browse Library',
-        reason: `Nothing on your list for today — no tasks to suggest. Add something below or pull from the <strong>Library</strong> when you're ready.`
+        reason: `Nothing due on Today. Tap <strong>Add</strong> for something new, open <strong>Not on Today</strong> below for weekly/monthly items, or browse the <strong>Library</strong>.`
       };
     }
 
@@ -34313,7 +34382,7 @@
       {
         id: 'today-intro',
         title: 'Your tasks',
-        body: '<strong>Tap</strong> a task when it’s done.<br><strong>Swipe left</strong> to edit or delete it.<br>Set energy to Low, Med, or High — easier tasks move up when you’re tired.',
+        body: '<strong>Tap</strong> a task when it’s done.<br><strong>Swipe left</strong> to edit or delete it.<br>Use <strong>Add</strong> up top for something new.',
         target: () => getTutorialTaskCard() || document.getElementById('tab-today'),
         cardPlacement: 'above',
         prepare: () => {
@@ -34324,9 +34393,30 @@
         }
       },
       {
+        id: 'energy-smart',
+        title: 'Energy',
+        body: 'Tap <strong>Energy</strong> (Low / Med / High).<br>Today reorders so easier tasks float up when you’re tired — Harbor’s main superpower.',
+        target: () => document.getElementById('energy-compact-btn')
+          || document.getElementById('energy-bar-section')
+          || document.getElementById('tab-today'),
+        cardPlacement: 'below',
+        prepare: () => {
+          hideTutorialSmartBanner();
+          switchTab('today');
+          try {
+            const section = document.getElementById('energy-bar-section');
+            const btn = document.getElementById('energy-compact-btn');
+            if (section && typeof energyExpanded !== 'undefined' && !energyExpanded && btn) {
+              // Expand energy once so the chips are visible during the tip
+              if (typeof toggleEnergyExpanded === 'function') toggleEnergyExpanded();
+            }
+          } catch (_) { /* ignore */ }
+        }
+      },
+      {
         id: 'summary',
         title: 'Daily Brief',
-        body: 'Tap the <strong>glowing button</strong> in the middle.<br>It shows what’s coming up and what to do next — a quick look at your day.',
+        body: 'Tap the <strong>glowing button</strong> in the middle.<br>Plan the day here, then do the work on Task.',
         target: () => document.getElementById('summary-launcher'),
         cardPlacement: 'bottom',
         prepare: () => {
@@ -34343,7 +34433,7 @@
       {
         id: 'library-intro',
         title: 'Library',
-        body: 'Ready-made habits and chores live here.<br><strong>Tap</strong> one to add it.<br>Bigger monthly or yearly jobs stay here until they’re due.',
+        body: 'Ready-made habits and chores live here.<br><strong>Tap</strong> one to add it.<br>Browse ideas here — your day list lives on Task.',
         target: () => document.getElementById('tab-library'),
         cardPlacement: 'above',
         prepare: () => {
@@ -35153,16 +35243,35 @@
       document.getElementById('app-scroll')?.addEventListener('scroll', onWelcomeSpotlightSync, { passive: true });
     }
 
-    function showWelcomeSpotlight() {
+    function showWelcomeSpotlight(attempt = 0) {
       if (state.settings.tutorialActive || !state.settings.showWelcomeBanner || currentTab !== 'today') {
         hideWelcomeSpotlight();
         return;
       }
 
+      // Ensure smart banner is painted so we can highlight it (retry a few frames)
+      try {
+        if (typeof updateSmartBanner === 'function') updateSmartBanner();
+      } catch (_) { /* ignore */ }
+
       const banner = document.getElementById('smart-banner');
       const cta = document.getElementById('smart-cta');
       if (!banner || banner.classList.contains('hidden') || !cta) {
-        hideWelcomeSpotlight();
+        if (attempt < 8) {
+          setTimeout(() => showWelcomeSpotlight(attempt + 1), 120);
+          return;
+        }
+        // Fallback: still show the card without a highlight so first-run isn’t silent
+        welcomeSpotlightActive = true;
+        const overlay = document.getElementById('welcome-spotlight-overlay');
+        const card = document.getElementById('welcome-spotlight-card');
+        const highlight = document.getElementById('welcome-spotlight-highlight');
+        if (overlay) {
+          overlay.classList.add('is-active');
+          overlay.setAttribute('aria-hidden', 'false');
+        }
+        if (highlight) highlight.classList.add('hidden');
+        if (card) card.classList.remove('hidden');
         return;
       }
 
@@ -35176,6 +35285,17 @@
       }
       if (card) card.classList.remove('hidden');
       requestAnimationFrame(() => positionWelcomeSpotlightHighlight());
+    }
+
+    function startWelcomeTourFromSpotlight() {
+      hideWelcomeSpotlight();
+      state.settings.showWelcomeBanner = false;
+      state.settings.welcomeBannerDismissed = true;
+      try { saveState(); } catch (_) { /* ignore */ }
+      if (typeof startAppTutorial === 'function') {
+        startAppTutorial();
+        showToast('Starting quick tour');
+      }
     }
 
     function skipWelcomeSpotlight() {
@@ -35919,12 +36039,13 @@
       const voiceContext = getVoiceContext();
       
       if (!SpeechRec) {
+        updateVoiceAddButtonVisibility();
         if (voiceContext === 'grocery') {
           showAddGroceryItemModal();
         } else {
           showQuickTaskModal({ mode: 'habit' });
         }
-        showToast("Voice recognition needs Chrome/Edge on desktop or Android");
+        showToast('Voice isn’t available here — use Add instead');
         return;
       }
       
@@ -39659,7 +39780,7 @@
                   <div class="theme-palette" role="listbox" aria-label="App color theme">
                     ${themeSwatches}
                   </div>
-                  <p class="settings-help-text mt-1.5 mb-0">Tap to preview · saves with Done.</p>
+                  <p class="settings-help-text mt-1.5 mb-0">Tap to preview · <strong class="text-harbor-text font-semibold">Done</strong> keeps it · Cancel restores your previous theme.</p>
                 </div>
               </div>
             </section>
@@ -39833,7 +39954,7 @@
               </div>
             </section>
 
-            <!-- Tools -->
+            <!-- Tools (weather refresh always; day-simulate only with localStorage harbor_dev_tools=1) -->
             <section class="settings-section" aria-labelledby="settings-sec-tools">
               <div class="settings-section-head">
                 <h3 id="settings-sec-tools" class="settings-section-title">Tools</h3>
@@ -39841,15 +39962,17 @@
               <div class="settings-card">
                 <div class="settings-card-block">
                   <div class="settings-inline-actions is-stack" style="margin-top:0">
-                    <button type="button" class="settings-btn-secondary" onclick="simulateContextChange(); this.closest('.fixed').remove()">
-                      Simulate a different day
-                    </button>
                     <button type="button" class="settings-btn-secondary" onclick="fetchRealWeather(); this.closest('.fixed').remove()">
                       Use real location &amp; weather
                     </button>
+                    ${typeof isHarborDevToolsEnabled === 'function' && isHarborDevToolsEnabled()
+                      ? `<button type="button" class="settings-btn-secondary" onclick="simulateContextChange(); this.closest('.fixed').remove()">
+                      Simulate a different day (dev)
+                    </button>`
+                      : ''}
                   </div>
                   <div class="settings-row-title mt-3 mb-0.5">Voice</div>
-                  <div class="settings-row-desc">Chrome and Edge only</div>
+                  <div class="settings-row-desc">${(window.SpeechRecognition || window.webkitSpeechRecognition) ? 'Say commands like the examples below' : 'Not available on this device — use Add instead'}</div>
                   <div class="settings-voice-examples">“add milk to grocery” · “mark rent paid” · “complete walk” · “set energy low”</div>
                 </div>
               </div>
@@ -39886,21 +40009,34 @@
       
       document.body.appendChild(modal);
 
-      // Color palette — live preview on tap
+      // Color palette — preview only until Done; Cancel restores theme at open
+      const themeAtOpen = typeof getAppTheme === 'function' ? getAppTheme() : 'harbor';
+      modal.dataset.themeAtOpen = themeAtOpen;
+      modal.dataset.themeDraft = themeAtOpen;
       modal.querySelectorAll('.theme-swatch').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.dataset.themeId;
           if (!id) return;
-          applyAppTheme(id);
-          try { saveState(); } catch (_) { /* ignore */ }
+          modal.dataset.themeDraft = id;
+          applyAppTheme(id); // preview only — not committed until Done
           modal.querySelectorAll('.theme-swatch').forEach(b => {
             const on = b.dataset.themeId === id;
             b.classList.toggle('is-active', on);
             b.setAttribute('aria-selected', on ? 'true' : 'false');
           });
-          showToast(getThemeLabel(id));
         });
       });
+      // Cancel must restore theme if user only previewed
+      const cancelBtn = modal.querySelector('.settings-sheet-footer button:last-child');
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', (e) => {
+          const restore = modal.dataset.themeAtOpen || themeAtOpen;
+          if (restore && typeof applyAppTheme === 'function') {
+            applyAppTheme(restore);
+            try { saveState(); } catch (_) { /* ignore */ }
+          }
+        }, true);
+      }
 
       // Re-assert initial checked state after wiring (ensures knobs paint)
       setSwitchChecked(modal.querySelector('#smart-suggestions-toggle'), smartSuggestionsOn);
@@ -40006,6 +40142,11 @@
 
     function saveSettingsFromModal(btn) {
       const modal = btn.closest('.fixed');
+      // Commit palette preview (or keep current)
+      try {
+        const draft = modal?.dataset?.themeDraft;
+        if (draft && typeof applyAppTheme === 'function') applyAppTheme(draft);
+      } catch (_) { /* ignore */ }
       const smartToggle = modal.querySelector('#smart-suggestions-toggle');
       let reenabledSmartSuggestions = false;
       if (smartToggle) {
@@ -42914,6 +43055,7 @@
         initNativeShell();
         repairOnboardedEmptyTodayList();
         loadCommonTasks();
+        try { updateVoiceAddButtonVisibility(); } catch (_) { /* ignore */ }
         if (typeof ensureBudgetReviewTask === 'function') {
           try { ensureBudgetReviewTask(); } catch (_) { /* ignore */ }
         }
