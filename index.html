@@ -11704,7 +11704,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 354;
+    const HARBOR_BUILD_NUMBER = 355;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11756,6 +11756,29 @@
      * Product train stays on 0.9 until 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '0.9',
+        date: '2026-07-17',
+        title: 'Not on Today + Hire polish · build 355',
+        intro: 'Every weekly/monthly routine is findable; Hire a pro is a reminder, not a booking service.',
+        sections: [
+          {
+            heading: 'Task tab',
+            items: [
+              'Not on Today list includes the full set of later routines (no 6-item cap)',
+              'Still collapsed by default — expand when you need to edit'
+            ]
+          },
+          {
+            heading: 'Library · hire option',
+            items: [
+              'Primary action is + Add (DIY); Hire a pro is secondary',
+              'Sheet explains Harbor does not book for you; soft “who to call” tips',
+              'Reminder task titled Hire: … lands on Task until you check it off'
+            ]
+          }
+        ]
+      },
       {
         version: '0.9',
         date: '2026-07-16',
@@ -12818,17 +12841,18 @@
       'Yard & Lawn Care', 'HVAC & Climate', 'Home Interior & Exterior', 'Car Maintenance'
     ];
 
+    // Soft “where people often look” tips — Harbor does not book or partner with these brands
     const PRO_SERVICE_HINTS = {
-      hvac: { label: 'HVAC technician', providers: ['Local HVAC company', 'Carrier authorized dealer', 'Angi / HomeAdvisor'] },
-      lawn: { label: 'Lawn care service', providers: ['TruGreen / local landscaper', 'Neighbor referral', 'TaskRabbit yard help'] },
-      plumbing: { label: 'Plumber', providers: ['Licensed local plumber', 'Roto-Rooter', 'Home warranty service'] },
-      roofing: { label: 'Roofer / gutter pro', providers: ['Local roofing company', 'Gutter cleaning service'] },
-      chimney: { label: 'Chimney sweep', providers: ['CSIA-certified sweep', 'Local fireplace shop'] },
-      auto: { label: 'Auto shop', providers: ['Dealership service', 'Trusted local mechanic', 'Jiffy Lube / Valvoline'] },
-      dental: { label: 'Dentist', providers: ['Your dentist', 'In-network provider'] },
-      medical: { label: 'Doctor / clinic', providers: ['Primary care', 'Urgent care', 'Telehealth'] },
-      vision: { label: 'Eye care', providers: ['Optometrist', 'Vision center'] },
-      general: { label: 'Home pro', providers: ['Handyman service', 'Thumbtack', 'Nextdoor recommendations'] }
+      hvac: { label: 'HVAC technician', providers: ['Your usual HVAC company', 'A neighbor or HOA referral', 'Local search / reviews'] },
+      lawn: { label: 'Lawn care service', providers: ['A local landscaper you trust', 'Neighbor referral', 'Local search / reviews'] },
+      plumbing: { label: 'Plumber', providers: ['Licensed local plumber', 'Home warranty if you have one', 'Local search / reviews'] },
+      roofing: { label: 'Roofer / gutter pro', providers: ['Local roofing or gutter company', 'Neighbor referral', 'Local search / reviews'] },
+      chimney: { label: 'Chimney sweep', providers: ['Certified chimney sweep', 'Local fireplace shop', 'Local search / reviews'] },
+      auto: { label: 'Auto shop', providers: ['Your usual mechanic or dealer', 'Trusted shop from a friend', 'Local search / reviews'] },
+      dental: { label: 'Dentist', providers: ['Your dentist', 'In-network provider if insured'] },
+      medical: { label: 'Doctor / clinic', providers: ['Primary care', 'Your clinic’s scheduling line'] },
+      vision: { label: 'Eye care', providers: ['Your optometrist', 'Vision center you already use'] },
+      general: { label: 'Home pro', providers: ['Handyman or specialist you trust', 'Neighbor / Nextdoor referral', 'Local search / reviews'] }
     };
 
     const FACTORY_RESET_VERSION = 'harbor_factory_reset_v1';
@@ -27706,7 +27730,8 @@
 
       const syncPending = state.habits.filter(h => canShowActivitySync(h));
       const renewingSubs = getSubscriptionsRenewingSoon(3);
-      const laterTasks = collectDiscoverableLaterTasks(6);
+      // Full list (collapsed in UI) — no 6-item cap so every weekly/monthly is findable
+      const laterTasks = collectDiscoverableLaterTasks();
 
       const sections = [];
       if (syncPending.length) {
@@ -33361,7 +33386,7 @@
       { id: 'cheat-day-fund', reason: '<strong>Harbor Day</strong> on Streaks: name a treat, fill the meter with real due tasks, then claim a Moment, Window, Full day, or Bank it for later.', cta: 'Harbor Day', action: 'streaks' },
       { id: 'subscriptions', reason: '<strong>Life → Subscriptions</strong> tracks streaming and services with renewal dates — pause one to auto-add a cancel task on Today.', cta: 'Manage subs', action: 'life-subs' },
       { id: 'sub-tiers', reason: 'When adding a subscription, pick the tier that matches your plan — pricing stays accurate for US tiers and CSV imports snap to the closest match.', cta: 'Add subscription', action: 'life-subs' },
-      { id: 'maintenance-pref', reason: 'Your <strong>maintenance style</strong> (DIY, Hire, or Mix) in Settings shapes Library defaults — Schedule pro visits vs do-it-yourself chores.', cta: 'Set preference', action: 'settings' },
+      { id: 'maintenance-pref', reason: 'Your <strong>maintenance style</strong> (DIY, Hire, or Mix) in Settings shapes Library defaults — do-it-yourself chores vs remind-me-to-hire items.', cta: 'Set preference', action: 'settings' },
       { id: 'voice-commands', reason: 'Voice works on supported browsers — try “add milk to grocery”, “mark rent paid”, “complete walk”, or “set energy low”.', cta: 'Try voice', action: 'voice' },
       { id: 'simulate-day', reason: 'Use <strong>Simulate day</strong> at the bottom (or in Settings) to preview how suggestions change with different weather and calendar load.', cta: 'Simulate day', action: 'simulate' },
       { id: 'real-weather', reason: 'Enable <strong>real location + weather</strong> in Settings for live Open-Meteo data — temperatures show in °F on the header strip.', cta: 'Use real weather', action: 'real-weather' },
@@ -36339,7 +36364,7 @@
       modal.className = 'fixed inset-0 bg-harbor-bg/75 flex items-end z-[60]';
       const providers = (pro.providers || []).map(p =>
         `<div class="flex items-center gap-2 py-2 border-b border-harbor-border/80 last:border-0">
-          <i class="fa-solid fa-building text-harbor-muted text-xs"></i>
+          <i class="fa-solid fa-lightbulb text-harbor-muted text-xs"></i>
           <span class="text-sm text-harbor-text">${p}</span>
         </div>`
       ).join('');
@@ -36350,30 +36375,32 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="flex justify-between items-start mb-3">
             <div>
-              <div class="text-[10px] uppercase tracking-wider text-sky-400 font-semibold">Don't DIY?</div>
-              <div class="text-lg font-semibold text-harbor-text mt-0.5">${task.title}</div>
-              <div class="text-xs text-harbor-muted mt-1">We'll add a <strong class="text-harbor-text">Today</strong> task to book a <strong class="text-harbor-text">${pro.label}</strong>. Check it off once the visit is scheduled.</div>
+              <div class="text-[10px] uppercase tracking-wider text-harbor-primary-light font-semibold">Do it yourself or hire?</div>
+              <div class="text-lg font-semibold text-harbor-text mt-0.5">${escapeBriefHtml(task.title)}</div>
+              <div class="text-xs text-harbor-muted mt-1 leading-relaxed">
+                Harbor doesn’t book anyone for you. Add this as a normal task, or put a short <strong class="text-harbor-text">remind me to hire</strong> item on Task so you remember to call a <strong class="text-harbor-text">${escapeBriefHtml(pro.label)}</strong>.
+              </div>
             </div>
             <button onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
 
           <div class="bg-harbor-raised/60 rounded-2xl p-3 mb-4">
-            <div class="text-[10px] uppercase tracking-wider text-harbor-muted mb-2">Where to look</div>
+            <div class="text-[10px] uppercase tracking-wider text-harbor-muted mb-2">Ideas for who to call</div>
             ${providers}
           </div>
 
           <div class="space-y-2">
-            <button id="pro-add-reminder" class="w-full py-3.5 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 rounded-2xl font-semibold text-sm text-white">
-              <i class="fa-regular fa-calendar-plus mr-1.5"></i> Add booking task to Today
+            <button id="pro-add-diy-too" class="w-full py-3.5 bg-harbor-primary hover:bg-harbor-primary-light active:opacity-90 rounded-2xl font-semibold text-sm text-white">
+              <i class="fa-solid fa-hammer mr-1.5"></i> Add to my list (DIY)
             </button>
-            <button id="pro-add-diy-too" class="w-full py-3 bg-harbor-surface active:bg-harbor-border rounded-2xl font-medium text-sm text-harbor-text">
-              I'll DIY — add task to my list
+            <button id="pro-add-reminder" class="w-full py-3 bg-harbor-surface border border-harbor-border active:bg-harbor-raised rounded-2xl font-medium text-sm text-harbor-text">
+              <i class="fa-regular fa-bell mr-1.5"></i> Remind me to hire a pro
             </button>
             <button onclick="this.closest('.fixed').remove()" class="w-full py-2 text-xs text-harbor-muted">Not now</button>
           </div>
 
           <div class="text-[10px] text-harbor-muted text-center mt-3 leading-relaxed">
-            Booking task is saved on <strong class="text-harbor-text">Today</strong> — you'll stay here in Library
+            Hire reminder lands on <strong class="text-harbor-text">Task</strong> as a one-time item — check it off after you book the visit
           </div>
         </div>
       `;
@@ -36386,7 +36413,7 @@
         if (!habit) {
           habit = stampHabitMeta(ensureProReminderVisible({
             id: reminderId,
-            title: `Book pro: ${pro.short || task.title}`,
+            title: `Hire: ${pro.short || task.title}`,
             librarySection: task.librarySection,
             category: 'pro',
             interval_days: 0, // one-off → stays on Today until completed
@@ -36395,7 +36422,7 @@
             is_preset: false,
             proLinkedTask: task.id,
             proLabel: pro.label,
-            note: `Book a ${pro.label}. Check off after you schedule the visit.`,
+            note: `Call or book a ${pro.label}. Check off after the visit is scheduled. Harbor does not book for you.`,
             is_pro_reminder: true,
             trackStreak: false
           }));
@@ -36410,8 +36437,7 @@
         updateSummaryLauncher();
         modal.remove();
         renderLibrary();
-        // Stay in Library so users can keep browsing
-        showToast(`Saved on Today · Book your ${pro.label.toLowerCase()}`);
+        showToast(`On Task · remind yourself to hire a ${pro.label.toLowerCase()}`);
       };
 
       modal.querySelector('#pro-add-diy-too').onclick = () => {
@@ -36592,13 +36618,14 @@
           </div>`;
       } else if (proScheduled) {
         actionCol = `<div class="library-task-actions">
-            <button type="button" class="lib-goto-pro-btn text-[10px] px-2.5 py-1.5 rounded-xl bg-sky-600/90 text-white font-semibold whitespace-nowrap">On Today →</button>
+            <button type="button" class="lib-goto-pro-btn text-[10px] px-2.5 py-1.5 rounded-xl bg-harbor-primary/20 text-harbor-primary-light font-semibold whitespace-nowrap">On Task →</button>
             <button type="button" class="lib-add-btn text-[9px] text-harbor-muted hover:text-harbor-text">+ Add DIY</button>
           </div>`;
       } else if (proOpt) {
+        // DIY is the main path; hire is a reminder — Harbor never books for you
         actionCol = `<div class="library-task-actions">
-            <button type="button" class="lib-pro-btn px-2.5 py-1.5 text-[10px] font-semibold rounded-xl bg-sky-600 hover:bg-sky-500 text-white whitespace-nowrap">Schedule Pro</button>
-            <button type="button" class="lib-add-btn text-[9px] text-harbor-muted hover:text-harbor-text">+ Add DIY</button>
+            <button type="button" class="lib-add-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl bg-harbor-primary hover:bg-harbor-primary-light text-white">+ Add</button>
+            <button type="button" class="lib-pro-btn text-[9px] font-semibold text-harbor-muted hover:text-harbor-text px-1.5 py-1 whitespace-nowrap">Hire a pro</button>
           </div>`;
       } else {
         actionCol = `<div class="library-task-actions">
@@ -36607,7 +36634,7 @@
       }
 
       const proChip = proOpt
-        ? `<span class="library-meta-chip chip-pro"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i>Pro option</span>`
+        ? `<span class="library-meta-chip chip-pro"><i class="fa-solid fa-user-tie" aria-hidden="true"></i>Hire option</span>`
         : '';
 
       div.innerHTML = `
@@ -36643,7 +36670,7 @@
         gotoProBtn.onclick = (e) => {
           e.stopPropagation();
           switchTab('today');
-          showToast('Your pro booking task is on Today');
+          showToast('Hire reminder is on Task');
         };
       }
       const gotoTaskBtn = div.querySelector('.lib-goto-task-btn');
@@ -40795,7 +40822,7 @@
       {
         id: 'hire',
         title: 'Use a Professional',
-        subtitle: 'Book pros for HVAC, lawn, repairs & more',
+        subtitle: 'Prefer hiring for HVAC, lawn, repairs & more',
         icon: 'fa-user-tie',
         color: 'sky'
       },
