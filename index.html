@@ -30,15 +30,16 @@
         var parsed = JSON.parse(raw);
         var s = parsed && parsed.settings ? parsed.settings : {};
         var t = s.theme;
-        var allowed = { harbor:1, dark:1, lilac:1, blush:1, wood:1, lagoon:1 };
+        var allowed = { harbor:1, dark:1, lilac:1, blush:1, peach:1, lagoon:1 };
         if (t === 'mono') t = 'dark';
         else if (t === 'light') t = 'harbor';
+        else if (t === 'wood') t = 'peach'; // Driftwood → Harbor Peach
         else if (!allowed[t]) t = 'harbor';
         document.documentElement.setAttribute('data-theme', t);
         document.documentElement.style.colorScheme = t === 'dark' ? 'dark' : 'light';
         var metaMap = {
           harbor: '#D6E8E2', dark: '#0A1614', lilac: '#E8E4F0',
-          blush: '#F8E4E8', wood: '#E8DED0', lagoon: '#DCEAF2'
+          blush: '#F8E4E8', peach: '#FCE8DE', lagoon: '#DCEAF2'
         };
         var solid = metaMap[t] || metaMap.harbor;
         // Paint status-bar / overscroll immediately (iOS translucent status bar)
@@ -248,33 +249,33 @@
       color-scheme: light;
     }
 
-    /* ── Driftwood — warm sand & walnut ── */
-    html[data-theme="wood"] {
-      --harbor-bg: 232 222 208;
-      --harbor-surface: 245 238 228;
-      --harbor-raised: 236 226 212;
-      --harbor-border: 200 184 160;
-      --harbor-primary: 140 100 64;
-      --harbor-primary-light: 96 68 40;
-      --harbor-accent: 180 130 70;
-      --harbor-text: 48 36 24;
-      --harbor-muted: 120 100 80;
+    /* ── Harbor Peach — soft coral / apricot (warm, popular wellness palette) ── */
+    html[data-theme="peach"] {
+      --harbor-bg: 252 232 222;
+      --harbor-surface: 255 248 244;
+      --harbor-raised: 252 238 230;
+      --harbor-border: 232 200 186;
+      --harbor-primary: 224 122 108;
+      --harbor-primary-light: 176 72 64;
+      --harbor-accent: 212 160 100;
+      --harbor-text: 56 36 32;
+      --harbor-muted: 140 108 100;
       --harbor-low: 196 110 86;
       --harbor-med: 184 148 48;
-      --harbor-high: 140 100 64;
-      --harbor-dawn: 220 208 188;
-      --harbor-mint: 210 196 172;
-      --harbor-body-solid: #E8DED0;
-      --harbor-body-g1: #DDD0BC;
-      --harbor-body-g2: #E8DED0;
-      --harbor-body-g3: #F0E8DC;
-      --harbor-body-g4: #F7F2EA;
-      --harbor-dock-g1: #FCFAF6;
-      --harbor-dock-g2: #F5EEE4;
-      --harbor-dock-g3: #EDE4D6;
-      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 2px 10px rgba(60, 40, 20, 0.07), 0 8px 22px rgba(60, 40, 20, 0.05);
-      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.55) inset, 0 12px 36px rgba(60, 40, 20, 0.1);
-      --harbor-glow-primary: 0 0 0 1px rgba(140, 100, 64, 0.2);
+      --harbor-high: 224 122 108;
+      --harbor-dawn: 248 220 208;
+      --harbor-mint: 244 214 200;
+      --harbor-body-solid: #FCE8DE;
+      --harbor-body-g1: #F5D4C4;
+      --harbor-body-g2: #FCE8DE;
+      --harbor-body-g3: #FDF2EC;
+      --harbor-body-g4: #FFF9F6;
+      --harbor-dock-g1: #FFFCFA;
+      --harbor-dock-g2: #FFF6F0;
+      --harbor-dock-g3: #FCEEE6;
+      --harbor-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.65) inset, 0 2px 10px rgba(96, 48, 40, 0.06), 0 8px 22px rgba(96, 48, 40, 0.045);
+      --harbor-shadow-md: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 12px 36px rgba(96, 48, 40, 0.09);
+      --harbor-glow-primary: 0 0 0 1px rgba(224, 122, 108, 0.22);
       color-scheme: light;
     }
 
@@ -440,19 +441,19 @@
     /* Shared light-theme UX polish (match Harbor Mint clarity) */
     html[data-theme="lilac"] .harbor-card,
     html[data-theme="blush"] .harbor-card,
-    html[data-theme="wood"] .harbor-card,
+    html[data-theme="peach"] .harbor-card,
     html[data-theme="lagoon"] .harbor-card {
       box-shadow: var(--harbor-shadow-sm);
     }
     html[data-theme="lilac"] .chip-add-btn,
     html[data-theme="blush"] .chip-add-btn,
-    html[data-theme="wood"] .chip-add-btn,
+    html[data-theme="peach"] .chip-add-btn,
     html[data-theme="lagoon"] .chip-add-btn {
       color: #fff !important;
     }
     html[data-theme="lilac"] .main-nav-tab.nav-active,
     html[data-theme="blush"] .main-nav-tab.nav-active,
-    html[data-theme="wood"] .main-nav-tab.nav-active,
+    html[data-theme="peach"] .main-nav-tab.nav-active,
     html[data-theme="lagoon"] .main-nav-tab.nav-active {
       color: rgb(var(--harbor-primary-light)) !important;
     }
@@ -2492,10 +2493,10 @@
       background-image: linear-gradient(180deg, #DDD6EE 0%, #E8E4F0 55%, #F0ECF8 100%);
       border-bottom-color: #C8BEDC;
     }
-    html[data-theme="wood"] .site-header {
-      background-color: #E8DED0;
-      background-image: linear-gradient(180deg, #DDD0BC 0%, #E8DED0 55%, #F0E8DC 100%);
-      border-bottom-color: #C8B8A0;
+    html[data-theme="peach"] .site-header {
+      background-color: #FCE8DE;
+      background-image: linear-gradient(180deg, #F5D4C4 0%, #FCE8DE 55%, #FDF2EC 100%);
+      border-bottom-color: #E8C8BA;
     }
     html[data-theme="lagoon"] .site-header {
       background-color: #DCEAF2;
@@ -3460,7 +3461,7 @@
     /* Keep Close pills pill-shaped on every palette (colors still theme tokens) */
     html[data-theme="lilac"] .modal-close-chip,
     html[data-theme="blush"] .modal-close-chip,
-    html[data-theme="wood"] .modal-close-chip,
+    html[data-theme="peach"] .modal-close-chip,
     html[data-theme="lagoon"] .modal-close-chip,
     html[data-theme="harbor"] .modal-close-chip {
       border-radius: 999px !important;
@@ -11770,7 +11771,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 358;
+    const HARBOR_BUILD_NUMBER = 359;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11825,8 +11826,22 @@
       {
         version: '0.9',
         date: '2026-07-17',
+        title: 'Harbor Peach palette · build 359',
+        intro: 'Driftwood replaced with Harbor Peach — a soft coral/apricot theme popular in wellness apps.',
+        sections: [{
+          heading: 'Color palettes',
+          items: [
+            'New Harbor Peach (soft coral) replaces Driftwood',
+            'Anyone still on Driftwood upgrades automatically to Peach',
+            'Lineup: Mint · Night · Lilac · Blush · Peach · Lagoon'
+          ]
+        }]
+      },
+      {
+        version: '0.9',
+        date: '2026-07-17',
         title: 'Theme contrast · build 358',
-        intro: 'Tags, filters, and badges use theme colors so Lilac, Blush, Driftwood, and Lagoon match Mint/Night quality.',
+        intro: 'Tags, filters, and badges use theme colors so Lilac, Blush, Harbor Peach, and Lagoon match Mint/Night quality.',
         sections: [{
           heading: 'Color palettes',
           items: [
@@ -12147,7 +12162,7 @@
             items: [
               'Top header (date, tasks today, menu) uses hard-coded per-theme colors + inline paint',
               'Fixed CSS bug: mint rules no longer apply to bare html for every theme',
-              'Pick Blush/Lilac/Driftwood/Lagoon again after a hard refresh'
+              'Pick Blush/Lilac/Harbor Peach/Lagoon again after a hard refresh'
             ]
           },
           {
@@ -13233,18 +13248,21 @@
       if (state.settings.studentPricing === undefined) {
         state.settings.studentPricing = false;
       }
-      // Theme palettes: harbor, dark, lilac, blush, wood, lagoon
-      // Legacy: mono→dark, light→harbor
+      // Theme palettes: harbor, dark, lilac, blush, peach, lagoon
+      // Legacy: mono→dark, light→harbor, wood (Driftwood)→peach
       if (!state.settings.themeSchemeV2) {
         const old = state.settings.theme;
         if (old === 'mono') state.settings.theme = 'dark';
         else if (old === 'light') state.settings.theme = 'harbor';
+        else if (old === 'wood') state.settings.theme = 'peach';
         else if (!HARBOR_THEME_IDS?.includes?.(old)) state.settings.theme = 'harbor';
         state.settings.themeSchemeV2 = true;
       } else if (state.settings.theme === 'mono') {
         state.settings.theme = 'dark';
       } else if (state.settings.theme === 'light') {
         state.settings.theme = 'harbor';
+      } else if (state.settings.theme === 'wood') {
+        state.settings.theme = 'peach';
       } else if (typeof HARBOR_THEME_IDS !== 'undefined' && !HARBOR_THEME_IDS.includes(state.settings.theme)) {
         state.settings.theme = 'harbor';
       }
@@ -37570,17 +37588,17 @@
         }
       },
       {
-        id: 'wood',
-        label: 'Driftwood',
-        hint: 'Warm sand & walnut',
-        meta: '#E8DED0',
-        preview: 'linear-gradient(135deg, #DDD0BC 0%, #8C6440 55%, #604428 100%)',
+        id: 'peach',
+        label: 'Harbor Peach',
+        hint: 'Soft coral glow',
+        meta: '#FCE8DE',
+        preview: 'linear-gradient(135deg, #F5D4C4 0%, #E07A6C 55%, #B04840 100%)',
         vars: {
-          bg: '232 222 208', surface: '245 238 228', raised: '236 226 212', border: '200 184 160',
-          primary: '140 100 64', primaryLight: '96 68 40', accent: '180 130 70',
-          text: '48 36 24', muted: '120 100 80', low: '196 110 86', med: '184 148 48', high: '140 100 64',
-          bodySolid: '#E8DED0', g1: '#DDD0BC', g2: '#E8DED0', g3: '#F0E8DC', g4: '#F7F2EA',
-          dock1: '#FCFAF6', dock2: '#F5EEE4', dock3: '#EDE4D6'
+          bg: '252 232 222', surface: '255 248 244', raised: '252 238 230', border: '232 200 186',
+          primary: '224 122 108', primaryLight: '176 72 64', accent: '212 160 100',
+          text: '56 36 32', muted: '140 108 100', low: '196 110 86', med: '184 148 48', high: '224 122 108',
+          bodySolid: '#FCE8DE', g1: '#F5D4C4', g2: '#FCE8DE', g3: '#FDF2EC', g4: '#FFF9F6',
+          dock1: '#FFFCFA', dock2: '#FFF6F0', dock3: '#FCEEE6'
         }
       },
       {
@@ -37601,9 +37619,10 @@
     const HARBOR_THEME_IDS = HARBOR_THEMES.map(t => t.id);
 
     function getAppTheme() {
-      const t = state?.settings?.theme;
+      let t = state?.settings?.theme;
       if (t === 'mono') return 'dark';
       if (t === 'light') return 'harbor';
+      if (t === 'wood') return 'peach'; // Driftwood → Harbor Peach
       if (HARBOR_THEME_IDS.includes(t)) return t;
       return 'harbor';
     }
@@ -37697,7 +37716,7 @@
     }
 
     function applyAppTheme(theme) {
-      let t = theme === 'mono' ? 'dark' : theme === 'light' ? 'harbor' : theme;
+      let t = theme === 'mono' ? 'dark' : theme === 'light' ? 'harbor' : theme === 'wood' ? 'peach' : theme;
       if (!HARBOR_THEME_IDS.includes(t)) t = 'harbor';
       if (state?.settings) {
         state.settings.theme = t;
