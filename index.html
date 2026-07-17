@@ -11704,7 +11704,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 355;
+    const HARBOR_BUILD_NUMBER = 356;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11756,6 +11756,16 @@
      * Product train stays on 0.9 until 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '0.9',
+        date: '2026-07-17',
+        title: 'Custom duration in hours · build 356',
+        intro: 'Add Event custom duration uses hours instead of minutes.',
+        sections: [{ heading: 'Calendar', items: [
+          'Custom duration field is hours (e.g. 1.5 = 90 min)',
+          'Quick chips unchanged (15 min–2 hr); max custom 12 hours'
+        ]}]
+      },
       {
         version: '0.9',
         date: '2026-07-17',
@@ -23020,6 +23030,19 @@
       const DURATION_PRESETS = [15, 30, 45, 60, 90, 120];
       const initialDuration = editEvent?.durationMin || 30;
       const initialIsCustom = !DURATION_PRESETS.includes(initialDuration);
+      // Custom field is in hours (presets stay quick-pick minutes); stored as durationMin
+      const hoursFromMinutes = (mins) => {
+        const m = Math.min(12 * 60, Math.max(15, Number(mins) || 30));
+        const h = m / 60;
+        // Prefer clean decimals (1, 1.5, 2) over long floats
+        return Math.round(h * 100) / 100;
+      };
+      const minutesFromHours = (hours) => {
+        const h = parseFloat(hours);
+        if (!Number.isFinite(h) || h <= 0) return 60;
+        return Math.min(12 * 60, Math.max(15, Math.round(h * 60)));
+      };
+      const initialCustomHours = hoursFromMinutes(initialIsCustom ? initialDuration : 60);
       const durationChipActive = (mins) => (!initialIsCustom && mins === initialDuration)
         ? 'border-harbor-primary text-harbor-text bg-harbor-primary/15'
         : 'border-harbor-border bg-harbor-raised text-harbor-muted';
@@ -23075,9 +23098,10 @@
               <span id="cal-ev-duration-other-label">${initialIsCustom ? `Custom · ${formatDurationShort(initialDuration)}` : 'Custom duration…'}</span>
             </button>
             <div id="cal-ev-duration-custom-wrap" class="cal-duration-custom-wrap${initialIsCustom ? '' : ' hidden'}">
-              <input id="cal-ev-duration" type="number" min="5" max="480" step="5" value="${initialDuration}" placeholder="Minutes"
-                class="bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 outline-none text-harbor-text" aria-label="Custom duration in minutes">
-              <span class="text-xs text-harbor-muted flex-shrink-0">min</span>
+              <input id="cal-ev-duration" type="number" min="0.25" max="12" step="0.25" value="${initialCustomHours}" placeholder="Hours"
+                inputmode="decimal"
+                class="bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 outline-none text-harbor-text" aria-label="Custom duration in hours">
+              <span class="text-xs text-harbor-muted flex-shrink-0">hr</span>
             </div>
           </div>
 
@@ -23117,6 +23141,8 @@
         });
       };
 
+      const readCustomDurationMin = () => minutesFromHours(durationInput?.value);
+
       const setDurationChipSelection = (mins, custom) => {
         durationIsCustom = !!custom;
         modal.querySelectorAll('.cal-duration-chip').forEach(c => {
@@ -23127,8 +23153,11 @@
         durationOtherBtn?.classList.toggle('is-open', custom);
         durationOtherBtn?.setAttribute('aria-expanded', custom ? 'true' : 'false');
         if (durationOtherLabel) {
+          const labelMins = custom
+            ? readCustomDurationMin()
+            : (mins || 30);
           durationOtherLabel.textContent = custom
-            ? `Custom · ${formatDurationShort(Math.min(480, Math.max(5, parseInt(durationInput?.value, 10) || mins || 30)))}`
+            ? `Custom · ${formatDurationShort(labelMins)}`
             : 'Custom duration…';
         }
         if (custom) scrollDurationIntoView();
@@ -23137,7 +23166,8 @@
       modal.querySelectorAll('.cal-duration-chip').forEach(chip => {
         chip.onclick = () => {
           const mins = parseInt(chip.dataset.duration, 10);
-          durationInput.value = mins;
+          // Keep custom field in hours so switching back to Custom is coherent
+          if (durationInput) durationInput.value = String(hoursFromMinutes(mins));
           setDurationChipSelection(mins, false);
         };
       });
@@ -23148,17 +23178,23 @@
           scrollDurationIntoView();
           return;
         }
-        setDurationChipSelection(parseInt(durationInput?.value, 10) || initialDuration, true);
+        // Default custom to 1 hour when opening from a short preset
+        const fromChip = parseInt(
+          modal.querySelector('.cal-duration-chip[class*="border-harbor-primary"]')?.dataset?.duration || '60',
+          10
+        ) || 60;
+        const startMins = fromChip >= 60 ? fromChip : 60;
+        if (durationInput) durationInput.value = String(hoursFromMinutes(startMins));
+        setDurationChipSelection(startMins, true);
         durationInput?.focus();
         durationInput?.select?.();
         scrollDurationIntoView();
       });
 
       durationInput?.addEventListener('input', () => {
-        if (!durationIsCustom) setDurationChipSelection(parseInt(durationInput.value, 10) || 30, true);
+        if (!durationIsCustom) setDurationChipSelection(readCustomDurationMin(), true);
         else if (durationOtherLabel) {
-          const mins = Math.min(480, Math.max(5, parseInt(durationInput.value, 10) || 30));
-          durationOtherLabel.textContent = `Custom · ${formatDurationShort(mins)}`;
+          durationOtherLabel.textContent = `Custom · ${formatDurationShort(readCustomDurationMin())}`;
         }
       });
       durationInput?.addEventListener('focus', () => scrollDurationIntoView());
@@ -23219,7 +23255,14 @@
           showToast('Pick a valid time');
           return;
         }
-        const durationMin = Math.min(480, Math.max(5, parseInt(durationInput.value, 10) || 30));
+        // Presets write minutes into logic via chips; custom field is hours → minutes
+        let durationMin;
+        if (durationIsCustom) {
+          durationMin = readCustomDurationMin();
+        } else {
+          const chip = modal.querySelector('.cal-duration-chip[class*="border-harbor-primary"]');
+          durationMin = Math.min(12 * 60, Math.max(15, parseInt(chip?.dataset?.duration, 10) || 30));
+        }
         let startDate = calState.startDate || calState.selectedDate || todayStr();
         let endDate = calState.endDate || startDate;
         if (endDate < startDate) {
