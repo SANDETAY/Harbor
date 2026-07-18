@@ -11453,6 +11453,8 @@
             <div class="panel-toolbar panel-toolbar-cluster">
               <button type="button" id="grocery-dinners-btn" class="chip-tool-btn" onclick="toggleGroceryDinners()"
                 aria-expanded="false" aria-label="Show dinners">Dinners</button>
+              <button type="button" id="grocery-recipes-btn" class="chip-tool-btn" onclick="toggleGroceryRecipes()"
+                aria-expanded="false" aria-label="Show your recipes">Recipes</button>
               <button type="button" id="grocery-edit-dinner-btn" class="chip-tool-btn hidden"
                 onclick="editActiveDinnerList()" aria-label="Edit this dinner list">Edit dinner</button>
               <div class="life-manage-wrap">
@@ -11814,7 +11816,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 366;
+    const HARBOR_BUILD_NUMBER = 367;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -12626,6 +12628,12 @@
     ];
     let libraryFiltersExpanded = false;
     let groceryDinnersOpen = false;
+    let groceryRecipesOpen = false;
+    /** Category filter for Recipes tray: 'all' or a category label */
+    let groceryRecipeCategoryFilter = 'all';
+    const RECIPE_CATEGORY_SUGGESTIONS = [
+      'Weeknight', 'Meal prep', 'Comfort', 'Healthy', 'Breakfast', 'Lunch', 'Dessert', 'Sides', 'Grill', 'Slow cooker'
+    ];
     let subsBrowseOpen = false;
     let energyExpanded = false;
 
@@ -19099,9 +19107,25 @@
       btn.textContent = groceryDinnersOpen ? 'Hide dinners' : 'Dinners';
     }
 
-    /** When dinner chips are hidden, always show the main Shopping list. */
+    function updateGroceryRecipesButton() {
+      const btn = document.getElementById('grocery-recipes-btn');
+      if (!btn) return;
+      const n = typeof getCustomRecipes === 'function' ? getCustomRecipes().length : 0;
+      btn.setAttribute('aria-expanded', groceryRecipesOpen ? 'true' : 'false');
+      btn.setAttribute('aria-label', groceryRecipesOpen ? 'Hide your recipes' : 'Show your recipes');
+      btn.classList.toggle('is-active', groceryRecipesOpen);
+      btn.textContent = groceryRecipesOpen
+        ? 'Hide recipes'
+        : (n ? `Recipes (${n})` : 'Recipes');
+    }
+
+    function isGroceryMealTrayOpen() {
+      return !!(groceryDinnersOpen || groceryRecipesOpen);
+    }
+
+    /** When dinner/recipe chips are hidden, always show the main Shopping list. */
     function ensureShoppingListWhenDinnersHidden(options = {}) {
-      if (groceryDinnersOpen) return false;
+      if (isGroceryMealTrayOpen()) return false;
       if (!isGroceryMealView()) return false;
       state.groceryView = { mode: 'master' };
       state.groceryTripItems = [];
@@ -19111,35 +19135,83 @@
       return true;
     }
 
-    function toggleGroceryDinners() {
-      groceryDinnersOpen = !groceryDinnersOpen;
+    function closeGroceryMealTrays(options = {}) {
+      groceryDinnersOpen = false;
+      groceryRecipesOpen = false;
       const filters = document.getElementById('meal-grocery-filters');
-      if (filters) filters.classList.toggle('hidden', !groceryDinnersOpen);
-      if (groceryDinnersOpen) {
-        renderMealGroceryFilters();
-        updateGroceryDinnersButton();
-        return;
-      }
-      // Hide dinners → always land on Shopping list (not a leftover dinner trip)
-      ensureShoppingListWhenDinnersHidden({ save: true });
       if (filters) {
         filters.innerHTML = '';
         filters.classList.add('hidden');
       }
       updateGroceryDinnersButton();
-      renderGrocery();
+      updateGroceryRecipesButton();
+      if (options.resetList !== false) {
+        ensureShoppingListWhenDinnersHidden({ save: options.save !== false });
+      }
+    }
+
+    function toggleGroceryDinners() {
+      if (groceryDinnersOpen) {
+        groceryDinnersOpen = false;
+        ensureShoppingListWhenDinnersHidden({ save: true });
+        const filters = document.getElementById('meal-grocery-filters');
+        if (filters && !groceryRecipesOpen) {
+          filters.innerHTML = '';
+          filters.classList.add('hidden');
+        }
+        updateGroceryDinnersButton();
+        renderGrocery();
+        return;
+      }
+      groceryDinnersOpen = true;
+      groceryRecipesOpen = false;
+      updateGroceryRecipesButton();
+      renderMealGroceryFilters();
+      updateGroceryDinnersButton();
+    }
+
+    function toggleGroceryRecipes() {
+      if (groceryRecipesOpen) {
+        groceryRecipesOpen = false;
+        ensureShoppingListWhenDinnersHidden({ save: true });
+        const filters = document.getElementById('meal-grocery-filters');
+        if (filters && !groceryDinnersOpen) {
+          filters.innerHTML = '';
+          filters.classList.add('hidden');
+        }
+        updateGroceryRecipesButton();
+        renderGrocery();
+        return;
+      }
+      groceryRecipesOpen = true;
+      groceryDinnersOpen = false;
+      updateGroceryDinnersButton();
+      renderMealGroceryFilters();
+      updateGroceryRecipesButton();
+    }
+
+    function setGroceryRecipeCategoryFilter(cat) {
+      groceryRecipeCategoryFilter = cat || 'all';
+      if (!groceryRecipesOpen) {
+        groceryRecipesOpen = true;
+        groceryDinnersOpen = false;
+        updateGroceryDinnersButton();
+      }
+      renderMealGroceryFilters();
+      updateGroceryRecipesButton();
     }
 
     function syncGroceryDinnersUI() {
-      // Dinners closed ⇒ Shopping list only (no lingering dinner trip)
+      // Trays closed ⇒ Shopping list only (no lingering dinner trip)
       ensureShoppingListWhenDinnersHidden({ save: true });
-      const btn = document.getElementById('grocery-dinners-btn');
-      if (btn) updateGroceryDinnersButton();
+      updateGroceryDinnersButton();
+      updateGroceryRecipesButton();
       const filters = document.getElementById('meal-grocery-filters');
-      if (filters) filters.classList.toggle('hidden', !groceryDinnersOpen);
-      if (groceryDinnersOpen && typeof renderMealGroceryFilters === 'function') {
+      const open = isGroceryMealTrayOpen();
+      if (filters) filters.classList.toggle('hidden', !open);
+      if (open && typeof renderMealGroceryFilters === 'function') {
         renderMealGroceryFilters();
-      } else if (filters && !groceryDinnersOpen) {
+      } else if (filters && !open) {
         filters.innerHTML = '';
       }
     }
@@ -19987,6 +20059,44 @@
       return ensureMealPresets().find(p => p.id === id) || null;
     }
 
+    /** User-added recipes only (not themed weeknight dinners). */
+    function getCustomRecipes() {
+      return ensureMealPresets().filter(p => p && p.isCustom);
+    }
+
+    function getRecipeCategory(preset) {
+      const c = String(preset?.category || '').trim();
+      return c || 'Uncategorized';
+    }
+
+    function getRecipeCategoriesSorted() {
+      const set = new Set();
+      getCustomRecipes().forEach(p => set.add(getRecipeCategory(p)));
+      return [...set].sort((a, b) => {
+        if (a === 'Uncategorized') return 1;
+        if (b === 'Uncategorized') return -1;
+        return a.localeCompare(b, undefined, { sensitivity: 'base' });
+      });
+    }
+
+    function getCustomRecipesFilteredSorted() {
+      let list = getCustomRecipes();
+      if (groceryRecipeCategoryFilter && groceryRecipeCategoryFilter !== 'all') {
+        list = list.filter(p => getRecipeCategory(p) === groceryRecipeCategoryFilter);
+      }
+      return list.slice().sort((a, b) => {
+        const ca = getRecipeCategory(a);
+        const cb = getRecipeCategory(b);
+        if (ca !== cb) {
+          if (ca === 'Uncategorized') return 1;
+          if (cb === 'Uncategorized') return -1;
+          const c = ca.localeCompare(cb, undefined, { sensitivity: 'base' });
+          if (c) return c;
+        }
+        return String(a.label || '').localeCompare(String(b.label || ''), undefined, { sensitivity: 'base' });
+      });
+    }
+
     function getMealEffortLabel(effort) {
       return { 1: 'Easy', 2: 'Medium', 3: 'Involved' }[effort] || 'Medium';
     }
@@ -19995,6 +20105,16 @@
       if (!preset) return 'Recipe';
       if (preset.dayShort) return `${preset.label}`;
       return preset.label;
+    }
+
+    function recipeCategoryDatalistHtml(selected) {
+      const existing = getRecipeCategoriesSorted().filter(c => c !== 'Uncategorized');
+      const opts = [...new Set([...RECIPE_CATEGORY_SUGGESTIONS, ...existing])].sort((a, b) =>
+        a.localeCompare(b, undefined, { sensitivity: 'base' })
+      );
+      return opts.map(c =>
+        `<option value="${escapeBriefHtml(c)}"${selected && selected === c ? ' selected' : ''}></option>`
+      ).join('');
     }
 
     function getMealPresetsForEnergy(energy) {
@@ -20390,6 +20510,13 @@
           <label class="block text-xs text-harbor-muted mb-1">Recipe name</label>
           <input id="mp-name" type="text" placeholder="e.g. Sheet Pan Chicken" value="${escapeBriefHtml(seed.name || '')}"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-3 outline-none text-harbor-text">
+          <label class="block text-xs text-harbor-muted mb-1" for="mp-category">Category</label>
+          <input id="mp-category" type="text" list="mp-category-list" placeholder="e.g. Weeknight, Meal prep, Comfort"
+            value="${escapeBriefHtml(seed.category || '')}"
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-1 outline-none text-harbor-text"
+            autocomplete="off" maxlength="40">
+          <datalist id="mp-category-list">${recipeCategoryDatalistHtml(seed.category || '')}</datalist>
+          <p class="text-[10px] text-harbor-muted mb-3 leading-snug">Categories sort your Recipes tray. Leave blank for Uncategorized.</p>
           <label class="block text-xs text-harbor-muted mb-1">Ingredients (comma-separated)</label>
           <textarea id="mp-items" rows="4" placeholder="Chicken thighs, Potatoes, Olive oil, Green beans"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-3 outline-none text-harbor-text resize-none">${escapeBriefHtml(seed.itemsText || '')}</textarea>
@@ -20556,6 +20683,8 @@
           showMealPresetLimitModal();
           return;
         }
+        const categoryRaw = (modal.querySelector('#mp-category')?.value || '').trim();
+        const category = categoryRaw ? normalizeUserText(categoryRaw).slice(0, 40) : '';
         const id = 'meal-custom-' + Date.now();
         const recipe = {
           id,
@@ -20564,6 +20693,7 @@
           items,
           isCustom: true
         };
+        if (category) recipe.category = category;
         if (photoDataUrl) recipe.photoDataUrl = photoDataUrl;
         state.mealPresets.push(recipe);
         let saved = saveState();
@@ -20573,6 +20703,9 @@
           saved = saveState();
           if (saved) {
             modal.remove();
+            groceryRecipesOpen = true;
+            groceryDinnersOpen = false;
+            if (category) groceryRecipeCategoryFilter = category;
             renderGrocery();
             showToast('Recipe saved — photo was too large for device storage', 'warn');
             return;
@@ -20584,6 +20717,10 @@
           return;
         }
         modal.remove();
+        // Show Recipes tray so the new pill is visible
+        groceryRecipesOpen = true;
+        groceryDinnersOpen = false;
+        if (category) groceryRecipeCategoryFilter = category;
         renderGrocery();
         showToast(photoDataUrl ? `"${name}" saved with photo` : `"${name}" added to recipes`);
       };
@@ -20616,6 +20753,13 @@
           <label class="block text-[10px] text-harbor-muted mb-1" for="mp-edit-name">Name</label>
           <input id="mp-edit-name" type="text" value="${escapeBriefHtml(preset.label || '')}"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-3 text-harbor-text">
+          ${preset.isCustom ? `
+          <label class="block text-[10px] text-harbor-muted mb-1" for="mp-edit-category">Category</label>
+          <input id="mp-edit-category" type="text" list="mp-edit-category-list" value="${escapeBriefHtml(preset.category || '')}"
+            placeholder="e.g. Weeknight, Meal prep"
+            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-3 text-harbor-text" maxlength="40" autocomplete="off">
+          <datalist id="mp-edit-category-list">${recipeCategoryDatalistHtml(preset.category || '')}</datalist>
+          ` : ''}
           <label class="block text-[10px] text-harbor-muted mb-1" for="mp-edit-recipe">Note (optional)</label>
           <input id="mp-edit-recipe" type="text" value="${escapeBriefHtml(preset.recipe || '')}" placeholder="e.g. 30 min · sheet pan"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-3 text-harbor-text">
@@ -20639,12 +20783,18 @@
         if (!items.length) { showToast('Add at least one ingredient', 'warn'); return; }
         const idx = state.mealPresets.findIndex(p => p.id === presetId);
         if (idx < 0) { showToast('Dinner list not found', 'warn'); return; }
-        state.mealPresets[idx] = {
+        const next = {
           ...state.mealPresets[idx],
           label: name.replace(/^🍽\s*/, ''),
           recipe: recipe || undefined,
           items
         };
+        if (preset.isCustom) {
+          const cat = (modal.querySelector('#mp-edit-category')?.value || '').trim();
+          if (cat) next.category = normalizeUserText(cat).slice(0, 40);
+          else delete next.category;
+        }
+        state.mealPresets[idx] = next;
         // If this dinner is open, refresh the trip list and keep checked-off names when possible
         if (state.groceryView?.mode === 'meal' && state.groceryView.mealId === presetId) {
           reloadActiveDinnerTripFromPreset(presetId);
@@ -20700,6 +20850,13 @@
 
     function showManageMealPresetsModal() {
       const presets = ensureMealPresets();
+      const custom = presets.filter(p => p.isCustom).slice().sort((a, b) => {
+        const ca = getRecipeCategory(a);
+        const cb = getRecipeCategory(b);
+        if (ca !== cb) return ca.localeCompare(cb, undefined, { sensitivity: 'base' });
+        return String(a.label || '').localeCompare(String(b.label || ''), undefined, { sensitivity: 'base' });
+      });
+      const dinners = presets.filter(p => !p.isCustom);
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-harbor-bg/60 flex items-end z-[60]';
       modal.innerHTML = `
@@ -20708,15 +20865,15 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="flex items-center justify-between mb-3">
             <div>
-              <div class="font-semibold text-lg text-harbor-text">Dinner lists</div>
-              <div class="text-[10px] text-harbor-muted">${presets.length} / ${MAX_MEAL_PRESETS} · tap Edit to change ingredients</div>
+              <div class="font-semibold text-lg text-harbor-text">Dinners &amp; recipes</div>
+              <div class="text-[10px] text-harbor-muted">${presets.length} / ${MAX_MEAL_PRESETS} · recipes sorted by category</div>
             </div>
             <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip" aria-label="Close">Close</button>
           </div>
           <div id="mp-manage-list" class="space-y-2 mb-4"></div>
           <button type="button" id="mp-manage-add-btn"
             class="w-full py-2.5 rounded-2xl border border-harbor-primary/40 text-harbor-primary-light text-xs font-semibold ${presets.length >= MAX_MEAL_PRESETS ? 'opacity-60' : ''}">
-            + Add custom dinner
+            + Add custom recipe
           </button>
         </div>
       `;
@@ -20728,32 +20885,45 @@
       };
 
       const list = modal.querySelector('#mp-manage-list');
-      presets.forEach(p => {
-        const row = document.createElement('div');
-        row.className = 'bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 flex items-center gap-2';
-        const thumb = p.photoDataUrl
-          ? `<img src="${p.photoDataUrl}" alt="" class="w-10 h-10 rounded-xl object-cover border border-harbor-border flex-shrink-0" loading="lazy"/>`
-          : '';
-        row.innerHTML = `
-          ${thumb}
-          <div class="flex-1 min-w-0">
-            <div class="font-medium text-sm truncate">${p.dayShort ? `${escapeBriefHtml(p.dayShort)} · ` : ''}${escapeBriefHtml(p.label)}</div>
-            <div class="text-[10px] text-harbor-muted">${p.recipe ? `${escapeBriefHtml(p.recipe)} · ` : ''}${getMealEffortLabel(p.effort)} · ${(p.items || []).length} items${p.photoDataUrl ? ' · photo' : ''}</div>
-          </div>
-          <button type="button" data-id="${p.id}" class="mp-edit text-[10px] font-semibold text-harbor-primary-light px-2 py-1.5 rounded-lg bg-harbor-primary/10">Edit</button>
-          <button type="button" data-id="${p.id}" class="mp-delete text-rose-400 text-xs font-medium px-2">Delete</button>
-        `;
-        row.querySelector('.mp-edit').onclick = () => {
-          modal.remove();
-          showEditMealPresetModal(p.id, { returnToManage: true });
-        };
-        row.querySelector('.mp-delete').onclick = () => {
-          removeMealPreset(p.id);
-          modal.remove();
-          if (ensureMealPresets().length) showManageMealPresetsModal();
-        };
-        list.appendChild(row);
-      });
+      const appendSection = (title, rows) => {
+        if (!rows.length) return;
+        const h = document.createElement('div');
+        h.className = 'text-[10px] font-semibold uppercase tracking-wide text-harbor-muted pt-1 px-0.5';
+        h.textContent = title;
+        list.appendChild(h);
+        rows.forEach(p => {
+          const row = document.createElement('div');
+          row.className = 'bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 flex items-center gap-2';
+          const thumb = p.photoDataUrl
+            ? `<img src="${p.photoDataUrl}" alt="" class="w-10 h-10 rounded-xl object-cover border border-harbor-border flex-shrink-0" loading="lazy"/>`
+            : '';
+          const catBit = p.isCustom ? `${escapeBriefHtml(getRecipeCategory(p))} · ` : '';
+          row.innerHTML = `
+            ${thumb}
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-sm truncate">${p.dayShort ? `${escapeBriefHtml(p.dayShort)} · ` : ''}${escapeBriefHtml(p.label)}</div>
+              <div class="text-[10px] text-harbor-muted">${catBit}${p.recipe ? `${escapeBriefHtml(p.recipe)} · ` : ''}${getMealEffortLabel(p.effort)} · ${(p.items || []).length} items${p.photoDataUrl ? ' · photo' : ''}</div>
+            </div>
+            <button type="button" data-id="${p.id}" class="mp-edit text-[10px] font-semibold text-harbor-primary-light px-2 py-1.5 rounded-lg bg-harbor-primary/10">Edit</button>
+            <button type="button" data-id="${p.id}" class="mp-delete text-rose-400 text-xs font-medium px-2">Delete</button>
+          `;
+          row.querySelector('.mp-edit').onclick = () => {
+            modal.remove();
+            showEditMealPresetModal(p.id, { returnToManage: true });
+          };
+          row.querySelector('.mp-delete').onclick = () => {
+            removeMealPreset(p.id);
+            modal.remove();
+            if (ensureMealPresets().length) showManageMealPresetsModal();
+          };
+          list.appendChild(row);
+        });
+      };
+      appendSection('Your recipes', custom);
+      appendSection('Weeknight dinners', dinners);
+      if (!custom.length && !dinners.length) {
+        list.innerHTML = `<div class="text-xs text-harbor-muted text-center py-4">No lists yet — add a recipe to get started.</div>`;
+      }
     }
 
     function isGroceryMealView() {
@@ -20854,16 +21024,25 @@
       }
       const preset = getMealPresetById(mealId);
       if (!preset) return;
-      // Dinner list only exists while dinners tray is open
-      if (!groceryDinnersOpen) {
+      // Keep the matching tray open so chips stay visible
+      if (preset.isCustom) {
+        if (!groceryRecipesOpen) {
+          groceryRecipesOpen = true;
+          groceryDinnersOpen = false;
+          updateGroceryDinnersButton();
+          updateGroceryRecipesButton();
+        }
+      } else if (!groceryDinnersOpen) {
         groceryDinnersOpen = true;
+        groceryRecipesOpen = false;
         updateGroceryDinnersButton();
+        updateGroceryRecipesButton();
       }
-      if ((preset.effort || 2) > currentEnergy) {
+      if ((preset.effort || 2) > currentEnergy && !preset.isCustom) {
         showToast(`${getMealEffortLabel(preset.effort)} dinner — list loaded for planning`);
       }
       state.groceryView = { mode: 'meal', mealId };
-      state.groceryTripItems = preset.items.map((name, i) => ({
+      state.groceryTripItems = (preset.items || []).map((name, i) => ({
         id: 'trip-' + mealId + '-' + i,
         name,
         qty: '',
@@ -20879,27 +21058,105 @@
     function renderMealGroceryFilters() {
       const container = document.getElementById('meal-grocery-filters');
       if (!container) return;
-      // Dinners hidden → no chips; list itself is forced to Shopping list in renderGrocery
-      if (!groceryDinnersOpen) {
+
+      if (typeof updateGroceryDinnersButton === 'function') updateGroceryDinnersButton();
+      if (typeof updateGroceryRecipesButton === 'function') updateGroceryRecipesButton();
+
+      // Neither tray → no chips
+      if (!groceryDinnersOpen && !groceryRecipesOpen) {
         container.innerHTML = '';
         container.classList.add('hidden');
-        if (typeof updateGroceryDinnersButton === 'function') updateGroceryDinnersButton();
         return;
       }
 
       let activeMeal = state.groceryView?.mode === 'meal' ? state.groceryView.mealId : null;
-      const visible = getMealPresetsForEnergy(currentEnergy);
 
-      if (activeMeal && !visible.some(p => p.id === activeMeal)) {
-        state.groceryView = { mode: 'master' };
-        state.groceryTripItems = [];
-        activeMeal = null;
+      // ── Recipes tray: your custom recipes, sortable by category ──
+      if (groceryRecipesOpen) {
+        const allCustom = getCustomRecipes();
+        const cats = getRecipeCategoriesSorted();
+        const visible = getCustomRecipesFilteredSorted();
+
+        if (activeMeal && !allCustom.some(p => p.id === activeMeal)) {
+          // Active list isn't a custom recipe — clear selection for this tray
+          if (!getMealPresetById(activeMeal)?.isCustom) {
+            /* keep dinner trip if somehow open — rare */
+          }
+        }
+        if (activeMeal && groceryRecipeCategoryFilter !== 'all') {
+          const activePreset = getMealPresetById(activeMeal);
+          if (activePreset?.isCustom && getRecipeCategory(activePreset) !== groceryRecipeCategoryFilter) {
+            // Still allow active meal even if filter would hide chip — keep chip visible by not clearing
+          }
+        }
+
+        container.classList.remove('hidden');
+        if (!allCustom.length) {
+          container.innerHTML = `
+            <div class="rounded-2xl border border-harbor-border bg-harbor-raised/60 px-3 py-3 text-center">
+              <div class="text-xs font-semibold text-harbor-text">No recipes yet</div>
+              <div class="text-[10px] text-harbor-muted mt-1 leading-snug">Add a custom recipe to pin it here. Tag a category so you can sort later.</div>
+              <button type="button" class="chip-add-btn mt-2.5" onclick="tryShowAddMealPresetModal()">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>Add recipe
+              </button>
+            </div>`;
+          return;
+        }
+
+        const catChip = (id, label) => {
+          const on = groceryRecipeCategoryFilter === id;
+          const enc = encodeURIComponent(String(id));
+          return `<button type="button" onclick="setGroceryRecipeCategoryFilter(decodeURIComponent('${enc}'))"
+            class="meal-grocery-chip px-2.5 py-1 rounded-full border text-[11px] font-semibold whitespace-nowrap ${on ? 'is-active border-harbor-primary text-harbor-text' : 'border-harbor-border bg-harbor-raised text-harbor-muted'}">${escapeBriefHtml(label)}</button>`;
+        };
+
+        const recipeChips = visible.map(p => {
+          const cat = getRecipeCategory(p);
+          const on = activeMeal === p.id;
+          const title = `${p.label}${cat ? ' · ' + cat : ''} · ${getMealEffortLabel(p.effort)}`;
+          return `<button type="button" onclick="selectMealGroceryList('${p.id}')"
+            class="meal-grocery-chip px-3 py-1.5 rounded-full border text-xs font-semibold whitespace-nowrap ${on ? 'is-active border-harbor-primary text-harbor-text' : 'border-harbor-border bg-harbor-raised text-harbor-muted'}"
+            title="${escapeBriefHtml(title)}">
+            ${p.photoDataUrl ? '📷 ' : ''}${escapeBriefHtml(getMealChipLabel(p))}
+          </button>`;
+        }).join('');
+
+        container.innerHTML = `
+          <div class="mb-1.5">
+            <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1 px-0.5">Category</div>
+            <div class="library-filters">
+              ${catChip('all', `All (${allCustom.length})`)}
+              ${cats.map(c => {
+                const count = allCustom.filter(p => getRecipeCategory(p) === c).length;
+                return catChip(c, `${c} (${count})`);
+              }).join('')}
+            </div>
+          </div>
+          <div>
+            <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1 px-0.5 flex items-center justify-between gap-2">
+              <span>Your recipes</span>
+              <button type="button" class="text-harbor-primary-light font-semibold normal-case tracking-normal" onclick="tryShowAddMealPresetModal()">+ Add</button>
+            </div>
+            <div class="library-filters">
+              ${recipeChips || `<span class="text-[11px] text-harbor-muted px-1 py-1">Nothing in this category</span>`}
+            </div>
+          </div>`;
+        initHorizontalScrollRows();
+        return;
       }
 
-      if (typeof updateGroceryDinnersButton === 'function') updateGroceryDinnersButton();
+      // ── Dinners tray: themed weeknight lists ──
+      const visible = getMealPresetsForEnergy(currentEnergy).filter(p => !p.isCustom);
 
-      // Dinner chips only — Shopping list is the default surface when dinners are hidden
-      // (no "Shopping list" chip here; Hide dinners returns you to the master list).
+      if (activeMeal && !visible.some(p => p.id === activeMeal)) {
+        const still = getMealPresetById(activeMeal);
+        if (!still || still.isCustom) {
+          state.groceryView = { mode: 'master' };
+          state.groceryTripItems = [];
+          activeMeal = null;
+        }
+      }
+
       container.classList.remove('hidden');
       container.innerHTML = `
         <div class="library-filters">
@@ -21078,13 +21335,16 @@
       if (labelEl) {
         if (isMeal) {
           labelEl.classList.remove('hidden');
-          labelEl.innerHTML = `<strong class="text-harbor-text">${escapeBriefHtml(preset?.label || 'Dinner')}</strong>${preset?.recipe ? ` · ${escapeBriefHtml(preset.recipe)}` : ''} · trip mode`;
+          const cat = preset?.isCustom ? getRecipeCategory(preset) : '';
+          const catBit = preset?.isCustom ? ` · ${escapeBriefHtml(cat)}` : '';
+          labelEl.innerHTML = `<strong class="text-harbor-text">${escapeBriefHtml(preset?.label || 'Dinner')}</strong>${preset?.recipe ? ` · ${escapeBriefHtml(preset.recipe)}` : ''}${catBit} · trip mode`;
         } else {
           // Quiet master list — no dinner/grocery filler under the toolbar
           labelEl.classList.add('hidden');
           labelEl.textContent = '';
         }
       }
+      if (typeof updateGroceryRecipesButton === 'function') updateGroceryRecipesButton();
 
       container.innerHTML = '';
 
@@ -21111,7 +21371,7 @@
           isMeal ? 'Empty dinner list' : 'No list yet',
           isMeal
             ? 'Type an ingredient above and hit Enter, or open <strong>Edit dinner</strong> to paste a full list.'
-            : 'Type above and hit Enter for staples, or <strong>Show dinners</strong> for a ready-made meal shop.',
+            : 'Type above and hit Enter for staples, open <strong>Dinners</strong> for weeknight lists, or <strong>Recipes</strong> for your own.',
           isMeal
             ? `<div class="harbor-empty-actions">
                 <button type="button" class="chip-add-btn" onclick="document.getElementById('grocery-quick-input')?.focus()"><i class="fa-solid fa-plus"></i>Type to add</button>
@@ -21120,7 +21380,8 @@
               </div>`
             : `<div class="harbor-empty-actions">
                 <button type="button" class="chip-add-btn" onclick="document.getElementById('grocery-quick-input')?.focus()"><i class="fa-solid fa-plus"></i>Type to add</button>
-                <button type="button" class="chip-tool-btn" onclick="toggleGroceryDinners()">Show dinners</button>
+                <button type="button" class="chip-tool-btn" onclick="toggleGroceryDinners()">Dinners</button>
+                <button type="button" class="chip-tool-btn" onclick="toggleGroceryRecipes()">Recipes</button>
               </div>`
         );
         return;
