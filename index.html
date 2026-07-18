@@ -11814,7 +11814,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 364;
+    const HARBOR_BUILD_NUMBER = 365;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -20064,44 +20064,153 @@
       showAddMealPresetModal();
     }
 
-    /** Read a recipe photo into a small data URL (keeps localStorage light). */
-    function readRecipePhotoFile(file) {
-      return new Promise((resolve, reject) => {
-        if (!file || !file.type || !file.type.startsWith('image/')) {
-          reject(new Error('Pick a photo of your recipe'));
-          return;
-        }
-        if (file.size > 12 * 1024 * 1024) {
-          reject(new Error('Photo is too large — try a clearer, smaller shot'));
-          return;
-        }
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-        img.onload = () => {
+    /** True for camera/library picks — iOS often leaves file.type empty (HEIC). */
+    function isLikelyRecipeImageFile(file) {
+      if (!file) return false;
+      const type = String(file.type || '').toLowerCase();
+      if (type.startsWith('image/')) return true;
+      if (/heic|heif/.test(type)) return true;
+      // Empty MIME is common on iOS WKWebView photo picks — allow by name or size
+      const name = String(file.name || '').toLowerCase();
+      if (/\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(name)) return true;
+      if (!type && file.size > 0) return true;
+      return false;
+    }
+
+    function canvasFromImageSource(source, naturalW, naturalH) {
+      const maxW = 960;
+      const nw = naturalW || maxW;
+      const nh = naturalH || maxW;
+      const scale = Math.min(1, maxW / nw);
+      const w = Math.max(1, Math.round(nw * scale));
+      const h = Math.max(1, Math.round(nh * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not process photo');
+      ctx.drawImage(source, 0, 0, w, h);
+      return canvas.toDataURL('image/jpeg', 0.72);
+    }
+
+    /** Read a recipe photo into a small JPEG data URL (keeps localStorage light). */
+    async function readRecipePhotoFile(file) {
+      if (!isLikelyRecipeImageFile(file)) {
+        throw new Error('Pick a photo of your recipe');
+      }
+      if (file.size > 18 * 1024 * 1024) {
+        throw new Error('Photo is too large — try a clearer, smaller shot');
+      }
+
+      // Prefer createImageBitmap (handles many iOS HEIC picks better than <img>)
+      if (typeof createImageBitmap === 'function') {
+        try {
+          const bitmap = await createImageBitmap(file);
           try {
-            const maxW = 960;
-            const scale = Math.min(1, maxW / (img.naturalWidth || maxW));
-            const w = Math.max(1, Math.round((img.naturalWidth || maxW) * scale));
-            const h = Math.max(1, Math.round((img.naturalHeight || maxW) * scale));
-            const canvas = document.createElement('canvas');
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-            // JPEG keeps size modest for device storage
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
-            URL.revokeObjectURL(url);
-            resolve(dataUrl);
-          } catch (err) {
-            URL.revokeObjectURL(url);
-            reject(err || new Error('Could not read photo'));
+            return canvasFromImageSource(bitmap, bitmap.width, bitmap.height);
+          } finally {
+            if (typeof bitmap.close === 'function') bitmap.close();
           }
+        } catch (_) {
+          /* fall through to Image / FileReader */
+        }
+      }
+
+      // Object URL + Image
+      try {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const img = new Image();
+          const url = URL.createObjectURL(file);
+          img.onload = () => {
+            try {
+              const out = canvasFromImageSource(img, img.naturalWidth, img.naturalHeight);
+              URL.revokeObjectURL(url);
+              resolve(out);
+            } catch (err) {
+              URL.revokeObjectURL(url);
+              reject(err || new Error('Could not read photo'));
+            }
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Could not open that photo'));
+          };
+          img.src = url;
+        });
+        return dataUrl;
+      } catch (err) {
+        // Last resort: raw data URL (may be large HEIC — still better than failing)
+        if (typeof FileReader !== 'undefined') {
+          const raw = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Could not read photo'));
+            reader.readAsDataURL(file);
+          });
+          if (typeof raw === 'string' && raw.startsWith('data:')) {
+            // Try re-encode via Image if possible
+            try {
+              const reenc = await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                  try {
+                    resolve(canvasFromImageSource(img, img.naturalWidth, img.naturalHeight));
+                  } catch (e) {
+                    reject(e);
+                  }
+                };
+                img.onerror = () => resolve(raw);
+                img.src = raw;
+              });
+              return reenc;
+            } catch (_) {
+              return raw;
+            }
+          }
+        }
+        throw err || new Error('Could not use that photo');
+      }
+    }
+
+    /** Open system photo picker (library). Works more reliably than dynamic inputs on iOS. */
+    function openRecipePhotoPicker({ capture = false } = {}) {
+      return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*,.heic,.heif,image/heic,image/heif';
+        if (capture) input.setAttribute('capture', 'environment');
+        // iOS WKWebView: keep input in-tree and "visible" (opacity 0) so the picker opens
+        input.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;z-index:99999;';
+        let settled = false;
+        const finish = (file) => {
+          if (settled) return;
+          settled = true;
+          try { input.remove(); } catch (_) { /* ignore */ }
+          resolve(file || null);
         };
-        img.onerror = () => {
-          URL.revokeObjectURL(url);
-          reject(new Error('Could not open that photo'));
-        };
-        img.src = url;
+        input.addEventListener('change', () => {
+          finish(input.files && input.files[0] ? input.files[0] : null);
+        });
+        // User cancelled — no change event on some iOS versions
+        input.addEventListener('cancel', () => finish(null));
+        document.body.appendChild(input);
+        // Defer click to next frame so the input is attached (iOS)
+        requestAnimationFrame(() => {
+          try {
+            input.click();
+          } catch (_) {
+            finish(null);
+          }
+        });
+        // Safety: if user dismisses without events, clean up after a while
+        setTimeout(() => {
+          if (!settled && input.parentNode) {
+            // don't resolve yet — wait longer; only remove if still idle after 3 min
+          }
+        }, 0);
+        setTimeout(() => {
+          if (!settled) finish(null);
+        }, 180000);
       });
     }
 
@@ -20128,17 +20237,16 @@
             <button type="button" id="mp-photo-clear" class="mt-1.5 text-[11px] font-semibold text-harbor-muted">Remove photo</button>
           </div>
           <div class="flex gap-2 mb-3">
-            <label class="chip-tool-btn flex-1 text-center cursor-pointer" style="display:inline-flex;align-items:center;justify-content:center;gap:0.35rem">
+            <button type="button" id="mp-photo-camera" class="chip-tool-btn flex-1" style="display:inline-flex;align-items:center;justify-content:center;gap:0.35rem">
               <i class="fa-solid fa-camera" aria-hidden="true"></i>
-              <span>Photo</span>
-              <input id="mp-photo-input" type="file" accept="image/*" capture="environment" class="sr-only" aria-label="Take or choose recipe photo">
-            </label>
+              <span>Camera</span>
+            </button>
             <button type="button" id="mp-photo-pick" class="chip-tool-btn flex-1" style="display:inline-flex;align-items:center;justify-content:center;gap:0.35rem">
               <i class="fa-regular fa-image" aria-hidden="true"></i>
               <span>Library</span>
             </button>
           </div>
-          <p class="text-[10px] text-harbor-muted mb-3 leading-snug">Photo is saved with the recipe for reference. Auto-reading ingredients from a picture is coming later — for now, type the list below.</p>
+          <p class="text-[10px] text-harbor-muted mb-3 leading-snug">Photo is saved with the recipe on this device. Auto-reading ingredients from a picture is coming later — type the list below for now.</p>
           <label class="block text-xs text-harbor-muted mb-1">Recipe name</label>
           <input id="mp-name" type="text" placeholder="e.g. Sheet Pan Chicken" value="${escapeBriefHtml(seed.name || '')}"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-3 outline-none text-harbor-text">
@@ -20173,32 +20281,33 @@
       const handlePhotoFile = async (file) => {
         if (!file) return;
         try {
-          showToast('Reading photo…');
+          showToast('Reading photo…', 'info');
           const dataUrl = await readRecipePhotoFile(file);
           setPhoto(dataUrl);
           showToast('Photo attached — add name & ingredients');
         } catch (err) {
-          showToast(err?.message || 'Could not use that photo');
+          console.warn('Recipe photo failed', err);
+          showToast(err?.message || 'Could not use that photo', 'warn');
         }
       };
-      const photoInput = modal.querySelector('#mp-photo-input');
-      photoInput?.addEventListener('change', () => {
-        const f = photoInput.files && photoInput.files[0];
-        handlePhotoFile(f);
-        photoInput.value = '';
+      const pickPhoto = async (useCamera) => {
+        try {
+          const file = await openRecipePhotoPicker({ capture: !!useCamera });
+          if (!file) return; // cancelled
+          await handlePhotoFile(file);
+        } catch (err) {
+          showToast(err?.message || 'Could not open photos', 'warn');
+        }
+      };
+      modal.querySelector('#mp-photo-camera')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        pickPhoto(true);
       });
-      modal.querySelector('#mp-photo-pick')?.addEventListener('click', () => {
-        // Library picker (no capture attribute) via temporary input
-        const pick = document.createElement('input');
-        pick.type = 'file';
-        pick.accept = 'image/*';
-        pick.className = 'sr-only';
-        pick.onchange = () => {
-          handlePhotoFile(pick.files && pick.files[0]);
-          pick.remove();
-        };
-        document.body.appendChild(pick);
-        pick.click();
+      modal.querySelector('#mp-photo-pick')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        pickPhoto(false);
       });
       modal.querySelector('#mp-photo-clear')?.addEventListener('click', () => setPhoto(''));
 
@@ -20240,7 +20349,29 @@
         };
         if (photoDataUrl) recipe.photoDataUrl = photoDataUrl;
         state.mealPresets.push(recipe);
-        saveState();
+        try {
+          saveState();
+        } catch (err) {
+          // Photo can push localStorage over quota — save recipe without photo
+          console.warn('saveState with photo failed', err);
+          if (photoDataUrl) {
+            delete recipe.photoDataUrl;
+            try {
+              saveState();
+              showToast('Recipe saved — photo was too large for device storage', 'warn');
+              modal.remove();
+              renderGrocery();
+              return;
+            } catch (err2) {
+              state.mealPresets = state.mealPresets.filter(p => p.id !== id);
+              showToast('Could not save recipe — storage full', 'warn');
+              return;
+            }
+          }
+          state.mealPresets = state.mealPresets.filter(p => p.id !== id);
+          showToast('Could not save recipe', 'warn');
+          return;
+        }
         modal.remove();
         renderGrocery();
         showToast(photoDataUrl ? `"${name}" saved with photo` : `"${name}" added to recipes`);
