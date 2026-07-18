@@ -11455,26 +11455,15 @@
                 aria-expanded="false" aria-label="Show dinners">Dinners</button>
               <button type="button" id="grocery-recipes-btn" class="chip-tool-btn" onclick="toggleGroceryRecipes()"
                 aria-expanded="false" aria-label="Show your recipes">Recipes</button>
+              <button type="button" id="grocery-add-recipe-btn" class="chip-add-btn" onclick="tryShowAddMealPresetModal()"
+                aria-label="Add recipe">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                <span>Recipe</span>
+              </button>
               <button type="button" id="grocery-edit-dinner-btn" class="chip-tool-btn hidden"
-                onclick="editActiveDinnerList()" aria-label="Edit this dinner list">Edit dinner</button>
-              <div class="life-manage-wrap">
-                <button type="button" class="chip-tool-btn" onclick="toggleLifeManageMenu('grocery')" aria-haspopup="menu" aria-expanded="false">Manage</button>
-                <div id="grocery-manage-menu" class="life-manage-menu hidden" role="menu">
-                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); tryShowAddMealPresetModal()">
-                    <i class="fa-solid fa-utensils" aria-hidden="true"></i><span>Add recipe</span>
-                  </button>
-                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); showManageMealPresetsModal()">
-                    <i class="fa-solid fa-list" aria-hidden="true"></i><span>Edit dinner lists</span>
-                  </button>
-                  <button type="button" role="menuitem" id="grocery-manage-edit-active"
-                    onclick="closeLifeManageMenus(); editActiveDinnerList()">
-                    <i class="fa-solid fa-pen" aria-hidden="true"></i><span>Edit this dinner</span>
-                  </button>
-                  <button type="button" role="menuitem" onclick="closeLifeManageMenus(); clearCheckedGrocery()">
-                    <i class="fa-solid fa-broom" aria-hidden="true"></i><span>Clear checked</span>
-                  </button>
-                </div>
-              </div>
+                onclick="editActiveDinnerList()" aria-label="Edit this recipe or dinner">Edit</button>
+              <button type="button" id="grocery-clear-checked-btn" class="chip-tool-btn"
+                onclick="clearCheckedGrocery()" aria-label="Clear checked items">Clear</button>
             </div>
           </div>
           <div id="grocery-view-label" class="text-[10px] text-harbor-muted leading-snug mb-1.5 px-0.5"></div>
@@ -11816,7 +11805,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 367;
+    const HARBOR_BUILD_NUMBER = 368;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -20425,45 +20414,133 @@
       return { items, raw };
     }
 
-    /** Open system photo picker (library). Works more reliably than dynamic inputs on iOS. */
-    function openRecipePhotoPicker({ capture = false } = {}) {
+    function getCapacitorCamera() {
+      try {
+        const Cap = window.Capacitor;
+        return Cap?.Plugins?.Camera || window.Camera || null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    /**
+     * Take / pick a recipe photo.
+     * On native iOS/Android: Capacitor Camera (real camera when source is camera).
+     * On web: file input (label path preferred in modal).
+     * Returns a JPEG data URL or null if cancelled.
+     */
+    async function captureRecipePhoto({ fromCamera = true } = {}) {
+      const Camera = getCapacitorCamera();
+      if (Camera && typeof Camera.getPhoto === 'function' && isHarborNativeApp()) {
+        try {
+          // CameraSource: 0 PHOTOS, 1 CAMERA, 2 PROMPT — use string enums when available
+          const source = fromCamera
+            ? (Camera.CameraSource?.Camera || 'CAMERA')
+            : (Camera.CameraSource?.Photos || 'PHOTOS');
+          const resultType = Camera.CameraResultType?.DataUrl || 'dataUrl';
+          const photo = await Camera.getPhoto({
+            quality: 78,
+            width: 1280,
+            allowEditing: false,
+            resultType,
+            source,
+            // Prefer rear camera for recipe cards
+            direction: Camera.CameraDirection?.Rear || 'REAR',
+            saveToGallery: false,
+            correctOrientation: true
+          });
+          let dataUrl = photo?.dataUrl || null;
+          if (!dataUrl && photo?.base64String) {
+            const fmt = (photo.format || 'jpeg').toLowerCase();
+            dataUrl = `data:image/${fmt === 'jpg' ? 'jpeg' : fmt};base64,${photo.base64String}`;
+          }
+          if (!dataUrl && photo?.webPath) {
+            // Rare path: fetch webPath into canvas
+            const resp = await fetch(photo.webPath);
+            const blob = await resp.blob();
+            dataUrl = await readRecipePhotoFile(new File([blob], 'recipe.jpg', { type: blob.type || 'image/jpeg' }));
+          }
+          if (!dataUrl) return null;
+          // Re-compress to keep storage light
+          if (dataUrl.startsWith('data:image') && !dataUrl.includes('image/jpeg')) {
+            try {
+              dataUrl = await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                  try {
+                    resolve(canvasFromImageSource(img, img.naturalWidth, img.naturalHeight));
+                  } catch (e) { reject(e); }
+                };
+                img.onerror = () => resolve(dataUrl);
+                img.src = dataUrl;
+              });
+            } catch (_) { /* keep original */ }
+          } else if (dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg')) {
+            // Already jpeg dataUrl from plugin — optional downscale if huge
+            try {
+              dataUrl = await new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                  try {
+                    if ((img.naturalWidth || 0) > 960) {
+                      resolve(canvasFromImageSource(img, img.naturalWidth, img.naturalHeight));
+                    } else resolve(dataUrl);
+                  } catch (_) { resolve(dataUrl); }
+                };
+                img.onerror = () => resolve(dataUrl);
+                img.src = dataUrl;
+              });
+            } catch (_) { /* keep */ }
+          }
+          return dataUrl;
+        } catch (err) {
+          // User cancel is normal
+          const msg = String(err?.message || err || '');
+          if (/cancel|dismiss|user/i.test(msg)) return null;
+          console.warn('Capacitor Camera failed, falling back to file input', err);
+          // fall through to file input
+        }
+      }
+
+      // Web / fallback: file input (capture for camera when possible)
       return new Promise((resolve) => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'image/*,.heic,.heif,image/heic,image/heif';
-        if (capture) input.setAttribute('capture', 'environment');
-        // iOS WKWebView: keep input in-tree and "visible" (opacity 0) so the picker opens
-        input.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;z-index:99999;';
+        input.accept = 'image/*';
+        if (fromCamera) {
+          input.setAttribute('capture', 'environment');
+        }
+        input.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;opacity:0.01;z-index:99999;';
         let settled = false;
         const finish = (file) => {
           if (settled) return;
           settled = true;
           try { input.remove(); } catch (_) { /* ignore */ }
-          resolve(file || null);
+          if (!file) {
+            resolve(null);
+            return;
+          }
+          readRecipePhotoFile(file).then(resolve).catch((e) => {
+            showToast(e?.message || 'Could not use that photo', 'warn');
+            resolve(null);
+          });
         };
-        input.addEventListener('change', () => {
-          finish(input.files && input.files[0] ? input.files[0] : null);
-        });
-        // User cancelled — no change event on some iOS versions
+        input.addEventListener('change', () => finish(input.files && input.files[0] ? input.files[0] : null));
         input.addEventListener('cancel', () => finish(null));
         document.body.appendChild(input);
-        // Defer click to next frame so the input is attached (iOS)
         requestAnimationFrame(() => {
-          try {
-            input.click();
-          } catch (_) {
-            finish(null);
-          }
+          try { input.click(); } catch (_) { finish(null); }
         });
-        // Safety: if user dismisses without events, clean up after a while
-        setTimeout(() => {
-          if (!settled && input.parentNode) {
-            // don't resolve yet — wait longer; only remove if still idle after 3 min
-          }
-        }, 0);
-        setTimeout(() => {
-          if (!settled) finish(null);
-        }, 180000);
+        setTimeout(() => { if (!settled) finish(null); }, 180000);
+      });
+    }
+
+    /** @deprecated use captureRecipePhoto — kept for any old callers */
+    function openRecipePhotoPicker({ capture = false } = {}) {
+      return captureRecipePhoto({ fromCamera: !!capture }).then(async (dataUrl) => {
+        if (!dataUrl) return null;
+        // Fake a File-like path for old handlePhotoFile — return null file, callers should use dataUrl path
+        return dataUrl;
       });
     }
 
@@ -20479,56 +20556,74 @@
       modal.innerHTML = `
         <div class="absolute inset-0" onclick="this.parentElement.remove()"></div>
         <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm max-h-[min(92dvh,100%)] overflow-y-auto">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="flex items-start justify-between gap-3 mb-1">
-            <div class="font-semibold text-lg text-harbor-text">Add Custom Recipe</div>
+            <div>
+              <div class="font-semibold text-lg text-harbor-text">New recipe</div>
+              <div class="text-[10px] text-harbor-muted mt-0.5">Photo optional · save to Recipes</div>
+            </div>
             <button type="button" class="modal-close-chip flex-shrink-0" onclick="this.closest('.fixed')?.remove()" aria-label="Close">Close</button>
           </div>
-          <div class="text-[10px] text-harbor-muted mb-3">Up to ${MAX_MEAL_PRESETS} recipes · snap a card or type ingredients</div>
-          <div id="mp-photo-preview-wrap" class="mb-3 ${photoDataUrl ? '' : 'hidden'}">
-            <img id="mp-photo-preview" alt="Recipe photo" class="w-full max-h-40 object-cover rounded-2xl border border-harbor-border bg-harbor-raised"
-              ${photoDataUrl ? `src="${photoDataUrl}"` : ''}/>
-            <div class="flex flex-wrap items-center gap-2 mt-1.5">
-              <button type="button" id="mp-photo-scan" class="chip-add-btn text-[11px] py-1.5 px-2.5" style="display:inline-flex;align-items:center;gap:0.35rem">
-                <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-                <span>Read ingredients</span>
-              </button>
-              <button type="button" id="mp-photo-clear" class="text-[11px] font-semibold text-harbor-muted px-1">Remove photo</button>
+
+          <!-- 1. Photo (camera first) -->
+          <div class="mb-4 mt-3">
+            <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1.5">1 · Photo</div>
+            <div id="mp-photo-preview-wrap" class="mb-2 ${photoDataUrl ? '' : 'hidden'}">
+              <img id="mp-photo-preview" alt="Recipe photo" class="w-full max-h-44 object-cover rounded-2xl border border-harbor-border bg-harbor-raised"
+                ${photoDataUrl ? `src="${photoDataUrl}"` : ''}/>
             </div>
-            <p id="mp-ocr-status" class="text-[10px] text-harbor-muted mt-1 hidden" aria-live="polite"></p>
-          </div>
-          <div class="flex gap-2 mb-3">
-            <button type="button" id="mp-photo-camera" class="chip-tool-btn flex-1" style="display:inline-flex;align-items:center;justify-content:center;gap:0.35rem">
+            <button type="button" id="mp-photo-camera"
+              class="w-full py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm flex items-center justify-center gap-2 active:opacity-90 mb-2">
               <i class="fa-solid fa-camera" aria-hidden="true"></i>
-              <span>Camera</span>
+              <span id="mp-photo-camera-label">${photoDataUrl ? 'Retake photo' : 'Take photo'}</span>
             </button>
-            <button type="button" id="mp-photo-pick" class="chip-tool-btn flex-1" style="display:inline-flex;align-items:center;justify-content:center;gap:0.35rem">
-              <i class="fa-regular fa-image" aria-hidden="true"></i>
-              <span>Library</span>
-            </button>
+            <div class="flex gap-2">
+              <button type="button" id="mp-photo-pick" class="chip-tool-btn flex-1 text-center" style="display:inline-flex;align-items:center;justify-content:center;gap:0.35rem">
+                <i class="fa-regular fa-image" aria-hidden="true"></i>
+                <span>Library</span>
+              </button>
+              <button type="button" id="mp-photo-scan" class="chip-tool-btn flex-1 text-center ${photoDataUrl ? '' : 'opacity-50'}" style="display:inline-flex;align-items:center;justify-content:center;gap:0.35rem"
+                ${photoDataUrl ? '' : 'disabled'}>
+                <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                <span>Read list</span>
+              </button>
+              <button type="button" id="mp-photo-clear" class="chip-tool-btn ${photoDataUrl ? '' : 'hidden'}" style="display:inline-flex;align-items:center;justify-content:center">
+                Remove
+              </button>
+            </div>
+            <p id="mp-ocr-status" class="text-[10px] text-harbor-muted mt-1.5 hidden" aria-live="polite"></p>
           </div>
-          <p class="text-[10px] text-harbor-muted mb-3 leading-snug">Snap a recipe card, then <strong class="text-harbor-text">Read ingredients</strong> to fill the list (on-device text reading). Always double-check — OCR isn’t perfect. Photo stays on this device.</p>
-          <label class="block text-xs text-harbor-muted mb-1">Recipe name</label>
-          <input id="mp-name" type="text" placeholder="e.g. Sheet Pan Chicken" value="${escapeBriefHtml(seed.name || '')}"
-            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-3 outline-none text-harbor-text">
-          <label class="block text-xs text-harbor-muted mb-1" for="mp-category">Category</label>
-          <input id="mp-category" type="text" list="mp-category-list" placeholder="e.g. Weeknight, Meal prep, Comfort"
-            value="${escapeBriefHtml(seed.category || '')}"
-            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-1 outline-none text-harbor-text"
-            autocomplete="off" maxlength="40">
-          <datalist id="mp-category-list">${recipeCategoryDatalistHtml(seed.category || '')}</datalist>
-          <p class="text-[10px] text-harbor-muted mb-3 leading-snug">Categories sort your Recipes tray. Leave blank for Uncategorized.</p>
-          <label class="block text-xs text-harbor-muted mb-1">Ingredients (comma-separated)</label>
-          <textarea id="mp-items" rows="4" placeholder="Chicken thighs, Potatoes, Olive oil, Green beans"
-            class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-3 outline-none text-harbor-text resize-none">${escapeBriefHtml(seed.itemsText || '')}</textarea>
-          <label class="block text-xs text-harbor-muted mb-1.5">Cooking effort</label>
-          <div class="flex gap-1.5 mb-6">
-            <button type="button" data-effort="1" class="mp-effort flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-primary bg-harbor-primary/15 text-harbor-text">Easy</button>
-            <button type="button" data-effort="2" class="mp-effort flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-border bg-harbor-raised text-harbor-muted">Medium</button>
-            <button type="button" data-effort="3" class="mp-effort flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-border bg-harbor-raised text-harbor-muted">Involved</button>
+
+          <!-- 2. Basics -->
+          <div class="mb-4">
+            <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1.5">2 · Basics</div>
+            <label class="block text-xs text-harbor-muted mb-1" for="mp-name">Name</label>
+            <input id="mp-name" type="text" placeholder="e.g. Sheet Pan Chicken" value="${escapeBriefHtml(seed.name || '')}"
+              class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-2.5 outline-none text-harbor-text"
+              enterkeyhint="next" autocomplete="off">
+            <label class="block text-xs text-harbor-muted mb-1" for="mp-category">Category <span class="font-normal opacity-70">(optional)</span></label>
+            <input id="mp-category" type="text" list="mp-category-list" placeholder="Weeknight, Meal prep…"
+              value="${escapeBriefHtml(seed.category || '')}"
+              class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-1 outline-none text-harbor-text"
+              autocomplete="off" maxlength="40">
+            <datalist id="mp-category-list">${recipeCategoryDatalistHtml(seed.category || '')}</datalist>
           </div>
-          <div class="pt-1 border-t border-harbor-border/60 mt-1">
-            <button type="button" id="mp-save" class="w-full mt-4 py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold">Save recipe</button>
+
+          <!-- 3. Ingredients -->
+          <div class="mb-4">
+            <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1.5">3 · Ingredients</div>
+            <textarea id="mp-items" rows="5" placeholder="Chicken thighs, Potatoes, Olive oil…"
+              class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-2 outline-none text-harbor-text resize-none">${escapeBriefHtml(seed.itemsText || '')}</textarea>
+            <p class="text-[10px] text-harbor-muted leading-snug mb-2">Comma-separated. After a photo, use <strong class="text-harbor-text">Read list</strong> then edit.</p>
+            <label class="block text-xs text-harbor-muted mb-1.5">Effort</label>
+            <div class="flex gap-1.5">
+              <button type="button" data-effort="1" class="mp-effort flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-primary bg-harbor-primary/15 text-harbor-text">Easy</button>
+              <button type="button" data-effort="2" class="mp-effort flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-border bg-harbor-raised text-harbor-muted">Medium</button>
+              <button type="button" data-effort="3" class="mp-effort flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-border bg-harbor-raised text-harbor-muted">Involved</button>
+            </div>
           </div>
+
+          <button type="button" id="mp-save" class="w-full py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm">Save to Recipes</button>
         </div>
       `;
       document.body.appendChild(modal);
@@ -20538,6 +20633,8 @@
       const ocrStatus = modal.querySelector('#mp-ocr-status');
       const itemsField = modal.querySelector('#mp-items');
       const scanBtn = modal.querySelector('#mp-photo-scan');
+      const clearBtn = modal.querySelector('#mp-photo-clear');
+      const camLabel = modal.querySelector('#mp-photo-camera-label');
       const setOcrStatus = (msg, show = true) => {
         if (!ocrStatus) return;
         if (!show || !msg) {
@@ -20553,15 +20650,27 @@
         if (photoDataUrl) {
           previewImg.src = photoDataUrl;
           previewWrap.classList.remove('hidden');
+          if (scanBtn) {
+            scanBtn.disabled = false;
+            scanBtn.classList.remove('opacity-50');
+          }
+          clearBtn?.classList.remove('hidden');
+          if (camLabel) camLabel.textContent = 'Retake photo';
         } else {
           previewImg.removeAttribute('src');
           previewWrap.classList.add('hidden');
           setOcrStatus('', false);
+          if (scanBtn) {
+            scanBtn.disabled = true;
+            scanBtn.classList.add('opacity-50');
+          }
+          clearBtn?.classList.add('hidden');
+          if (camLabel) camLabel.textContent = 'Take photo';
         }
       };
       const runIngredientScan = async ({ auto = false } = {}) => {
         if (!photoDataUrl) {
-          showToast('Add a photo first', 'info');
+          showToast('Take a photo first', 'info');
           return;
         }
         if (_recipeOcrBusy) return;
@@ -20570,7 +20679,7 @@
           scanBtn.disabled = true;
           scanBtn.style.opacity = '0.65';
         }
-        setOcrStatus(auto ? 'Reading ingredients from photo…' : 'Reading text… (first time may take a moment)');
+        setOcrStatus(auto ? 'Reading ingredients…' : 'Reading text… (first time may take a moment)');
         try {
           const { items } = await extractIngredientsFromRecipePhoto(photoDataUrl, {
             onProgress: (p) => {
@@ -20579,63 +20688,49 @@
             }
           });
           if (!items.length) {
-            setOcrStatus('Couldn’t find a clear list — type ingredients below or try a sharper photo.');
-            showToast('No ingredients found — try a clearer recipe card photo', 'warn');
+            setOcrStatus('No clear list found — type ingredients below.');
+            showToast('No ingredients found — try a clearer photo', 'warn');
             return;
           }
           const joined = items.join(', ');
           if (itemsField) {
             const existing = (itemsField.value || '').trim();
-            // Auto after photo: fill if empty; manual scan: replace (user asked to read)
-            if (!existing || !auto) {
-              itemsField.value = joined;
-            } else if (auto && existing) {
-              // Keep typed list; offer merge lightly
-              setOcrStatus(`Found ${items.length} items — ingredients field already has text (use Read ingredients to replace).`);
-              showToast(`Found ${items.length} ingredients — tap Read ingredients to fill`, 'info');
+            if (!existing || !auto) itemsField.value = joined;
+            else if (auto && existing) {
+              setOcrStatus(`Found ${items.length} items — tap Read list to replace your text.`);
               return;
             }
           }
-          setOcrStatus(`Found ${items.length} ingredient${items.length === 1 ? '' : 's'} — edit if needed.`);
+          setOcrStatus(`Found ${items.length} — edit if needed, then save.`);
           showToast(`Found ${items.length} ingredient${items.length === 1 ? '' : 's'}`);
         } catch (err) {
           console.warn('Recipe OCR failed', err);
-          setOcrStatus(err?.message || 'Could not read ingredients from photo.');
+          setOcrStatus(err?.message || 'Could not read ingredients.');
           showToast(err?.message || 'Could not read ingredients', 'warn');
         } finally {
           _recipeOcrBusy = false;
           if (scanBtn) {
-            scanBtn.disabled = false;
+            scanBtn.disabled = !photoDataUrl;
             scanBtn.style.opacity = '';
           }
         }
       };
-      const handlePhotoFile = async (file) => {
-        if (!file) return;
-        try {
-          showToast('Reading photo…', 'info');
-          const dataUrl = await readRecipePhotoFile(file);
-          setPhoto(dataUrl);
-          showToast('Photo attached');
-          // Auto-try OCR when ingredients field is empty
-          const existing = (itemsField?.value || '').trim();
-          if (!existing) {
-            await runIngredientScan({ auto: true });
-          } else {
-            setOcrStatus('Photo ready — tap Read ingredients to scan.');
-          }
-        } catch (err) {
-          console.warn('Recipe photo failed', err);
-          showToast(err?.message || 'Could not use that photo', 'warn');
-        }
+      const applyPhotoDataUrl = async (dataUrl) => {
+        if (!dataUrl) return;
+        setPhoto(dataUrl);
+        showToast('Photo attached');
+        const existing = (itemsField?.value || '').trim();
+        if (!existing) await runIngredientScan({ auto: true });
+        else setOcrStatus('Photo ready — tap Read list to scan.');
       };
-      const pickPhoto = async (useCamera) => {
+      const pickPhoto = async (fromCamera) => {
         try {
-          const file = await openRecipePhotoPicker({ capture: !!useCamera });
-          if (!file) return; // cancelled
-          await handlePhotoFile(file);
+          showToast(fromCamera ? 'Opening camera…' : 'Opening library…', 'info');
+          const dataUrl = await captureRecipePhoto({ fromCamera: !!fromCamera });
+          if (!dataUrl) return;
+          await applyPhotoDataUrl(dataUrl);
         } catch (err) {
-          showToast(err?.message || 'Could not open photos', 'warn');
+          showToast(err?.message || 'Could not open camera', 'warn');
         }
       };
       modal.querySelector('#mp-photo-camera')?.addEventListener('click', (e) => {
@@ -20648,7 +20743,7 @@
         e.stopPropagation();
         pickPhoto(false);
       });
-      modal.querySelector('#mp-photo-clear')?.addEventListener('click', () => setPhoto(''));
+      clearBtn?.addEventListener('click', () => setPhoto(''));
       scanBtn?.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -20698,7 +20793,6 @@
         state.mealPresets.push(recipe);
         let saved = saveState();
         if (!saved && photoDataUrl) {
-          // Photo can push localStorage over quota — keep recipe, drop photo
           delete recipe.photoDataUrl;
           saved = saveState();
           if (saved) {
@@ -20717,13 +20811,14 @@
           return;
         }
         modal.remove();
-        // Show Recipes tray so the new pill is visible
         groceryRecipesOpen = true;
         groceryDinnersOpen = false;
         if (category) groceryRecipeCategoryFilter = category;
         renderGrocery();
         showToast(photoDataUrl ? `"${name}" saved with photo` : `"${name}" added to recipes`);
       };
+
+      setTimeout(() => modal.querySelector('#mp-name')?.focus(), 80);
     }
 
 
@@ -20745,8 +20840,8 @@
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="flex items-center justify-between mb-3 gap-2">
             <div class="min-w-0">
-              <div class="font-semibold text-lg text-harbor-text">Edit dinner list</div>
-              <div class="text-[10px] text-harbor-muted leading-snug">Change the name and shopping ingredients for <strong class="text-harbor-text">${escapeBriefHtml(titleBit)}</strong></div>
+              <div class="font-semibold text-lg text-harbor-text">${preset.isCustom ? 'Edit recipe' : 'Edit dinner list'}</div>
+              <div class="text-[10px] text-harbor-muted leading-snug">${preset.isCustom ? 'Update name, category, and ingredients' : 'Change the name and shopping ingredients'} for <strong class="text-harbor-text">${escapeBriefHtml(titleBit)}</strong></div>
             </div>
             <button type="button" onclick="this.closest('.fixed').remove()" class="modal-close-chip flex-shrink-0" aria-label="Close">Close</button>
           </div>
@@ -20768,7 +20863,7 @@
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3 py-2.5 mb-2 text-harbor-text text-xs leading-relaxed"
             placeholder="Tortillas&#10;Ground beef&#10;Cheese">${escapeBriefHtml(itemsText)}</textarea>
           <div class="text-[10px] text-harbor-muted mb-3 leading-snug">Saves this dinner’s shopping list. Checking items off while shopping won’t change the recipe.</div>
-          <button type="button" id="mp-edit-save" class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold">Save dinner list</button>
+          <button type="button" id="mp-edit-save" class="w-full py-3 rounded-2xl bg-harbor-primary text-white font-semibold">${preset.isCustom ? 'Save recipe' : 'Save dinner list'}</button>
         </div>`;
       document.body.appendChild(modal);
       setTimeout(() => modal.querySelector('#mp-edit-name')?.focus(), 60);
@@ -21110,21 +21205,11 @@
             class="meal-grocery-chip px-2.5 py-1 rounded-full border text-[11px] font-semibold whitespace-nowrap ${on ? 'is-active border-harbor-primary text-harbor-text' : 'border-harbor-border bg-harbor-raised text-harbor-muted'}">${escapeBriefHtml(label)}</button>`;
         };
 
-        const recipeChips = visible.map(p => {
-          const cat = getRecipeCategory(p);
-          const on = activeMeal === p.id;
-          const title = `${p.label}${cat ? ' · ' + cat : ''} · ${getMealEffortLabel(p.effort)}`;
-          return `<button type="button" onclick="selectMealGroceryList('${p.id}')"
-            class="meal-grocery-chip px-3 py-1.5 rounded-full border text-xs font-semibold whitespace-nowrap ${on ? 'is-active border-harbor-primary text-harbor-text' : 'border-harbor-border bg-harbor-raised text-harbor-muted'}"
-            title="${escapeBriefHtml(title)}">
-            ${p.photoDataUrl ? '📷 ' : ''}${escapeBriefHtml(getMealChipLabel(p))}
-          </button>`;
-        }).join('');
-
+        container.classList.remove('hidden');
         container.innerHTML = `
           <div class="mb-1.5">
             <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1 px-0.5">Category</div>
-            <div class="library-filters">
+            <div class="library-filters" id="mp-recipe-cat-row">
               ${catChip('all', `All (${allCustom.length})`)}
               ${cats.map(c => {
                 const count = allCustom.filter(p => getRecipeCategory(p) === c).length;
@@ -21133,14 +21218,51 @@
             </div>
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1 px-0.5 flex items-center justify-between gap-2">
-              <span>Your recipes</span>
-              <button type="button" class="text-harbor-primary-light font-semibold normal-case tracking-normal" onclick="tryShowAddMealPresetModal()">+ Add</button>
+            <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1 px-0.5">
+              Your recipes <span class="font-normal normal-case tracking-normal text-harbor-muted">· tap shop · hold edit</span>
             </div>
-            <div class="library-filters">
-              ${recipeChips || `<span class="text-[11px] text-harbor-muted px-1 py-1">Nothing in this category</span>`}
-            </div>
+            <div class="library-filters" id="mp-recipe-chip-row"></div>
           </div>`;
+        const chipRow = container.querySelector('#mp-recipe-chip-row');
+        if (!visible.length) {
+          chipRow.innerHTML = `<span class="text-[11px] text-harbor-muted px-1 py-1">Nothing in this category</span>`;
+        } else {
+          visible.forEach(p => {
+            const cat = getRecipeCategory(p);
+            const on = activeMeal === p.id;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `meal-grocery-chip px-3 py-1.5 rounded-full border text-xs font-semibold whitespace-nowrap ${on ? 'is-active border-harbor-primary text-harbor-text' : 'border-harbor-border bg-harbor-raised text-harbor-muted'}`;
+            btn.title = `${p.label}${cat ? ' · ' + cat : ''} · hold to edit`;
+            btn.innerHTML = `${p.photoDataUrl ? '📷 ' : ''}${escapeBriefHtml(getMealChipLabel(p))}`;
+            let holdTimer = null;
+            let held = false;
+            const clearHold = () => {
+              if (holdTimer) clearTimeout(holdTimer);
+              holdTimer = null;
+            };
+            btn.addEventListener('pointerdown', (e) => {
+              held = false;
+              clearHold();
+              holdTimer = setTimeout(() => {
+                held = true;
+                try { btn.setPointerCapture?.(e.pointerId); } catch (_) { /* ignore */ }
+                showEditMealPresetModal(p.id, { returnToManage: false });
+              }, 480);
+            });
+            btn.addEventListener('pointerup', (e) => {
+              clearHold();
+              if (held) {
+                e.preventDefault();
+                return;
+              }
+              selectMealGroceryList(p.id);
+            });
+            btn.addEventListener('pointerleave', clearHold);
+            btn.addEventListener('pointercancel', clearHold);
+            chipRow.appendChild(btn);
+          });
+        }
         initHorizontalScrollRows();
         return;
       }
@@ -21309,7 +21431,6 @@
       const container = document.getElementById('grocery-list');
       const labelEl = document.getElementById('grocery-view-label');
       const editDinnerBtn = document.getElementById('grocery-edit-dinner-btn');
-      const manageEditActive = document.getElementById('grocery-manage-edit-active');
       const progressEl = document.getElementById('grocery-trip-progress');
       if (!container) return;
 
@@ -21327,9 +21448,10 @@
 
       if (editDinnerBtn) {
         editDinnerBtn.classList.toggle('hidden', !isMeal);
-      }
-      if (manageEditActive) {
-        manageEditActive.classList.toggle('hidden', !isMeal);
+        if (isMeal) {
+          editDinnerBtn.textContent = preset?.isCustom ? 'Edit recipe' : 'Edit dinner';
+          editDinnerBtn.setAttribute('aria-label', preset?.isCustom ? 'Edit this recipe' : 'Edit this dinner list');
+        }
       }
 
       if (labelEl) {
@@ -21337,7 +21459,10 @@
           labelEl.classList.remove('hidden');
           const cat = preset?.isCustom ? getRecipeCategory(preset) : '';
           const catBit = preset?.isCustom ? ` · ${escapeBriefHtml(cat)}` : '';
-          labelEl.innerHTML = `<strong class="text-harbor-text">${escapeBriefHtml(preset?.label || 'Dinner')}</strong>${preset?.recipe ? ` · ${escapeBriefHtml(preset.recipe)}` : ''}${catBit} · trip mode`;
+          const editHint = preset?.isCustom
+            ? ` · <button type="button" class="text-harbor-primary-light font-semibold underline-offset-2" onclick="editActiveDinnerList()">edit</button>`
+            : '';
+          labelEl.innerHTML = `<strong class="text-harbor-text">${escapeBriefHtml(preset?.label || 'Dinner')}</strong>${preset?.recipe ? ` · ${escapeBriefHtml(preset.recipe)}` : ''}${catBit}${editHint}`;
         } else {
           // Quiet master list — no dinner/grocery filler under the toolbar
           labelEl.classList.add('hidden');
@@ -21370,17 +21495,17 @@
           '🛒',
           isMeal ? 'Empty dinner list' : 'No list yet',
           isMeal
-            ? 'Type an ingredient above and hit Enter, or open <strong>Edit dinner</strong> to paste a full list.'
-            : 'Type above and hit Enter for staples, open <strong>Dinners</strong> for weeknight lists, or <strong>Recipes</strong> for your own.',
+            ? 'Type an ingredient above and hit Enter, or tap <strong>Edit</strong> to change the full recipe.'
+            : 'Type above and hit Enter for staples, open <strong>Dinners</strong> or <strong>Recipes</strong>, or tap <strong>+ Recipe</strong>.',
           isMeal
             ? `<div class="harbor-empty-actions">
                 <button type="button" class="chip-add-btn" onclick="document.getElementById('grocery-quick-input')?.focus()"><i class="fa-solid fa-plus"></i>Type to add</button>
-                <button type="button" class="chip-tool-btn" onclick="editActiveDinnerList()">Edit dinner</button>
+                <button type="button" class="chip-tool-btn" onclick="editActiveDinnerList()">Edit</button>
                 <button type="button" class="chip-tool-btn" onclick="selectMealGroceryList(null)">Shopping list</button>
               </div>`
             : `<div class="harbor-empty-actions">
                 <button type="button" class="chip-add-btn" onclick="document.getElementById('grocery-quick-input')?.focus()"><i class="fa-solid fa-plus"></i>Type to add</button>
-                <button type="button" class="chip-tool-btn" onclick="toggleGroceryDinners()">Dinners</button>
+                <button type="button" class="chip-tool-btn" onclick="tryShowAddMealPresetModal()">+ Recipe</button>
                 <button type="button" class="chip-tool-btn" onclick="toggleGroceryRecipes()">Recipes</button>
               </div>`
         );

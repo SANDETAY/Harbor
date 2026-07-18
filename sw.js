@@ -1,1 +1,1 @@
-const CACHE_NAME = 'harbor-preview-v367';
+const CACHE_NAME = 'harbor-preview-v368';
