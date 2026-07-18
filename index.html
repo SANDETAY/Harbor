@@ -13583,6 +13583,7 @@
     }
 
     let _storageSaveWarned = false;
+    /** Persist state. Returns true on success, false if storage failed (quota/private mode). */
     function saveState() {
       try {
         if (state.settings?.onboarded) {
@@ -13590,6 +13591,7 @@
         }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         _storageSaveWarned = false;
+        return true;
       } catch (err) {
         console.warn('[Harbor] Could not save local data', err?.name || err);
         try {
@@ -13609,6 +13611,7 @@
             );
           } catch (_) { /* toast may not exist during early boot */ }
         }
+        return false;
       }
     }
 
@@ -20349,27 +20352,21 @@
         };
         if (photoDataUrl) recipe.photoDataUrl = photoDataUrl;
         state.mealPresets.push(recipe);
-        try {
-          saveState();
-        } catch (err) {
-          // Photo can push localStorage over quota — save recipe without photo
-          console.warn('saveState with photo failed', err);
-          if (photoDataUrl) {
-            delete recipe.photoDataUrl;
-            try {
-              saveState();
-              showToast('Recipe saved — photo was too large for device storage', 'warn');
-              modal.remove();
-              renderGrocery();
-              return;
-            } catch (err2) {
-              state.mealPresets = state.mealPresets.filter(p => p.id !== id);
-              showToast('Could not save recipe — storage full', 'warn');
-              return;
-            }
+        let saved = saveState();
+        if (!saved && photoDataUrl) {
+          // Photo can push localStorage over quota — keep recipe, drop photo
+          delete recipe.photoDataUrl;
+          saved = saveState();
+          if (saved) {
+            modal.remove();
+            renderGrocery();
+            showToast('Recipe saved — photo was too large for device storage', 'warn');
+            return;
           }
+        }
+        if (!saved) {
           state.mealPresets = state.mealPresets.filter(p => p.id !== id);
-          showToast('Could not save recipe', 'warn');
+          showToast('Could not save recipe — storage full', 'warn');
           return;
         }
         modal.remove();
