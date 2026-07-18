@@ -14205,7 +14205,12 @@
     }
 
     function getFilteredLibraryTasks() {
+      const freeTier = typeof isHarborPremium === 'function' && !isHarborPremium();
       let tasks = commonTasks.filter(t => {
+        // Free: no preset catalog — personal tasks only (or empty)
+        if (freeTier && typeof isPersonalLibraryTask === 'function' && !isPersonalLibraryTask(t)) {
+          return false;
+        }
         if (!matchesMaintenancePreference(t)) return false;
         if (currentLibraryFilter === 'in-harbor') {
           if (!isLibraryItemInHarbor(t)) return false;
@@ -14233,8 +14238,10 @@
     }
 
     function getLibraryFilterCounts() {
+      const freeTier = typeof isHarborPremium === 'function' && !isHarborPremium();
       const counts = { all: 0, 'in-harbor': 0 };
       commonTasks.forEach(t => {
+        if (freeTier && typeof isPersonalLibraryTask === 'function' && !isPersonalLibraryTask(t)) return;
         if (!matchesMaintenancePreference(t)) return;
         counts.all = (counts.all || 0) + 1;
         if (isLibraryItemInHarbor(t)) counts['in-harbor'] = (counts['in-harbor'] || 0) + 1;
@@ -37519,21 +37526,39 @@
       const statsEl = document.getElementById('library-stats');
       if (!container) return;
 
+      const purposeEl = document.getElementById('library-purpose');
+      if (purposeEl) {
+        if (typeof isHarborPremium === 'function' && !isHarborPremium()) {
+          purposeEl.textContent = 'Add your own tasks free. Unlock Premium for the full chore & habit catalog.';
+        } else {
+          purposeEl.textContent = 'Browse ideas, add what fits, edit anything that’s already in Harbor.';
+        }
+      }
+
       const tasks = getFilteredLibraryTasks();
       container.innerHTML = '';
       container.classList.toggle('library-filtered', currentLibraryFilter !== 'all' && currentLibraryFilter !== 'in-harbor');
 
       if (statsEl) {
-        const added = commonTasks.filter(t => isLibraryItemInHarbor(t)).length;
-        const total = commonTasks.filter(t => matchesMaintenancePreference(t)).length;
-        if (currentLibraryFilter === 'in-harbor') {
+        const freeTier = typeof isHarborPremium === 'function' && !isHarborPremium();
+        const visiblePool = commonTasks.filter(t => {
+          if (freeTier && typeof isPersonalLibraryTask === 'function' && !isPersonalLibraryTask(t)) return false;
+          return matchesMaintenancePreference(t);
+        });
+        const added = visiblePool.filter(t => isLibraryItemInHarbor(t)).length;
+        const total = visiblePool.length;
+        if (freeTier && !tasks.length && !librarySearchQuery) {
+          statsEl.textContent = 'Free · personal tasks only · catalog is Premium';
+        } else if (currentLibraryFilter === 'in-harbor') {
           statsEl.textContent = added
             ? `${tasks.length} in your Harbor · edit here or on Task`
-            : 'Nothing in Harbor yet — add ideas from All';
+            : 'Nothing in Harbor yet — add a personal task';
         } else if (librarySearchQuery) {
           statsEl.textContent = `${tasks.length} match${tasks.length === 1 ? '' : 'es'} · ${added} already in Harbor`;
         } else {
-          statsEl.textContent = `${tasks.length} shown · ${added} of ${total} in your Harbor`;
+          statsEl.textContent = freeTier
+            ? `${tasks.length} personal · unlock Premium for full catalog`
+            : `${tasks.length} shown · ${added} of ${total} in your Harbor`;
         }
       }
 
@@ -37541,17 +37566,30 @@
         const searching = !!librarySearchQuery;
         const inHarborEmpty = currentLibraryFilter === 'in-harbor';
         const personalEmpty = currentLibraryFilter === 'personal';
+        const freeTier = typeof isHarborPremium === 'function' && !isHarborPremium();
         let title = 'No matches';
         let body = 'Try another filter or clear search.';
         let actions = '';
-        if (searching) {
+        if (freeTier && !searching) {
+          title = 'Preset Library is Premium';
+          body = 'Free stays calm: add your own personal tasks anytime. Premium unlocks the full chore & habit catalog (oil change, deep clean, seasonal routines, and more).';
+          actions = `
+            <div class="harbor-empty-actions mt-3 flex flex-col items-center gap-2">
+              <button type="button" class="chip-add-btn" onclick="addCustomToLibrary()"><i class="fa-solid fa-plus"></i>Add personal task</button>
+              <button type="button" class="chip-tool-btn" onclick="requireHarborPremium({feature:'Preset Library',detail:'Unlock the full chore and habit catalog. Free can still add your own personal tasks.'})"><i class="fa-solid fa-lock"></i>Unlock Premium catalog</button>
+            </div>`;
+        } else if (searching) {
           title = 'No matches';
           body = 'Try a shorter word, or clear search to browse.';
           actions = `<button type="button" class="mt-3 text-xs text-harbor-primary-light font-medium" onclick="librarySearchQuery='';document.getElementById('library-search').value='';renderLibraryFilters();renderLibrary();">Clear search</button>`;
         } else if (inHarborEmpty) {
           title = 'Nothing in Harbor yet';
-          body = 'Add habits and chores from All, Daily, or Weekly — they show up here once they’re yours.';
-          actions = `<button type="button" class="mt-3 chip-add-btn" onclick="switchLibraryFilter('all')"><i class="fa-solid fa-star"></i>Browse All</button>`;
+          body = freeTier
+            ? 'Add a personal task, or unlock Premium for the full catalog.'
+            : 'Add habits and chores from All, Daily, or Weekly — they show up here once they’re yours.';
+          actions = freeTier
+            ? `<button type="button" class="mt-3 chip-add-btn" onclick="addCustomToLibrary()"><i class="fa-solid fa-plus"></i>Add personal</button>`
+            : `<button type="button" class="mt-3 chip-add-btn" onclick="switchLibraryFilter('all')"><i class="fa-solid fa-star"></i>Browse All</button>`;
         } else if (personalEmpty) {
           title = 'No personal items';
           body = 'Save your own ideas with Add — they’re private on this device.';
@@ -37561,7 +37599,7 @@
         }
         container.innerHTML = `
           <div class="library-column w-full max-w-none flex-none text-center py-10 px-4 rounded-2xl bg-harbor-raised/70 border border-harbor-border/50">
-            <div class="text-2xl mb-2">${inHarborEmpty ? '⚓' : (searching ? '🔍' : '📚')}</div>
+            <div class="text-2xl mb-2">${freeTier && !searching ? '🔒' : (inHarborEmpty ? '⚓' : (searching ? '🔍' : '📚'))}</div>
             <div class="text-sm text-harbor-text font-medium">${title}</div>
             <div class="text-xs text-harbor-muted mt-1 leading-relaxed max-w-xs mx-auto">${body}</div>
             ${actions}
