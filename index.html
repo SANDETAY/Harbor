@@ -1761,7 +1761,7 @@
       position: relative;
       z-index: 1;
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 0.62rem;
       width: 100%;
       padding: 0.68rem 0.72rem;
@@ -1788,7 +1788,6 @@
       font-size: 0.92rem;
       color: rgb(var(--harbor-muted));
       pointer-events: none;
-      margin-top: 0.12rem;
       flex-shrink: 0;
     }
     .life-flyout-item:hover {
@@ -1805,27 +1804,6 @@
     .life-flyout-item.is-active i {
       color: #FFFFFF;
       opacity: 0.95;
-    }
-    .life-flyout-item-text {
-      display: flex;
-      flex-direction: column;
-      gap: 0.12rem;
-      min-width: 0;
-      flex: 1;
-    }
-    .life-flyout-item-label {
-      font-size: 0.84rem;
-      font-weight: 650;
-      line-height: 1.15;
-    }
-    .life-flyout-item-hint {
-      font-size: 0.62rem;
-      font-weight: 500;
-      color: rgb(var(--harbor-muted));
-      line-height: 1.25;
-    }
-    .life-flyout-item.is-active .life-flyout-item-hint {
-      color: rgba(255, 255, 255, 0.88);
     }
     .life-panel-intro {
       font-size: 0.72rem;
@@ -11763,46 +11741,31 @@
   <div id="life-flyout-backdrop" class="life-flyout-backdrop" hidden aria-hidden="true"></div>
   <div id="life-flyout" class="life-flyout" role="menu" aria-label="Life sections" hidden>
     <div class="life-flyout-card">
-      <div class="life-flyout-kicker">Life · tap a section</div>
+      <div class="life-flyout-kicker">Life</div>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-schedule"
         data-life-panel="schedule" onclick="selectLifeSection('schedule')">
         <i class="fa-regular fa-calendar" aria-hidden="true"></i>
-        <span class="life-flyout-item-text">
-          <span class="life-flyout-item-label">Schedule</span>
-          <span class="life-flyout-item-hint">Events &amp; free time</span>
-        </span>
+        <span>Schedule</span>
       </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-grocery"
         data-life-panel="grocery" onclick="selectLifeSection('grocery')">
         <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
-        <span class="life-flyout-item-text">
-          <span class="life-flyout-item-label">Grocery</span>
-          <span class="life-flyout-item-hint">Shopping list &amp; dinners</span>
-        </span>
+        <span>Grocery</span>
       </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-bills"
         data-life-panel="bills" onclick="selectLifeSection('bills')">
         <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
-        <span class="life-flyout-item-text">
-          <span class="life-flyout-item-label">Bills</span>
-          <span class="life-flyout-item-hint">You owe on a due date</span>
-        </span>
+        <span>Bills</span>
       </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-subscriptions"
         data-life-panel="subscriptions" onclick="selectLifeSection('subscriptions')">
         <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-        <span class="life-flyout-item-text">
-          <span class="life-flyout-item-label">Subscriptions</span>
-          <span class="life-flyout-item-hint">Memberships that renew</span>
-        </span>
+        <span>Subscriptions</span>
       </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-budget"
         data-life-panel="budget" onclick="selectLifeSection('budget')">
         <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
-        <span class="life-flyout-item-text">
-          <span class="life-flyout-item-label">Budget</span>
-          <span class="life-flyout-item-hint">Optional · import bank CSVs</span>
-        </span>
+        <span>Budget</span>
       </button>
       <span class="life-flyout-caret" aria-hidden="true"></span>
     </div>
@@ -11851,7 +11814,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 362;
+    const HARBOR_BUILD_NUMBER = 363;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
