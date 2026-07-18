@@ -1,30 +1,38 @@
 #!/usr/bin/env python3
 """Generate Harbor iOS launch splash for seamless handoff into the web splash.
 
-Produces:
-  1) Splash.imageset — FIRST FRAME of the web splash (deep teal gradient + sky glow,
-     no mark/word yet) so mark→word→slogan animations can play without a flash.
-  2) harbor-ios-launch-splash.png — settled brand lockup preview (anchor + Harbor +
-     slogan) for docs / App Store marketing.
+Native LaunchScreen cannot animate. It must match the HTML splash *background*
+exactly so the handoff feels like one continuous screen — then mark / word /
+slogan animate in HTML.
 
-iOS LaunchScreen cannot animate; motion lives in index.html runSplashSequence.
+HTML reference (index.html):
+  .splash-screen-harbor {
+    background: linear-gradient(165deg, #062826 0%, #0a3a38 28%,
+      #14605a 58%, #7aaba3 86%, #d8e4de 100%);
+  }
+  .splash-sky {
+    radial-gradient(ellipse 80% 50% at 50% 16%, rgba(255,236,210,0.2) …),
+    radial-gradient(ellipse 55% 40% at 50% 48%, primary/0.14 …);
+  }
+
+Do NOT draw hard concentric rings / “arches” — those read as a different design
+from the soft CSS gradients and break the handoff.
 """
 from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "ios" / "App" / "App" / "Assets.xcassets" / "Splash.imageset"
 SIZE = 2732
 
-# Match index.html .splash-screen-harbor / body.is-splash-active
-# linear-gradient(165deg, #062826 0%, #0a3a38 28%, #14605a 58%, #7aaba3 86%, #d8e4de 100%)
+# CSS 165deg-ish stops (top-left deep teal → bottom-right mist)
 STOPS = [
-    (0.00, (6, 40, 38)),  # #062826
-    (0.28, (10, 58, 56)),  # #0a3a38
-    (0.58, (20, 96, 90)),  # #14605a
+    (0.00, (6, 40, 38)),      # #062826
+    (0.28, (10, 58, 56)),     # #0a3a38
+    (0.58, (20, 96, 90)),     # #14605a
     (0.86, (122, 171, 163)),  # #7aaba3
     (1.00, (216, 228, 222)),  # #d8e4de
 ]
@@ -54,49 +62,71 @@ def color_at(t: float):
 
 
 def make_bg(size: int) -> Image.Image:
+    """Match CSS linear-gradient(165deg, …) — smooth top→bottom with slight diagonal."""
     img = Image.new("RGB", (size, size))
     px = img.load()
     for y in range(size):
         vy = y / (size - 1)
         for x in range(size):
             vx = x / (size - 1)
+            # 165deg ≈ mostly vertical, slight L→R
             t = max(0.0, min(1.0, vy * 0.88 + vx * 0.12))
             px[x, y] = color_at(t)
     return img
 
 
+def soft_radial(
+    size: int,
+    cx: float,
+    cy: float,
+    rx: float,
+    ry: float,
+    rgba: tuple[int, int, int, int],
+    blur_frac: float = 0.12,
+) -> Image.Image:
+    """Soft ellipse glow (blurred) — matches CSS radial-gradient, not ring arches."""
+    layer = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    r, g, b, a = rgba
+    # Draw a filled ellipse then blur heavily so edges dissolve
+    box = [cx - rx, cy - ry, cx + rx, cy + ry]
+    draw.ellipse(box, fill=(r, g, b, a))
+    blur = max(8, int(size * blur_frac))
+    return layer.filter(ImageFilter.GaussianBlur(radius=blur))
+
+
 def add_sky_glows(base: Image.Image) -> Image.Image:
+    """HTML .splash-sky — warm top glow + soft primary mid glow."""
     size = base.size[0]
-    overlay = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(overlay)
-    cx, cy = size // 2, int(size * 0.18)
-    for i, alpha in enumerate((28, 18, 10, 4)):
-        r = int(size * (0.42 - i * 0.06))
-        draw.ellipse(
-            [cx - r, cy - int(r * 0.55), cx + r, cy + int(r * 0.55)],
-            fill=(255, 236, 210, alpha),
-        )
-    cx2, cy2 = size // 2, int(size * 0.48)
-    for i, alpha in enumerate((36, 22, 10)):
-        r = int(size * (0.32 - i * 0.05))
-        draw.ellipse([cx2 - r, cy2 - r, cx2 + r, cy2 + r], fill=(47, 155, 140, alpha))
-    return Image.alpha_composite(base.convert("RGBA"), overlay)
+    out = base.convert("RGBA")
+    # Warm highlight near top (50% y≈16%)
+    warm = soft_radial(
+        size,
+        cx=size * 0.5,
+        cy=size * 0.16,
+        rx=size * 0.42,
+        ry=size * 0.26,
+        rgba=(255, 236, 210, 48),
+        blur_frac=0.10,
+    )
+    # Soft mint mid glow (primary-ish at ~48%)
+    mid = soft_radial(
+        size,
+        cx=size * 0.5,
+        cy=size * 0.48,
+        rx=size * 0.30,
+        ry=size * 0.22,
+        rgba=(47, 155, 140, 36),
+        blur_frac=0.11,
+    )
+    out = Image.alpha_composite(out, warm)
+    out = Image.alpha_composite(out, mid)
+    return out
 
 
-def add_wave_hint(base: Image.Image) -> Image.Image:
-    """Soft bottom bands hinting at .splash-waves (static)."""
-    size = base.size[0]
-    overlay = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(overlay)
-    # Simple layered ellipses near bottom
-    for i, (y_frac, alpha, h_frac) in enumerate(
-        ((0.78, 40, 0.22), (0.84, 32, 0.2), (0.9, 24, 0.18))
-    ):
-        y0 = int(size * y_frac)
-        h = int(size * h_frac)
-        color = (12, 70, 66, alpha) if i % 2 == 0 else (232, 240, 236, alpha // 2)
-        draw.ellipse([-int(size * 0.1), y0, int(size * 1.1), y0 + h * 2], fill=color)
-    return Image.alpha_composite(base, overlay)
+def compose_first_frame() -> Image.Image:
+    """First frame of web splash: gradient + soft sky only (no mark, no arches)."""
+    return add_sky_glows(make_bg(SIZE))
 
 
 def load_light_anchor(path: Path, size: int) -> Image.Image:
@@ -174,13 +204,8 @@ def draw_centered_text(draw, text: str, cy: int, font, fill, letter_spacing: int
     return max_h
 
 
-def compose_first_frame() -> Image.Image:
-    """What the web splash looks like before mark/word animate in."""
-    return add_wave_hint(add_sky_glows(make_bg(SIZE)))
-
-
 def compose_settled_brand(mark_path: Path) -> Image.Image:
-    """Full brand lockup (preview / marketing)."""
+    """Full brand lockup (preview / marketing only — not LaunchScreen)."""
     bg = compose_first_frame()
     logo_w = int(SIZE * 0.22)
     mark = load_light_anchor(mark_path, logo_w)
@@ -191,8 +216,9 @@ def compose_settled_brand(mark_path: Path) -> Image.Image:
     cy_mark = int(SIZE * 0.42)
     r = int(logo_w * 0.78)
     pdraw.ellipse(
-        [cx - r, cy_mark - r, cx + r, cy_mark + r], fill=(232, 244, 240, 28)
+        [cx - r, cy_mark - r, cx + r, cy_mark + r], fill=(232, 244, 240, 22)
     )
+    plate = plate.filter(ImageFilter.GaussianBlur(radius=int(SIZE * 0.02)))
     bg = Image.alpha_composite(bg, plate)
 
     mx = (SIZE - logo_w) // 2
@@ -247,19 +273,25 @@ def main() -> None:
         raise SystemExit("No Harbor mark found")
     print("mark:", mark_path)
 
-    # iOS LaunchScreen / Capacitor SplashScreen — first frame for animation handoff
+    # iOS LaunchScreen — first frame only (seamless → HTML splash)
     first = compose_first_frame().convert("RGB")
     for n in ("splash-2732x2732.png", "splash-2732x2732-1.png", "splash-2732x2732-2.png"):
         p = OUT / n
         first.save(p, "PNG", optimize=True)
         print("wrote first-frame", p.name, p.stat().st_size)
 
-    # Settled brand preview (not used as LaunchScreen — animations handle mark/text)
+    # Solid fallback (top of gradient) for any solid-color launch uses
+    solid = Image.new("RGB", (64, 64), STOPS[0][1])
+    solid_path = ROOT / "harbor-ios-launch-solid.png"
+    solid.save(solid_path, "PNG")
+    print("solid", solid_path)
+
+    # Settled brand preview (marketing / docs — not LaunchScreen)
     settled = compose_settled_brand(mark_path).convert("RGB")
     preview = ROOT / "harbor-ios-launch-splash.png"
     settled.save(preview, "PNG", optimize=True)
     print("preview (settled brand)", preview)
-    print("done")
+    print("done — first frame is clean gradient + soft sky (no arches)")
 
 
 if __name__ == "__main__":
