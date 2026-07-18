@@ -11814,7 +11814,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 365;
+    const HARBOR_BUILD_NUMBER = 366;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11866,6 +11866,20 @@
      * Product train is 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '1.0',
+        date: '2026-07-18',
+        title: 'Recipe photo ingredients · build 366',
+        intro: 'Snap a recipe card and Harbor can read the ingredient list for you to review.',
+        sections: [{
+          heading: 'Grocery recipes',
+          items: [
+            'Camera and photo library for custom recipes (iOS permissions)',
+            'Read ingredients from a photo — on-device text reading, editable before save',
+            'Photo attaches to the recipe for reference'
+          ]
+        }]
+      },
       {
         version: '1.0',
         date: '2026-07-18',
@@ -20175,6 +20189,122 @@
       }
     }
 
+    // ── Recipe photo → ingredients (on-device OCR via Tesseract, loaded on demand) ──
+    let _tesseractLoadPromise = null;
+    let _recipeOcrBusy = false;
+
+    function loadTesseractLib() {
+      if (typeof window !== 'undefined' && window.Tesseract) {
+        return Promise.resolve(window.Tesseract);
+      }
+      if (_tesseractLoadPromise) return _tesseractLoadPromise;
+      _tesseractLoadPromise = new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-harbor-tesseract]');
+        if (existing && window.Tesseract) {
+          resolve(window.Tesseract);
+          return;
+        }
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+        s.async = true;
+        s.dataset.harborTesseract = '1';
+        s.onload = () => {
+          if (window.Tesseract) resolve(window.Tesseract);
+          else reject(new Error('Ingredient reader failed to start'));
+        };
+        s.onerror = () => {
+          _tesseractLoadPromise = null;
+          reject(new Error('Could not load ingredient reader — needs a network connection the first time'));
+        };
+        document.head.appendChild(s);
+      });
+      return _tesseractLoadPromise;
+    }
+
+    /** Turn OCR dump into a clean ingredient list (user can still edit). */
+    function parseIngredientsFromOcrText(raw) {
+      const text = String(raw || '')
+        .replace(/\r/g, '\n')
+        .replace(/[•●▪◦‣∙·]/g, '\n')
+        .replace(/\t/g, ' ')
+        .trim();
+      if (!text) return [];
+
+      const skipLine = /^(ingredients?|directions?|instructions?|method|preparation|prep\s*time|cook\s*time|total\s*time|serves?|servings?|yield|nutrition|calories|steps?|notes?|you.?ll need|what you need|for the |makes?\b)/i;
+      const skipOnly = /^(optional|to serve|for garnish|equipment|tools?)$/i;
+      const looksLikeTime = /^\d+\s*(min|mins|minutes|hr|hrs|hours?|sec)\b/i;
+      const looksLikeTemp = /^\d+\s*°?\s*[fc]\b/i;
+
+      let lines = text.split(/\n+/).map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
+
+      // If OCR mashed everything into few lines, also split on common separators
+      if (lines.length <= 2 && text.length > 40) {
+        const exploded = text
+          .split(/(?<=\d)\s*[,;]\s+|\s+[;|]\s+|\s{2,}/)
+          .map(s => s.trim())
+          .filter(Boolean);
+        if (exploded.length > lines.length) lines = exploded;
+      }
+
+      const items = [];
+      const seen = new Set();
+      for (let line of lines) {
+        line = line
+          .replace(/^[\d]+[.)]\s+/, '')
+          .replace(/^[-–—*]\s+/, '')
+          .replace(/^\(\s*/, '')
+          .replace(/\s*\)$/, '')
+          .trim();
+        if (line.length < 2 || line.length > 80) continue;
+        if (skipLine.test(line) || skipOnly.test(line)) continue;
+        if (looksLikeTime.test(line) || looksLikeTemp.test(line)) continue;
+        // Skip pure page noise
+        if (/^[\d\s./-]+$/.test(line)) continue;
+        if (/^https?:/i.test(line)) continue;
+        // Prefer lines that look like food amounts or names (letters present)
+        if (!/[a-zA-Z]/.test(line)) continue;
+
+        // Split "2 cups flour, 1 tsp salt" style
+        const chunks = line.includes(',') && line.length > 28
+          ? line.split(/\s*,\s*/).map(s => s.trim()).filter(Boolean)
+          : [line];
+        for (const chunk of chunks) {
+          if (chunk.length < 2 || chunk.length > 60) continue;
+          if (skipLine.test(chunk)) continue;
+          const key = chunk.toLowerCase();
+          if (seen.has(key)) continue;
+          seen.add(key);
+          items.push(chunk);
+        }
+      }
+
+      // Cap so the field stays usable
+      return items.slice(0, 40);
+    }
+
+    /**
+     * OCR a recipe photo (JPEG data URL). Needs network once to load the reader.
+     * Returns { items: string[], raw: string }.
+     */
+    async function extractIngredientsFromRecipePhoto(dataUrl, options = {}) {
+      if (!dataUrl || typeof dataUrl !== 'string') {
+        throw new Error('Add a photo first');
+      }
+      const Tesseract = await loadTesseractLib();
+      const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
+      const result = await Tesseract.recognize(dataUrl, 'eng', {
+        logger: (m) => {
+          if (!onProgress) return;
+          if (m && m.status === 'recognizing text' && typeof m.progress === 'number') {
+            onProgress(m.progress);
+          }
+        }
+      });
+      const raw = String(result?.data?.text || '').trim();
+      const items = parseIngredientsFromOcrText(raw);
+      return { items, raw };
+    }
+
     /** Open system photo picker (library). Works more reliably than dynamic inputs on iOS. */
     function openRecipePhotoPicker({ capture = false } = {}) {
       return new Promise((resolve) => {
@@ -20237,7 +20367,14 @@
           <div id="mp-photo-preview-wrap" class="mb-3 ${photoDataUrl ? '' : 'hidden'}">
             <img id="mp-photo-preview" alt="Recipe photo" class="w-full max-h-40 object-cover rounded-2xl border border-harbor-border bg-harbor-raised"
               ${photoDataUrl ? `src="${photoDataUrl}"` : ''}/>
-            <button type="button" id="mp-photo-clear" class="mt-1.5 text-[11px] font-semibold text-harbor-muted">Remove photo</button>
+            <div class="flex flex-wrap items-center gap-2 mt-1.5">
+              <button type="button" id="mp-photo-scan" class="chip-add-btn text-[11px] py-1.5 px-2.5" style="display:inline-flex;align-items:center;gap:0.35rem">
+                <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                <span>Read ingredients</span>
+              </button>
+              <button type="button" id="mp-photo-clear" class="text-[11px] font-semibold text-harbor-muted px-1">Remove photo</button>
+            </div>
+            <p id="mp-ocr-status" class="text-[10px] text-harbor-muted mt-1 hidden" aria-live="polite"></p>
           </div>
           <div class="flex gap-2 mb-3">
             <button type="button" id="mp-photo-camera" class="chip-tool-btn flex-1" style="display:inline-flex;align-items:center;justify-content:center;gap:0.35rem">
@@ -20249,12 +20386,12 @@
               <span>Library</span>
             </button>
           </div>
-          <p class="text-[10px] text-harbor-muted mb-3 leading-snug">Photo is saved with the recipe on this device. Auto-reading ingredients from a picture is coming later — type the list below for now.</p>
+          <p class="text-[10px] text-harbor-muted mb-3 leading-snug">Snap a recipe card, then <strong class="text-harbor-text">Read ingredients</strong> to fill the list (on-device text reading). Always double-check — OCR isn’t perfect. Photo stays on this device.</p>
           <label class="block text-xs text-harbor-muted mb-1">Recipe name</label>
           <input id="mp-name" type="text" placeholder="e.g. Sheet Pan Chicken" value="${escapeBriefHtml(seed.name || '')}"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-3 outline-none text-harbor-text">
           <label class="block text-xs text-harbor-muted mb-1">Ingredients (comma-separated)</label>
-          <textarea id="mp-items" rows="3" placeholder="Chicken thighs, Potatoes, Olive oil, Green beans"
+          <textarea id="mp-items" rows="4" placeholder="Chicken thighs, Potatoes, Olive oil, Green beans"
             class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-3 outline-none text-harbor-text resize-none">${escapeBriefHtml(seed.itemsText || '')}</textarea>
           <label class="block text-xs text-harbor-muted mb-1.5">Cooking effort</label>
           <div class="flex gap-1.5 mb-6">
@@ -20271,6 +20408,19 @@
 
       const previewWrap = modal.querySelector('#mp-photo-preview-wrap');
       const previewImg = modal.querySelector('#mp-photo-preview');
+      const ocrStatus = modal.querySelector('#mp-ocr-status');
+      const itemsField = modal.querySelector('#mp-items');
+      const scanBtn = modal.querySelector('#mp-photo-scan');
+      const setOcrStatus = (msg, show = true) => {
+        if (!ocrStatus) return;
+        if (!show || !msg) {
+          ocrStatus.classList.add('hidden');
+          ocrStatus.textContent = '';
+          return;
+        }
+        ocrStatus.textContent = msg;
+        ocrStatus.classList.remove('hidden');
+      };
       const setPhoto = (dataUrl) => {
         photoDataUrl = dataUrl || '';
         if (photoDataUrl) {
@@ -20279,6 +20429,58 @@
         } else {
           previewImg.removeAttribute('src');
           previewWrap.classList.add('hidden');
+          setOcrStatus('', false);
+        }
+      };
+      const runIngredientScan = async ({ auto = false } = {}) => {
+        if (!photoDataUrl) {
+          showToast('Add a photo first', 'info');
+          return;
+        }
+        if (_recipeOcrBusy) return;
+        _recipeOcrBusy = true;
+        if (scanBtn) {
+          scanBtn.disabled = true;
+          scanBtn.style.opacity = '0.65';
+        }
+        setOcrStatus(auto ? 'Reading ingredients from photo…' : 'Reading text… (first time may take a moment)');
+        try {
+          const { items } = await extractIngredientsFromRecipePhoto(photoDataUrl, {
+            onProgress: (p) => {
+              const pct = Math.round(Math.max(0, Math.min(1, p)) * 100);
+              setOcrStatus(`Reading ingredients… ${pct}%`);
+            }
+          });
+          if (!items.length) {
+            setOcrStatus('Couldn’t find a clear list — type ingredients below or try a sharper photo.');
+            showToast('No ingredients found — try a clearer recipe card photo', 'warn');
+            return;
+          }
+          const joined = items.join(', ');
+          if (itemsField) {
+            const existing = (itemsField.value || '').trim();
+            // Auto after photo: fill if empty; manual scan: replace (user asked to read)
+            if (!existing || !auto) {
+              itemsField.value = joined;
+            } else if (auto && existing) {
+              // Keep typed list; offer merge lightly
+              setOcrStatus(`Found ${items.length} items — ingredients field already has text (use Read ingredients to replace).`);
+              showToast(`Found ${items.length} ingredients — tap Read ingredients to fill`, 'info');
+              return;
+            }
+          }
+          setOcrStatus(`Found ${items.length} ingredient${items.length === 1 ? '' : 's'} — edit if needed.`);
+          showToast(`Found ${items.length} ingredient${items.length === 1 ? '' : 's'}`);
+        } catch (err) {
+          console.warn('Recipe OCR failed', err);
+          setOcrStatus(err?.message || 'Could not read ingredients from photo.');
+          showToast(err?.message || 'Could not read ingredients', 'warn');
+        } finally {
+          _recipeOcrBusy = false;
+          if (scanBtn) {
+            scanBtn.disabled = false;
+            scanBtn.style.opacity = '';
+          }
         }
       };
       const handlePhotoFile = async (file) => {
@@ -20287,7 +20489,14 @@
           showToast('Reading photo…', 'info');
           const dataUrl = await readRecipePhotoFile(file);
           setPhoto(dataUrl);
-          showToast('Photo attached — add name & ingredients');
+          showToast('Photo attached');
+          // Auto-try OCR when ingredients field is empty
+          const existing = (itemsField?.value || '').trim();
+          if (!existing) {
+            await runIngredientScan({ auto: true });
+          } else {
+            setOcrStatus('Photo ready — tap Read ingredients to scan.');
+          }
         } catch (err) {
           console.warn('Recipe photo failed', err);
           showToast(err?.message || 'Could not use that photo', 'warn');
@@ -20313,6 +20522,11 @@
         pickPhoto(false);
       });
       modal.querySelector('#mp-photo-clear')?.addEventListener('click', () => setPhoto(''));
+      scanBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        runIngredientScan({ auto: false });
+      });
 
       let selectedEffort = Number(seed.effort) || 1;
       const paintEffort = () => {
