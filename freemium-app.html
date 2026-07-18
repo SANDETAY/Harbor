@@ -481,6 +481,80 @@
     .theme-swatch.is-premium-locked .theme-swatch-preview {
       filter: grayscale(0.25);
     }
+    .life-flyout-lock,
+    .life-web-tab-lock,
+    .harbor-prem-lock {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 999px;
+      font-size: 0.55rem;
+      color: rgb(var(--harbor-primary-light));
+      background: rgb(var(--harbor-primary) / 0.12);
+      flex-shrink: 0;
+    }
+    html:not([data-harbor-premium="1"]) .life-flyout-item[data-life-panel="budget"] .life-flyout-lock,
+    html:not([data-harbor-premium="1"]) .life-web-tab[data-life-panel="budget"] .life-web-tab-lock {
+      display: inline-flex;
+    }
+    .life-flyout-item .life-flyout-lock i,
+    .life-web-tab-lock i { font-size: 0.55rem; }
+    .library-task-card.is-premium-locked {
+      opacity: 0.88;
+    }
+    .library-task-card.is-premium-locked .lib-add-btn {
+      background: rgb(var(--harbor-raised)) !important;
+      color: rgb(var(--harbor-muted)) !important;
+      border: 1px solid rgb(var(--harbor-border));
+    }
+    .harbor-day-premium-lock {
+      border: 1px dashed rgb(var(--harbor-border));
+      border-radius: 1.1rem;
+      padding: 1rem 0.95rem;
+      background: rgb(var(--harbor-raised) / 0.55);
+      text-align: center;
+    }
+    .harbor-day-premium-lock .hdl-lock {
+      width: 2rem;
+      height: 2rem;
+      margin: 0 auto 0.55rem;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgb(var(--harbor-primary) / 0.12);
+      color: rgb(var(--harbor-primary-light));
+      font-size: 0.85rem;
+    }
+    .cal-premium-lock-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.9rem 1rem;
+      border-radius: 1rem;
+      border: 1px dashed rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised) / 0.65);
+      text-align: left;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+    .cal-premium-lock-row .cal-lock-icon {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 0.65rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgb(var(--harbor-primary) / 0.12);
+      color: rgb(var(--harbor-primary-light));
+      flex-shrink: 0;
+    }
+
     .freemium-sandbox-banner {
       position: sticky;
       top: 0;
@@ -11449,9 +11523,10 @@
           </button>
           <button type="button" role="tab" class="life-web-tab" id="life-web-tab-budget"
             data-life-panel="budget" aria-selected="false" aria-controls="life-panel-budget"
-            onclick="selectLifeSection('budget')" title="Optional: import bank CSVs">
+            onclick="selectLifeSection('budget')" title="Budget · Premium">
             <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
             <span>Budget</span>
+            <span class="life-web-tab-lock" title="Premium"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
           </button>
         </nav>
         <div class="life-panels-scroll">
@@ -11812,9 +11887,11 @@
         <span>Subscriptions</span>
       </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-budget"
-        data-life-panel="budget" onclick="selectLifeSection('budget')">
+        data-life-panel="budget" onclick="selectLifeSection('budget')"
+        aria-label="Budget (Premium)">
         <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
         <span>Budget</span>
+        <span class="life-flyout-lock" title="Premium"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
       </button>
       <span class="life-flyout-caret" aria-hidden="true"></span>
     </div>
@@ -11880,6 +11957,14 @@
       try {
         document.documentElement.dataset.harborPremium = on ? '1' : '0';
       } catch (_) { /* ignore */ }
+      if (typeof refreshHarborPremiumDom === 'function') refreshHarborPremiumDom();
+      // Refresh surfaces that show locks
+      try {
+        if (typeof updateLifeFlyoutActive === 'function') updateLifeFlyoutActive();
+        if (typeof renderLibrary === 'function') renderLibrary();
+        if (typeof renderRewardBank === 'function') renderRewardBank();
+        if (typeof renderStreaks === 'function') renderStreaks();
+      } catch (_) { /* ignore */ }
       return !!on;
     }
 
@@ -11914,9 +11999,11 @@
             <button type="button" class="modal-close-chip" data-prem-dismiss="1" aria-label="Close">Close</button>
           </div>
           <ul class="text-[11px] text-harbor-muted space-y-1 mb-4 pl-0.5">
-            <li>· Extra color palettes (Lilac, Blush, Peach, Lagoon)</li>
-            <li>· Network helper for calendar feeds</li>
-            <li>· Higher household profile limit</li>
+            <li>· Budget (bank CSV overview)</li>
+            <li>· Sync iPhone / phone calendars</li>
+            <li>· Harbor Day rewards</li>
+            <li>· Preset Library chores</li>
+            <li>· Extra color palettes</li>
             <li>· Review-only — no real IAP in this sandbox</li>
           </ul>
           <div class="flex gap-2">
@@ -11938,9 +12025,10 @@
         setHarborPremium(true);
         close();
         if (typeof showToast === 'function') showToast('Premium preview on — re-open Settings to toggle off');
-        if (typeof showSettings === 'function') {
-          /* leave user in app; they can open settings */
-        }
+        try {
+          if (typeof renderRewardBank === 'function') renderRewardBank();
+          if (typeof renderLibrary === 'function') renderLibrary();
+        } catch (_) { /* ignore */ }
       });
     }
 
@@ -11954,7 +12042,13 @@
       return HARBOR_PREMIUM_THEME_IDS.includes(themeId);
     }
 
-
+    /** Sync html data attr for CSS lock icons (Budget tab, etc.). */
+    function refreshHarborPremiumDom() {
+      try {
+        document.documentElement.dataset.harborPremium = isHarborPremium() ? '1' : '0';
+      } catch (_) { /* ignore */ }
+    }
+    refreshHarborPremiumDom();
 
     // Product train 1.0 (store-ready train). Day-to-day ships bump HARBOR_BUILD_NUMBER
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
@@ -21971,6 +22065,10 @@
     }
 
     async function connectDeviceCalendars() {
+      if (typeof requireHarborPremium === 'function' && !requireHarborPremium({
+        feature: 'Sync iPhone calendars',
+        detail: 'One-tap phone calendar sync is Premium. Free can still import a .ics file or paste a secret calendar link.'
+      })) return;
       if (!isHarborNativeApp()) {
         showToast('Open Harbor on your iPhone to sync calendars', 'info');
         if (!document.getElementById('connect-calendar-modal')) showCalendarFeedModal();
@@ -25449,6 +25547,15 @@
 
     function switchLifePanel(panel, options = {}) {
       if (!LIFE_PANEL_ORDER.includes(panel)) return;
+      if (panel === 'budget' && typeof isHarborPremium === 'function' && !isHarborPremium() && !options.allowPremiumBypass) {
+        panel = currentLifePanel && currentLifePanel !== 'budget' ? currentLifePanel : 'schedule';
+        if (typeof requireHarborPremium === 'function' && options.fromUser) {
+          requireHarborPremium({
+            feature: 'Budget',
+            detail: 'Bank CSV overview is Premium. Free includes Bills and Subscriptions for due dates and renewals.'
+          });
+        }
+      }
       const prev = currentLifePanel;
       const same = prev === panel && !options.force;
       const prevIdx = LIFE_PANEL_ORDER.indexOf(prev);
@@ -28102,6 +28209,14 @@
     /** Pick a Life section → panel under shared chrome */
     function selectLifeSection(panel, options = {}) {
       if (!LIFE_PANEL_ORDER.includes(panel)) return;
+      if (panel === 'budget' && typeof requireHarborPremium === 'function' && !isHarborPremium()) {
+        closeLifeFlyout();
+        requireHarborPremium({
+          feature: 'Budget',
+          detail: 'Bank CSV overview is Premium. Free includes Bills and Subscriptions for due dates and renewals.'
+        });
+        return;
+      }
       closeLifeFlyout();
       const needTab = currentTab !== 'life';
       if (needTab) {
@@ -36975,6 +37090,14 @@
     }
 
     function addLibraryTaskToHabits(task, cardEl) {
+      const isPersonal = typeof isPersonalLibraryTask === 'function' && isPersonalLibraryTask(task);
+      if (!isPersonal && typeof requireHarborPremium === 'function' && !isHarborPremium()) {
+        requireHarborPremium({
+          feature: 'Preset Library',
+          detail: 'Built-in chores and routines are Premium. Free can still add your own personal tasks from Library.'
+        });
+        return;
+      }
       if (state.habits.some(h => h.id === task.id)) return;
 
       // Library add is silent — never browser-prompt for amounts.
@@ -37039,6 +37162,14 @@
     }
 
     function scheduleProForTask(task) {
+      if (typeof requireHarborPremium === 'function' && !isHarborPremium()) {
+        requireHarborPremium({
+          feature: 'Preset Library',
+          detail: 'Hire-a-pro reminders for built-in chores are Premium. Add your own personal tasks for free.'
+        });
+        return;
+      }
+
       const pro = getTaskProOption(task);
       if (!pro) return;
       // Ensure task carries proOption for reminder linking
@@ -37282,7 +37413,8 @@
         : '';
 
       const div = document.createElement('div');
-      div.className = `library-task-card${alreadyAdded || proScheduled ? ' is-added' : ''}`;
+      const presetLocked = !isPersonal && typeof isHarborPremium === 'function' && !isHarborPremium();
+      div.className = `library-task-card${alreadyAdded || proScheduled ? ' is-added' : ''}${presetLocked ? ' is-premium-locked' : ''}`;
 
       let actionCol = '';
 
@@ -37300,10 +37432,14 @@
             <button type="button" class="lib-edit-btn text-[10px] font-semibold text-harbor-primary-light px-2 py-1.5 rounded-xl border border-harbor-border bg-harbor-raised">Edit</button>
             <button type="button" class="lib-goto-task-btn text-[10px] font-semibold text-harbor-text px-2 py-1.5 rounded-xl bg-harbor-primary/15 text-harbor-primary-light">On Task</button>
           </div>`;
-      } else if (proScheduled) {
+      } else if (proScheduled && !presetLocked) {
         actionCol = `<div class="library-task-actions">
             <button type="button" class="lib-goto-pro-btn text-[10px] px-2.5 py-1.5 rounded-xl bg-harbor-primary/20 text-harbor-primary-light font-semibold whitespace-nowrap">On Task →</button>
             <button type="button" class="lib-add-btn text-[9px] text-harbor-muted hover:text-harbor-text">+ Add DIY</button>
+          </div>`;
+      } else if (presetLocked) {
+        actionCol = `<div class="library-task-actions">
+            <button type="button" class="lib-add-btn px-3 py-1.5 text-[10px] font-semibold rounded-xl whitespace-nowrap"><i class="fa-solid fa-lock mr-1" aria-hidden="true"></i>Premium</button>
           </div>`;
       } else if (proOpt) {
         // DIY is the main path; hire is a reminder — Harbor never books for you
@@ -37526,6 +37662,7 @@
     }
 
     function isCheatDayFundEnabled() {
+      if (typeof isHarborPremium === 'function' && !isHarborPremium()) return false;
       return state.settings.cheatDayFundEnabled !== false;
     }
 
@@ -38669,6 +38806,20 @@
 
     function renderRewardBank() {
       const panel = document.getElementById('reward-bank-panel');
+      if (panel && typeof isHarborPremium === 'function' && !isHarborPremium()) {
+        panel.innerHTML = `
+          <div class="harbor-day-premium-lock">
+            <div class="hdl-lock" aria-hidden="true"><i class="fa-solid fa-lock"></i></div>
+            <div class="text-sm font-semibold text-harbor-text">Harbor Day is Premium</div>
+            <p class="text-[11px] text-harbor-muted mt-1.5 leading-relaxed max-w-xs mx-auto">
+              Earn rest from real progress — Moment, Window, Full day, or Bank. Streaks stay free; Harbor Day rewards unlock with Premium.
+            </p>
+            <button type="button" class="chip-add-btn mt-3" onclick="requireHarborPremium({feature:'Harbor Day',detail:'Claim earned rest days and custom treats with Premium. Streak tracking stays free.'})">
+              <i class="fa-solid fa-lock" aria-hidden="true"></i> Preview Premium
+            </button>
+          </div>`;
+        return;
+      }
       if (!panel) return;
       wireHarborDayInfoToggle();
 
@@ -40285,7 +40436,9 @@
       
       const smartSuggestionsOn = !state.settings.smartSuggestionsMuted;
       const currentTheme = getAppTheme();
-      const cheatFundOn = state.settings.cheatDayFundEnabled !== false;
+      const cheatFundOn = (typeof isHarborPremium === 'function' && !isHarborPremium())
+        ? false
+        : state.settings.cheatDayFundEnabled !== false;
       const corsHelperOn = state.settings.calendarAllowCorsHelper === true;
       const notificationsOn = state.settings.notificationsEnabled === true;
       const notifyBillsOn = state.settings.notifyBills !== false;
@@ -40339,7 +40492,7 @@
                 <div class="settings-row">
                   <div class="settings-row-copy">
                     <div class="settings-row-title">Premium unlocked</div>
-                    <div class="settings-row-desc">Review toggle only — no real purchase. Free = Mint + Night; Pro = all palettes + extras.</div>
+                    <div class="settings-row-desc">Review only. Free: Mint/Night, ICS calendars, personal tasks. Premium: Budget, phone calendar sync, Harbor Day, presets, extra palettes.</div>
                   </div>
                   <button type="button" id="premium-review-toggle" role="switch" aria-checked="${premiumOn ? 'true' : 'false'}"
                     aria-label="Harbor Premium preview" class="smart-suggestions-toggle harbor-switch">
@@ -40630,7 +40783,7 @@
             try { saveState(); } catch (_) { /* ignore */ }
           }
           if (typeof showToast === 'function') {
-            showToast(on ? 'Premium preview ON' : 'Free tier — Pro palettes locked', on ? 'success' : 'info');
+            showToast(on ? 'Premium preview ON' : 'Free tier — Budget, phone sync, Harbor Day, presets locked', on ? 'success' : 'info');
           }
           // Re-open settings so swatches refresh locked state
           modal.remove();
@@ -40661,7 +40814,19 @@
       setSwitchChecked(modal.querySelector('#notify-routine-toggle'), notifyRoutineOn);
 
       wireSwitchToggle(modal.querySelector('#smart-suggestions-toggle'));
-      wireSwitchToggle(modal.querySelector('#cheat-fund-toggle'));
+      wireSwitchToggle(modal.querySelector('#cheat-fund-toggle'), (on) => {
+        if (on && typeof requireHarborPremium === 'function' && !requireHarborPremium({
+          feature: 'Harbor Day',
+          detail: 'Harbor Day rewards are Premium. Streak fires stay free.'
+        })) {
+          setSwitchChecked(modal.querySelector('#cheat-fund-toggle'), false);
+          return;
+        }
+        state.settings.cheatDayFundEnabled = on;
+        saveState();
+        if (typeof renderRewardBank === 'function') renderRewardBank();
+        showToast(on ? 'Harbor Day on' : 'Harbor Day off');
+      });
       wireSwitchToggle(modal.querySelector('#calendar-cors-helper-toggle'), (on) => {
         if (on && typeof requireHarborPremium === 'function' && !requireHarborPremium({
           feature: 'Calendar network helper',
@@ -42857,8 +43022,11 @@
       };
 
       const renderHome = () => {
+        const prem = typeof isHarborPremium === 'function' && isHarborPremium();
         titleEl.textContent = 'Calendars';
-        subEl.textContent = 'One tap to sync what’s on this phone.';
+        subEl.textContent = prem
+          ? 'One tap to sync what’s on this phone.'
+          : 'Import a file or paste a private link. Phone sync is Premium.';
         const feeds = getCalendarFeeds();
         const imported = state.settings.importedCalendarEvents?.length || 0;
         const deviceOn = isDeviceCalendarConnected();
@@ -42893,7 +43061,33 @@
             </div>
           ` : `
             <div class="mb-4">
-              ${native ? `
+              ${!prem ? `
+                <button type="button" data-device-connect-locked class="cal-premium-lock-row mb-2">
+                  <span class="cal-lock-icon" aria-hidden="true"><i class="fa-solid fa-lock"></i></span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block text-sm font-semibold text-harbor-text">Sync iPhone calendars</span>
+                    <span class="block text-[11px] text-harbor-muted mt-0.5 leading-snug">Premium · one-tap calendars already on this phone</span>
+                  </span>
+                </button>
+                <div class="space-y-2">
+                  <button type="button" class="cal-connect-provider" data-cal-view="file">
+                    <span class="cal-connect-provider-icon is-file" aria-hidden="true"><i class="fa-solid fa-file-import"></i></span>
+                    <span class="min-w-0">
+                      <span class="cal-connect-provider-title block">Import a file</span>
+                      <span class="cal-connect-provider-desc block">Choose a .ics calendar export</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="cal-connect-provider" data-cal-view="other">
+                    <span class="cal-connect-provider-icon is-other" aria-hidden="true"><i class="fa-solid fa-link"></i></span>
+                    <span class="min-w-0">
+                      <span class="cal-connect-provider-title block">Paste a link</span>
+                      <span class="cal-connect-provider-desc block">Private .ics / secret feed URL</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-right cal-connect-provider-chev" aria-hidden="true"></i>
+                  </button>
+                </div>
+              ` : native ? `
                 <button type="button" data-device-connect
                   class="w-full py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm flex items-center justify-center gap-2 active:opacity-90">
                   <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i>
@@ -42922,7 +43116,7 @@
             </div>
           ` : ''}
 
-          <details class="cal-connect-advanced mt-1 rounded-2xl border border-harbor-border bg-harbor-raised/60 overflow-hidden">
+          <details class="cal-connect-advanced mt-1 rounded-2xl border border-harbor-border bg-harbor-raised/60 overflow-hidden${prem ? '' : ' hidden'}">
             <summary class="px-3.5 py-3 text-xs font-semibold text-harbor-text cursor-pointer list-none flex items-center justify-between gap-2">
               <span>More options</span>
               <span class="text-[10px] font-medium text-harbor-muted">File or link</span>
@@ -42964,6 +43158,14 @@
         body.querySelector('[data-device-connect]')?.addEventListener('click', async () => {
           await connectDeviceCalendars();
           renderHome();
+        });
+        body.querySelector('[data-device-connect-locked]')?.addEventListener('click', () => {
+          if (typeof requireHarborPremium === 'function') {
+            requireHarborPremium({
+              feature: 'Sync iPhone calendars',
+              detail: 'One-tap phone calendar sync is Premium. Free can import a .ics file or paste a secret calendar link.'
+            });
+          }
         });
         body.querySelector('[data-device-refresh]')?.addEventListener('click', async () => {
           await syncDeviceCalendarEvents({ silent: false });

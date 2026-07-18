@@ -3,51 +3,39 @@
 **Production app:** `index.html` (unchanged)  
 **Review sandbox:** `freemium.html` (phone shell) → loads `freemium-app.html` (mobile UI)
 
-## Purpose
-
-Review free vs Premium UX on the **mobile** layout without risking the shipping app.  
-`freemium.html` is a phone frame; the app inside is always the cradle / Life flyout UI (not desktop tabs).
-
 ## Open it
 
 ```bash
-# from Harbor repo
 npm start
-# then
 open http://localhost:3000/freemium.html
 ```
 
-Or dual preview header → **Freemium review**.
+## Free vs Premium (what is gated)
 
-## What is gated (sandbox)
+| Free | Premium |
+|------|---------|
+| Harbor Mint + Harbor Night | Lilac, Blush, Peach, Lagoon |
+| Tasks, habits, streaks (fires) | **Harbor Day** rewards |
+| Bills, Subscriptions, Grocery, Schedule | **Budget** (lock on Life menu) |
+| Calendar: **.ics file** + **secret link** | **Sync iPhone / phone calendars** |
+| **Personal** Library tasks (your own) | **Preset** Library chores (+ hire-a-pro) |
+| Daily Brief (full — not gated) | Same |
+| Direct calendar feeds (no network helper) | Calendar network helper |
 
-| Free | Premium (toggle on) |
-|------|---------------------|
-| Harbor Mint + Harbor Night | All palettes (Lilac, Blush, Peach, Lagoon) |
-| Direct calendar / file import | Calendar network helper |
-| Full daily core (tasks, bills, grocery, streaks…) | Same + locked extras unlocked |
+Toggle: **Settings → Harbor Premium → Premium unlocked**
 
-Tapping a locked palette or turning on network helper while Free opens a **Harbor Premium** sheet. **Preview Premium** flips the same toggle as Settings.
+## Daily Brief
+
+Left **fully free** on purpose: it’s the “plan before you execute” hub. Paywalling it would make Free feel broken. Premium differentiates with Budget, phone calendar, Harbor Day, and presets instead.
 
 ## Storage isolation
 
 | Key | Used by |
 |-----|---------|
 | `harbor_state_v1` | Production `index.html` |
-| `harbor_state_freemium_v1` | `freemium-app.html` only |
-| `harbor_freemium_premium_v1` | Premium on/off (`1` / `0`) |
-
-| File | Role |
-|------|------|
-| `freemium.html` | Phone shell (390px iframe) — **open this** |
-| `freemium-app.html` | Full app (mobile UI, freemium gates) |
-
-On first freemium open, if freemium storage is empty, state is **copied once** from production so you can review with real data. Edits in freemium do **not** write back to production.
-
-Service worker registration is **skipped** in the sandbox so it won’t fight production cache.
-
-The phone iframe is ~390px wide so CSS media queries use the **mobile** layout (bottom cradle, Life flyout) — not desktop top tabs.
+| `harbor_state_freemium_v1` | `freemium-app.html` |
+| `harbor_freemium_premium_v1` | Premium on/off |
 
 ## Do not ship
 
-Do not set Capacitor `webDir` / store entry to `freemium.html` or `freemium-app.html`. Store and TestFlight stay on `index.html` until freemium is merged deliberately.
+Store / TestFlight stay on `index.html`.
