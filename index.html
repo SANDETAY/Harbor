@@ -11851,7 +11851,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 361;
+    const HARBOR_BUILD_NUMBER = 362;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11906,7 +11906,7 @@
       {
         version: '1.0',
         date: '2026-07-18',
-        title: 'Store polish · Life labels · in-app confirms · build 361',
+        title: 'Store polish · Life labels · in-app confirms · build 362',
         intro: 'Harbor 1.0 labeling, clearer Bills/Subs/Budget, plain-language Streaks & Harbor Day, and delete confirms that match the app (not the browser).',
         sections: [
           {
@@ -11921,7 +11921,7 @@
             items: [
               'Bills = payments you owe on a due date; Subscriptions = renewals; Budget = optional bank CSVs',
               'Budget framed as optional / advanced — not required for daily Harbor',
-              'Phone Life: first tap opens your last section; tap again for the section menu'
+              'Phone Life: tap Life for the section menu (Schedule, Grocery, Bills, Subs, Budget)'
             ]
           },
           {
@@ -27977,15 +27977,13 @@
         switchTab('life');
         return;
       }
-      // Mobile: first tap opens last Life section (one less menu hop). Tap Life again to switch sections.
-      if (currentTab !== 'life') {
-        if (typeof closeLifeFlyout === 'function') closeLifeFlyout();
-        switchTab('life');
-        return;
-      }
+      // Mobile: Life always shows the section menu on tap (toggle closed if already open).
       if (lifeFlyoutOpen) {
         closeLifeFlyout();
         return;
+      }
+      if (currentTab !== 'life') {
+        switchTab('life', { keepLifeFlyout: true });
       }
       openLifeFlyout();
     }
