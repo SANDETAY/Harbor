@@ -1761,7 +1761,7 @@
       position: relative;
       z-index: 1;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 0.62rem;
       width: 100%;
       padding: 0.68rem 0.72rem;
@@ -1788,6 +1788,8 @@
       font-size: 0.92rem;
       color: rgb(var(--harbor-muted));
       pointer-events: none;
+      margin-top: 0.12rem;
+      flex-shrink: 0;
     }
     .life-flyout-item:hover {
       background: rgb(var(--harbor-raised));
@@ -1803,6 +1805,59 @@
     .life-flyout-item.is-active i {
       color: #FFFFFF;
       opacity: 0.95;
+    }
+    .life-flyout-item-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.12rem;
+      min-width: 0;
+      flex: 1;
+    }
+    .life-flyout-item-label {
+      font-size: 0.84rem;
+      font-weight: 650;
+      line-height: 1.15;
+    }
+    .life-flyout-item-hint {
+      font-size: 0.62rem;
+      font-weight: 500;
+      color: rgb(var(--harbor-muted));
+      line-height: 1.25;
+    }
+    .life-flyout-item.is-active .life-flyout-item-hint {
+      color: rgba(255, 255, 255, 0.88);
+    }
+    .life-panel-intro {
+      font-size: 0.72rem;
+      line-height: 1.4;
+      color: rgb(var(--harbor-muted));
+      margin: 0 0 0.75rem;
+      padding: 0 0.15rem;
+    }
+    .streak-fleet-intro {
+      font-size: 0.72rem;
+      line-height: 1.4;
+      color: rgb(var(--harbor-muted));
+      margin: 0 0 0.75rem;
+    }
+    .streak-fleet-section-sub {
+      font-size: 0.65rem;
+      line-height: 1.3;
+      color: rgb(var(--harbor-muted));
+      margin: -0.1rem 0 0.5rem;
+      padding: 0 0.1rem;
+    }
+
+    /* In-app confirm sheet (replaces browser confirm on iOS) */
+    #harbor-confirm-modal .harbor-confirm-sheet {
+      max-width: 28rem;
+      margin: 0 auto;
+    }
+    #harbor-confirm-modal .harbor-confirm-msg {
+      white-space: pre-wrap;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      color: rgb(var(--harbor-muted));
     }
 
     .life-flyout-kicker {
@@ -9781,10 +9836,16 @@
       box-shadow: 0 3px 12px rgb(var(--harbor-primary) / 0.28);
     }
     #harbor-text-modal .harbor-prompt-save,
-    #harbor-choice-modal .harbor-prompt-save {
+    #harbor-choice-modal .harbor-prompt-save,
+    #harbor-confirm-modal .harbor-prompt-save {
       background: linear-gradient(180deg, rgb(var(--harbor-primary)) 0%, rgb(var(--harbor-primary-light)) 100%);
       color: #fff;
       box-shadow: 0 4px 16px rgb(var(--harbor-primary) / 0.3), 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+    }
+    #harbor-confirm-modal .harbor-confirm-danger {
+      background: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(225, 29, 72, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.14) inset;
     }
 
     .proj-milestone {
@@ -11327,7 +11388,7 @@
         <div id="task-list"></div>
         <div id="app-version-foot" class="app-version-foot" aria-label="App version">
           <button type="button" class="app-version-foot-btn" onclick="showReleaseNotes()" title="What's new">
-            Harbor <span class="tabular-nums" id="app-version-foot-label">0.9</span>
+            Harbor <span class="tabular-nums" id="app-version-foot-label">1.0</span>
           </button>
         </div>
       </div>
@@ -11337,31 +11398,31 @@
         <nav class="life-web-subnav" role="tablist" aria-label="Life sections">
           <button type="button" role="tab" class="life-web-tab life-panel-active" id="life-web-tab-schedule"
             data-life-panel="schedule" aria-selected="true" aria-controls="life-panel-schedule"
-            onclick="selectLifeSection('schedule')">
+            onclick="selectLifeSection('schedule')" title="Events & free time">
             <i class="fa-regular fa-calendar" aria-hidden="true"></i>
             <span>Schedule</span>
           </button>
           <button type="button" role="tab" class="life-web-tab" id="life-web-tab-grocery"
             data-life-panel="grocery" aria-selected="false" aria-controls="life-panel-grocery"
-            onclick="selectLifeSection('grocery')">
+            onclick="selectLifeSection('grocery')" title="Shopping list">
             <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
             <span>Grocery</span>
           </button>
           <button type="button" role="tab" class="life-web-tab" id="life-web-tab-bills"
             data-life-panel="bills" aria-selected="false" aria-controls="life-panel-bills"
-            onclick="selectLifeSection('bills')">
+            onclick="selectLifeSection('bills')" title="Payments you owe on a date">
             <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
             <span>Bills</span>
           </button>
           <button type="button" role="tab" class="life-web-tab" id="life-web-tab-subscriptions"
             data-life-panel="subscriptions" aria-selected="false" aria-controls="life-panel-subscriptions"
-            onclick="selectLifeSection('subscriptions')">
+            onclick="selectLifeSection('subscriptions')" title="Memberships that renew">
             <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-            <span>Subscriptions</span>
+            <span>Subs</span>
           </button>
           <button type="button" role="tab" class="life-web-tab" id="life-web-tab-budget"
             data-life-panel="budget" aria-selected="false" aria-controls="life-panel-budget"
-            onclick="selectLifeSection('budget')">
+            onclick="selectLifeSection('budget')" title="Optional: import bank CSVs">
             <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
             <span>Budget</span>
           </button>
@@ -11461,6 +11522,7 @@
               </button>
             </div>
           </div>
+          <p class="life-panel-intro">Payments you <strong class="text-harbor-text font-semibold">owe on a due date</strong> (rent, utilities). Not the same as Subscriptions or Budget.</p>
           <div id="bills-monthly-total" class="hidden bills-spend-card mb-3" aria-live="polite"></div>
           <div id="bills-list" class="space-y-2"></div>
         </div>
@@ -11492,12 +11554,13 @@
               </div>
             </div>
           </div>
+          <p class="life-panel-intro"><strong class="text-harbor-text font-semibold">Optional · advanced.</strong> Import bank CSVs to see spending — not required for daily Harbor. Bills = due dates · Subs = renewals.</p>
           <div id="budget-empty" class="harbor-empty py-6">
             <div class="harbor-empty-icon" aria-hidden="true">📊</div>
-            <div class="text-sm font-medium text-harbor-text">Money at a glance</div>
+            <div class="text-sm font-medium text-harbor-text">Bank CSV overview</div>
             <div class="text-xs text-harbor-muted mt-1.5 leading-relaxed max-w-xs mx-auto">
-              Stack CSVs from checking, credit cards, and savings. Harbor sorts automatically — you only fix a line if it looks wrong.
-              Clear everything anytime. Stays on this device.
+              Optional power tool: stack CSVs from checking, credit cards, and savings. Harbor auto-sorts categories — fix a line only if it looks wrong.
+              Skip this if you just want tasks, bills, and grocery. Stays on this device.
             </div>
             <div class="harbor-empty-actions mt-3">
               <button type="button" class="chip-add-btn" onclick="showBudgetImportModal()">
@@ -11571,6 +11634,7 @@
               </div>
             </div>
           </div>
+          <p class="life-panel-intro">Memberships that <strong class="text-harbor-text font-semibold">renew</strong> (Netflix, gym). Bills = one-off due dates · Budget = bank CSV spend.</p>
           <button type="button" id="subs-browse-btn" class="chip-tool-btn w-full mb-2" onclick="toggleSubsBrowse()"
             aria-expanded="false">Browse popular services</button>
           <div id="subs-browse-panel" class="hidden mb-3">
@@ -11600,7 +11664,7 @@
           <div class="section-header font-semibold text-harbor-text mb-2">Streak Preview</div>
           <div id="projection-panel"
             class="bg-harbor-surface border border-harbor-border rounded-3xl p-4 text-sm shadow-[var(--harbor-shadow-sm)]">
-            <div id="projection-hint" class="text-harbor-muted text-xs leading-relaxed">Tap a Streak Above to See Your Progress</div>
+            <div id="projection-hint" class="text-harbor-muted text-xs leading-relaxed">Tap a streak above to see your progress</div>
             <div id="projection-content" class="hidden"></div>
           </div>
         </div>
@@ -11614,7 +11678,9 @@
             </button>
           </div>
           <div id="harbor-day-info-tip" class="harbor-info-tip hidden mb-2" role="note">
-            Finish <strong>tasks</strong>, <strong>habits</strong>, and <strong>chores</strong> on the Task tab to fill the meter. When it’s full, claim a <strong>Harbor Day</strong> — rest without breaking your streaks.
+            Finish real work on <strong>Task</strong> to fill the meter (not just tiny check-offs). When it’s full, claim rest without breaking streaks:
+            <strong>Moment</strong> (short break), <strong>Window</strong> (longer free block), <strong>Full day</strong>, or <strong>Bank</strong> it for later.
+            <strong>Passes</strong> protect a streak if you miss a required day — earn them from milestones, not points.
           </div>
           <div id="reward-bank-panel"></div>
         </div>
@@ -11697,31 +11763,46 @@
   <div id="life-flyout-backdrop" class="life-flyout-backdrop" hidden aria-hidden="true"></div>
   <div id="life-flyout" class="life-flyout" role="menu" aria-label="Life sections" hidden>
     <div class="life-flyout-card">
-      <div class="life-flyout-kicker">Life</div>
+      <div class="life-flyout-kicker">Life · tap a section</div>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-schedule"
         data-life-panel="schedule" onclick="selectLifeSection('schedule')">
         <i class="fa-regular fa-calendar" aria-hidden="true"></i>
-        <span>Schedule</span>
+        <span class="life-flyout-item-text">
+          <span class="life-flyout-item-label">Schedule</span>
+          <span class="life-flyout-item-hint">Events &amp; free time</span>
+        </span>
       </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-grocery"
         data-life-panel="grocery" onclick="selectLifeSection('grocery')">
         <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
-        <span>Grocery</span>
+        <span class="life-flyout-item-text">
+          <span class="life-flyout-item-label">Grocery</span>
+          <span class="life-flyout-item-hint">Shopping list &amp; dinners</span>
+        </span>
       </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-bills"
         data-life-panel="bills" onclick="selectLifeSection('bills')">
         <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
-        <span>Bills</span>
+        <span class="life-flyout-item-text">
+          <span class="life-flyout-item-label">Bills</span>
+          <span class="life-flyout-item-hint">You owe on a due date</span>
+        </span>
       </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-subscriptions"
         data-life-panel="subscriptions" onclick="selectLifeSection('subscriptions')">
         <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-        <span>Subscriptions</span>
+        <span class="life-flyout-item-text">
+          <span class="life-flyout-item-label">Subscriptions</span>
+          <span class="life-flyout-item-hint">Memberships that renew</span>
+        </span>
       </button>
       <button type="button" role="menuitem" class="life-flyout-item" id="life-flyout-budget"
         data-life-panel="budget" onclick="selectLifeSection('budget')">
         <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
-        <span>Budget</span>
+        <span class="life-flyout-item-text">
+          <span class="life-flyout-item-label">Budget</span>
+          <span class="life-flyout-item-hint">Optional · import bank CSVs</span>
+        </span>
       </button>
       <span class="life-flyout-caret" aria-hidden="true"></span>
     </div>
@@ -11766,12 +11847,11 @@
     // ==================== CONFIG & STATE ====================
     const STORAGE_KEY = 'harbor_state_v1';
 
-    // Product train (pre-1.0). Stay on 0.9 until store launch — do NOT burn 0.9.1/0.9.2/…
-    // for every ship. Day-to-day ships only bump HARBOR_BUILD_NUMBER (cache + support).
-    // Changelog is one entry per calendar day: append highlights to that day’s list.
-    const HARBOR_VERSION = '0.9';
+    // Product train 1.0 (store-ready train). Day-to-day ships bump HARBOR_BUILD_NUMBER
+    // (cache + support + TestFlight). Changelog is one entry per calendar day.
+    const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 360;
+    const HARBOR_BUILD_NUMBER = 361;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11803,7 +11883,7 @@
       return mm ? `${h12}:${String(mm).padStart(2, '0')} ${ampm}` : `${h12} ${ampm}`;
     }
     const HARBOR_BUILD = 'v' + HARBOR_BUILD_NUMBER;
-    const HARBOR_CHANNEL = 'beta'; // beta → rc → stable at 1.0
+    const HARBOR_CHANNEL = 'beta'; // TestFlight beta on product 1.0
 
     // Feedback delivery (tried in order): Web3Forms → FormSubmit → mailto backup.
     // Web3Forms access_key is PUBLIC by design (not a secret API key). Get one free at
@@ -11820,9 +11900,45 @@
     /**
      * User-facing changelog (newest day first).
      * Prefer `sections` (test-friendly groups). `highlights` is a short flat list for older UI.
-     * Product train stays on 0.9 until 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
+     * Product train is 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '1.0',
+        date: '2026-07-18',
+        title: 'Store polish · Life labels · in-app confirms · build 361',
+        intro: 'Harbor 1.0 labeling, clearer Bills/Subs/Budget, plain-language Streaks & Harbor Day, and delete confirms that match the app (not the browser).',
+        sections: [
+          {
+            heading: 'Version & trust',
+            items: [
+              'Product version shows 1.0 for store readiness (build number still tracks TestFlight)',
+              'About and footers match the 1.0 train'
+            ]
+          },
+          {
+            heading: 'Life · money clarity',
+            items: [
+              'Bills = payments you owe on a due date; Subscriptions = renewals; Budget = optional bank CSVs',
+              'Budget framed as optional / advanced — not required for daily Harbor',
+              'Phone Life: first tap opens your last section; tap again for the section menu'
+            ]
+          },
+          {
+            heading: 'Streaks & Harbor Day',
+            items: [
+              'Strong right now / Holding steady — plain language instead of Glowing / Steady',
+              'Harbor Day tip explains Moment, Window, Full day, Bank, and Passes'
+            ]
+          },
+          {
+            heading: 'Confirms',
+            items: [
+              'Deletes and destructive actions use Harbor sheets instead of the browser confirm dialog'
+            ]
+          }
+        ]
+      },
       {
         version: '0.9',
         date: '2026-07-18',
@@ -13195,12 +13311,17 @@
       }
     }
 
-    function confirmFactoryResetFromSettings(btn) {
-      const confirmed = confirm(
-        'Factory Reset will permanently erase all tasks, habits, bills, grocery lists, subscriptions, streaks, Harbor Day progress, and settings.\n\n' +
-        'The app will restart from the beginning, including onboarding — as if you just downloaded it.\n\n' +
-        'This cannot be undone. Continue?'
-      );
+    async function confirmFactoryResetFromSettings(btn) {
+      const confirmed = await showHarborConfirm({
+        title: 'Factory Reset?',
+        message:
+          'This permanently erases all tasks, habits, bills, grocery lists, subscriptions, streaks, Harbor Day progress, and settings.\n\n' +
+          'The app will restart from the beginning, including onboarding — as if you just downloaded it.\n\n' +
+          'This cannot be undone.',
+        confirmLabel: 'Erase everything',
+        cancelLabel: 'Keep my data',
+        danger: true
+      });
       if (!confirmed) return;
 
       settingsWasOpen = false;
@@ -14863,10 +14984,16 @@
         listEl.querySelectorAll('.household-profile-row').forEach(row => {
           const id = row.dataset.personId;
           row.querySelector('.hp-edit')?.addEventListener('click', () => openHouseholdPersonEditor(id, paint));
-          row.querySelector('.hp-del')?.addEventListener('click', () => {
+          row.querySelector('.hp-del')?.addEventListener('click', async () => {
             const person = getHouseholdPerson(id);
             if (!person || person.role === 'me' || person.id === 'me') return;
-            if (!confirm(`Remove ${person.name} from household profiles? Events stay, but lose this color label.`)) return;
+            const ok = await showHarborConfirm({
+              title: 'Remove profile?',
+              message: `Remove ${person.name} from household profiles?\n\nEvents stay, but lose this color label.`,
+              confirmLabel: 'Remove',
+              danger: true
+            });
+            if (!ok) return;
             state.settings.householdProfiles = getHouseholdProfiles().filter(p => p.id !== id);
             // Clear personId on events that pointed here → fall back to me visually only when missing
             const clearPerson = (list) => (list || []).map(e => e.personId === id ? { ...e, personId: null } : e);
@@ -15467,11 +15594,17 @@
         showToast(`Merged ${added} event${added === 1 ? '' : 's'} · household updated`);
       };
 
-      modal.querySelector('#import-mode-replace').onclick = () => {
-        if (!confirm(
-          'Replace ALL data on this device with the imported profile?\n\n' +
-          'Tasks, bills, grocery, streaks, and settings will be overwritten. This cannot be undone.'
-        )) return;
+      modal.querySelector('#import-mode-replace').onclick = async () => {
+        const ok = await showHarborConfirm({
+          title: 'Replace all data?',
+          message:
+            'Replace ALL data on this device with the imported profile?\n\n' +
+            'Tasks, bills, grocery, streaks, and settings will be overwritten. This cannot be undone.',
+          confirmLabel: 'Replace everything',
+          cancelLabel: 'Cancel',
+          danger: true
+        });
+        if (!ok) return;
         applyFullImportReplace(incoming);
         modal.remove();
         showToast('Profile replaced — reloading…');
@@ -15555,7 +15688,7 @@
           <div class="privacy-block mb-3">
             <h4>Version</h4>
             <p class="tabular-nums">${getHarborVersionMeta()} · local-first</p>
-            <p class="text-[11px] text-harbor-muted mt-1.5 leading-snug">Product version ${getHarborVersionShort()} (pre-1.0 ${HARBOR_CHANNEL}). Build ${HARBOR_BUILD_NUMBER} for support and cache checks.</p>
+            <p class="text-[11px] text-harbor-muted mt-1.5 leading-snug">Product version ${getHarborVersionShort()} (${HARBOR_CHANNEL}). Build ${HARBOR_BUILD_NUMBER} for support and cache checks.</p>
           </div>
           <div class="privacy-block mb-3">
             <h4>Support</h4>
@@ -17716,6 +17849,78 @@
       });
     }
 
+    function closeHarborConfirmModal(result) {
+      const modal = document.getElementById('harbor-confirm-modal');
+      if (!modal) return;
+      const resolve = modal._resolve;
+      modal._resolve = null;
+      modal.remove();
+      if (!document.querySelector('body > .fixed.inset-0')) document.body.classList.remove('harbor-modal-open');
+      if (typeof resolve === 'function') resolve(result === true);
+    }
+
+    /**
+     * In-app confirm sheet — replaces browser confirm() (especially awkward on iOS WKWebView).
+     * Resolves true (confirm) or false (cancel / dismiss).
+     * options: { title, message, confirmLabel, cancelLabel, danger }
+     */
+    function showHarborConfirm(options = {}) {
+      return new Promise((resolve) => {
+        closeHarborConfirmModal(false);
+        const title = options.title || 'Are you sure?';
+        const message = options.message != null ? String(options.message) : (options.msg != null ? String(options.msg) : '');
+        const confirmLabel = options.confirmLabel || options.okLabel || 'Confirm';
+        const cancelLabel = options.cancelLabel || 'Cancel';
+        const isDanger = options.danger !== false; // default destructive-style for delete flows
+        const esc = (s) => (typeof escapeBriefHtml === 'function' ? escapeBriefHtml(s) : String(s || '')
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
+
+        const modal = document.createElement('div');
+        modal.id = 'harbor-confirm-modal';
+        modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end sm:items-center justify-center harbor-modal-overlay z-[320]';
+        modal._resolve = resolve;
+        modal.innerHTML = `
+          <div class="absolute inset-0" data-hcf-dismiss="1"></div>
+          <div class="modal-sheet harbor-confirm-sheet relative w-full sm:max-w-md bg-harbor-surface border-t sm:border border-harbor-border rounded-t-3xl sm:rounded-3xl px-5 pt-3 pb-5 text-sm"
+            role="dialog" aria-modal="true" aria-labelledby="harbor-confirm-title" onclick="event.stopPropagation()">
+            <div class="modal-grab-pill" aria-hidden="true"></div>
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <div class="min-w-0 flex-1">
+                <div id="harbor-confirm-title" class="font-semibold text-base text-harbor-text">${esc(title)}</div>
+                ${message ? `<div class="harbor-confirm-msg mt-2">${esc(message)}</div>` : ''}
+              </div>
+              <button type="button" class="modal-close-chip shrink-0" data-hcf-dismiss="1" aria-label="Close">Close</button>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" data-hcf-dismiss="1"
+                class="flex-1 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-harbor-muted font-semibold text-sm">${esc(cancelLabel)}</button>
+              <button type="button" id="harbor-confirm-ok"
+                class="${isDanger ? 'harbor-confirm-danger' : 'harbor-prompt-save'} flex-[1.35] py-3 rounded-2xl font-semibold text-sm">${esc(confirmLabel)}</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        document.body.classList.add('harbor-modal-open');
+        modal.querySelectorAll('[data-hcf-dismiss]').forEach(el => {
+          el.addEventListener('click', () => closeHarborConfirmModal(false));
+        });
+        modal.querySelector('#harbor-confirm-ok')?.addEventListener('click', () => closeHarborConfirmModal(true));
+        const onKey = (e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            closeHarborConfirmModal(false);
+          } else if (e.key === 'Enter' && document.activeElement?.id === 'harbor-confirm-ok') {
+            e.preventDefault();
+            closeHarborConfirmModal(true);
+          }
+        };
+        modal.addEventListener('keydown', onKey);
+        requestAnimationFrame(() => {
+          try { modal.querySelector('#harbor-confirm-ok')?.focus(); } catch (_) { /* ignore */ }
+        });
+      });
+    }
+
     function parseTitleAmount(title) {
       const m = title.match(/\$\s*(\d+(?:\.\d+)?)/) || title.match(/(?:save|saving|invest|budget)\s*\$?\s*(\d+(?:\.\d+)?)/i);
       return m ? parseFloat(m[1]) : null;
@@ -19619,10 +19824,16 @@
       };
     }
 
-    function removeBill(billId) {
-      if (!confirm('Remove this bill?')) return;
+    async function removeBill(billId) {
       const bill = (state.bills || []).find(b => b.id === billId);
       const name = bill?.name || bill?.title || 'Bill';
+      const ok = await showHarborConfirm({
+        title: 'Remove bill?',
+        message: `Remove “${name}” from Bills?`,
+        confirmLabel: 'Remove',
+        danger: true
+      });
+      if (!ok) return;
       state.bills = state.bills.filter(b => b.id !== billId);
       saveState();
       renderBills();
@@ -19690,7 +19901,7 @@
         container.innerHTML = harborEmptyHtml(
           '💳',
           'No bills yet',
-          'Track rent, utilities, insurance, and other payments you owe on a date.',
+          'Track rent, utilities, insurance — payments you owe on a due date. (Subscriptions = renewals · Budget = optional bank CSVs.)',
           `<div class="harbor-empty-actions">
             <button type="button" class="chip-add-btn" onclick="addBillFromPrompt()"><i class="fa-solid fa-plus"></i>Add bill</button>
           </div>`
@@ -19825,10 +20036,16 @@
       return '';
     }
 
-    function removeMealPreset(presetId) {
+    async function removeMealPreset(presetId) {
       const preset = getMealPresetById(presetId);
       if (!preset) return;
-      if (!confirm(`Remove "${preset.label}" from your recipe list?`)) return;
+      const ok = await showHarborConfirm({
+        title: 'Remove recipe?',
+        message: `Remove “${preset.label}” from your recipe list?`,
+        confirmLabel: 'Remove',
+        danger: true
+      });
+      if (!ok) return;
       state.mealPresets = ensureMealPresets().filter(p => p.id !== presetId);
       if (state.groceryView?.mode === 'meal' && state.groceryView.mealId === presetId) {
         state.groceryView = { mode: 'master' };
@@ -22709,7 +22926,7 @@
       if (modal) showSuppressedCalendarEventsModal();
     }
 
-    function restoreAllSuppressedCalendarEvents() {
+    async function restoreAllSuppressedCalendarEvents() {
       const entries = Array.isArray(state.settings.suppressedCalendarEvents)
         ? [...state.settings.suppressedCalendarEvents]
         : [];
@@ -22717,7 +22934,13 @@
         showToast('No hidden events');
         return;
       }
-      if (!confirm('Show all hidden calendar events in Harbor again?')) return;
+      const ok = await showHarborConfirm({
+        title: 'Restore hidden events?',
+        message: 'Show all hidden calendar events in Harbor again?',
+        confirmLabel: 'Restore all',
+        danger: false
+      });
+      if (!ok) return;
       if (!Array.isArray(state.settings.importedCalendarEvents)) {
         state.settings.importedCalendarEvents = [];
       }
@@ -23512,13 +23735,19 @@
       modal.querySelector('#cal-ev-title')?.focus();
     }
 
-    function deleteCalendarEvent(eventId) {
+    async function deleteCalendarEvent(eventId) {
       const ev = typeof getCalendarEventById === 'function' ? getCalendarEventById(eventId) : null;
       const fromFeed = isImportedOrFeedCalendarEvent(ev);
       const msg = fromFeed
         ? 'Remove this from Harbor’s schedule?\n\nThis only affects Harbor on this device — not Google, Apple, or Outlook.\nHarbor will keep it hidden if the calendar refreshes.'
         : 'Remove this event from Harbor’s schedule?\n\nEvents stay on this device only.';
-      if (!confirm(msg)) return;
+      const ok = await showHarborConfirm({
+        title: 'Remove event?',
+        message: msg,
+        confirmLabel: 'Remove',
+        danger: true
+      });
+      if (!ok) return;
 
       const dayModal = document.getElementById('summary-day-events-modal');
       const dayDate = dayModal?.dataset?.forDate || null;
@@ -24956,10 +25185,16 @@
       showToast(`Resumed ${sub.name}`);
     }
 
-    function removeSubscription(subId) {
-      if (!confirm('Remove this subscription?')) return;
+    async function removeSubscription(subId) {
       const sub = state.subscriptions.find(s => s.id === subId);
       const name = sub?.name || 'Subscription';
+      const ok = await showHarborConfirm({
+        title: 'Remove subscription?',
+        message: `Remove “${name}” from Subscriptions?`,
+        confirmLabel: 'Remove',
+        danger: true
+      });
+      if (!ok) return;
       if (sub) removeSubscriptionCancelTask(sub);
       state.subscriptions = state.subscriptions.filter(s => s.id !== subId);
       saveState();
@@ -25025,7 +25260,7 @@
         container.innerHTML = harborEmptyHtml(
           '🔁',
           'Nothing tracked yet',
-          'Track Netflix, gym, cloud storage, and other memberships that renew.',
+          'Track Netflix, gym, cloud — memberships that renew. Bills are one-time due dates; Budget is optional CSV spend.',
           `<div class="harbor-empty-actions">
             <button type="button" class="chip-add-btn" onclick="showAddSubscriptionModal()"><i class="fa-solid fa-plus"></i>Add</button>
             <button type="button" class="chip-tool-btn" onclick="showSubscriptionImportModal()">Import CSV</button>
@@ -25296,13 +25531,19 @@
       return Array.isArray(budget.importSources) ? budget.importSources : [];
     }
 
-    function removeBudgetImportSource(sourceId) {
+    async function removeBudgetImportSource(sourceId) {
       const budget = ensureBudgetState();
       const id = String(sourceId || '');
       if (!id) return;
       const src = (budget.importSources || []).find(s => s && s.id === id);
       const label = src?.label || 'this CSV';
-      if (!confirm(`Remove all transactions from “${label}”?\n\nOther stacked CSVs stay. Category memory is kept.`)) return;
+      const ok = await showHarborConfirm({
+        title: 'Remove CSV stack?',
+        message: `Remove all transactions from “${label}”?\n\nOther stacked CSVs stay. Category memory is kept.`,
+        confirmLabel: 'Remove',
+        danger: true
+      });
+      if (!ok) return;
       budget.transactions = (budget.transactions || []).filter(t => t && t.sourceId !== id);
       budget.importSources = (budget.importSources || []).filter(s => s && s.id !== id);
       if (!(budget.transactions || []).length) {
@@ -26586,7 +26827,7 @@
       document.body.appendChild(modal);
     }
 
-    function clearBudgetData() {
+    async function clearBudgetData() {
       const budget = ensureBudgetState();
       if (!(budget.transactions || []).length) {
         showToast('Nothing to clear');
@@ -26595,7 +26836,13 @@
       const n = (budget.transactions || []).length;
       const srcN = (budget.importSources || []).length;
       const srcBit = srcN ? ` (${srcN} stacked CSV${srcN === 1 ? '' : 's'})` : '';
-      if (!confirm(`Clear all ${n} budget transaction${n === 1 ? '' : 's'}${srcBit} from this device?\n\nYou can import CSVs again anytime. Remembered categories (e.g. treating a transfer as Savings) are kept.`)) return;
+      const ok = await showHarborConfirm({
+        title: 'Clear budget data?',
+        message: `Clear all ${n} budget transaction${n === 1 ? '' : 's'}${srcBit} from this device?\n\nYou can import CSVs again anytime. Remembered categories (e.g. treating a transfer as Savings) are kept.`,
+        confirmLabel: 'Clear all',
+        danger: true
+      });
+      if (!ok) return;
       const rules = ensureBudgetMerchantRules();
       state.budget = {
         transactions: [],
@@ -26721,13 +26968,19 @@
       }, true);
     }
 
-    function deleteBudgetTransaction(txId) {
+    async function deleteBudgetTransaction(txId) {
       const budget = ensureBudgetState();
       const idx = (budget.transactions || []).findIndex(t => t.id === txId);
       if (idx < 0) return;
       const tx = budget.transactions[idx];
       const label = (tx.description || 'Transaction').slice(0, 40);
-      if (!confirm(`Remove “${label}” from this budget?`)) return;
+      const ok = await showHarborConfirm({
+        title: 'Remove transaction?',
+        message: `Remove “${label}” from this budget?`,
+        confirmLabel: 'Remove',
+        danger: true
+      });
+      if (!ok) return;
       budget.transactions.splice(idx, 1);
       saveState();
       renderBudget();
@@ -27720,6 +27973,12 @@
         event.stopPropagation();
       }
       if (typeof isLifeMobileNav === 'function' && !isLifeMobileNav()) {
+        if (typeof closeLifeFlyout === 'function') closeLifeFlyout();
+        switchTab('life');
+        return;
+      }
+      // Mobile: first tap opens last Life section (one less menu hop). Tap Life again to switch sections.
+      if (currentTab !== 'life') {
         if (typeof closeLifeFlyout === 'function') closeLifeFlyout();
         switchTab('life');
         return;
@@ -38485,7 +38744,7 @@
       }
     }
 
-    function deleteStreak(habitId, event) {
+    async function deleteStreak(habitId, event) {
       if (event) {
         event.stopPropagation();
         event.preventDefault();
@@ -38495,11 +38754,15 @@
 
       const streak = computeCurrentStreak(habitId);
       const longest = getLongestStreak(habitId);
-      const confirmed = confirm(
-        `Stop tracking a streak for "${habit.title}"?\n\n` +
-        `This clears streak history (${streak} day${streak === 1 ? '' : 's'} current · ${longest} day longest) and removes it from Streaks.\n\n` +
-        `Chores stay available when due (Today or Summary) without streak pressure.`
-      );
+      const confirmed = await showHarborConfirm({
+        title: 'Stop streak tracking?',
+        message:
+          `Stop tracking a streak for “${habit.title}”?\n\n` +
+          `This clears streak history (${streak} day${streak === 1 ? '' : 's'} current · ${longest} day longest) and removes it from Streaks.\n\n` +
+          `Chores stay available when due (Today or Summary) without streak pressure.`,
+        confirmLabel: 'Stop streak',
+        danger: true
+      });
       if (!confirmed) return;
 
       habit.trackStreak = false;
@@ -38934,7 +39197,7 @@
       return row;
     }
 
-    function appendStreakFleetSection(container, { id, label, count, rows, dense }) {
+    function appendStreakFleetSection(container, { id, label, sublabel, count, rows, dense }) {
       if (!rows.length) return;
       const section = document.createElement('div');
       section.className = 'streak-fleet-section';
@@ -38944,6 +39207,7 @@
           <span>${label}</span>
           <span class="count">${count != null ? count : rows.length}</span>
         </div>
+        ${sublabel ? `<div class="streak-fleet-section-sub">${sublabel}</div>` : ''}
       `;
       const stack = document.createElement('div');
       stack.className = `streak-fleet-stack${dense ? ' is-dense' : ''}`;
@@ -39005,17 +39269,24 @@
         return;
       }
 
-      // Satisfaction tiers — not a to-do board
+      // How healthy streaks feel — not a to-do board
+      const intro = document.createElement('div');
+      intro.className = 'streak-fleet-intro';
+      intro.textContent = 'How healthy your streaks feel — not what’s due today. Tap a card for progress.';
+      container.appendChild(intro);
+
       appendStreakFleetSection(container, {
         id: 'streak-fleet-glowing',
-        label: 'Glowing',
+        label: 'Strong right now',
+        sublabel: 'Longest, healthiest fires',
         count: fleet.glowing.length,
         rows: fleet.glowing,
         dense: false
       });
       appendStreakFleetSection(container, {
         id: 'streak-fleet-steady',
-        label: 'Steady',
+        label: 'Holding steady',
+        sublabel: 'Solid pace — keep showing up',
         count: fleet.steady.length,
         rows: fleet.steady,
         dense: false
@@ -39406,7 +39677,7 @@
       if (state.rewardBank?.passMilestones) delete state.rewardBank.passMilestones[habitId];
     }
 
-    function deleteHabitFromToday(habitId, event) {
+    async function deleteHabitFromToday(habitId, event) {
       if (event) event.stopImmediatePropagation();
       const habit = state.habits.find(h => h.id === habitId);
       if (!habit) return;
@@ -39415,7 +39686,13 @@
         showBudgetReviewTaskSheet(habitId);
         return;
       }
-      if (!confirm(`Remove "${habit.title}" from your tasks?`)) return;
+      const ok = await showHarborConfirm({
+        title: 'Remove task?',
+        message: `Remove “${habit.title}” from your tasks?`,
+        confirmLabel: 'Remove',
+        danger: true
+      });
+      if (!ok) return;
       state.habits = state.habits.filter(h => h.id !== habitId);
       purgeHabitSideData(habitId);
       saveState();
@@ -39427,8 +39704,16 @@
       showToast('Task removed');
     }
 
-    function removeHabit(habitId, btnEl) {
-      if (!confirm('Remove this habit entirely?')) return;
+    async function removeHabit(habitId, btnEl) {
+      const habit = state.habits.find(h => h.id === habitId);
+      const title = habit?.title || 'this habit';
+      const ok = await showHarborConfirm({
+        title: 'Remove habit?',
+        message: `Remove “${title}” entirely from Harbor?`,
+        confirmLabel: 'Remove',
+        danger: true
+      });
+      if (!ok) return;
       state.habits = state.habits.filter(h => h.id !== habitId);
       purgeHabitSideData(habitId);
       saveState();
