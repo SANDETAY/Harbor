@@ -11771,7 +11771,7 @@
     // Changelog is one entry per calendar day: append highlights to that day’s list.
     const HARBOR_VERSION = '0.9';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 359;
+    const HARBOR_BUILD_NUMBER = 360;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -11823,6 +11823,21 @@
      * Product train stays on 0.9 until 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '0.9',
+        date: '2026-07-18',
+        title: 'Smart suggestions only your tasks · build 360',
+        intro: 'Suggestions no longer push Library chores you never added, or car/yard jobs at night.',
+        sections: [{
+          heading: 'Smart Suggestions',
+          items: [
+            'Only habits on your list — never invent oil change / car wash from the Library',
+            'Parked Summary work and heavy maintenance stay out of the soft banner',
+            'Outdoor / vehicle nudges only in daylight (not 10pm car wash)',
+            'Hire reminders only if you already put them on Today'
+          ]
+        }]
+      },
       {
         version: '0.9',
         date: '2026-07-17',
@@ -30407,17 +30422,18 @@
 
       if (mode === 'day') {
         if (isQuietHours(mins)) {
-          if (tags.outdoor || tags.physical || tags.pet) penalty += 90;
-          if (tags.noisy) penalty += 50;
-          if (tags.errand) penalty += 40;
+          if (tags.outdoor || tags.physical || tags.pet || tags.vehicle) penalty += 95;
+          if (tags.noisy) penalty += 55;
+          if (tags.errand) penalty += 45;
           if (tags.calm || tags.focus || tags.admin || tags.financial || tags.hygiene) penalty -= 25;
         } else if (isLateEvening(mins)) {
-          if (tags.outdoor || tags.noisy) penalty += 35;
+          // After ~8pm: don't nudge car wash, yard, or shop runs
+          if (tags.outdoor || tags.noisy || tags.vehicle) penalty += 70;
           if (tags.physical && !tags.outdoor && !tags.hygiene) penalty += 15;
           if (tags.long && tags.hard) penalty += 12;
           if (tags.calm || tags.social || tags.hygiene || tags.windDown) penalty -= 10;
-        } else if (!isDaylightHours(mins) && tags.outdoor) {
-          penalty += 10;
+        } else if (!isDaylightHours(mins) && (tags.outdoor || tags.vehicle)) {
+          penalty += 40;
         }
         // Morning focus for hard/long work when energy is high
         if (mins >= 6 * 60 && mins < 11 * 60 && currentEnergy >= 2 && (tags.hard || tags.long)) {
@@ -33442,12 +33458,21 @@
       if (typeof isParkedForSummary === 'function' && isParkedForSummary(habit) && !isPulledToToday(habit)) {
         return true;
       }
+      // Hire / pro booking reminders are intentional one-offs — not soft “next up” fodder
+      if (habit.is_pro_reminder || String(habit.id || '').startsWith('pro-schedule-')) return true;
       const tags = classifyTask(habit);
       const mins = habit.est_minutes || 0;
       const diff = habit.difficulty || 2;
       const interval = habit.interval_days || 0;
+      const title = String(habit.title || '').toLowerCase();
+      // Car / shop maintenance is never a casual smart push
+      if (tags.vehicle || /oil change|tire rotate|brake|mechanic|dealership|change engine oil|wash.*(car|truck|vehicle)|(car|truck|vehicle).*wash/i.test(title)) {
+        return true;
+      }
       if (tags.hard && (tags.long || mins >= 25 || interval >= 7)) return true;
       if (diff >= 3 && mins >= 25) return true;
+      // Monthly+ chores with real effort (e.g. 30–45 min) stay out of the soft banner
+      if (interval >= 28 && mins >= 25 && diff >= 2) return true;
       if (interval >= 90 && diff >= 2 && mins >= 20) return true;
       return false;
     }
@@ -33474,16 +33499,40 @@
       return days >= 0 && days <= 3;
     }
 
+    /**
+     * Smart Suggestions may only mention habits the user owns on their list.
+     * Never invent Library presets. Prefer items on Task → Today (not parked Summary).
+     */
+    function isOwnedUserHabit(habit) {
+      if (!habit?.id) return false;
+      return (state.habits || []).some(h => h && h.id === habit.id);
+    }
+
     function isSmartSuggestable(habit, opts = {}) {
-      if (!habit || isCompletedToday(habit.id)) return false;
-      if (!isHabitSensibleNow(habit)) return false;
-      const overdue = typeof isHabitOverdue === 'function' && isHabitOverdue(habit);
-      if (overdue) return true;
+      if (!habit || !isOwnedUserHabit(habit)) return false;
+      if (isCompletedToday(habit.id)) return false;
+      // Parked “When you can” work stays out of the banner until the user pulls it
       if (typeof isParkedForSummary === 'function' && isParkedForSummary(habit) && !isPulledToToday(habit)) {
         return false;
       }
+      // Hire reminders are user-created one-offs — only nudge if they still sit on Today
+      if (habit.is_pro_reminder || String(habit.id || '').startsWith('pro-schedule-')) {
+        if (typeof belongsOnTodayTab === 'function') return belongsOnTodayTab(habit) && isHabitSensibleNow(habit);
+        return isDueToday(habit) && isHabitSensibleNow(habit);
+      }
+      // Heavy maintenance (oil change, big yard jobs) is never a soft banner push
+      if (typeof isHeavySmartTask === 'function' && isHeavySmartTask(habit) && !opts.allowHeavy) {
+        return false;
+      }
+      if (!isHabitSensibleNow(habit)) return false;
       if (opts.lightOnly && !isLightGapFillTask(habit)) return false;
-      if (opts.allowEasyPull && isEasyPullForward(habit)) return true;
+      // Easy pull-forward: only light owned chores due soon — never outdoor at night
+      if (opts.allowEasyPull && isEasyPullForward(habit)) {
+        const tags = typeof classifyTask === 'function' ? classifyTask(habit) : {};
+        if ((isQuietHours() || isLateEvening()) && (tags.outdoor || tags.noisy || tags.vehicle)) return false;
+        return true;
+      }
+      // Default: only what the user sees on Task → Today
       if (typeof belongsOnTodayTab === 'function') return belongsOnTodayTab(habit);
       return isDueToday(habit);
     }
@@ -33860,9 +33909,12 @@
       const nowMins = getNowMinutes();
       const phrase = (h) => escapeBriefHtml(formatTaskTitleForSuggestion(h?.title || ''));
 
-      // --- Overdue tasks: strongest emphasis (even if heavier) ---
+      // --- Overdue tasks on Today only (never parked Summary / never Library presets) ---
       const overdueHabits = rankHabitsForNow(
-        state.habits.filter(h => typeof isHabitOverdue === 'function' && isHabitOverdue(h) && isHabitSensibleNow(h))
+        state.habits.filter(h =>
+          typeof isHabitOverdue === 'function' && isHabitOverdue(h)
+          && isSmartSuggestable(h, { allowHeavy: true })
+        )
       );
       overdueHabits.slice(0, 2).forEach((h, i) => {
         candidates.push({
@@ -34052,15 +34104,16 @@
       }
 
       // --- Peak outdoor comfort window (walk / yard when weather is good) ---
-      if (!quietNow && !rainRisk?.risky && typeof getBestOutdoorTime === 'function') {
+      // Daylight only — never suggest car wash / yard work at 10pm
+      if (!quietNow && !isLateEvening(nowMins) && isDaylightHours(nowMins) && !rainRisk?.risky && typeof getBestOutdoorTime === 'function') {
         const bestOut = getBestOutdoorTime();
         const outdoorDue = todayPool.filter(h => {
           const t = classifyTask(h);
-          return (t.outdoor || t.pet) && isHabitSensibleNow(h);
+          // Walks/pets yes; vehicle wash / errands no
+          return (t.outdoor || t.pet) && !t.vehicle && isHabitSensibleNow(h) && isSmartSuggestable(h);
         });
         if (bestOut?.time && bestOut.score >= 4 && outdoorDue.length) {
           const h = outdoorDue[0];
-          // If "best" is roughly now (±90 min) or later today, nudge
           candidates.push({
             score: 92,
             type: 'weather',
@@ -34074,7 +34127,8 @@
       // --- Energy-aware soft next step (never auto-push heavy parked work) ---
       if (!quietNow) {
         const softBest = rankHabitsForNow(
-          (lightToday.length ? lightToday : energyPool.filter(isLightGapFillTask)).filter(isHabitSensibleNow)
+          (lightToday.length ? lightToday : energyPool.filter(isLightGapFillTask))
+            .filter(h => isHabitSensibleNow(h) && isSmartSuggestable(h) && !isHeavySmartTask(h))
         )[0] || null;
         const hardOnToday = todayPool.filter(h => isHeavySmartTask(h) || (h.difficulty || 2) >= 3);
         const hardRef = hardOnToday.sort((a, b) => (b.difficulty || 2) - (a.difficulty || 2))[0];
