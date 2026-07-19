@@ -5534,6 +5534,36 @@
       transform: scale(0.97);
       opacity: 0.92;
     }
+    /* Icon-only grocery actions (recipe book) — keeps toolbar uncrowded */
+    .chip-tool-btn.grocery-icon-btn {
+      position: relative;
+      min-width: 2.35rem;
+      padding-left: 0.65rem;
+      padding-right: 0.65rem;
+      gap: 0;
+    }
+    .chip-tool-btn.grocery-icon-btn i {
+      font-size: 0.95rem;
+      margin: 0;
+    }
+    .grocery-icon-badge {
+      position: absolute;
+      top: -0.2rem;
+      right: -0.15rem;
+      min-width: 1rem;
+      height: 1rem;
+      padding: 0 0.28rem;
+      border-radius: 999px;
+      background: rgb(var(--harbor-primary));
+      color: #fff;
+      font-size: 0.55rem;
+      font-weight: 700;
+      line-height: 1rem;
+      text-align: center;
+      box-shadow: 0 0 0 1.5px rgb(var(--harbor-surface));
+    }
+    .grocery-icon-badge.hidden { display: none !important; }
+
     .chip-tool-btn.is-active,
     .chip-tool-btn[aria-expanded="true"],
     #work-schedule-chip.is-set {
@@ -11453,15 +11483,13 @@
             <div class="panel-toolbar panel-toolbar-cluster">
               <button type="button" id="grocery-dinners-btn" class="chip-tool-btn" onclick="toggleGroceryDinners()"
                 aria-expanded="false" aria-label="Show dinners">Dinners</button>
-              <button type="button" id="grocery-recipes-btn" class="chip-tool-btn" onclick="toggleGroceryRecipes()"
-                aria-expanded="false" aria-label="Show your recipes">Recipes</button>
-              <button type="button" id="grocery-add-recipe-btn" class="chip-add-btn" onclick="tryShowAddMealPresetModal()"
-                aria-label="Add recipe">
-                <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                <span>Recipe</span>
+              <button type="button" id="grocery-recipe-book-btn" class="chip-tool-btn grocery-icon-btn" onclick="openRecipeBookFromToolbar()"
+                aria-label="Open recipe book" title="Recipe book">
+                <i class="fa-solid fa-book-open" aria-hidden="true"></i>
+                <span id="grocery-recipe-book-count" class="grocery-icon-badge hidden" aria-hidden="true"></span>
               </button>
               <button type="button" id="grocery-edit-dinner-btn" class="chip-tool-btn hidden"
-                onclick="editActiveDinnerList()" aria-label="Edit this recipe or dinner">Edit</button>
+                onclick="editActiveDinnerList()" aria-label="Edit this dinner list">Edit</button>
               <button type="button" id="grocery-clear-checked-btn" class="chip-tool-btn"
                 onclick="clearCheckedGrocery()" aria-label="Clear checked items">Clear</button>
             </div>
@@ -11805,7 +11833,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 372;
+    const HARBOR_BUILD_NUMBER = 373;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -19097,19 +19125,49 @@
     }
 
     function updateGroceryRecipesButton() {
-      const btn = document.getElementById('grocery-recipes-btn');
+      // Recipe book is an icon — badge shows how many recipes you have
+      const btn = document.getElementById('grocery-recipe-book-btn')
+        || document.getElementById('grocery-recipes-btn');
       if (!btn) return;
       const n = typeof getCustomRecipes === 'function' ? getCustomRecipes().length : 0;
-      btn.setAttribute('aria-expanded', groceryRecipesOpen ? 'true' : 'false');
-      btn.setAttribute('aria-label', groceryRecipesOpen ? 'Hide your recipes' : 'Show your recipes');
-      btn.classList.toggle('is-active', groceryRecipesOpen);
-      btn.textContent = groceryRecipesOpen
-        ? 'Hide recipes'
-        : (n ? `Recipes (${n})` : 'Recipes');
+      const open = !!document.getElementById('recipe-book-modal')
+        || !!document.getElementById('recipe-detail-modal');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.setAttribute(
+        'aria-label',
+        n ? `Open recipe book (${n} recipe${n === 1 ? '' : 's'})` : 'Open recipe book'
+      );
+      btn.classList.toggle('is-active', open);
+      const badge = document.getElementById('grocery-recipe-book-count');
+      if (badge) {
+        if (n > 0) {
+          badge.textContent = n > 99 ? '99+' : String(n);
+          badge.classList.remove('hidden');
+        } else {
+          badge.textContent = '';
+          badge.classList.add('hidden');
+        }
+      }
+    }
+
+    /** Open the recipe book sheet (icon in grocery toolbar). */
+    function openRecipeBookFromToolbar() {
+      groceryDinnersOpen = false;
+      groceryRecipesOpen = false;
+      updateGroceryDinnersButton();
+      const filters = document.getElementById('meal-grocery-filters');
+      if (filters && !groceryDinnersOpen) {
+        // keep dinner chips if dinners open — we closed dinners above
+        filters.innerHTML = '';
+        filters.classList.add('hidden');
+      }
+      showRecipeBookModal();
+      updateGroceryRecipesButton();
     }
 
     function isGroceryMealTrayOpen() {
-      return !!(groceryDinnersOpen || groceryRecipesOpen);
+      // Only dinners tray pins a meal chip strip; recipe book is a modal
+      return !!groceryDinnersOpen;
     }
 
     /** When dinner/recipe chips are hidden, always show the main Shopping list. */
@@ -19129,7 +19187,7 @@
         groceryDinnersOpen = false;
         ensureShoppingListWhenDinnersHidden({ save: true });
         const filters = document.getElementById('meal-grocery-filters');
-        if (filters && !groceryRecipesOpen) {
+        if (filters) {
           filters.innerHTML = '';
           filters.classList.add('hidden');
         }
@@ -19139,48 +19197,21 @@
       }
       groceryDinnersOpen = true;
       groceryRecipesOpen = false;
+      document.getElementById('recipe-book-modal')?.remove();
       updateGroceryRecipesButton();
       renderMealGroceryFilters();
       updateGroceryDinnersButton();
     }
 
+    /** @deprecated use openRecipeBookFromToolbar */
     function toggleGroceryRecipes() {
-      // Recipes = recipe book (filterable list), not a long chip row
-      if (groceryRecipesOpen) {
-        groceryRecipesOpen = false;
-        ensureShoppingListWhenDinnersHidden({ save: true });
-        const filters = document.getElementById('meal-grocery-filters');
-        if (filters && !groceryDinnersOpen) {
-          filters.innerHTML = '';
-          filters.classList.add('hidden');
-        }
-        updateGroceryRecipesButton();
-        renderGrocery();
-        document.getElementById('recipe-book-modal')?.remove();
-        return;
-      }
-      groceryRecipesOpen = true;
-      groceryDinnersOpen = false;
-      updateGroceryDinnersButton();
-      updateGroceryRecipesButton();
-      renderMealGroceryFilters();
-      showRecipeBookModal();
+      openRecipeBookFromToolbar();
     }
 
     function setGroceryRecipeCategoryFilter(cat) {
       groceryRecipeCategoryFilter = cat || 'all';
-      if (!groceryRecipesOpen) {
-        groceryRecipesOpen = true;
-        groceryDinnersOpen = false;
-        updateGroceryDinnersButton();
-      }
       updateGroceryRecipesButton();
-      // Prefer the book UI when filtering
-      if (document.getElementById('recipe-book-modal')) {
-        showRecipeBookModal({ category: groceryRecipeCategoryFilter });
-      } else {
-        renderMealGroceryFilters();
-      }
+      showRecipeBookModal({ category: groceryRecipeCategoryFilter });
     }
 
     function syncGroceryDinnersUI() {
@@ -20029,10 +20060,30 @@
       state.settings.mealPresetsVersion = MEAL_PRESETS_VERSION;
     }
 
+    /** Drop stored recipe photos — OCR only; book is text. Frees localStorage. */
+    let _recipePhotosStripped = false;
+    function stripStoredRecipePhotos() {
+      let changed = false;
+      (state.mealPresets || []).forEach(p => {
+        if (p && p.photoDataUrl) {
+          delete p.photoDataUrl;
+          changed = true;
+        }
+      });
+      return changed;
+    }
+
     function ensureMealPresets() {
       migrateMealPresetsIfNeeded();
       if (!state.mealPresets || !state.mealPresets.length) {
         state.mealPresets = JSON.parse(JSON.stringify(BUILTIN_MEAL_PRESETS));
+      }
+      // One-time: remove any previously saved recipe photos (not needed in the book)
+      if (!_recipePhotosStripped) {
+        _recipePhotosStripped = true;
+        if (stripStoredRecipePhotos()) {
+          try { saveState(); } catch (_) { /* ignore */ }
+        }
       }
       return state.mealPresets;
     }
@@ -20357,6 +20408,11 @@
         .replace(/⅝/g, '5/8')
         .replace(/⅞/g, '7/8');
 
+      // Yen ¥ (Y with two bars) — OCR noise for checkboxes / broken 1/2
+      s = s.replace(/[¥￥Ұ]\s*2(?=\s|$)/g, '1/2');
+      s = s.replace(/[¥￥Ұ]\s*2\s+/g, '1/2 ');
+      s = s.replace(/[¥￥Ұ]/g, ' ');
+
       // Leading garbage before a unit: "AY2 cup", "Y2 cup", "V2 teaspoon", "Ya cup"
       // 1/2 is the most common OCR fail on web screenshots
       s = s.replace(
@@ -20481,11 +20537,11 @@
         .replace(/\r/g, '\n')
         .replace(/\t/g, ' ')
         // Checkbox / bullet glyphs from recipe websites & apps
-        .replace(/[☐☑✓✔✗✘□■◻◼▢▣○●◦⦿☑☒]/g, ' ')
+        .replace(/[☐☑✓✔✗✘□■◻◼▢▣○●◦⦿☑☒¥￥Ұ]/g, ' ')
         .replace(/\[\s*[xX✓✔ ]?\s*\]/g, ' ')
         .replace(/\(\s*[xX ]?\s*\)/g, ' ')
-        // Common OCR of empty checkbox as leading o / 0 / x
-        .replace(/(^|\n)\s*[oO0xX]\s+(?=[\d½¼¾AYlIV½a-zA-Z])/g, '$1')
+        // Common OCR of empty checkbox as leading o / 0 / x / yen
+        .replace(/(^|\n)\s*[oO0xX¥￥]\s+(?=[\d½¼¾AYlIV½a-zA-Z])/g, '$1')
         .replace(/[•●▪◦‣∙·]/g, '\n')
         .trim();
       if (!text) return [];
@@ -20567,7 +20623,8 @@
     function parseRecipeIngredientsField(raw) {
       return String(raw || '')
         .split(/\n+/)
-        .map(s => s.replace(/^\s*[-–—*•☐☑✓]\s*/, '').trim())
+        .map(s => s.replace(/^\s*[-–—*•☐☑✓¥￥]\s*/, '').trim())
+        .map(s => (typeof fixOcrRecipeFractions === 'function' ? fixOcrRecipeFractions(s) : s))
         .filter(Boolean)
         .map(s => normalizeUserText(s))
         .filter(Boolean)
@@ -20822,7 +20879,7 @@
             <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1.5">3 · Ingredients</div>
             <textarea id="mp-items" rows="7" placeholder="½ cup butter&#10;1 cup sugar&#10;2 cups flour&#10;1 tsp vanilla"
               class="w-full bg-harbor-raised border border-harbor-border rounded-2xl px-4 py-2.5 mb-2 outline-none text-harbor-text resize-none text-[13px] leading-relaxed">${escapeBriefHtml(seed.itemsText || '')}</textarea>
-            <p class="text-[10px] text-harbor-muted leading-snug mb-2"><strong class="text-harbor-text">One ingredient per line</strong> (keep amounts with the item). After a photo, use <strong class="text-harbor-text">Read list</strong> then fix any OCR mistakes.</p>
+            <p class="text-[10px] text-harbor-muted leading-snug mb-2"><strong class="text-harbor-text">One ingredient per line</strong> (keep amounts with the item). Photo is only for reading ingredients — it is <strong class="text-harbor-text">not</strong> saved in your recipe book.</p>
             <label class="block text-xs text-harbor-muted mb-1.5">Effort</label>
             <div class="flex gap-1.5">
               <button type="button" data-effort="1" class="mp-effort flex-1 py-2 rounded-xl text-xs font-semibold border border-harbor-primary bg-harbor-primary/15 text-harbor-text">Easy</button>
@@ -20997,33 +21054,22 @@
           isCustom: true
         };
         if (category) recipe.category = category;
-        if (photoDataUrl) recipe.photoDataUrl = photoDataUrl;
+        // Photo is only used for OCR while adding — not stored in the recipe book
+        // (keeps local storage light; book is text + categories)
         state.mealPresets.push(recipe);
-        let saved = saveState();
-        if (!saved && photoDataUrl) {
-          delete recipe.photoDataUrl;
-          saved = saveState();
-          if (saved) {
-            modal.remove();
-            groceryRecipesOpen = true;
-            groceryDinnersOpen = false;
-            if (category) groceryRecipeCategoryFilter = category;
-            renderGrocery();
-            showToast('Recipe saved — photo was too large for device storage', 'warn');
-            return;
-          }
-        }
+        const saved = saveState();
         if (!saved) {
           state.mealPresets = state.mealPresets.filter(p => p.id !== id);
           showToast('Could not save recipe — storage full', 'warn');
           return;
         }
         modal.remove();
-        groceryRecipesOpen = true;
         groceryDinnersOpen = false;
         if (category) groceryRecipeCategoryFilter = category;
         renderGrocery();
-        showToast(photoDataUrl ? `"${name}" saved with photo` : `"${name}" added to recipes`);
+        showToast(`“${name}” added to recipe book`);
+        // Open book so they see it right away
+        showRecipeBookModal({ category: groceryRecipeCategoryFilter });
       };
 
       setTimeout(() => modal.querySelector('#mp-name')?.focus(), 80);
@@ -21367,8 +21413,6 @@
       const close = () => {
         modal.remove();
         if (!document.querySelector('body > .fixed.inset-0')) document.body.classList.remove('harbor-modal-open');
-        // Keep Recipes mode on so the compact bar stays; user can Hide recipes
-        renderMealGroceryFilters();
         updateGroceryRecipesButton();
       };
       modal.querySelectorAll('[data-rb-close]').forEach(el => el.addEventListener('click', close));
@@ -21459,9 +21503,7 @@
               </button>`;
             const contentHtml = `
               <div class="flex gap-2.5 items-center w-full min-w-0" data-rb-open="${escapeBriefHtml(safeId)}">
-                ${p.photoDataUrl
-                  ? `<img src="${p.photoDataUrl}" alt="" class="w-14 h-14 rounded-xl object-cover border border-harbor-border flex-shrink-0 pointer-events-none" loading="lazy"/>`
-                  : `<div class="w-14 h-14 rounded-xl bg-harbor-border/40 flex items-center justify-center text-lg flex-shrink-0 pointer-events-none" aria-hidden="true">🍽</div>`}
+                <div class="w-11 h-11 rounded-xl bg-harbor-primary/12 flex items-center justify-center text-base flex-shrink-0 pointer-events-none" aria-hidden="true">🍽</div>
                 <div class="min-w-0 flex-1 pointer-events-none">
                   <div class="font-semibold text-sm text-harbor-text truncate">${escapeBriefHtml(p.label || 'Recipe')}</div>
                   <div class="text-[10px] text-harbor-muted mt-0.5">${n} ingredient${n === 1 ? '' : 's'}${p.recipe ? ` · ${escapeBriefHtml(p.recipe)}` : ''}</div>
@@ -21538,9 +21580,6 @@
         <div class="absolute inset-0" data-rd-close></div>
         <div onclick="event.stopImmediatePropagation()" class="relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl text-sm max-h-[min(92dvh,100%)] overflow-y-auto">
           <div class="modal-grab-pill" aria-hidden="true"></div>
-          ${preset.photoDataUrl
-            ? `<img src="${preset.photoDataUrl}" alt="" class="w-full max-h-48 object-cover"/>`
-            : ''}
           <div class="p-5 pt-3">
             <div class="flex items-start justify-between gap-2 mb-1">
               <div class="min-w-0">
@@ -21585,10 +21624,10 @@
       });
       modal.querySelector('#rd-shop')?.addEventListener('click', () => {
         close();
-        groceryRecipesOpen = true;
         groceryDinnersOpen = false;
         selectMealGroceryList(presetId);
         showToast(`Shopping list for “${preset.label}”`);
+        updateGroceryRecipesButton();
       });
     }
 
@@ -21602,20 +21641,22 @@
       }
       const preset = getMealPresetById(mealId);
       if (!preset) return;
-      // Keep the matching tray open so chips stay visible
-      if (preset.isCustom) {
-        if (!groceryRecipesOpen) {
-          groceryRecipesOpen = true;
-          groceryDinnersOpen = false;
+      // Weeknight dinners keep the dinners chip tray open; custom recipes shop without it
+      if (!preset.isCustom) {
+        if (!groceryDinnersOpen) {
+          groceryDinnersOpen = true;
           updateGroceryDinnersButton();
-          updateGroceryRecipesButton();
         }
-      } else if (!groceryDinnersOpen) {
-        groceryDinnersOpen = true;
-        groceryRecipesOpen = false;
+      } else {
+        groceryDinnersOpen = false;
         updateGroceryDinnersButton();
-        updateGroceryRecipesButton();
+        const filters = document.getElementById('meal-grocery-filters');
+        if (filters) {
+          filters.innerHTML = '';
+          filters.classList.add('hidden');
+        }
       }
+      updateGroceryRecipesButton();
       if ((preset.effort || 2) > currentEnergy && !preset.isCustom) {
         showToast(`${getMealEffortLabel(preset.effort)} dinner — list loaded for planning`);
       }
@@ -21640,39 +21681,14 @@
       if (typeof updateGroceryDinnersButton === 'function') updateGroceryDinnersButton();
       if (typeof updateGroceryRecipesButton === 'function') updateGroceryRecipesButton();
 
-      // Neither tray → no chips
-      if (!groceryDinnersOpen && !groceryRecipesOpen) {
+      // Dinners tray only — recipe book is a separate modal (book icon)
+      if (!groceryDinnersOpen) {
         container.innerHTML = '';
         container.classList.add('hidden');
         return;
       }
 
       let activeMeal = state.groceryView?.mode === 'meal' ? state.groceryView.mealId : null;
-
-      // ── Recipes: compact bar — full book opens as a sheet ──
-      if (groceryRecipesOpen) {
-        const allCustom = getCustomRecipes();
-        const active = activeMeal ? getMealPresetById(activeMeal) : null;
-        const shoppingCustom = active?.isCustom ? active : null;
-        container.classList.remove('hidden');
-        container.innerHTML = `
-          <div class="rounded-2xl border border-harbor-border bg-harbor-raised/70 px-3 py-2.5 flex items-center gap-2">
-            <div class="flex-1 min-w-0">
-              <div class="text-xs font-semibold text-harbor-text">Recipe book</div>
-              <div class="text-[10px] text-harbor-muted truncate">
-                ${allCustom.length
-                  ? `${allCustom.length} recipe${allCustom.length === 1 ? '' : 's'} · filter & scroll`
-                  : 'Save recipes with photo, amounts & categories'}
-                ${shoppingCustom ? ` · shopping <strong class="text-harbor-text">${escapeBriefHtml(shoppingCustom.label)}</strong>` : ''}
-              </div>
-            </div>
-            <button type="button" class="chip-add-btn shrink-0" onclick="showRecipeBookModal()">
-              <i class="fa-solid fa-book-open" aria-hidden="true"></i>
-              <span>Open</span>
-            </button>
-          </div>`;
-        return;
-      }
 
       // ── Dinners tray: themed weeknight lists ──
       const visible = getMealPresetsForEnergy(currentEnergy).filter(p => !p.isCustom);
@@ -21903,7 +21919,7 @@
           isMeal ? 'Empty dinner list' : 'No list yet',
           isMeal
             ? 'Type an ingredient above and hit Enter, or tap <strong>Edit</strong> to change the full recipe.'
-            : 'Type above and hit Enter for staples, open <strong>Dinners</strong> or <strong>Recipes</strong>, or tap <strong>+ Recipe</strong>.',
+            : 'Type above and hit Enter for staples, open <strong>Dinners</strong>, or tap the <strong>book</strong> icon for your recipe book.',
           isMeal
             ? `<div class="harbor-empty-actions">
                 <button type="button" class="chip-add-btn" onclick="document.getElementById('grocery-quick-input')?.focus()"><i class="fa-solid fa-plus"></i>Type to add</button>
@@ -21912,8 +21928,7 @@
               </div>`
             : `<div class="harbor-empty-actions">
                 <button type="button" class="chip-add-btn" onclick="document.getElementById('grocery-quick-input')?.focus()"><i class="fa-solid fa-plus"></i>Type to add</button>
-                <button type="button" class="chip-tool-btn" onclick="tryShowAddMealPresetModal()">+ Recipe</button>
-                <button type="button" class="chip-tool-btn" onclick="toggleGroceryRecipes()">Recipes</button>
+                <button type="button" class="chip-tool-btn" onclick="openRecipeBookFromToolbar()"><i class="fa-solid fa-book-open"></i> Recipe book</button>
               </div>`
         );
         return;
