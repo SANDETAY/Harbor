@@ -11805,7 +11805,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 371;
+    const HARBOR_BUILD_NUMBER = 372;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -20324,17 +20324,157 @@
       return _tesseractLoadPromise;
     }
 
+    const RECIPE_UNIT_RE = /\b(cups?|cupsof|tbsps?|tsps?|tablespoons?|teaspoons?|oz|ounces?|lbs?|pounds?|grams?|kg|ml|liters?|cloves?|sticks?|cans?|packages?|bags?|large|medium|small|whole)\b/i;
+
     /** Measurement at start of an ingredient line (keep whole line together). */
     function looksLikeIngredientMeasure(line) {
-      return /^\d/.test(line)
-        || /^[\d½¼¾⅓⅔⅛⅜⅝⅞]/.test(line)
-        || /^\d+\s*\/\s*\d+/.test(line)
-        || /^(a\s+pinch|a\s+dash|pinch|dash|to\s+taste)\b/i.test(line);
+      const s = String(line || '').trim();
+      return /^\d/.test(s)
+        || /^[\d½¼¾⅓⅔⅛⅜⅝⅞]/.test(s)
+        || /^\d+\s*\/\s*\d+/.test(s)
+        || /^(?:1\/2|1\/3|1\/4|2\/3|3\/4|1\/8|3\/8|5\/8|7\/8)\b/.test(s)
+        || /^(?:v|y|ay|l|i|j|\||¡)[/\\]?2\b/i.test(s) // OCR of 1/2
+        || /^(a\s+pinch|a\s+dash|pinch|dash|to\s+taste)\b/i.test(s);
+    }
+
+    /**
+     * Fix classic OCR mangling of fractions on recipe screenshots.
+     * Examples: AY2/Y2/V2/Ya → 1/2, 1% → 1 3/4, % cup → 3/4 cup
+     */
+    function fixOcrRecipeFractions(line) {
+      let s = String(line || '').trim();
+      if (!s) return s;
+
+      // Unicode vulgar fractions → ascii for consistency
+      s = s
+        .replace(/½/g, '1/2')
+        .replace(/¼/g, '1/4')
+        .replace(/¾/g, '3/4')
+        .replace(/⅓/g, '1/3')
+        .replace(/⅔/g, '2/3')
+        .replace(/⅛/g, '1/8')
+        .replace(/⅜/g, '3/8')
+        .replace(/⅝/g, '5/8')
+        .replace(/⅞/g, '7/8');
+
+      // Leading garbage before a unit: "AY2 cup", "Y2 cup", "V2 teaspoon", "Ya cup"
+      // 1/2 is the most common OCR fail on web screenshots
+      s = s.replace(
+        /^(?:[AYlIij\|¡]{1,3}|V)\s*[/\\|!]?\s*2(?=\s|$)/i,
+        '1/2'
+      );
+      s = s.replace(
+        /^(?:[AYlIij\|¡]|V)a(?=\s+(?:cup|cups|tsp|tbsp|teaspoon|tablespoon|oz|ounce))/i,
+        '1/2'
+      );
+      // "Y2 cup" without slash already handled; "1 2 cup" with space → 1/2 when unit follows
+      s = s.replace(/^1\s+2(?=\s+(?:cup|cups|tsp|tbsp|teaspoon|tablespoon)\b)/i, '1/2');
+
+      // Mixed numbers OCR: "1 3 4 cups" / "1% cups" / "13/4 cups" → 1 3/4
+      s = s.replace(/^1\s*%(?=\s)/, '1 3/4');
+      s = s.replace(/^1\s*%\s*(?=(?:cup|cups)\b)/i, '1 3/4 ');
+      s = s.replace(/^1\s*[¾](?=\s)/, '1 3/4');
+      s = s.replace(/^1\s+(\d)\s+(\d)(?=\s+(?:cup|cups)\b)/i, '1 $1/$2');
+      s = s.replace(/^13\/4(?=\s)/, '1 3/4');
+      s = s.replace(/^11\/2(?=\s)/, '1 1/2');
+      s = s.replace(/^11\/4(?=\s)/, '1 1/4');
+
+      // Bare % as three-quarters when a unit follows
+      s = s.replace(/^%\s*(?=(?:cup|cups|tsp|tbsp)\b)/i, '3/4 ');
+      s = s.replace(/^3\s*%(?=\s)/, '3/4');
+
+      // Mid-line: "… V2 teaspoon …" after a word break
+      s = s.replace(
+        /(\s)(?:[AYlIij\|¡]{1,3}|V)\s*[/\\|!]?\s*2(?=\s+(?:cup|cups|tsp|tbsp|teaspoon|tablespoon|oz)\b)/gi,
+        '$11/2'
+      );
+
+      // "V2 Baking soda" (unit missing) → "1/2 Baking soda" then tidy casing
+      s = s.replace(/^(?:[AYlIij\|¡]{1,3}|V)\s*[/\\|!]?\s*2\s+/i, '1/2 ');
+
+      // "1/2teaspoon" → "1/2 teaspoon"
+      s = s.replace(
+        /\b(\d+\/\d+|\d+)\s*(cups?|tbsps?|tsps?|tablespoons?|teaspoons?|oz|ounces?)\b/gi,
+        '$1 $2'
+      );
+
+      // Drop stray leading non-measure letters left from checkbox OCR: "x 1/2 cup"
+      s = s.replace(/^[xXoO]\s+(?=\d)/, '');
+      s = s.replace(/^[xXoO]\s+(?=1\/\d)/, '');
+
+      // Normalize "cup of" / spacing
+      s = s.replace(/\s+/g, ' ').trim();
+
+      // Common unit repairs
+      s = s.replace(/\bcupsof\b/gi, 'cups of');
+      s = s.replace(/\bteaspoonof\b/gi, 'teaspoon of');
+      s = s.replace(/\ball purpose\b/gi, 'all-purpose');
+      s = s.replace(/\ballpurpose\b/gi, 'all-purpose');
+
+      // If line is "1/2 Baking soda" without a unit, leave it (user can edit);
+      // prefer inserting teaspoon when it's clearly a leavener/salt with half amount
+      if (/^1\/2\s+(baking\s*soda|baking\s*powder|kosher\s*salt|salt|cinnamon|nutmeg)\b/i.test(s)
+          && !RECIPE_UNIT_RE.test(s)) {
+        s = s.replace(/^1\/2\s+/i, '1/2 teaspoon ');
+      }
+
+      return s;
+    }
+
+    /**
+     * Upscale + contrast boost — Tesseract struggles with thin "1/" on phone screenshots.
+     */
+    async function preprocessRecipeImageForOcr(dataUrl) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const maxW = 1600;
+            const scale = Math.min(2.2, Math.max(1.4, maxW / (img.naturalWidth || maxW)));
+            const w = Math.max(1, Math.round((img.naturalWidth || 800) * scale));
+            const h = Math.max(1, Math.round((img.naturalHeight || 800) * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              resolve(dataUrl);
+              return;
+            }
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, w, h);
+            const imageData = ctx.getImageData(0, 0, w, h);
+            const d = imageData.data;
+            // Grayscale + mild contrast (helps 1 vs / vs checkbox noise)
+            const contrast = 1.35;
+            const intercept = 128 * (1 - contrast);
+            for (let i = 0; i < d.length; i += 4) {
+              let y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+              y = contrast * y + intercept;
+              // Soft threshold toward black/white without nuking thin strokes
+              if (y > 200) y = 255;
+              else if (y < 55) y = 0;
+              y = Math.max(0, Math.min(255, y));
+              d[i] = d[i + 1] = d[i + 2] = y;
+            }
+            ctx.putImageData(imageData, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          } catch (_) {
+            resolve(dataUrl);
+          }
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      });
     }
 
     /**
      * Turn OCR dump into recipe-style ingredient lines (one per line).
-     * Preserves “½ cup butter” as a single line; strips website checkboxes.
+     * Preserves “1/2 cup butter” as a single line; strips website checkboxes;
+     * repairs common fraction misreads (V2/Y2/AY2 → 1/2).
      */
     function parseIngredientsFromOcrText(raw) {
       let text = String(raw || '')
@@ -20345,7 +20485,7 @@
         .replace(/\[\s*[xX✓✔ ]?\s*\]/g, ' ')
         .replace(/\(\s*[xX ]?\s*\)/g, ' ')
         // Common OCR of empty checkbox as leading o / 0 / x
-        .replace(/(^|\n)\s*[oO0xX]\s+(?=[\d½¼¾a-zA-Z])/g, '$1')
+        .replace(/(^|\n)\s*[oO0xX]\s+(?=[\d½¼¾AYlIV½a-zA-Z])/g, '$1')
         .replace(/[•●▪◦‣∙·]/g, '\n')
         .trim();
       if (!text) return [];
@@ -20372,7 +20512,7 @@
         }
         softSplit.push(line);
       });
-      lines = softSplit;
+      lines = softSplit.map(fixOcrRecipeFractions);
 
       // Merge orphan amount lines: "1/2 cup" + "all-purpose flour" → one line
       const merged = [];
@@ -20382,28 +20522,29 @@
           .replace(/^[-–—*+]\s+/, '')
           .replace(/^\s*[•·]\s*/, '')
           .trim();
+        line = fixOcrRecipeFractions(line);
         // Amount-only line (no food name yet) — e.g. "1/2 cup" or "2 tbsp"
         const strippedUnits = line.replace(
-          /\b(cups?|tbsps?|tsps?|tablespoons?|teaspoons?|oz|ounces?|lbs?|pounds?|grams?|kg|ml|liters?|cloves?|sticks?|cans?|packages?|bags?|sticks?)\b/gi,
+          /\b(cups?|tbsps?|tsps?|tablespoons?|teaspoons?|oz|ounces?|lbs?|pounds?|grams?|kg|ml|liters?|cloves?|sticks?|cans?|packages?|bags?)\b/gi,
           ''
         );
         const amountOnly = line.length < 28
           && looksLikeIngredientMeasure(line)
           && !/[a-zA-Z]{4,}/.test(strippedUnits);
         if (amountOnly && i + 1 < lines.length) {
-          const next = lines[i + 1].replace(/^[-–—*]\s+/, '').trim();
+          let next = fixOcrRecipeFractions(lines[i + 1].replace(/^[-–—*]\s+/, '').trim());
           if (next && /[a-zA-Z]/.test(next) && !looksLikeIngredientMeasure(next) && !skipLine.test(next)) {
             line = `${line} ${next}`.replace(/\s+/g, ' ').trim();
             i++;
           }
         }
-        merged.push(line);
+        merged.push(fixOcrRecipeFractions(line));
       }
 
       const items = [];
       const seen = new Set();
       for (let line of merged) {
-        line = line.trim();
+        line = fixOcrRecipeFractions(line.trim());
         if (line.length < 2 || line.length > 100) continue;
         if (skipLine.test(line) || skipOnly.test(line)) continue;
         if (looksLikeTime.test(line) || looksLikeTemp.test(line)) continue;
@@ -20439,6 +20580,7 @@
 
     /**
      * OCR a recipe photo (JPEG data URL). Needs network once to load the reader.
+     * Preprocesses image (upscale + contrast) and repairs common fraction misreads.
      * Returns { items: string[], raw: string }.
      */
     async function extractIngredientsFromRecipePhoto(dataUrl, options = {}) {
@@ -20447,15 +20589,44 @@
       }
       const Tesseract = await loadTesseractLib();
       const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
-      const result = await Tesseract.recognize(dataUrl, 'eng', {
-        logger: (m) => {
-          if (!onProgress) return;
-          if (m && m.status === 'recognizing text' && typeof m.progress === 'number') {
-            onProgress(m.progress);
+      if (onProgress) onProgress(0.05);
+      const prepared = await preprocessRecipeImageForOcr(dataUrl);
+      if (onProgress) onProgress(0.12);
+
+      // Prefer createWorker so we can set PSM for ingredient lists
+      let raw = '';
+      if (typeof Tesseract.createWorker === 'function') {
+        const worker = await Tesseract.createWorker('eng', 1, {
+          logger: (m) => {
+            if (!onProgress) return;
+            if (m && m.status === 'recognizing text' && typeof m.progress === 'number') {
+              onProgress(0.15 + m.progress * 0.8);
+            }
           }
+        });
+        try {
+          // 6 = assume a single uniform block of text (recipe card / list)
+          await worker.setParameters({
+            tessedit_pageseg_mode: '6',
+            preserve_interword_spaces: '1'
+          });
+          const result = await worker.recognize(prepared);
+          raw = String(result?.data?.text || '').trim();
+        } finally {
+          try { await worker.terminate(); } catch (_) { /* ignore */ }
         }
-      });
-      const raw = String(result?.data?.text || '').trim();
+      } else {
+        const result = await Tesseract.recognize(prepared, 'eng', {
+          logger: (m) => {
+            if (!onProgress) return;
+            if (m && m.status === 'recognizing text' && typeof m.progress === 'number') {
+              onProgress(m.progress);
+            }
+          }
+        });
+        raw = String(result?.data?.text || '').trim();
+      }
+
       const items = parseIngredientsFromOcrText(raw);
       return { items, raw };
     }
