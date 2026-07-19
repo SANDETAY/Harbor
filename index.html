@@ -11805,7 +11805,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 369;
+    const HARBOR_BUILD_NUMBER = 370;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -20135,14 +20135,14 @@
 
     async function removeMealPreset(presetId) {
       const preset = getMealPresetById(presetId);
-      if (!preset) return;
+      if (!preset) return false;
       const ok = await showHarborConfirm({
         title: 'Remove recipe?',
         message: `Remove “${preset.label}” from your recipe list?`,
         confirmLabel: 'Remove',
         danger: true
       });
-      if (!ok) return;
+      if (!ok) return false;
       state.mealPresets = ensureMealPresets().filter(p => p.id !== presetId);
       if (state.groceryView?.mode === 'meal' && state.groceryView.mealId === presetId) {
         state.groceryView = { mode: 'master' };
@@ -20151,6 +20151,7 @@
       saveState();
       renderGrocery();
       showToast('Recipe removed');
+      return true;
     }
 
     function showMealPresetLimitModal() {
@@ -21291,35 +21292,63 @@
         });
 
         listEl.innerHTML = '';
+        listEl.classList.add('space-y-0');
         groups.forEach((recipes, cat) => {
           const h = document.createElement('div');
-          h.className = 'text-[10px] font-semibold uppercase tracking-wide text-harbor-muted pt-1 px-0.5 sticky top-0 bg-harbor-surface/95 backdrop-blur-sm py-1 z-[1]';
+          h.className = 'text-[10px] font-semibold uppercase tracking-wide text-harbor-muted pt-2 px-0.5 sticky top-0 bg-harbor-surface/95 backdrop-blur-sm py-1 z-[1]';
           h.textContent = cat;
           listEl.appendChild(h);
           recipes.forEach(p => {
-            const card = document.createElement('button');
-            card.type = 'button';
-            card.className = 'w-full text-left bg-harbor-raised border border-harbor-border rounded-2xl p-2.5 flex gap-2.5 active:scale-[0.99] transition-transform';
             const n = (p.items || []).length;
             const preview = (p.items || []).slice(0, 3).map(i => escapeBriefHtml(i)).join(' · ');
-            card.innerHTML = `
-              ${p.photoDataUrl
-                ? `<img src="${p.photoDataUrl}" alt="" class="w-14 h-14 rounded-xl object-cover border border-harbor-border flex-shrink-0" loading="lazy"/>`
-                : `<div class="w-14 h-14 rounded-xl bg-harbor-border/40 flex items-center justify-center text-lg flex-shrink-0" aria-hidden="true">🍽</div>`}
-              <div class="min-w-0 flex-1">
-                <div class="font-semibold text-sm text-harbor-text truncate">${escapeBriefHtml(p.label || 'Recipe')}</div>
-                <div class="text-[10px] text-harbor-muted mt-0.5">${n} ingredient${n === 1 ? '' : 's'}${p.recipe ? ` · ${escapeBriefHtml(p.recipe)}` : ''}</div>
-                ${preview ? `<div class="text-[10px] text-harbor-muted/90 mt-1 line-clamp-2 leading-snug">${preview}</div>` : ''}
-              </div>
-              <i class="fa-solid fa-chevron-right text-harbor-muted text-[10px] self-center flex-shrink-0" aria-hidden="true"></i>`;
-            card.addEventListener('click', () => {
+            const safeId = String(p.id).replace(/"/g, '');
+            const actionsHtml = `
+              <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit recipe">
+                <i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span>
+              </button>
+              <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete recipe">
+                <i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Delete</span>
+              </button>`;
+            const contentHtml = `
+              <div class="flex gap-2.5 items-center w-full min-w-0" data-rb-open="${escapeBriefHtml(safeId)}">
+                ${p.photoDataUrl
+                  ? `<img src="${p.photoDataUrl}" alt="" class="w-14 h-14 rounded-xl object-cover border border-harbor-border flex-shrink-0 pointer-events-none" loading="lazy"/>`
+                  : `<div class="w-14 h-14 rounded-xl bg-harbor-border/40 flex items-center justify-center text-lg flex-shrink-0 pointer-events-none" aria-hidden="true">🍽</div>`}
+                <div class="min-w-0 flex-1 pointer-events-none">
+                  <div class="font-semibold text-sm text-harbor-text truncate">${escapeBriefHtml(p.label || 'Recipe')}</div>
+                  <div class="text-[10px] text-harbor-muted mt-0.5">${n} ingredient${n === 1 ? '' : 's'}${p.recipe ? ` · ${escapeBriefHtml(p.recipe)}` : ''}</div>
+                  ${preview ? `<div class="text-[10px] text-harbor-muted/90 mt-1 line-clamp-2 leading-snug">${preview}</div>` : ''}
+                </div>
+                <i class="fa-solid fa-chevron-right text-harbor-muted text-[10px] flex-shrink-0 pointer-events-none" aria-hidden="true"></i>
+              </div>`;
+            const row = document.createElement('div');
+            row.className = 'swipe-row';
+            row.dataset.swipeType = 'recipe';
+            row.dataset.swipeId = safeId;
+            row.innerHTML = buildSwipeRowHtml(
+              actionsHtml,
+              contentHtml,
+              'bg-harbor-raised border border-harbor-border rounded-2xl p-2.5 flex items-center'
+            );
+            // Tap row content → open recipe (not when swipe is open / after swipe)
+            row.querySelector('.swipe-row-content')?.addEventListener('click', (e) => {
+              if (row.classList.contains('is-open') || row.dataset.swipeSuppressClick === '1') return;
+              if (e.target.closest('.swipe-action')) return;
               modal.remove();
               document.body.classList.remove('harbor-modal-open');
               showRecipeDetailModal(p.id);
             });
-            listEl.appendChild(card);
+            listEl.appendChild(row);
           });
         });
+        if (typeof bindSwipeRows === 'function') bindSwipeRows(listEl, { force: true });
+        // Hint under first group
+        if (!listEl.querySelector('.rb-swipe-hint')) {
+          const hint = document.createElement('p');
+          hint.className = 'rb-swipe-hint text-[10px] text-harbor-muted text-center pt-1 pb-2 px-2';
+          hint.textContent = 'Swipe left on a recipe for Edit or Delete';
+          listEl.appendChild(hint);
+        }
       };
 
       paintCategorySelect();
@@ -29572,6 +29601,20 @@
       } else if (type === 'budget') {
         if (action === 'edit') showBudgetCategoryEditor(id);
         else if (action === 'delete') deleteBudgetTransaction(id);
+      } else if (type === 'recipe') {
+        if (action === 'edit') {
+          document.getElementById('recipe-book-modal')?.remove();
+          document.getElementById('recipe-detail-modal')?.remove();
+          showEditMealPresetModal(id, { returnToManage: false, returnToBook: true });
+        } else if (action === 'delete') {
+          removeMealPreset(id).then((removed) => {
+            if (!removed) return;
+            // Refresh open recipe book if still on screen
+            const book = document.getElementById('recipe-book-modal');
+            if (book) showRecipeBookModal({ category: groceryRecipeCategoryFilter });
+            else if (typeof renderMealGroceryFilters === 'function') renderMealGroceryFilters();
+          });
+        }
       }
     }
 
@@ -29591,8 +29634,10 @@
       );
     }
 
-    function bindSwipeRows(root) {
-      if (!isSwipeMobile() || !root) return;
+    function bindSwipeRows(root, options = {}) {
+      // force: true — enable swipe in modals (recipe book) even on wide desktop preview
+      if (!root) return;
+      if (!options.force && !isSwipeMobile()) return;
 
       root.querySelectorAll('.swipe-row:not([data-swipe-bound])').forEach(row => {
         row.dataset.swipeBound = '1';
