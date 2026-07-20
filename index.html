@@ -11833,7 +11833,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 373;
+    const HARBOR_BUILD_NUMBER = 374;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -15870,6 +15870,31 @@
       return Math.min(5, Math.round(n));
     }
 
+    /** Normalize "9:00" / "09:00:00" → "HH:MM" or '' */
+    function normalizeReminderTimeStr(raw) {
+      const s = String(raw || '').trim();
+      const m = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+      if (!m) return '';
+      const hh = Math.min(23, Math.max(0, parseInt(m[1], 10)));
+      const mm = Math.min(59, Math.max(0, parseInt(m[2], 10)));
+      return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    }
+
+    /** Clean list of reminder times from a habit/task. */
+    function getHabitReminderTimes(habit) {
+      if (!habit || !Array.isArray(habit.reminderTimes)) return [];
+      return habit.reminderTimes.map(normalizeReminderTimeStr).filter(Boolean).slice(0, 5);
+    }
+
+    function formatReminderTimeLabel(hhmm) {
+      const t = normalizeReminderTimeStr(hhmm);
+      if (!t) return '';
+      const [h, m] = t.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+    }
+
     /** @deprecated use getTimesPerPeriod — kept for older call sites */
     function getTimesPerDay(habit) {
       return getTimesPerPeriod(habit);
@@ -18307,6 +18332,16 @@
             </div>
           </div>
 
+          <!-- Optional clock times → local notifications (task / habit / chore) -->
+          <div id="qt-remind-section" class="mb-3">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input id="qt-remind-toggle" type="checkbox" class="rounded border-harbor-border text-harbor-primary focus:ring-harbor-primary">
+              <span class="text-[10px] uppercase tracking-wider text-harbor-muted font-semibold">Remind me</span>
+            </label>
+            <div id="qt-remind-hint" class="text-[10px] text-harbor-muted mt-1 leading-snug">Optional. Harbor can ping you at specific times (phone notifications).</div>
+            <div id="qt-remind-times" class="hidden mt-2 space-y-1.5"></div>
+          </div>
+
           <div id="qt-energy-section" class="mb-3">
             <label class="block text-xs text-harbor-muted mb-1.5">Energy needed</label>
             <div class="qt-energy-row" role="group" aria-label="Energy needed">
@@ -18344,6 +18379,11 @@
       let selectedKind = 'task'; // task | habit | chore
       let selectedTimesPerDay = editSource?.times_per_day ? Math.max(1, Number(editSource.times_per_day) || 1) : 1;
       let selectedWeekdays = getHabitWeekdays(editSource) ? [...getHabitWeekdays(editSource)] : [];
+      // Optional reminder clock times "HH:MM" — tasks / habits / chores
+      let remindEnabled = !!(editSource?.reminderTimes && editSource.reminderTimes.length);
+      let selectedReminderTimes = Array.isArray(editSource?.reminderTimes) && editSource.reminderTimes.length
+        ? editSource.reminderTimes.map(t => normalizeReminderTimeStr(t)).filter(Boolean)
+        : [];
       const MINUTE_PRESETS = [
         { label: '5 min', value: 5 },
         { label: '15 min', value: 15 },
@@ -18579,7 +18619,10 @@
         const show = (selectedKind === 'habit' || selectedKind === 'chore') && hasCadence
           && selectedInterval !== 0;
         sec.classList.toggle('hidden', !show);
-        if (!show) return;
+        if (!show) {
+          renderReminderTimes();
+          return;
+        }
         const period = frequencyPeriodWord();
         if (hint) {
           if (period === 'day') {
@@ -18609,9 +18652,79 @@
         row.querySelectorAll('.qt-times-chip').forEach(btn => {
           btn.onclick = () => {
             selectedTimesPerDay = parseInt(btn.dataset.times, 10) || 1;
+            // Grow/shrink reminder slots with frequency
+            syncReminderTimesLength();
             renderTimesPerDay();
             refreshSummary();
           };
+        });
+        renderReminderTimes();
+      }
+
+      function defaultReminderTimesForCount(n) {
+        const map = {
+          1: ['09:00'],
+          2: ['08:00', '18:00'],
+          3: ['08:00', '13:00', '18:00']
+        };
+        if (map[n]) return [...map[n]];
+        return Array.from({ length: Math.max(1, n) }, (_, i) => map[3][i] || '12:00');
+      }
+
+      function syncReminderTimesLength() {
+        const n = selectedKind === 'task' ? 1 : Math.max(1, Math.min(3, selectedTimesPerDay || 1));
+        if (!selectedReminderTimes.length) {
+          selectedReminderTimes = defaultReminderTimesForCount(n);
+          return;
+        }
+        while (selectedReminderTimes.length < n) {
+          const defaults = defaultReminderTimesForCount(n);
+          selectedReminderTimes.push(defaults[selectedReminderTimes.length] || '12:00');
+        }
+        if (selectedReminderTimes.length > n) {
+          selectedReminderTimes = selectedReminderTimes.slice(0, n);
+        }
+      }
+
+      function renderReminderTimes() {
+        const sec = modal.querySelector('#qt-remind-section');
+        const wrap = modal.querySelector('#qt-remind-times');
+        const toggle = modal.querySelector('#qt-remind-toggle');
+        const hint = modal.querySelector('#qt-remind-hint');
+        if (!sec || !wrap || !toggle) return;
+        // Available for task, habit, and chore
+        sec.classList.remove('hidden');
+        toggle.checked = !!remindEnabled;
+        if (hint) {
+          if (selectedKind === 'task') {
+            hint.textContent = 'Optional. One ping at this time (today if still ahead, otherwise tomorrow).';
+          } else if ((selectedTimesPerDay || 1) > 1 && (selectedInterval == null || selectedInterval === 1)) {
+            hint.textContent = `Optional. Set ${selectedTimesPerDay} times — e.g. feed dogs at 8:00 AM and 6:00 PM.`;
+          } else {
+            hint.textContent = 'Optional. Harbor pings at these clock times when notifications are on.';
+          }
+        }
+        wrap.classList.toggle('hidden', !remindEnabled);
+        if (!remindEnabled) {
+          wrap.innerHTML = '';
+          return;
+        }
+        syncReminderTimesLength();
+        const n = selectedReminderTimes.length;
+        wrap.innerHTML = selectedReminderTimes.map((t, i) => `
+          <label class="flex items-center gap-2 text-xs text-harbor-muted">
+            <span class="w-14 shrink-0">${n > 1 ? `Time ${i + 1}` : 'Time'}</span>
+            <input type="time" class="qt-remind-time flex-1 bg-harbor-raised border border-harbor-border rounded-xl px-3 py-2 text-harbor-text outline-none"
+              data-ri="${i}" value="${escapeBriefHtml(t)}" aria-label="Reminder time ${i + 1}">
+          </label>
+        `).join('');
+        wrap.querySelectorAll('.qt-remind-time').forEach(inp => {
+          inp.addEventListener('change', () => {
+            const i = parseInt(inp.dataset.ri, 10);
+            if (!Number.isFinite(i)) return;
+            selectedReminderTimes[i] = normalizeReminderTimeStr(inp.value) || selectedReminderTimes[i];
+            refreshSummary();
+          });
         });
       }
 
@@ -18666,6 +18779,7 @@
           recurCaption.textContent = selectedKind === 'habit' ? 'habits & streaks' : selectedKind === 'chore' ? 'chores' : '';
         }
         if (showRecurrence) renderRecurrenceChips();
+        else renderReminderTimes();
       }
 
       function applyKind(kind) {
@@ -18786,7 +18900,12 @@
         const energy = getDifficultyLabel(selectedDiff);
         const goal = inf.unit && goalVal ? ` · goal ${goalVal} ${inf.unit}` : '';
         const minLabel = mins > 0 ? `~${mins} min` : 'quick task';
-        summaryEl.textContent = `${freq} · ${energy} energy · ${minLabel}${goal}${streakNote}${tag}`;
+        let remindBit = '';
+        if (remindEnabled && selectedReminderTimes.length) {
+          const labels = selectedReminderTimes.map(formatReminderTimeLabel).filter(Boolean);
+          if (labels.length) remindBit = ` · remind ${labels.join(', ')}`;
+        }
+        summaryEl.textContent = `${freq} · ${energy} energy · ${minLabel}${goal}${remindBit}${streakNote}${tag}`;
       }
 
       function refreshGoalField() {
@@ -18836,6 +18955,17 @@
       updateIntervalButtons();
       renderMinuteChips();
       renderTimesPerDay();
+      renderReminderTimes();
+      const remindToggle = modal.querySelector('#qt-remind-toggle');
+      if (remindToggle) {
+        remindToggle.checked = !!remindEnabled;
+        remindToggle.addEventListener('change', () => {
+          remindEnabled = !!remindToggle.checked;
+          if (remindEnabled) syncReminderTimesLength();
+          renderReminderTimes();
+          refreshSummary();
+        });
+      }
       refreshGoalField();
 
       modal.querySelectorAll('.qt-kind-chip').forEach(btn => {
@@ -18926,6 +19056,15 @@
         } else {
           delete task.times_per_day;
         }
+        // Optional clock reminders (task / habit / chore)
+        if (remindEnabled) {
+          syncReminderTimesLength();
+          const times = selectedReminderTimes.map(normalizeReminderTimeStr).filter(Boolean);
+          if (times.length) task.reminderTimes = times;
+          else delete task.reminderTimes;
+        } else {
+          delete task.reminderTimes;
+        }
         if ((selectedKind === 'habit' || selectedKind === 'chore') && selectedWeekdays.length) {
           task.weekdays = [...selectedWeekdays];
         } else {
@@ -18951,6 +19090,7 @@
         function applyClearedEditFields(target) {
           if (!target) return target;
           if (!keepFrequency) delete target.times_per_day;
+          if (!remindEnabled || !task.reminderTimes) delete target.reminderTimes;
           if (!task.weekdays) {
             delete target.weekdays;
             delete target.preferred_weekdays;
@@ -18983,6 +19123,7 @@
             loadCommonTasks();
           }
           saveState();
+          if (typeof syncHarborNotifications === 'function') syncHarborNotifications({ silent: true });
           renderTasks();
           renderLibrary();
           if (typeof renderStreaks === 'function') renderStreaks();
@@ -19024,6 +19165,7 @@
           state.habits.push(stampHabitMeta(task));
           state.customUsage[task.id] = 1;
           saveState();
+          if (typeof syncHarborNotifications === 'function') syncHarborNotifications({ silent: true });
           closeQuickTaskModal();
           // Always show Today so new Swim/habits “pop up” where the user looks
           if (typeof switchTab === 'function') switchTab('today', { force: true });
@@ -23443,8 +23585,94 @@
         }
       }
 
+      // User-set clock times on tasks / habits / chores
+      try {
+        collectTaskReminderNotifications(7).forEach(r => list.push(r));
+      } catch (e) {
+        console.warn('task reminders', e);
+      }
+
       // Cap pending alerts (iOS limit ~64). Prefer appointments + bills over routines.
+      // Keep task reminders near the front after bills/events by stable sort:
+      const typeRank = (p) => {
+        const t = String(p.extra?.type || '');
+        if (t === 'event') return 0;
+        if (t.startsWith('bill')) return 1;
+        if (t === 'task-reminder') return 2;
+        if (t === 'morning') return 3;
+        return 4;
+      };
+      list.sort((a, b) => typeRank(a) - typeRank(b) || (a.schedule?.at - b.schedule?.at));
       return list.slice(0, 48);
+    }
+
+    /**
+     * Clock-time reminders for tasks / habits / chores with reminderTimes set.
+     * Requires Settings → Notifications on (same as bills).
+     */
+    function collectTaskReminderNotifications(horizonDays = 7) {
+      const out = [];
+      const now = Date.now();
+      const habits = state.habits || [];
+      habits.forEach(h => {
+        if (!h || h.id == null) return;
+        const times = typeof getHabitReminderTimes === 'function' ? getHabitReminderTimes(h) : [];
+        if (!times.length) return;
+
+        const isOneOff = typeof isOneOffTask === 'function' && isOneOffTask(h);
+        const maxDays = isOneOff ? 2 : Math.max(1, horizonDays);
+        const weekdays = typeof getHabitWeekdays === 'function' ? getHabitWeekdays(h) : null;
+
+        for (let d = 0; d < maxDays; d++) {
+          const day = new Date();
+          day.setHours(0, 0, 0, 0);
+          day.setDate(day.getDate() + d);
+          const ds = typeof dateStrLocal === 'function' ? dateStrLocal(day) : null;
+          if (!ds) continue;
+
+          // Skip days that aren't on preferred weekdays (when set)
+          if (weekdays && weekdays.length) {
+            const dow = day.getDay(); // 0=Sun
+            if (!weekdays.includes(dow)) continue;
+          }
+
+          // Don't nag if already fully done for this period
+          if (typeof isPeriodFullyComplete === 'function' && isPeriodFullyComplete(h, ds)) continue;
+
+          times.forEach((timeStr, ti) => {
+            const m = String(timeStr).match(/^(\d{1,2}):(\d{2})$/);
+            if (!m) return;
+            const at = new Date(day);
+            at.setHours(parseInt(m[1], 10), parseInt(m[2], 10), 0, 0);
+            if (at.getTime() <= now + 60_000) return;
+
+            const label = typeof formatReminderTimeLabel === 'function'
+              ? formatReminderTimeLabel(timeStr)
+              : timeStr;
+            const need = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(h) : 1;
+            const done = typeof countCompletionsInPeriod === 'function'
+              ? countCompletionsInPeriod(h, ds)
+              : 0;
+            let body = 'Time for this when you’re ready.';
+            if (need > 1) {
+              body = done > 0
+                ? `Still need ${need - done} more today (${done}/${need}).`
+                : `Scheduled for ${label} · ${need}× today.`;
+            } else if (label) {
+              body = `Reminder for ${label}.`;
+            }
+
+            out.push({
+              id: harborNotifIdFromKey(`trem|${h.id}|${ds}|${ti}`),
+              title: h.title || 'Harbor',
+              body,
+              schedule: { at },
+              extra: { type: 'task-reminder', habitId: h.id, dueKey: `${ds}|${ti}` }
+            });
+          });
+        }
+      });
+      return out;
     }
 
     async function cancelHarborNotifications() {
@@ -23505,7 +23733,7 @@
             await LN.createChannel({
               id: 'harbor-reminders',
               name: 'Harbor reminders',
-              description: 'Bills, appointments, and gentle routine nudges',
+              description: 'Bills, appointments, task times, and gentle routine nudges',
               importance: 4,
               visibility: 1
             });
