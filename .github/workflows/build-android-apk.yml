@@ -68,9 +68,8 @@ jobs:
           # Avoid interactive daemon issues in CI
           GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx2g
         run: |
-          ./gradlew clean assembleDebug --stacktrace --info 2>&1 | tee /tmp/gradle-build.log
-          # Keep log tail visible if it fails
-          tail -n 80 /tmp/gradle-build.log
+          set -o pipefail
+          ./gradlew clean assembleDebug --stacktrace 2>&1 | tee /tmp/gradle-build.log
 
       - name: Upload Gradle log on failure
         if: failure()
@@ -82,9 +81,15 @@ jobs:
 
       - name: Package APK
         run: |
-          APK=$(find android/app/build/outputs/apk -name '*.apk' | head -1)
+          set -e
+          echo "Looking for APK..."
+          find android/app/build/outputs -type f -name '*.apk' -print || true
+          APK=$(find android/app/build/outputs -type f -name '*debug*.apk' | head -1)
+          if [ -z "$APK" ]; then
+            APK=$(find android/app/build/outputs -type f -name '*.apk' | head -1)
+          fi
           echo "Found: $APK"
-          test -n "$APK"
+          test -n "$APK" && test -f "$APK"
           cp "$APK" "Harbor-debug-378.apk"
           ls -lah Harbor-debug-378.apk
 
