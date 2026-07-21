@@ -6541,10 +6541,22 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
+      /* Invisible scrollbar — scroll still works (match library / Today) */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
-    /* Thumb-zone close — mobile only (desktop keeps top-right Close) */
-    .summary-sheet-foot {
+    .summary-sheet-scroll::-webkit-scrollbar {
+      width: 0;
+      height: 0;
       display: none;
+      background: transparent;
+    }
+    .summary-sheet-scroll::-webkit-scrollbar-thumb {
+      background: transparent;
+    }
+    /* Done + swipe-down close Daily Brief (no top-right Close chip) */
+    .summary-sheet-foot {
+      display: block;
       flex-shrink: 0;
       padding: 0.65rem 0 0;
       margin-top: 0.15rem;
@@ -6574,7 +6586,7 @@
       border-color: rgb(var(--harbor-primary) / 0.35);
     }
     .summary-sheet-dismiss-hint {
-      display: none;
+      display: block;
       text-align: center;
       font-size: 0.62rem;
       font-weight: 600;
@@ -6584,12 +6596,6 @@
       flex-shrink: 0;
     }
     @media (max-width: 767px) {
-      .summary-sheet-foot {
-        display: block;
-      }
-      .summary-sheet-dismiss-hint {
-        display: block;
-      }
       .summary-sheet .modal-grab-pill {
         width: 2.75rem;
         height: 0.28rem;
@@ -6805,6 +6811,113 @@
       white-space: nowrap;
       flex-shrink: 0;
       padding-top: 0.1rem;
+    }
+
+    /* Morning check-in + end-of-day ritual cards */
+    .hv-ritual-card {
+      border: 1px solid rgb(var(--harbor-primary) / 0.28);
+      background:
+        linear-gradient(165deg, rgb(var(--harbor-primary) / 0.12) 0%, rgb(var(--harbor-raised)) 55%);
+      border-radius: 1.15rem;
+      padding: 0.85rem 0.95rem;
+      margin-bottom: 0.85rem;
+    }
+    .hv-ritual-kicker {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-primary-light));
+      margin-bottom: 0.35rem;
+    }
+    .hv-ritual-kicker i { margin-right: 0.3rem; }
+    .hv-ritual-lead {
+      font-size: 0.88rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-text));
+      margin: 0 0 0.25rem;
+      line-height: 1.3;
+    }
+    .hv-ritual-meta {
+      font-size: 0.68rem;
+      color: rgb(var(--harbor-muted));
+      margin-bottom: 0.65rem;
+    }
+    .hv-ritual-energy-row {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.7rem;
+    }
+    .hv-ritual-energy {
+      flex: 1;
+      appearance: none;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-surface));
+      color: rgb(var(--harbor-muted));
+      border-radius: 999px;
+      padding: 0.45rem 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .hv-ritual-energy.is-active {
+      border-color: rgb(var(--harbor-primary) / 0.5);
+      background: rgb(var(--harbor-primary) / 0.14);
+      color: rgb(var(--harbor-text));
+    }
+    .hv-ritual-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .hv-ritual-primary {
+      appearance: none;
+      width: 100%;
+      min-height: 2.65rem;
+      border-radius: 0.9rem;
+      border: none;
+      background: rgb(var(--harbor-primary));
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .hv-ritual-secondary {
+      appearance: none;
+      width: 100%;
+      min-height: 2.2rem;
+      border: none;
+      background: transparent;
+      color: rgb(var(--harbor-muted));
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .harbor-eod-banner .chip-add-btn,
+    .harbor-eod-banner .chip-tool-btn {
+      min-height: 2rem;
+    }
+
+    .person-filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .person-filter-chip {
+      appearance: none;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+      border-radius: 999px;
+      padding: 0.32rem 0.7rem;
+      font-size: 0.68rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .person-filter-chip.is-active {
+      border-color: rgb(var(--harbor-primary) / 0.45);
+      background: rgb(var(--harbor-primary) / 0.14);
+      color: rgb(var(--harbor-text));
     }
 
     .summary-when-you-can {
@@ -11833,7 +11946,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 374;
+    const HARBOR_BUILD_NUMBER = 378;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -12523,6 +12636,11 @@
         bedtimeMins: 21 * 60,           // 9:00 PM default
         morningWindowStart: 6 * 60,     // 6:00 AM
         morningWindowEnd: 9 * 60 + 30,  // 9:30 AM
+        // Day rituals (once per calendar day)
+        morningRitualEnabled: true,
+        eveningRitualEnabled: true,
+        morningRitualDoneDate: null,   // todayStr when completed/dismissed
+        eveningRitualDoneDate: null,
         mealPresetsVersion: MEAL_PRESETS_VERSION,
         // Household members for color-coded schedule events (spouse, kids, etc.)
         householdProfiles: [
@@ -12531,8 +12649,34 @@
       }
     };
 
+    // Fallback awake window when rhythm settings unavailable
     const AWAKE_DAY_START = 7 * 60;
     const AWAKE_DAY_END = 22 * 60;
+    /** Minutes of padding before/after calendar events for free-time accuracy */
+    const EVENT_BUFFER_MINS = 10;
+
+    /**
+     * Awake window from Your day settings (morning start → bedtime).
+     * Free-time / gaps only count inside this window.
+     */
+    function getAwakeWindowMins() {
+      let start = AWAKE_DAY_START;
+      let end = AWAKE_DAY_END;
+      try {
+        const morning = typeof getMorningWindow === 'function' ? getMorningWindow() : null;
+        if (morning && Number.isFinite(morning.start)) start = morning.start;
+        const bed = typeof getBedtimeMins === 'function' ? getBedtimeMins() : null;
+        if (Number.isFinite(bed)) {
+          // Small wind-down past bedtime so late free time still exists
+          end = Math.min(23 * 60 + 45, bed + 30);
+        }
+      } catch (_) { /* keep defaults */ }
+      if (!(end > start + 60)) {
+        start = AWAKE_DAY_START;
+        end = AWAKE_DAY_END;
+      }
+      return { start, end };
+    }
 
     const WORK_SCHEDULE_PRESETS = [
       { id: '9to5', label: '9–5 weekdays', mode: 'preset', start: '09:00', end: '17:00', days: [1, 2, 3, 4, 5] },
@@ -12556,7 +12700,8 @@
     let currentProjectionHabit = null;
     let commonTasks = [];
     /** Collapsed by default so weekly/monthly “not due” list stays out of the way */
-    let laterRoutinesExpanded = false;
+    // Open by default so weekly laundry etc. are visible under Coming up
+    let laterRoutinesExpanded = true;
 
     const CHEAT_DAY_COOLDOWN_DAYS = 2;
     // Harbor Day should take real progress (tasks + habits + chores), not tiny dailies alone
@@ -13521,6 +13666,21 @@
       }
       // Ensure household profiles exist and always include a "Me" entry
       state.settings.householdProfiles = ensureHouseholdProfiles(state.settings.householdProfiles);
+      // Day rituals (morning Brief card + end-of-day close)
+      if (state.settings.morningRitualEnabled !== true && state.settings.morningRitualEnabled !== false) {
+        state.settings.morningRitualEnabled = true;
+      }
+      if (state.settings.eveningRitualEnabled !== true && state.settings.eveningRitualEnabled !== false) {
+        state.settings.eveningRitualEnabled = true;
+      }
+      if (state.settings.morningRitualDoneDate != null && typeof state.settings.morningRitualDoneDate !== 'string') {
+        state.settings.morningRitualDoneDate = null;
+      }
+      if (state.settings.eveningRitualDoneDate != null && typeof state.settings.eveningRitualDoneDate !== 'string') {
+        state.settings.eveningRitualDoneDate = null;
+      }
+      if (!state.settings.taskPersonFilter) state.settings.taskPersonFilter = 'all';
+      if (!state.settings.groceryPersonFilter) state.settings.groceryPersonFilter = 'all';
       if (!Array.isArray(state.settings.calendarFeeds)) {
         state.settings.calendarFeeds = [];
       }
@@ -14902,6 +15062,118 @@
 
     function getPersonLabel(personId) {
       return getHouseholdPerson(personId)?.name || '';
+    }
+
+    /** Tasks/chores default to Me; grocery null = anyone / household. */
+    function getHabitPersonId(habit) {
+      if (!habit) return 'me';
+      const id = habit.personId;
+      if (id == null || id === '') return 'me';
+      return String(id);
+    }
+    function getGroceryPersonId(item) {
+      if (!item) return null;
+      const id = item.personId;
+      if (id == null || id === '' || id === 'anyone') return null;
+      return String(id);
+    }
+    function householdHasMultiplePeople() {
+      try { return getHouseholdProfiles().length > 1; } catch (_) { return false; }
+    }
+    /**
+     * filter: 'all' | 'me' | personId
+     * Tasks: mine = me (or missing). Grocery mine = personId me only (null stays in All).
+     */
+    function matchesPersonFilter(personId, filter, opts = {}) {
+      const f = filter || 'all';
+      if (f === 'all') return true;
+      const pid = personId == null || personId === '' ? null : String(personId);
+      if (f === 'me') {
+        if (opts.grocery) return pid === 'me';
+        return !pid || pid === 'me';
+      }
+      return pid === f;
+    }
+    function getTaskPersonFilter() {
+      return state.settings?.taskPersonFilter || 'all';
+    }
+    function setTaskPersonFilter(filter) {
+      if (!state.settings) state.settings = {};
+      state.settings.taskPersonFilter = filter || 'all';
+      saveState();
+      try { renderTasks(); } catch (_) { /* ignore */ }
+    }
+    function getGroceryPersonFilter() {
+      return state.settings?.groceryPersonFilter || 'all';
+    }
+    function setGroceryPersonFilter(filter) {
+      if (!state.settings) state.settings = {};
+      state.settings.groceryPersonFilter = filter || 'all';
+      saveState();
+      try { renderGrocery(); } catch (_) { /* ignore */ }
+    }
+    /** Compact person filter chips (All · Me · names). Hidden if only Me. */
+    function buildPersonFilterChipsHtml(activeFilter, onAttr = 'data-person-filter') {
+      if (!householdHasMultiplePeople()) return '';
+      const people = getHouseholdProfiles();
+      const chips = [
+        { id: 'all', label: 'All' },
+        ...people.map(p => ({ id: p.id, label: p.name }))
+      ];
+      return `<div class="person-filter-row" role="group" aria-label="Filter by person">
+        ${chips.map(c => {
+          const on = (activeFilter || 'all') === c.id;
+          return `<button type="button" class="person-filter-chip${on ? ' is-active' : ''}" ${onAttr}="${escapeBriefHtml(c.id)}" aria-pressed="${on ? 'true' : 'false'}">${escapeBriefHtml(c.label)}</button>`;
+        }).join('')}
+      </div>`;
+    }
+    /** Person picker for tasks/grocery. allowAnyone → “Anyone” chip with empty id. */
+    function buildAssigneePickerHtml(selectedId, opts = {}) {
+      const people = getHouseholdProfiles();
+      if (people.length < 2 && !opts.force) return '';
+      const allowAnyone = !!opts.allowAnyone;
+      const sel = selectedId == null || selectedId === ''
+        ? (allowAnyone ? '' : 'me')
+        : String(selectedId);
+      const id = opts.pickerId || 'assignee-picker';
+      const anyoneBtn = allowAnyone
+        ? `<button type="button" class="person-pick-btn${sel === '' ? ' is-active' : ''}" data-person-id=""
+            aria-pressed="${sel === '' ? 'true' : 'false'}">Anyone</button>`
+        : '';
+      return `<div class="person-pick-grid" id="${escapeBriefHtml(id)}" role="group" aria-label="${escapeBriefHtml(opts.label || 'Who is this for?')}">
+        ${anyoneBtn}
+        ${people.map(p => {
+          const active = p.id === sel;
+          return `<button type="button" class="person-pick-btn${active ? ' is-active' : ''}" data-person-id="${escapeBriefHtml(p.id)}"
+            style="--person-color:${escapeBriefHtml(p.color)}" aria-pressed="${active ? 'true' : 'false'}">
+            <span class="person-swatch" style="background:${escapeBriefHtml(p.color)}"></span>
+            ${escapeBriefHtml(p.name)}
+          </button>`;
+        }).join('')}
+      </div>`;
+    }
+    function wireAssigneePicker(root, onChange) {
+      if (!root) return;
+      root.querySelectorAll('.person-pick-btn[data-person-id]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = btn.getAttribute('data-person-id') ?? '';
+          root.querySelectorAll('.person-pick-btn').forEach(b => {
+            const on = (b.getAttribute('data-person-id') ?? '') === id;
+            b.classList.toggle('is-active', on);
+            b.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+          if (typeof onChange === 'function') onChange(id === '' ? null : id);
+        };
+      });
+    }
+    function getSelectedAssigneeId(root) {
+      if (!root) return null;
+      const active = root.querySelector('.person-pick-btn.is-active');
+      if (!active) return null;
+      const id = active.getAttribute('data-person-id');
+      return id === '' || id == null ? null : id;
     }
 
     function nextHouseholdColor() {
@@ -18351,6 +18623,11 @@
             </div>
           </div>
 
+          <div id="qt-person-section" class="mb-3 ${typeof householdHasMultiplePeople === 'function' && householdHasMultiplePeople() ? '' : 'hidden'}">
+            <label class="block text-xs text-harbor-muted mb-1.5">Who is this for?</label>
+            <div id="qt-person-picker-wrap"></div>
+          </div>
+
           <div id="qt-goal-wrap" class="hidden mb-3">
             <label class="block text-xs text-harbor-muted mb-1">Goal amount <span id="qt-goal-unit" class="text-harbor-primary-light"></span></label>
             <input id="qt-goal" type="number" min="0" step="any"
@@ -18384,6 +18661,18 @@
       let selectedReminderTimes = Array.isArray(editSource?.reminderTimes) && editSource.reminderTimes.length
         ? editSource.reminderTimes.map(t => normalizeReminderTimeStr(t)).filter(Boolean)
         : [];
+      let selectedPersonId = typeof getHabitPersonId === 'function'
+        ? getHabitPersonId(editSource || { personId: 'me' })
+        : (editSource?.personId || 'me');
+      const personSection = modal.querySelector('#qt-person-section');
+      const personWrap = modal.querySelector('#qt-person-picker-wrap');
+      if (personWrap && typeof buildAssigneePickerHtml === 'function' && householdHasMultiplePeople()) {
+        personSection?.classList.remove('hidden');
+        personWrap.innerHTML = buildAssigneePickerHtml(selectedPersonId, { pickerId: 'qt-person-picker', label: 'Who is this for?' });
+        wireAssigneePicker(personWrap.querySelector('#qt-person-picker'), (id) => {
+          selectedPersonId = id || 'me';
+        });
+      }
       const MINUTE_PRESETS = [
         { label: '5 min', value: 5 },
         { label: '15 min', value: 15 },
@@ -19040,7 +19329,8 @@
           is_preset: false,
           is_personal: mode === 'library' || isRecurring,
           librarySection: (mode === 'library' || isRecurring) ? 'Personal' : undefined,
-          trackStreak
+          trackStreak,
+          personId: selectedPersonId || 'me'
         };
         // Daily fitness always lands on Today (not Summary-only)
         if (isRhythmTitle && selectedKind === 'habit') {
@@ -19176,15 +19466,22 @@
           const kindLabel = selectedKind === 'habit' ? 'habit' : selectedKind === 'chore' ? 'chore' : 'task';
           const parked = typeof isParkedForSummary === 'function' && isParkedForSummary(task) && !isPulledToToday(task);
           const notDue = !parked && typeof isDueToday === 'function' && !isDueToday(task) && !belongsOnTodayTab(task);
-          if (parked || notDue) {
+          // Not on the main Today strip → force “Coming up” open so laundry etc. never vanishes
+          if (parked || notDue || (typeof belongsOnTodayTab === 'function' && !belongsOnTodayTab(task))) {
             try {
               laterRoutinesExpanded = true;
               if (typeof renderTodayFeed === 'function') renderTodayFeed();
+              // Scroll the Coming up block into view after layout
+              requestAnimationFrame(() => {
+                try {
+                  document.querySelector('.later-routines-block')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } catch (_) { /* ignore */ }
+              });
             } catch (_) { /* ignore */ }
             showToast(
               parked
-                ? `Saved “${title}” under Not on Today — tap Add to Today when you’re ready`
-                : `Saved “${title}” — not due yet; open Not on Today below to edit`
+                ? `Saved “${title}” under Coming up — tap Add to Today when you’re ready`
+                : `Saved “${title}” under Coming up — not due today; open below to edit`
             );
           } else {
             showToast(`Added ${kindLabel}: ${title}`);
@@ -21461,7 +21758,8 @@
         name,
         qty: qty || '',
         checked: false,
-        addedAt: new Date().toISOString()
+        addedAt: new Date().toISOString(),
+        personId: options.personId != null ? options.personId : null
       };
       if (!state.groceryMaster) state.groceryMaster = [];
       state.groceryMaster.unshift(item);
@@ -21870,6 +22168,25 @@
       document.getElementById('grocery-add-modal')?.remove();
     }
 
+    /** Cycle grocery assignee: Anyone → each household person → Anyone. */
+    function cycleGroceryAssignee(itemId) {
+      const item = (state.groceryMaster || []).find(g => g.id === itemId);
+      if (!item) return;
+      const people = getHouseholdProfiles();
+      if (people.length < 2) return;
+      const order = [null, ...people.map(p => p.id)];
+      const cur = getGroceryPersonId(item);
+      let idx = order.findIndex(id => id === cur);
+      if (idx < 0) idx = 0;
+      const next = order[(idx + 1) % order.length];
+      item.personId = next;
+      state.grocery = state.groceryMaster;
+      saveState();
+      renderGrocery();
+      const label = next ? (getPersonLabel(next) || 'Someone') : 'Anyone';
+      showToast(`${item.name} · ${label}`);
+    }
+
     /** Fast path: toolbar-adjacent field on Shop — no modal. */
     function addGroceryFromQuickInput() {
       const input = document.getElementById('grocery-quick-input');
@@ -21882,7 +22199,13 @@
         input.focus();
         return;
       }
-      addGroceryItem(name);
+      // If grocery filter is a person, assign new items to them
+      let personId = null;
+      try {
+        const f = getGroceryPersonFilter();
+        if (f && f !== 'all') personId = f;
+      } catch (_) { /* ignore */ }
+      addGroceryItem(name, '', { personId });
       input.value = '';
       input.focus();
     }
@@ -22008,7 +22331,13 @@
       updateGroceryQuickAddUi();
 
       const isMeal = isGroceryMealView();
-      const items = getActiveGroceryItems();
+      const personFilter = !isMeal && typeof getGroceryPersonFilter === 'function'
+        ? getGroceryPersonFilter()
+        : 'all';
+      let items = getActiveGroceryItems();
+      if (!isMeal && householdHasMultiplePeople() && personFilter !== 'all') {
+        items = items.filter(g => matchesPersonFilter(getGroceryPersonId(g), personFilter, { grocery: true }));
+      }
       const preset = isMeal ? getMealPresetById(state.groceryView.mealId) : null;
 
       if (editDinnerBtn) {
@@ -22037,6 +22366,21 @@
       if (typeof updateGroceryRecipesButton === 'function') updateGroceryRecipesButton();
 
       container.innerHTML = '';
+
+      // Household filter chips on master shopping list
+      if (!isMeal && householdHasMultiplePeople() && typeof buildPersonFilterChipsHtml === 'function') {
+        const filterWrap = document.createElement('div');
+        filterWrap.className = 'mb-2';
+        filterWrap.id = 'grocery-person-filter';
+        filterWrap.innerHTML = buildPersonFilterChipsHtml(personFilter, 'data-grocery-person-filter');
+        container.appendChild(filterWrap);
+        filterWrap.querySelectorAll('[data-grocery-person-filter]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            setGroceryPersonFilter(btn.getAttribute('data-grocery-person-filter') || 'all');
+          });
+        });
+      }
 
       const unchecked = items.filter(g => !g.checked);
       const checked = items.filter(g => g.checked);
@@ -22096,8 +22440,16 @@
           </button>
           <button type="button" class="grocery-check-hit grocery-check-hit--label flex-1 min-w-0 text-left bg-transparent border-0 p-0 m-0 cursor-pointer touch-target" data-grocery-toggle="${escapeBriefHtml(String(item.id))}" aria-label="${item.checked ? 'Uncheck' : 'Check'} ${safeName}">
             <div class="font-medium ${item.checked ? 'line-through text-harbor-muted' : 'text-harbor-text'}">${safeName}</div>
-            ${item.qty ? `<div class="text-xs text-harbor-muted">${escapeBriefHtml(item.qty)}</div>` : ''}
+            <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              ${item.qty ? `<span class="text-xs text-harbor-muted">${escapeBriefHtml(item.qty)}</span>` : ''}
+              ${!isMeal && householdHasMultiplePeople() && getGroceryPersonId(item)
+                ? (typeof renderPersonChipHtml === 'function' ? renderPersonChipHtml(getGroceryPersonId(item)) : '')
+                : ''}
+            </div>
           </button>
+          ${!isMeal && householdHasMultiplePeople()
+            ? `<button type="button" class="row-inline-actions text-[10px] text-harbor-primary-light font-semibold px-1" data-grocery-assign="${safeId}" title="Assign person">Who</button>`
+            : ''}
           ${isMeal ? `<button type="button" class="row-inline-actions text-[10px] text-harbor-primary-light font-semibold px-1" data-grocery-rename="${safeId}">Edit</button>` : ''}
           <button type="button" class="row-inline-actions text-harbor-muted hover:text-rose-400 text-sm" data-grocery-remove="${safeId}" aria-label="Remove item">×</button>
         `;
@@ -22130,6 +22482,11 @@
           e.preventDefault();
           e.stopPropagation();
           renameGroceryItem(item.id);
+        });
+        row.querySelector('[data-grocery-assign]')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          cycleGroceryAssignee(item.id);
         });
         row.querySelector('[data-grocery-remove]')?.addEventListener('click', (e) => {
           e.preventDefault();
@@ -22547,6 +22904,12 @@
       const ws = state.settings.workSchedule || { mode: 'flexible' };
       const dow = new Date().getDay();
       const today = todayStr();
+      const awake = typeof getAwakeWindowMins === 'function'
+        ? getAwakeWindowMins()
+        : { start: AWAKE_DAY_START, end: AWAKE_DAY_END };
+      const dayStart = awake.start;
+      const dayEnd = awake.end;
+      const buf = typeof EVENT_BUFFER_MINS === 'number' ? EVENT_BUFFER_MINS : 10;
 
       if (ws.mode === 'preset' || ws.mode === 'custom') {
         const days = ws.days || [1, 2, 3, 4, 5];
@@ -22565,8 +22928,6 @@
         || (typeof getAllCalendarEvents === 'function' ? getAllCalendarEvents() : null)
         || state.calendarCache?.events
         || [];
-      const dayStart = typeof AWAKE_DAY_START === 'number' ? AWAKE_DAY_START : 7 * 60;
-      const dayEnd = typeof AWAKE_DAY_END === 'number' ? AWAKE_DAY_END : 22 * 60;
       events.forEach(e => {
         // Only events that actually land on today
         if (typeof eventOccursOnDate === 'function') {
@@ -22597,10 +22958,12 @@
           }
           return;
         }
-        const start = parseTimeMins(e.time);
+        // Timed events: pad with buffer so prep/commute doesn’t look “free”
+        const rawStart = parseTimeMins(e.time);
+        const rawEnd = rawStart + (e.durationMin || 30);
         blocks.push({
-          start,
-          end: start + (e.durationMin || 30),
+          start: Math.max(0, rawStart - buf),
+          end: Math.min(24 * 60, rawEnd + buf),
           title: e.title,
           type: 'event'
         });
@@ -22629,8 +22992,11 @@
     function computeDayAvailability(options = {}) {
       const now = new Date();
       const nowMins = now.getHours() * 60 + now.getMinutes();
-      const windowStart = Math.max(AWAKE_DAY_START, nowMins);
-      const windowEnd = AWAKE_DAY_END;
+      const awake = typeof getAwakeWindowMins === 'function'
+        ? getAwakeWindowMins()
+        : { start: AWAKE_DAY_START, end: AWAKE_DAY_END };
+      const windowStart = Math.max(awake.start, nowMins);
+      const windowEnd = awake.end;
 
       const busy = mergeBusyBlocks(
         getTodayBusyBlocks(options.events)
@@ -22647,11 +23013,12 @@
       const totalWindow = Math.max(0, windowEnd - windowStart);
       const freeMinutes = Math.max(0, totalWindow - busyMinutes);
 
-      const gaps = [];
+      // Chronological free segments (not yet sorted by size)
+      const chronoGaps = [];
       let cursor = windowStart;
       busy.forEach(b => {
         if (b.start > cursor + 10) {
-          gaps.push({
+          chronoGaps.push({
             startMins: cursor,
             endMins: b.start,
             minutes: b.start - cursor,
@@ -22662,7 +23029,7 @@
         cursor = Math.max(cursor, b.end);
       });
       if (windowEnd > cursor + 15) {
-        gaps.push({
+        chronoGaps.push({
           startMins: cursor,
           endMins: windowEnd,
           minutes: windowEnd - cursor,
@@ -22670,11 +23037,34 @@
           beforeEvent: null
         });
       }
-      gaps.sort((a, b) => b.minutes - a.minutes);
+
+      // Gap covering "now" (remaining minutes from now, not full segment length)
+      let currentGap = null;
+      const covering = chronoGaps.find(g => nowMins >= (g.startMins || 0) && nowMins < (g.endMins || 0));
+      if (covering) {
+        const remaining = Math.max(0, (covering.endMins || 0) - nowMins);
+        if (remaining >= 5) {
+          currentGap = {
+            ...covering,
+            startMins: nowMins,
+            minutes: remaining,
+            isCurrent: true
+          };
+        }
+      }
+      // Next free block that starts in the future
+      const nextGap = chronoGaps.find(g => (g.startMins || 0) > nowMins) || null;
+      // Largest remaining block (day overview / schedule chip)
+      const gapsBySize = [...chronoGaps].sort((a, b) => b.minutes - a.minutes);
+      const bestGap = gapsBySize[0] || null;
+      // Prefer current → next → largest for smart suggestions
+      const suggestGap = currentGap || nextGap || bestGap;
+      // Public gaps list: size-sorted (legacy consumers) but keep chrono available
+      const gaps = gapsBySize;
 
       const ws = state.settings.workSchedule || { mode: 'flexible' };
       const taskMinutes = getTodayIncompleteTaskMinutes();
-      const dayWindow = AWAKE_DAY_END - AWAKE_DAY_START;
+      const dayWindow = Math.max(0, awake.end - awake.start);
       const timedBusyMinutes = busy.reduce((sum, b) => sum + (b.end - b.start), 0);
       const committedMinutes = timedBusyMinutes + taskMinutes;
       const dayFreeMinutes = Math.max(0, dayWindow - committedMinutes);
@@ -22692,6 +23082,12 @@
       if (eventCount > 0) factors.push('events');
       if (taskMinutes > 0) factors.push('tasks');
 
+      // Mid-busy? surface what you're in for honest free-now copy
+      let inBusy = null;
+      if (!currentGap) {
+        inBusy = busy.find(b => nowMins >= b.start && nowMins < b.end) || null;
+      }
+
       return {
         freeMinutes,
         dayFreeMinutes,
@@ -22700,7 +23096,15 @@
         timedBusyMinutes,
         todayEventCount: eventCount,
         gaps,
+        chronoGaps,
+        currentGap,
+        nextGap,
+        bestGap,
+        suggestGap,
+        inBusy,
         busy,
+        awakeStart: awake.start,
+        awakeEnd: awake.end,
         workLabel: getWorkScheduleLabel(ws),
         // Schedule chip uses remaining calendar free time — not task backlog
         summary: factors.length
@@ -22709,7 +23113,8 @@
               dayFreeMinutes,
               timedBusyMinutes,
               todayEventCount: eventCount,
-              gaps
+              gaps,
+              currentGap
             })
           : 'Open day — set hours for smarter free-time'
       };
@@ -22848,7 +23253,11 @@
       if (weekAhead.length === 0) return null;
 
       const candidates = getFlexibleTasks().filter(h => {
+        if (typeof isOwnedUserHabit === 'function' && !isOwnedUserHabit(h)) return false;
+        if (typeof isBannedFromSmartSuggest === 'function' && isBannedFromSmartSuggest(h)) return false;
+        if (typeof isHeavySmartTask === 'function' && isHeavySmartTask(h)) return false;
         const tags = classifyTask(h);
+        if (tags.vehicle) return false;
         return (h.est_minutes || 0) >= 20 || tags.outdoor || tags.long || tags.hard;
       });
       const task = candidates.sort((a, b) => (b.est_minutes || 0) - (a.est_minutes || 0))[0];
@@ -29431,9 +29840,9 @@
      * Discoverability only — not a second full list.
      */
     /**
-     * Weekly / monthly / parked habits not on the main Today list — so you can still
-     * find and edit them without cluttering the day (collapsed by default in the feed).
-     * Includes period-complete routines (done this week/month) so edit isn’t a scavenger hunt.
+     * Habits not on the main Today list — so laundry / weekly chores never “vanish”.
+     * Includes parked, not-due, preferred off-day, seasonal off-window, and period-resting.
+     * Collapsed by default in the feed; auto-expands after add and when it’s the only content.
      */
     function collectDiscoverableLaterTasks(limit = 80) {
       const today = todayStr();
@@ -29446,6 +29855,9 @@
         if (belongsOnTodayTab(h)) return;
 
         const periodDone = typeof isCompletedToday === 'function' && isCompletedToday(h.id);
+        // Finished dailies land in “Completed today” — not here
+        if (periodDone && !isNonDailyRecurring(h) && !isOneOffTask(h)) return;
+
         const parkedReady = !periodDone
           && typeof isParkedForSummary === 'function'
           && isParkedForSummary(h)
@@ -29460,7 +29872,11 @@
           && getHabitWeekdays(h)
           && !isDueToday(h)
           && !isOneOffTask(h);
-        if (!parkedReady && !laterWeekly && !preferredOffDay) return;
+        // Catch-all: anything owned but not on Today (seasonal off-window, etc.)
+        // so “I added laundry and it disappeared” can’t happen
+        const catchAllMissing = !parkedReady && !laterWeekly && !preferredOffDay;
+        if (catchAllMissing && periodDone && isOneOffTask(h)) return;
+        if (!parkedReady && !laterWeekly && !preferredOffDay && !catchAllMissing) return;
 
         let nextLabel = '';
         let kind = 'later';
@@ -29477,6 +29893,9 @@
             } else {
               nextLabel = 'Done this period';
             }
+          } else if (!isHabitInSeason(h, today)) {
+            kind = 'later';
+            nextLabel = 'Out of season';
           } else {
             const next = typeof getNextDueDate === 'function' ? getNextDueDate(h) : null;
             if (next && next === today) nextLabel = 'Due soon';
@@ -29484,11 +29903,11 @@
               const d = new Date(next + 'T12:00:00');
               nextLabel = 'Next ' + d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
             } else {
-              nextLabel = formatIntervalLabel(h.interval_days, h) || 'Later';
+              nextLabel = formatIntervalLabel(h.interval_days, h) || 'Coming up';
             }
           }
         } catch (_) {
-          nextLabel = parkedReady ? 'Ready when you can' : (periodDone ? 'Done this period' : 'Later');
+          nextLabel = parkedReady ? 'Ready when you can' : (periodDone ? 'Done this period' : 'Coming up');
         }
 
         out.push({
@@ -29512,13 +29931,34 @@
       try { renderTodayFeed(); } catch (_) { /* ignore */ }
     }
 
+    function wireTodayPersonFilter(container) {
+      const root = container || document.getElementById('task-list');
+      root?.querySelectorAll?.('[data-task-person-filter]').forEach(btn => {
+        if (btn.dataset.wired === '1') return;
+        btn.dataset.wired = '1';
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setTaskPersonFilter(btn.getAttribute('data-task-person-filter') || 'all');
+        });
+      });
+    }
+
     function buildTodayFeed() {
       // Today = achievable daily rhythm. Heavy maintenance lives in Summary until pulled.
       const today = todayStr();
       const active = [];
       const completed = [];
+      const personFilter = typeof getTaskPersonFilter === 'function' ? getTaskPersonFilter() : 'all';
+      const personOk = (h) => {
+        if (!householdHasMultiplePeople() || personFilter === 'all') return true;
+        try {
+          return matchesPersonFilter(getHabitPersonId(h), personFilter, { grocery: false });
+        } catch (_) { return true; }
+      };
 
       state.habits.forEach(h => {
+        if (!personOk(h)) return;
         // Dimmed strip: only habits actually finished *today* (wipes at midnight day roll)
         if (shouldShowCompletedOnTaskTab(h)) {
           completed.push(h);
@@ -29597,7 +30037,7 @@
       if (laterTasks.length) {
         sections.push({
           type: 'later-chores',
-          label: 'Not on Today · still in Harbor',
+          label: 'Coming up',
           items: laterTasks,
           variant: 'upcoming'
         });
@@ -29868,6 +30308,14 @@
       return changed;
     }
 
+    /** Which KPI sheet is open (tasks / when / events / …) so Add to Today stays in place. */
+    function getOpenSummaryKpiDetailKind() {
+      const modal = document.getElementById('summary-kpi-detail-modal');
+      if (!modal) return null;
+      const kind = modal.dataset?.kpiKind || modal.getAttribute('data-kpi-kind');
+      return kind || null;
+    }
+
     function pullHabitToToday(habitId) {
       const habit = (state.habits || []).find(h => h.id === habitId);
       if (!habit) {
@@ -29880,15 +30328,18 @@
       }
       habit.pullToToday = todayStr();
       saveState();
-      renderTasks();
+      // Update Today quietly in the background — do not switch tabs or close Daily Brief
+      try { renderTasks(); } catch (_) { /* ignore */ }
       if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
       if (typeof updateSmartBanner === 'function') updateSmartBanner();
       // Refresh Summary UI without jumping the task list (or main sheet) back to the top
       if (document.getElementById('summary-body')) {
         try { refreshSummaryModal(summaryMode || 'day', { preserveScroll: true }); } catch (_) { /* ignore */ }
       }
-      if (document.getElementById('summary-kpi-detail-modal')) {
-        try { refreshSummaryKpiDetail('tasks', { preserveScroll: true }); } catch (_) { /* ignore */ }
+      // Stay on the open list (When You Can full list, Tasks, etc.) — never swap to Tasks
+      const openKind = getOpenSummaryKpiDetailKind();
+      if (openKind) {
+        try { refreshSummaryKpiDetail(openKind, { preserveScroll: true }); } catch (_) { /* ignore */ }
       }
       showToast(`On Today · ${habit.title}`);
     }
@@ -29898,13 +30349,14 @@
       if (!habit || !habit.pullToToday) return;
       delete habit.pullToToday;
       saveState();
-      renderTasks();
+      try { renderTasks(); } catch (_) { /* ignore */ }
       if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
       if (document.getElementById('summary-body')) {
         try { refreshSummaryModal(summaryMode || 'day', { preserveScroll: true }); } catch (_) { /* ignore */ }
       }
-      if (document.getElementById('summary-kpi-detail-modal')) {
-        try { refreshSummaryKpiDetail('tasks', { preserveScroll: true }); } catch (_) { /* ignore */ }
+      const openKind = getOpenSummaryKpiDetailKind();
+      if (openKind) {
+        try { refreshSummaryKpiDetail(openKind, { preserveScroll: true }); } catch (_) { /* ignore */ }
       }
       showToast('Moved back to Summary');
     }
@@ -29942,7 +30394,9 @@
           else editHabitFromToday(id);
         } else if (action === 'delete') {
           deleteHabitFromToday(id, null);
-          if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('tasks');
+          if (document.getElementById('summary-kpi-detail-modal')) {
+            refreshSummaryKpiDetail(getOpenSummaryKpiDetailKind() || 'tasks');
+          }
         } else if (action === 'undo') {
           undoCompleteHabit(id);
         }
@@ -29950,7 +30404,9 @@
         if (action === 'undo') undoCompleteHabit(id);
         else if (action === 'delete') {
           deleteHabitFromToday(id, null);
-          if (document.getElementById('summary-kpi-detail-modal')) refreshSummaryKpiDetail('tasks');
+          if (document.getElementById('summary-kpi-detail-modal')) {
+            refreshSummaryKpiDetail(getOpenSummaryKpiDetailKind() || 'tasks');
+          }
         }
       } else if (type === 'grocery') {
         if (action === 'edit') renameGroceryItem(id);
@@ -30337,6 +30793,9 @@
             ${multiPill}
             ${freqChip ? `<span class="harbor-tag harbor-tag-soon">${freqChip}</span>` : ''}
             ${isOneOffTask(habit) && !(habit.is_pro_reminder || (habit.id && String(habit.id).startsWith('pro-schedule-'))) && !(typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit)) ? `<span class="harbor-tag harbor-tag-muted">One-time</span>` : ''}
+            ${typeof householdHasMultiplePeople === 'function' && householdHasMultiplePeople() && typeof getHabitPersonId === 'function' && getHabitPersonId(habit) !== 'me'
+              ? (typeof renderPersonChipHtml === 'function' ? renderPersonChipHtml(getHabitPersonId(habit)) : '')
+              : ''}
             ${dueNote}
             <span class="text-xs text-harbor-muted">${habit.est_minutes} min • ${difficultyLabel} energy</span>
             ${streak > 0 ? `<span class="harbor-tag-streak text-xs flex items-center gap-x-0.5 font-semibold"><i class="fa-solid fa-fire"></i> ${streak}</span>` : ''}
@@ -30551,7 +31010,7 @@
       const wrap = document.createElement('div');
       wrap.className = 'later-routines-block mt-3';
       wrap.setAttribute('role', 'region');
-      wrap.setAttribute('aria-label', 'Routines not on Today');
+      wrap.setAttribute('aria-label', 'Coming up — not due on Today');
 
       const toggle = document.createElement('button');
       toggle.type = 'button';
@@ -30560,8 +31019,8 @@
       toggle.innerHTML = `
         <span class="text-base flex-shrink-0" aria-hidden="true">🗓️</span>
         <span class="flex-1 min-w-0">
-          <span class="block text-xs font-semibold text-harbor-text">Not on Today · still in Harbor</span>
-          <span class="block text-[10px] text-harbor-muted mt-0.5">${n} weekly / monthly / later · tap to ${laterRoutinesExpanded ? 'hide' : 'edit'}</span>
+          <span class="block text-xs font-semibold text-harbor-text">Coming up</span>
+          <span class="block text-[10px] text-harbor-muted mt-0.5">${n} not due on Today · tap to ${laterRoutinesExpanded ? 'hide' : 'show'}</span>
         </span>
         <i class="fa-solid fa-chevron-${laterRoutinesExpanded ? 'up' : 'down'} text-[10px] text-harbor-muted flex-shrink-0" aria-hidden="true"></i>
       `;
@@ -30570,7 +31029,7 @@
 
       if (laterRoutinesExpanded) {
         const list = document.createElement('div');
-        list.className = 'mt-2 space-y-0';
+        list.className = 'mt-2 space-y-2';
         laterItems.forEach(item => renderLaterChoreDiscoverCard(item, list));
         wrap.appendChild(list);
       }
@@ -30675,6 +31134,15 @@
           </div>`;
       }
 
+      const eodBannerHtml = (typeof shouldShowEndOfDayBanner === 'function' && shouldShowEndOfDayBanner()
+        && typeof renderEndOfDayBannerHtml === 'function')
+        ? renderEndOfDayBannerHtml()
+        : '';
+      const personFilterHtml = (typeof householdHasMultiplePeople === 'function' && householdHasMultiplePeople()
+        && typeof buildPersonFilterChipsHtml === 'function')
+        ? `<div class="mb-2" id="today-person-filter">${buildPersonFilterChipsHtml(getTaskPersonFilter(), 'data-task-person-filter')}</div>`
+        : '';
+
       if (!hasPrimary) {
         // Distinguish brand-new empty vs “finished everything due today” vs chores waiting
         const hasAnyHabits = (state.habits || []).length > 0;
@@ -30691,9 +31159,9 @@
         const body = !hasAnyHabits
           ? 'Add something for today, or grab a ready-made task from the Library.'
           : parkedDue
-            ? 'Lighter list is clear. Bigger jobs sit below (or in <strong>Daily Brief</strong>) until you add them to Today.'
+            ? 'Lighter list is clear. Bigger jobs sit under <strong>Coming up</strong> below (or in Daily Brief) until you add them to Today.'
             : laterN
-              ? `Weekly or monthly chores stay off Today until they’re due. ${laterN} still in Harbor — listed below or in Daily Brief.`
+              ? `Weekly or monthly chores stay off Today until they’re due. ${laterN} under <strong>Coming up</strong> below — open to edit or Add to Today.`
               : 'Nice work — nothing left on Today. Pull something from Daily Brief or add a new task when you’re ready.';
         const actions = !hasAnyHabits
           ? `<div class="harbor-empty-actions">
@@ -30704,13 +31172,17 @@
             <button type="button" class="chip-add-btn" onclick="showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add task</button>
             <button type="button" class="chip-tool-btn" onclick="showSummaryModal()">Open Daily Brief</button>
           </div>`;
-        container.innerHTML = backupNudgeHtml + harborSoftBanner + harborEmptyHtml(
+        container.innerHTML = backupNudgeHtml + eodBannerHtml + personFilterHtml + harborSoftBanner + harborEmptyHtml(
           !hasAnyHabits ? '📋' : (laterN || parkedDue ? '🗓️' : '✅'),
           title,
           body,
           actions
         );
+        try { wireEndOfDayBanner(container); } catch (_) { /* ignore */ }
+        try { wireTodayPersonFilter(container); } catch (_) { /* ignore */ }
         if (laterN && typeof renderLaterRoutinesSection === 'function') {
+          // Only content is Coming up — always expand so chores like laundry are visible
+          laterRoutinesExpanded = true;
           renderLaterRoutinesSection(container, laterItems);
         }
         return;
@@ -30721,6 +31193,18 @@
         wrap.innerHTML = backupNudgeHtml;
         while (wrap.firstChild) container.appendChild(wrap.firstChild);
       }
+      if (eodBannerHtml) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = eodBannerHtml;
+        while (wrap.firstChild) container.appendChild(wrap.firstChild);
+        try { wireEndOfDayBanner(container); } catch (_) { /* ignore */ }
+      }
+      if (personFilterHtml) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = personFilterHtml;
+        while (wrap.firstChild) container.appendChild(wrap.firstChild);
+        try { wireTodayPersonFilter(container); } catch (_) { /* ignore */ }
+      }
       if (harborSoftBanner) {
         const wrap = document.createElement('div');
         wrap.innerHTML = harborSoftBanner;
@@ -30729,7 +31213,7 @@
 
       sections.forEach(section => {
         if (section.items.length === 0) return;
-        // Collapsed “Not on Today” block — rendered once after primary sections
+        // Coming up block — rendered once after primary sections
         if (section.type === 'later-chores') return;
         if (section.label) {
           const hdr = document.createElement('div');
@@ -31932,18 +32416,27 @@
       return mins >= start && mins < end;
     }
 
-    /** Largest free gap (minutes) still open from now — 0 if unknown. */
+    /**
+     * Free minutes right now (gap covering now only).
+     * Returns 0 while in a meeting/work block — does not fall back to a later large gap.
+     */
     function getCurrentFreeGapMinutes() {
       try {
         const avail = typeof computeDayAvailability === 'function' ? computeDayAvailability() : null;
-        const gaps = avail?.gaps || [];
-        const now = getNowMinutes();
-        // Prefer a gap that covers "now"
-        const covering = gaps.find(g => now >= (g.startMins || 0) && now < (g.endMins || 0));
-        if (covering) return covering.minutes || 0;
-        return gaps[0]?.minutes || 0;
+        if (avail?.currentGap?.minutes) return avail.currentGap.minutes;
+        return 0;
       } catch (_) {
         return 0;
+      }
+    }
+
+    /** Best gap for soft suggestions: current → next → largest. */
+    function getSuggestFreeGap() {
+      try {
+        const avail = typeof computeDayAvailability === 'function' ? computeDayAvailability() : null;
+        return avail?.suggestGap || avail?.currentGap || avail?.nextGap || avail?.bestGap || null;
+      } catch (_) {
+        return null;
       }
     }
 
@@ -32102,9 +32595,11 @@
         if (top && ctx.energy === 1) {
           return `Low-energy day — if you do one thing, make it ${top.title.toLowerCase()}. Everything else can wait.`;
         }
-        if (events.length && ctx.bestGap?.minutes >= 20 && !isQuietHours()) {
-          const gapHrs = formatFreeTimeHours(ctx.bestGap.minutes);
-          return `${events.length} event${events.length > 1 ? 's' : ''} on the calendar · ${gapHrs} free${ctx.bestGap.beforeEvent ? ` before ${ctx.bestGap.beforeEvent}` : ''} for tasks.`;
+        const gap = ctx.suggestGap || ctx.currentGap || ctx.bestGap;
+        if (events.length && gap?.minutes >= 20 && !isQuietHours()) {
+          const gapHrs = formatFreeTimeHours(gap.minutes);
+          const when = ctx.currentGap ? '' : (gap.startMins != null ? ` around ${formatMinsAsTime(gap.startMins)}` : '');
+          return `${events.length} event${events.length > 1 ? 's' : ''} on the calendar · ${gapHrs} free${when}${gap.beforeEvent ? ` before ${gap.beforeEvent}` : ''} for tasks.`;
         }
         return `${taskCount} task${taskCount === 1 ? '' : 's'} sorted for your ${energyWord} energy — timed for right now.`;
       }
@@ -32787,6 +33282,25 @@
         lines.push(`${describeHarborEventLine(sortedEv[1])} · +${sortedEv.length - 2} more`);
       }
 
+      // Free-now honesty from calendar + work (buffers + awake window)
+      try {
+        const ctx = typeof getContext === 'function' ? getContext() : null;
+        if (ctx?.currentGap?.minutes >= 10) {
+          const m = ctx.currentGap.minutes;
+          const until = ctx.currentGap.beforeEvent
+            ? ` until ${ctx.currentGap.beforeEvent}`
+            : (ctx.currentGap.until ? ` until ${ctx.currentGap.until}` : '');
+          lines.push(`Free now · ~${m < 60 ? `${m} min` : formatFreeTimeHours(m)}${until}`);
+        } else if (ctx?.inBusy?.title) {
+          lines.push(`In ${ctx.inBusy.title}${ctx.nextGap?.minutes >= 15 ? ` · free later ~${formatFreeTimeHours(ctx.nextGap.minutes)}` : ''}`);
+        } else if (ctx?.nextGap?.minutes >= 20) {
+          const at = ctx.nextGap.startMins != null && typeof formatMinsAsTime === 'function'
+            ? formatMinsAsTime(ctx.nextGap.startMins)
+            : '';
+          lines.push(`Next free${at ? ` ~${at}` : ''} · ${formatFreeTimeHours(ctx.nextGap.minutes)}`);
+        }
+      } catch (_) { /* ignore */ }
+
       const taskN = typeof getBriefTodayTabTasks === 'function'
         ? getBriefTodayTabTasks(dayBrief).length
         : (dayBrief?.tasks || []).length;
@@ -32934,6 +33448,228 @@
       return `<div class="hv-day-rail" role="list" aria-label="Remaining events today">${stops}</div>`;
     }
 
+    // ── Day rituals (morning check-in + end-of-day close) ──────────────
+    function isMorningRitualEnabled() {
+      return state.settings?.morningRitualEnabled !== false;
+    }
+    function isEveningRitualEnabled() {
+      return state.settings?.eveningRitualEnabled !== false;
+    }
+    function isMorningRitualDue() {
+      if (!isMorningRitualEnabled()) return false;
+      if (state.settings?.morningRitualDoneDate === todayStr()) return false;
+      try {
+        const m = getMorningWindow();
+        const now = getNowMinutes();
+        // Soft window: morning start → end + 90m (still catch late openers)
+        return now >= m.start && now < m.end + 90;
+      } catch (_) {
+        return false;
+      }
+    }
+    function isEveningRitualDue() {
+      if (!isEveningRitualEnabled()) return false;
+      if (state.settings?.eveningRitualDoneDate === todayStr()) return false;
+      if (typeof isCheatDayActive === 'function' && isCheatDayActive()
+          && typeof isFullHarborDayActive === 'function' && isFullHarborDayActive()) {
+        return false;
+      }
+      try {
+        const bed = getBedtimeMins();
+        const now = getNowMinutes();
+        // Near bedtime, or after 6pm with a light Today list
+        if (now >= bed - 90 && now <= bed + 45) return true;
+        if (now >= 18 * 60) {
+          const open = typeof countHabitsVisibleOnToday === 'function'
+            ? countHabitsVisibleOnToday()
+            : 0;
+          if (open <= 2) return true;
+        }
+      } catch (_) { /* ignore */ }
+      return false;
+    }
+    function completeMorningRitual(opts = {}) {
+      state.settings.morningRitualDoneDate = todayStr();
+      saveState();
+      if (opts.goToday) {
+        try { closeSummaryModal(); } catch (_) { /* ignore */ }
+        try { switchTab('today', { force: true }); } catch (_) { /* ignore */ }
+      } else {
+        try { refreshSummaryModal('day', { preserveScroll: true }); } catch (_) { /* ignore */ }
+      }
+    }
+    function completeEveningRitual() {
+      state.settings.eveningRitualDoneDate = todayStr();
+      saveState();
+      document.getElementById('harbor-eod-sheet')?.remove();
+      try { renderTodayFeed(); } catch (_) { /* ignore */ }
+      try { updateSmartBanner(); } catch (_) { /* ignore */ }
+      showToast('Day closed · rest well');
+    }
+    function renderMorningRitualCard(dayBrief) {
+      if (!isMorningRitualDue()) return '';
+      const energy = currentEnergy || 2;
+      let freeLine = '';
+      try {
+        const ctx = getContext();
+        if (ctx.currentGap?.minutes >= 10) {
+          freeLine = `Free now · ~${ctx.currentGap.minutes} min`;
+        } else if (ctx.nextGap?.minutes >= 15) {
+          freeLine = `Next free · ${formatFreeTimeHours(ctx.nextGap.minutes)}`;
+        } else if (ctx.freeTime >= 30) {
+          freeLine = `${formatFreeTimeHours(ctx.freeTime)} open today`;
+        }
+      } catch (_) { /* ignore */ }
+      const taskN = typeof getBriefTodayTabTasks === 'function'
+        ? getBriefTodayTabTasks(dayBrief).length
+        : 0;
+      const energyBtns = [1, 2, 3].map(l => {
+        const labels = { 1: 'Low', 2: 'Med', 3: 'High' };
+        const active = l === energy ? ' is-active' : '';
+        return `<button type="button" class="hv-ritual-energy${active}" data-ritual-energy="${l}">${labels[l]}</button>`;
+      }).join('');
+      return `
+        <div class="hv-ritual-card" id="hv-morning-ritual" role="region" aria-label="Morning check-in">
+          <div class="hv-ritual-kicker"><i class="fa-solid fa-sun" aria-hidden="true"></i> Morning check-in</div>
+          <p class="hv-ritual-lead">Set your energy, then start the day.</p>
+          <div class="hv-ritual-meta">${taskN} on Today${freeLine ? ` · ${escapeBriefHtml(freeLine)}` : ''}</div>
+          <div class="hv-ritual-energy-row" role="group" aria-label="Energy">
+            ${energyBtns}
+          </div>
+          <div class="hv-ritual-actions">
+            <button type="button" class="hv-ritual-primary" data-ritual-start="1">Start Today</button>
+            <button type="button" class="hv-ritual-secondary" data-ritual-dismiss="1">Dismiss for today</button>
+          </div>
+        </div>`;
+    }
+    function wireMorningRitualCard(container) {
+      const card = container?.querySelector?.('#hv-morning-ritual') || document.getElementById('hv-morning-ritual');
+      if (!card || card.dataset.wired === '1') return;
+      card.dataset.wired = '1';
+      card.querySelectorAll('[data-ritual-energy]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const level = parseInt(btn.dataset.ritualEnergy, 10);
+          if (!level) return;
+          setEnergy(level);
+          card.querySelectorAll('[data-ritual-energy]').forEach(b => {
+            b.classList.toggle('is-active', parseInt(b.dataset.ritualEnergy, 10) === level);
+          });
+          try { renderTasks(); } catch (_) { /* ignore */ }
+        });
+      });
+      card.querySelector('[data-ritual-start]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        completeMorningRitual({ goToday: true });
+        showToast('You’re set · energy saved');
+      });
+      card.querySelector('[data-ritual-dismiss]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        completeMorningRitual({ goToday: false });
+      });
+    }
+    function renderEndOfDayBannerHtml() {
+      if (!isEveningRitualDue()) return '';
+      let doneN = 0;
+      let openN = 0;
+      try {
+        doneN = (state.habits || []).filter(h => {
+          try { return typeof shouldShowCompletedOnTaskTab === 'function' && shouldShowCompletedOnTaskTab(h); }
+          catch (_) { return false; }
+        }).length;
+        openN = typeof countHabitsVisibleOnToday === 'function' ? countHabitsVisibleOnToday() : 0;
+      } catch (_) { /* ignore */ }
+      return `
+        <div class="harbor-eod-banner harbor-card rounded-3xl px-4 py-3 mb-3" id="harbor-eod-banner" role="region" aria-label="Close the day">
+          <div class="flex items-start gap-3">
+            <span class="text-xl flex-shrink-0" aria-hidden="true">🌙</span>
+            <div class="min-w-0 flex-1">
+              <div class="font-semibold text-sm text-harbor-text">Close the day</div>
+              <div class="text-[11px] text-harbor-muted mt-0.5 leading-snug">
+                ${doneN} done today${openN ? ` · ${openN} still open` : ' · nice work'}
+              </div>
+              <div class="flex flex-wrap gap-2 mt-2.5">
+                <button type="button" class="chip-add-btn text-xs" data-eod-open="1">Review &amp; close</button>
+                <button type="button" class="chip-tool-btn text-xs" data-eod-skip="1">Not now</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+    function showEndOfDaySheet() {
+      document.getElementById('harbor-eod-sheet')?.remove();
+      let doneN = 0;
+      let openTitles = [];
+      try {
+        doneN = (state.habits || []).filter(h => {
+          try { return typeof shouldShowCompletedOnTaskTab === 'function' && shouldShowCompletedOnTaskTab(h); }
+          catch (_) { return false; }
+        }).length;
+        openTitles = (state.habits || [])
+          .filter(h => {
+            try { return typeof belongsOnTodayTab === 'function' && belongsOnTodayTab(h) && !isCompletedToday(h.id); }
+            catch (_) { return false; }
+          })
+          .slice(0, 5)
+          .map(h => h.title || 'Task');
+      } catch (_) { /* ignore */ }
+      const openList = openTitles.length
+        ? `<ul class="text-xs text-harbor-muted space-y-1 mt-2 mb-1">${openTitles.map(t =>
+            `<li>· ${escapeBriefHtml(t)}</li>`).join('')}${openTitles.length >= 5 ? '<li class="text-harbor-muted/80">…</li>' : ''}</ul>`
+        : `<p class="text-xs text-harbor-muted mt-2">Nothing left on Today — you’re clear.</p>`;
+      const modal = document.createElement('div');
+      modal.id = 'harbor-eod-sheet';
+      modal.className = 'fixed inset-0 modal-overlay-blur flex items-end justify-center z-[70]';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-label', 'Close the day');
+      modal.innerHTML = `
+        <div class="absolute inset-0" data-eod-backdrop="1"></div>
+        <div class="modal-sheet relative w-full bg-harbor-surface border-t border-harbor-border rounded-t-3xl p-5 text-sm" data-sheet-panel="1">
+          <div class="modal-grab-pill" aria-hidden="true"></div>
+          <div class="font-semibold text-lg mb-1">Close the day</div>
+          <p class="text-[11px] text-harbor-muted mb-3">${doneN} completed today. Leftovers stay for tomorrow — no guilt.</p>
+          ${openList}
+          <button type="button" class="w-full mt-4 py-3.5 rounded-2xl bg-harbor-primary text-white font-semibold text-sm" data-eod-done="1">
+            Done for today
+          </button>
+          <button type="button" class="w-full mt-2 py-2.5 text-xs text-harbor-muted font-medium" data-eod-cancel="1">Keep going</button>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.querySelector('[data-eod-backdrop]')?.addEventListener('click', () => modal.remove());
+      modal.querySelector('[data-eod-cancel]')?.addEventListener('click', () => modal.remove());
+      modal.querySelector('[data-eod-done]')?.addEventListener('click', () => completeEveningRitual());
+      requestAnimationFrame(() => {
+        try { if (typeof wireSheetSwipeToDismiss === 'function') wireSheetSwipeToDismiss(modal); } catch (_) { /* ignore */ }
+      });
+    }
+    function wireEndOfDayBanner(container) {
+      const ban = container?.querySelector?.('#harbor-eod-banner') || document.getElementById('harbor-eod-banner');
+      if (!ban || ban.dataset.wired === '1') return;
+      ban.dataset.wired = '1';
+      ban.querySelector('[data-eod-open]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showEndOfDaySheet();
+      });
+      ban.querySelector('[data-eod-skip]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Soft dismiss until tomorrow without full "closed" if they want to come back —
+        // plan says Done for today marks complete; "Not now" just hides for session
+        ban.remove();
+        try { sessionStorage.setItem('harbor_eod_skip_' + todayStr(), '1'); } catch (_) { /* ignore */ }
+      });
+    }
+    function shouldShowEndOfDayBanner() {
+      if (!isEveningRitualDue()) return false;
+      try {
+        if (sessionStorage.getItem('harbor_eod_skip_' + todayStr()) === '1') return false;
+      } catch (_) { /* ignore */ }
+      return true;
+    }
+
     function renderHarborDayBriefing(dayBrief) {
       let pack;
       try {
@@ -32950,6 +33686,7 @@
       const greet = getDailyBriefGreeting();
       const lead = buildDailyBriefLead(dayBrief, pack);
       const rail = renderDailyBriefDayRail(dayBrief);
+      const ritualHtml = typeof renderMorningRitualCard === 'function' ? renderMorningRitualCard(dayBrief) : '';
 
       // Secondary notes only (skip lines that repeat the lead)
       const leadLower = String(lead || '').toLowerCase();
@@ -32980,6 +33717,7 @@
 
       return `
         <div class="hv-brief" aria-label="Daily Brief summary">
+          ${ritualHtml}
           <div class="hv-brief-greet">${escapeBriefHtml(greet)}</div>
           <p class="hv-brief-lead">${escapeBriefHtml(lead)}</p>
           <div class="hv-day-shape">${escapeBriefHtml(pack.shape || 'Steady day')}</div>
@@ -33279,10 +34017,15 @@
     function refreshSummaryKpiDetail(kind, options = {}) {
       const { preserveScroll = true } = options;
       const modal = document.getElementById('summary-kpi-detail-modal');
+      // Prefer the kind already open (When You Can vs Tasks) so Add to Today never switches lists
+      const openKind = modal?.dataset?.kpiKind || modal?.getAttribute('data-kpi-kind');
+      const resolvedKind = kind || openKind || 'tasks';
       if (!modal) {
-        showSummaryKpiDetail(kind);
+        showSummaryKpiDetail(resolvedKind);
         return;
       }
+      modal.dataset.kpiKind = resolvedKind;
+      modal.setAttribute('data-kpi-kind', resolvedKind);
 
       const list = modal.querySelector('#summary-kpi-detail-list')
         || modal.querySelector('.summary-kpi-detail-list')
@@ -33295,16 +34038,22 @@
       try {
         const brief = buildSummary(summaryMode || 'day');
         rangeLabel = brief.mode === 'day' ? 'Today' : brief.mode === 'month' ? 'This month' : 'This week';
+        const whenList = brief.parked || (brief.tasks || []).filter(t =>
+          typeof isParkedForSummary === 'function'
+            && isParkedForSummary(t.habit)
+            && !isPulledToToday(t.habit)
+        );
         const counts = {
           tasks: brief.mode === 'day' ? getBriefTodayTabTasks(brief).length : (brief.tasks || []).length,
+          when: whenList.length,
           events: typeof countActiveBriefEvents === 'function'
             ? countActiveBriefEvents(brief)
             : flattenBriefEvents(brief).length,
           bills: (brief.bills || []).length,
           grocery: (state.groceryMaster || []).filter(g => !g.checked).length
         };
-        count = counts[kind] ?? 0;
-        rowsHtml = renderSummaryKpiDetailRows(kind, brief);
+        count = counts[resolvedKind] ?? 0;
+        rowsHtml = renderSummaryKpiDetailRows(resolvedKind, brief);
       } catch (err) {
         console.error('[Harbor] KPI detail refresh failed', err);
         rowsHtml = `<div class="summary-empty py-4 text-center">Couldn’t refresh this list.</div>`;
@@ -33320,6 +34069,17 @@
         || modal.querySelector('[data-kpi-detail-meta="1"]');
       if (metaLine) {
         metaLine.textContent = `${count} item${count === 1 ? '' : 's'} · ${rangeLabel}`;
+      }
+      const titleEl = modal.querySelector('[data-kpi-detail-title="1"]');
+      if (titleEl) {
+        const titles = {
+          tasks: 'Tasks',
+          when: 'When You Can',
+          events: 'Events',
+          bills: 'Bills',
+          grocery: 'Grocery'
+        };
+        if (titles[resolvedKind]) titleEl.textContent = titles[resolvedKind];
       }
       const hint = modal.querySelector('#summary-kpi-detail-swipe-hint');
       if (hint) {
@@ -33600,12 +34360,14 @@
       modal.setAttribute('role', 'dialog');
       modal.setAttribute('aria-modal', 'true');
       modal.setAttribute('aria-label', title);
+      modal.dataset.kpiKind = kind;
+      modal.setAttribute('data-kpi-kind', kind);
       modal.innerHTML = `
         <div class="absolute inset-0" data-kpi-detail-backdrop="1" aria-hidden="true"></div>
         <div class="summary-kpi-detail-sheet summary-day-events-sheet modal-sheet p-5 text-sm" data-sheet-panel="1">
           <div class="modal-grab-pill" aria-hidden="true"></div>
           <div class="font-semibold text-lg mb-0.5 flex items-center justify-between gap-2 flex-shrink-0">
-            <span>${escapeBriefHtml(title)}</span>
+            <span data-kpi-detail-title="1">${escapeBriefHtml(title)}</span>
             <button type="button" class="modal-close-chip" data-kpi-detail-close="1" aria-label="Close">Close</button>
           </div>
           <div class="text-[11px] text-harbor-muted mb-2 flex-shrink-0" id="summary-kpi-detail-meta" data-kpi-detail-meta="1">
@@ -34015,6 +34777,7 @@
 
     function wireSummaryModal(container) {
       if (!container) return;
+      try { wireMorningRitualCard(container); } catch (_) { /* ignore */ }
       container.querySelectorAll('[data-brief-mode]').forEach(btn => {
         btn.onclick = () => {
           closeSummaryKpiDetail();
@@ -34103,7 +34866,6 @@
                 <div class="summary-dash-sub">Plan the day, then do it on Task</div>
               </div>
             </div>
-            <button type="button" class="modal-close-chip" data-summary-close="1" aria-label="Close">Close</button>
           </div>
           <div class="summary-sheet-scroll" data-sheet-scroll="1">
             <div id="summary-body">${bodyHtml}</div>
@@ -34181,16 +34943,21 @@
       const activeBills = getActiveBills();
       const groceryCount = (state.groceryMaster || []).filter(g => !g.checked).length;
       const nextEvent = getUpcomingEvents(1)[0] || null;
-      const gaps = avail.gaps;
-      const bestGap = gaps[0] || null;
-      // freeMinutes = total open time left today; bestGap = largest contiguous block
+      const gaps = avail.gaps || [];
+      const bestGap = avail.bestGap || gaps[0] || null;
+      const currentGap = avail.currentGap || null;
+      const nextGap = avail.nextGap || null;
+      const suggestGap = avail.suggestGap || currentGap || nextGap || bestGap;
+      // freeMinutes = total open time left today; suggestGap = right-now / next / largest
       const freeTime = Math.max(0, Number(avail.freeMinutes) || 0);
       const dayFreeMinutes = Math.max(0, Number(avail.dayFreeMinutes) || freeTime);
+      const freeNowMinutes = currentGap ? Math.max(0, Number(currentGap.minutes) || 0) : 0;
 
       return {
         weather,
         energy,
         freeTime,
+        freeNowMinutes,
         dayFreeMinutes,
         date: today,
         activeBills,
@@ -34199,6 +34966,10 @@
         calendarNote: cache?.note || '',
         gaps,
         bestGap,
+        currentGap,
+        nextGap,
+        suggestGap,
+        inBusy: avail.inBusy || null,
         eventBusyMinutes: avail.timedBusyMinutes || 0,
         workLabel: avail.workLabel || ''
       };
@@ -35119,22 +35890,40 @@
      */
     function isOwnedUserHabit(habit) {
       if (!habit?.id) return false;
+      // Must be the live object (or same id) currently on the user's Harbor list —
+      // never a detached Library preset clone that merely shares a catalog id.
       return (state.habits || []).some(h => h && h.id === habit.id);
+    }
+
+    /**
+     * Never soft-push hire / pro oil / vehicle shop work from Smart Suggestions.
+     * User must open the task themselves — even if they once added a Hire reminder.
+     */
+    function isBannedFromSmartSuggest(habit) {
+      if (!habit) return true;
+      if (habit.is_pro_reminder || String(habit.id || '').startsWith('pro-schedule-')) return true;
+      const title = String(habit.title || '').toLowerCase();
+      const note = String(habit.note || '').toLowerCase();
+      const blob = `${title} ${note}`;
+      if (/\bhire\s*:/.test(title) || /\bbook a pro\b|\bcall a pro\b|\bschedule (a )?pro\b/.test(blob)) return true;
+      if (/oil change|change engine oil|tire rotat|brake (job|pad|fluid)|mechanic|dealership/.test(blob)) return true;
+      try {
+        const tags = typeof classifyTask === 'function' ? classifyTask(habit) : {};
+        if (tags.vehicle) return true;
+      } catch (_) { /* ignore */ }
+      return false;
     }
 
     function isSmartSuggestable(habit, opts = {}) {
       if (!habit || !isOwnedUserHabit(habit)) return false;
       if (isCompletedToday(habit.id)) return false;
+      // Pro oil / hire / vehicle shop work is never a soft banner push (even if on list)
+      if (isBannedFromSmartSuggest(habit)) return false;
       // Parked “When you can” work stays out of the banner until the user pulls it
       if (typeof isParkedForSummary === 'function' && isParkedForSummary(habit) && !isPulledToToday(habit)) {
         return false;
       }
-      // Hire reminders are user-created one-offs — only nudge if they still sit on Today
-      if (habit.is_pro_reminder || String(habit.id || '').startsWith('pro-schedule-')) {
-        if (typeof belongsOnTodayTab === 'function') return belongsOnTodayTab(habit) && isHabitSensibleNow(habit);
-        return isDueToday(habit) && isHabitSensibleNow(habit);
-      }
-      // Heavy maintenance (oil change, big yard jobs) is never a soft banner push
+      // Heavy maintenance (big yard jobs) is never a soft banner push
       if (typeof isHeavySmartTask === 'function' && isHeavySmartTask(habit) && !opts.allowHeavy) {
         return false;
       }
@@ -35346,10 +36135,29 @@
     }
 
     function pickBestContextualSuggestion(candidates) {
-      if (!candidates.length) return buildAppTipSuggestion();
+      // Final ownership + ban gate — never invent Library oil change / hire pro
+      const safe = (candidates || []).filter(c => {
+        if (!c) return false;
+        if (!c.habit) return true;
+        if (!isOwnedUserHabit(c.habit)) return false;
+        if (isBannedFromSmartSuggest(c.habit)) return false;
+        // Soft habit nudges must still pass suggestability (Today-only by default)
+        if (['habit', 'progress', 'streak', 'event', 'weather', 'reschedule'].includes(c.type)) {
+          try {
+            if (c.type === 'reschedule') {
+              return isOwnedUserHabit(c.habit) && !isBannedFromSmartSuggest(c.habit);
+            }
+            return isSmartSuggestable(c.habit, { allowHeavy: c.type === 'habit' && /overdue/i.test(String(c.reason || '')) });
+          } catch (_) {
+            return false;
+          }
+        }
+        return true;
+      });
+      if (!safe.length) return buildAppTipSuggestion();
 
-      candidates.sort((a, b) => scoreWithRecency(b) - scoreWithRecency(a));
-      const best = candidates.find(isRelevantContextualSuggestion);
+      safe.sort((a, b) => scoreWithRecency(b) - scoreWithRecency(a));
+      const best = safe.find(isRelevantContextualSuggestion);
       if (!best) return buildAppTipSuggestion();
       return decorateSmartSuggestionCta(best);
     }
@@ -35420,7 +36228,7 @@
         score: 100,
         type: 'no-today',
         cta: 'Browse Library',
-        reason: `Nothing due on Today. Tap <strong>Add</strong> for something new, open <strong>Not on Today</strong> below for weekly/monthly items, or browse the <strong>Library</strong>.`
+        reason: `Nothing due on Today. Tap <strong>Add</strong> for something new, open <strong>Coming up</strong> below for weekly/monthly items, or browse the <strong>Library</strong>.`
       };
     }
 
@@ -35797,10 +36605,21 @@
         }
       }
 
-      // --- Calendar gap: prefer outdoor/pet fit, else light fill ---
-      if (!quietNow && ctx.bestGap && ctx.bestGap.minutes >= 15) {
+      // --- Calendar gap: current / next free block first (never invent free-now mid-meeting) ---
+      const gapForSuggest = ctx.suggestGap || ctx.currentGap || ctx.nextGap || ctx.bestGap;
+      const midBusy = !ctx.currentGap && ctx.inBusy;
+      if (!quietNow && midBusy && ctx.nextGap?.minutes >= 20) {
+        candidates.push({
+          score: 72,
+          type: 'tip',
+          tipId: 'in-busy',
+          cta: 'Got it',
+          action: 'none',
+          reason: `In <strong>${escapeBriefHtml(String(ctx.inBusy.title || 'an event'))}</strong> — next free block ~${formatFreeTimeHours(ctx.nextGap.minutes)}${ctx.nextGap.beforeEvent ? ` before ${escapeBriefHtml(String(ctx.nextGap.beforeEvent))}` : ''}.`
+        });
+      } else if (!quietNow && gapForSuggest && gapForSuggest.minutes >= 15) {
         const sensibleGap = gapPool.filter(h =>
-          isHabitSensibleNow(h) && (h.est_minutes || 15) <= ctx.bestGap.minutes + 5
+          isHabitSensibleNow(h) && (h.est_minutes || 15) <= gapForSuggest.minutes + 5
         );
         const outdoorGap = !rainRisk?.risky
           ? sensibleGap.find(h => {
@@ -35808,39 +36627,40 @@
               return t.outdoor || t.pet;
             })
           : null;
-        const fit = outdoorGap || findTaskForGap(ctx.bestGap, sensibleGap);
+        const fit = outdoorGap || findTaskForGap(gapForSuggest, sensibleGap);
         if (fit) {
-          const until = ctx.bestGap.beforeEvent
-            ? ` before <strong>${escapeBriefHtml(String(ctx.bestGap.beforeEvent))}</strong>`
-            : (ctx.bestGap.until ? ` until ${ctx.bestGap.until}` : '');
+          const until = gapForSuggest.beforeEvent
+            ? ` before <strong>${escapeBriefHtml(String(gapForSuggest.beforeEvent))}</strong>`
+            : (gapForSuggest.until ? ` until ${gapForSuggest.until}` : '');
           const pulled = isEasyPullForward(fit);
           const tags = classifyTask(fit);
           const outdoorish = tags.outdoor || tags.pet;
+          const nowish = !!gapForSuggest.isCurrent || !!ctx.currentGap;
           candidates.push({
             score: outdoorish ? 97 : 95,
             type: 'habit',
             habit: fit,
             cta: 'Show',
             reason: pulled
-              ? `${formatFreeTimeHours(ctx.bestGap.minutes)} open${until} — easy early win: <strong>${phrase(fit)}</strong>.`
+              ? `${formatFreeTimeHours(gapForSuggest.minutes)} ${nowish ? 'free now' : 'open'}${until} — easy early win: <strong>${phrase(fit)}</strong>.`
               : outdoorish
-                ? `${formatFreeTimeHours(ctx.bestGap.minutes)} free${until} — good for <strong>${phrase(fit)}</strong>.`
-                : `${formatFreeTimeHours(ctx.bestGap.minutes)} open${until} — room for <strong>${phrase(fit)}</strong>.`
+                ? `${formatFreeTimeHours(gapForSuggest.minutes)} ${nowish ? 'free now' : 'free'}${until} — good for <strong>${phrase(fit)}</strong>.`
+                : `${formatFreeTimeHours(gapForSuggest.minutes)} ${nowish ? 'free now' : 'open'}${until} — room for <strong>${phrase(fit)}</strong>.`
           });
-        } else if (ctx.bestGap.minutes >= 45) {
+        } else if (gapForSuggest.minutes >= 45) {
           candidates.push({
             score: 73,
             type: 'tip',
             tipId: 'gap-summary',
             cta: 'Got it',
             action: 'none',
-            reason: `${formatFreeTimeHours(ctx.bestGap.minutes)} open on the calendar. Keep Today easy, or deliberately pull something bigger from <strong>Daily Brief</strong>.`
+            reason: `${formatFreeTimeHours(gapForSuggest.minutes)} open on the calendar. Keep Today easy, or deliberately pull something bigger from <strong>Daily Brief</strong>.`
           });
         }
       }
 
       // --- Grocery when list is growing + free time ---
-      if (!quietNow && (ctx.groceryCount || 0) >= 5 && (ctx.bestGap?.minutes >= 25 || ctx.freeTime >= 30)) {
+      if (!quietNow && (ctx.groceryCount || 0) >= 5 && ((ctx.suggestGap || ctx.bestGap)?.minutes >= 25 || ctx.freeTime >= 30)) {
         candidates.push({
           score: 76,
           type: 'grocery',
@@ -38244,6 +39064,10 @@
         cardEl.classList.add('just-added');
         setTimeout(() => cardEl.classList.remove('just-added'), 500);
       }
+      const notOnToday = typeof belongsOnTodayTab === 'function' && !belongsOnTodayTab(taskToAdd);
+      if (notOnToday) {
+        try { laterRoutinesExpanded = true; } catch (_) { /* ignore */ }
+      }
       renderLibrary();
       renderTasks();
       renderStreaks();
@@ -38252,10 +39076,12 @@
       const kindNote = shouldTrackStreak(taskToAdd)
         ? ' · daily habit (streaks)'
         : isParkedForSummary(taskToAdd)
-          ? ' · lives in Summary until you Add to Task'
-          : isNonDailyRecurring(taskToAdd)
-            ? ' · chore when due'
-            : '';
+          ? ' · under Coming up until you Add to Today'
+          : isNonDailyRecurring(taskToAdd) && notOnToday
+            ? ' · under Coming up (not due today)'
+            : isNonDailyRecurring(taskToAdd)
+              ? ' · chore when due'
+              : '';
       showToast(`✓ ${taskToAdd.title} added${kindNote}`);
     }
 
@@ -38608,7 +39434,7 @@
         gotoTaskBtn.onclick = (e) => {
           e.stopPropagation();
           switchTab('today');
-          // Expand “Not on Today” if this routine isn’t due so they can still find it
+          // Expand Coming up if this routine isn’t due so they can still find it
           try {
             if (typeof belongsOnTodayTab === 'function' && !belongsOnTodayTab(
               (state.habits || []).find(h => h.id === task.id)
@@ -38617,7 +39443,7 @@
               if (typeof renderTodayFeed === 'function') renderTodayFeed();
             }
           } catch (_) { /* ignore */ }
-          showToast('On Task — edit weekly/monthly under “Not on Today” if it’s not due');
+          showToast('On Task — edit weekly/monthly under Coming up if it’s not due today');
         };
       }
 
@@ -41635,6 +42461,26 @@
                   </select>
                   <p class="settings-help-text mt-1.5 mb-0">When Harbor prefers morning habits (floss, vitamins, make bed).</p>
                 </div>
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">Morning check-in card</div>
+                    <div class="settings-row-desc">Energy + Start Today on Daily Brief in your morning window</div>
+                  </div>
+                  <button type="button" id="morning-ritual-toggle" role="switch" aria-checked="${state.settings.morningRitualEnabled !== false ? 'true' : 'false'}"
+                    aria-label="Morning check-in card" class="smart-suggestions-toggle harbor-switch">
+                    <span></span>
+                  </button>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-row-copy">
+                    <div class="settings-row-title">End-of-day close</div>
+                    <div class="settings-row-desc">Soft “Close the day” near bedtime on Today</div>
+                  </div>
+                  <button type="button" id="evening-ritual-toggle" role="switch" aria-checked="${state.settings.eveningRitualEnabled !== false ? 'true' : 'false'}"
+                    aria-label="End-of-day close" class="smart-suggestions-toggle harbor-switch">
+                    <span></span>
+                  </button>
+                </div>
               </div>
             </section>
 
@@ -41883,6 +42729,16 @@
         saveState();
         if (isNotificationsEnabled()) syncHarborNotifications({ silent: true });
         showToast(on ? 'Quiet routine nudges on' : 'Quiet routine nudges off');
+      });
+      wireSwitchToggle(modal.querySelector('#morning-ritual-toggle'), (on) => {
+        state.settings.morningRitualEnabled = on;
+        saveState();
+        showToast(on ? 'Morning check-in on' : 'Morning check-in off');
+      });
+      wireSwitchToggle(modal.querySelector('#evening-ritual-toggle'), (on) => {
+        state.settings.eveningRitualEnabled = on;
+        saveState();
+        showToast(on ? 'End-of-day close on' : 'End-of-day close off');
       });
       const applyRhythmFromSettingsModal = () => {
         const bedSel = modal.querySelector('#settings-bedtime');
