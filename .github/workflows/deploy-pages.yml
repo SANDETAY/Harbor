@@ -1,13 +1,8 @@
-# GitHub Pages deploy — DISABLED while the repo is private.
-# Free GitHub accounts cannot deploy Pages from private repos (needs GitHub Pro).
-# TestFlight / App Store do NOT use this workflow — archive in Xcode as usual.
-#
-# To re-enable later (public repo or paid plan): restore the `push: branches: [main]` trigger.
-
 name: Deploy GitHub Pages
 
-# Manual only — will not run on push (no more failure emails)
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -21,7 +16,6 @@ concurrency:
 
 jobs:
   deploy:
-    if: false  # hard-off until you intentionally re-enable Pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -38,6 +32,6 @@ jobs:
         with:
           path: .
 
-      - name: Deploy to Pages
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
