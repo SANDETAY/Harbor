@@ -57,10 +57,21 @@ jobs:
       - name: Accept Android licenses + install packages
         run: |
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
+
+      - name: Point Gradle at Android SDK
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME}"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT}"
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}}"
+          echo "Using SDK=$SDK"
+          test -d "$SDK"
+          printf 'sdk.dir=%s\n' "$SDK" > android/local.properties
+          cat android/local.properties
+          java -version
 
       - name: Build debug APK
         working-directory: android
@@ -69,7 +80,20 @@ jobs:
           GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx2g
         run: |
           set -o pipefail
-          ./gradlew clean assembleDebug --stacktrace 2>&1 | tee /tmp/gradle-build.log
+          ./gradlew clean assembleDebug --stacktrace --warning-mode all 2>&1 | tee /tmp/gradle-build.log
+          # Always print tail so errors aren't buried
+          echo "===== GRADLE TAIL ====="
+          tail -n 100 /tmp/gradle-build.log
+
+      - name: Surface Gradle log on failure
+        if: failure()
+        run: |
+          echo '## Gradle failure log' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -n 200 /tmp/gradle-build.log >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "===== FULL GRADLE LOG ====="
+          cat /tmp/gradle-build.log || true
 
       - name: Upload Gradle log on failure
         if: failure()
