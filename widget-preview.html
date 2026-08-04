@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Harbor Widgets Preview</title>
+  <style>
+    :root {
+      --accent: rgb(46, 140, 128);       /* 0.18, 0.55, 0.50 */
+      --accent-soft: rgba(46, 140, 128, 0.12);
+      --primary: #111;
+      --secondary: rgba(60, 60, 67, 0.6);
+      --bg: #fff;
+      --page: #e8ecef;
+      --hot: #ff9500;
+      --divider: rgba(60, 60, 67, 0.18);
+    }
+    [data-theme="dark"] {
+      --primary: #f5f5f7;
+      --secondary: rgba(235, 235, 245, 0.55);
+      --bg: #1c1c1e;
+      --page: #0b0b0c;
+      --divider: rgba(235, 235, 245, 0.16);
+      --accent-soft: rgba(46, 140, 128, 0.18);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 20% -10%, rgba(46,140,128,0.18), transparent 55%),
+        linear-gradient(180deg, var(--page), #d5dbe0 100%);
+      color: var(--primary);
+      min-height: 100vh;
+      padding: 28px 20px 60px;
+    }
+    [data-theme="dark"] body,
+    html[data-theme="dark"] body {
+      background:
+        radial-gradient(1200px 600px at 20% -10%, rgba(46,140,128,0.22), transparent 55%),
+        linear-gradient(180deg, #0b0b0c, #151518 100%);
+    }
+    header {
+      max-width: 980px;
+      margin: 0 auto 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 18px;
+      align-items: end;
+      justify-content: space-between;
+    }
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      margin: 4px 0 0;
+      color: var(--secondary);
+      font-size: 13px;
+    }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(255,255,255,0.75);
+      color: var(--primary);
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+    [data-theme="dark"] button {
+      background: rgba(44,44,46,0.9);
+      color: #f5f5f7;
+    }
+    button:hover { filter: brightness(0.97); }
+    .grid {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 28px;
+    }
+    .section-title {
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--secondary);
+      margin: 0 0 12px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .label {
+      font-size: 11px;
+      color: var(--secondary);
+      margin-top: 8px;
+      text-align: center;
+    }
+    .cell { display: flex; flex-direction: column; align-items: center; }
+
+    /* Widget sizes (approx iOS points) */
+    .w-sm { width: 158px; height: 158px; }
+    .w-md { width: 338px; height: 158px; }
+    .w-lg { width: 338px; height: 354px; }
+
+    .widget {
+      position: relative;
+      border-radius: 22px;
+      overflow: hidden;
+      color: var(--primary);
+      background:
+        linear-gradient(135deg, rgba(46,140,128,0.08), transparent 48%, rgba(46,140,128,0.03)),
+        var(--bg);
+      box-shadow:
+        0 10px 28px rgba(0,0,0,0.10),
+        0 1px 0 rgba(255,255,245,0.35) inset;
+      display: flex;
+      flex-direction: column;
+    }
+    [data-theme="dark"] .widget {
+      box-shadow:
+        0 12px 30px rgba(0,0,0,0.45),
+        0 1px 0 rgba(255,255,255,0.06) inset;
+    }
+    .pad-sm { padding: 10px; }
+    .pad-md { padding: 12px; }
+    .pad-lg { padding: 14px; }
+
+    .caption {
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--accent);
+      line-height: 1.1;
+    }
+    .muted { color: var(--secondary); }
+    .hot { color: var(--hot) !important; }
+    .mono { font-variant-numeric: tabular-nums; }
+    .grow { flex: 1; min-height: 0; }
+    .stack { display: flex; flex-direction: column; height: 100%; }
+    .row-h { display: flex; align-items: flex-start; gap: 8px; }
+    .row-c { display: flex; align-items: center; gap: 7px; }
+    .space { flex: 1; min-width: 0; }
+    .divider {
+      height: 1px;
+      background: var(--divider);
+      margin: 2px 0;
+      opacity: 0.9;
+    }
+
+    .free-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      background: var(--accent-soft);
+      font-size: 12px;
+      font-weight: 500;
+      margin: 2px 0 2px;
+    }
+    .free-pill .ico { color: var(--accent); font-size: 11px; }
+
+    .metric { text-align: right; line-height: 1.05; }
+    .metric .n {
+      font-size: 16px;
+      font-weight: 650;
+      font-feature-settings: "tnum";
+    }
+    .metric .l {
+      font-size: 9px;
+      font-weight: 500;
+      color: var(--secondary);
+    }
+
+    .task-dot {
+      width: 11px; height: 11px; border-radius: 50%;
+      border: 1.5px solid rgba(46,140,128,0.65);
+      flex: 0 0 auto;
+    }
+    .circle-outline {
+      width: 10px; height: 10px; border-radius: 50%;
+      border: 1.2px solid var(--secondary);
+      flex: 0 0 auto;
+      opacity: 0.75;
+    }
+    .task-line {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mins {
+      font-size: 11px;
+      color: var(--secondary);
+      font-feature-settings: "tnum";
+      flex: 0 0 auto;
+    }
+
+    .event-title { font-weight: 650; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .event-title.sm { font-size: 12.5px; }
+    .event-meta { font-size: 11px; color: var(--secondary); font-feature-settings: "tnum"; }
+
+    .next-title {
+      font-weight: 650;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .next-title.sm { font-size: 16px; }
+    .next-title.md { font-size: 20px; }
+    .next-time {
+      font-size: 13px;
+      font-weight: 650;
+      color: var(--accent);
+      font-feature-settings: "tnum";
+    }
+    .next-until { font-size: 12px; color: var(--secondary); }
+
+    .stat {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .stat .ico { color: var(--accent); font-size: 12px; }
+    .stat .n {
+      font-size: 20px;
+      font-weight: 650;
+      font-feature-settings: "tnum";
+      line-height: 1;
+    }
+    .stat .l { font-size: 10px; font-weight: 500; color: var(--secondary); }
+
+    .list-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .list-row .ico {
+      width: 16px;
+      text-align: center;
+      color: var(--accent);
+      font-size: 12px;
+    }
+    .list-row .val {
+      font-size: 15px;
+      font-weight: 650;
+      font-feature-settings: "tnum";
+    }
+
+    .ritual {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      margin-top: auto;
+    }
+    .empty {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--secondary);
+      margin: auto 0;
+    }
+    .count-lg {
+      font-size: 22px;
+      font-weight: 650;
+      font-feature-settings: "tnum";
+      line-height: 1;
+    }
+    .count-sm {
+      font-size: 18px;
+      font-weight: 650;
+      font-feature-settings: "tnum";
+      line-height: 1;
+    }
+    .note {
+      max-width: 980px;
+      margin: 28px auto 0;
+      font-size: 12px;
+      color: var(--secondary);
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Harbor widgets preview</h1>
+      <p class="sub">HTML mock of the professional SwiftUI widgets (build 458 layout)</p>
+    </div>
+    <div class="toolbar">
+      <button type="button" id="themeBtn">Toggle dark</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- Day (medium + large) -->
+    <section>
+      <div class="section-title">Day · HarborDayWidget</div>
+      <div class="row">
+        <div class="cell">
+          <div class="widget w-md pad-md stack" style="gap:8px">
+            <div class="row-h">
+              <div style="min-width:0">
+                <div style="font-size:11px;font-weight:600;color:var(--accent)">Good morning</div>
+                <div style="font-size:15px;font-weight:650;margin-top:2px">Light day</div>
+              </div>
+              <div class="space"></div>
+              <div style="display:flex;gap:8px">
+                <div class="metric"><div class="n mono">3</div><div class="l">tasks</div></div>
+                <div class="metric"><div class="n mono">6</div><div class="l">list</div></div>
+                <div class="metric"><div class="n mono hot">1</div><div class="l">bills</div></div>
+              </div>
+            </div>
+            <div class="free-pill"><span class="ico">⏱</span><span>Free · 45 min</span></div>
+            <div class="row-c" style="align-items:flex-start">
+              <span style="color:var(--accent);font-size:11px;width:13px;flex:0 0 auto">📅</span>
+              <div style="min-width:0">
+                <div class="event-title">Dentist</div>
+                <div class="event-meta">2:30 PM · in 1h 35m</div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="row-c"><span class="circle-outline"></span><span class="task-line space">Unload dishwasher</span><span class="mins mono">10m</span></div>
+            <div class="row-c"><span class="circle-outline"></span><span class="task-line space">Walk the dog</span><span class="mins mono">20m</span></div>
+            <div class="space"></div>
+            <div class="ritual">Evening ritual ready</div>
+          </div>
+          <div class="label">Medium</div>
+        </div>
+
+        <div class="cell">
+          <div class="widget w-lg pad-lg stack" style="gap:8px">
+            <div class="row-h">
+              <div style="min-width:0">
+                <div style="font-size:11px;font-weight:600;color:var(--accent)">Good morning</div>
+                <div style="font-size:15px;font-weight:650;margin-top:2px">Light day</div>
+              </div>
+              <div class="space"></div>
+              <div style="display:flex;gap:8px">
+                <div class="metric"><div class="n mono">3</div><div class="l">tasks</div></div>
+                <div class="metric"><div class="n mono">6</div><div class="l">list</div></div>
+                <div class="metric"><div class="n mono hot">1</div><div class="l">bills</div></div>
+              </div>
+            </div>
+            <div class="free-pill"><span class="ico">⏱</span><span>Free · 45 min</span></div>
+            <div class="row-c" style="align-items:flex-start">
+              <span style="color:var(--accent);font-size:11px;width:13px;flex:0 0 auto">📅</span>
+              <div style="min-width:0">
+                <div class="event-title">Dentist</div>
+                <div class="event-meta">2:30 PM · in 1h 35m</div>
+              </div>
+            </div>
+            <div class="row-c" style="align-items:flex-start">
+              <span style="color:var(--accent);font-size:11px;width:13px;flex:0 0 auto">📅</span>
+              <div style="min-width:0">
+                <div class="event-title sm">School pickup</div>
+                <div class="event-meta">4:00 PM · in 3h 5m</div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="row-c"><span class="circle-outline"></span><span class="task-line space">Unload dishwasher</span><span class="mins mono">10m</span></div>
+            <div class="row-c"><span class="circle-outline"></span><span class="task-line space">Walk the dog</span><span class="mins mono">20m</span></div>
+            <div class="row-c"><span class="circle-outline"></span><span class="task-line space">Pay electric bill</span><span class="mins mono">5m</span></div>
+            <div class="row-c"><span class="circle-outline"></span><span class="task-line space">Prep dinner</span><span class="mins mono">25m</span></div>
+            <div class="space"></div>
+            <div class="ritual">Evening ritual ready</div>
+          </div>
+          <div class="label">Large</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tasks -->
+    <section>
+      <div class="section-title">Tasks · HarborTodayWidget</div>
+      <div class="row">
+        <div class="cell">
+          <div class="widget w-sm pad-sm stack" style="gap:6px">
+            <div class="row-c" style="align-items:baseline">
+              <div class="caption">Today</div>
+              <div class="space"></div>
+              <div class="count-sm mono">3</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;margin-top:2px">
+              <div class="row-c"><span class="task-dot"></span><span class="task-line" style="font-size:12.5px">Unload dishwasher</span></div>
+              <div class="row-c"><span class="task-dot"></span><span class="task-line" style="font-size:12.5px">Walk the dog</span></div>
+              <div class="row-c"><span class="task-dot"></span><span class="task-line" style="font-size:12.5px">Pay electric bill</span></div>
+            </div>
+            <div class="space"></div>
+          </div>
+          <div class="label">Small</div>
+        </div>
+        <div class="cell">
+          <div class="widget w-md pad-md stack" style="gap:8px">
+            <div class="row-c" style="align-items:baseline">
+              <div class="caption">Today</div>
+              <div class="space"></div>
+              <div class="count-lg mono">3</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div class="row-c"><span class="task-dot"></span><span class="task-line space" style="font-size:13.5px">Unload dishwasher</span><span class="mins mono" style="font-size:12px">10m</span></div>
+              <div class="row-c"><span class="task-dot"></span><span class="task-line space" style="font-size:13.5px">Walk the dog</span><span class="mins mono" style="font-size:12px">20m</span></div>
+              <div class="row-c"><span class="task-dot"></span><span class="task-line space" style="font-size:13.5px">Pay electric bill</span><span class="mins mono" style="font-size:12px">5m</span></div>
+              <div class="row-c"><span class="task-dot"></span><span class="task-line space" style="font-size:13.5px">Prep dinner</span><span class="mins mono" style="font-size:12px">25m</span></div>
+            </div>
+            <div class="space"></div>
+          </div>
+          <div class="label">Medium</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Next up -->
+    <section>
+      <div class="section-title">Next up · HarborNextUpWidget</div>
+      <div class="row">
+        <div class="cell">
+          <div class="widget w-sm pad-sm stack" style="gap:6px">
+            <div class="caption">Next up</div>
+            <div class="next-title sm">Dentist</div>
+            <div class="row-c" style="gap:6px;margin-top:2px">
+              <span class="next-time mono">2:30 PM</span>
+              <span class="next-until">in 1h 35m</span>
+            </div>
+            <div class="space"></div>
+          </div>
+          <div class="label">Small</div>
+        </div>
+        <div class="cell">
+          <div class="widget w-md pad-md stack" style="gap:6px">
+            <div class="caption">Next up</div>
+            <div class="next-title md">Dentist</div>
+            <div class="row-c" style="gap:6px;margin-top:2px">
+              <span class="next-time mono">2:30 PM</span>
+              <span class="next-until">in 1h 35m</span>
+            </div>
+            <div class="muted" style="font-size:12px;font-weight:500">Dr. Patel · Main St</div>
+            <div class="space"></div>
+            <div class="muted" style="font-size:12px;font-weight:500">Free · 45 min</div>
+          </div>
+          <div class="label">Medium</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lists -->
+    <section>
+      <div class="section-title">Lists · HarborListsWidget</div>
+      <div class="row">
+        <div class="cell">
+          <div class="widget w-sm pad-sm stack" style="gap:8px">
+            <div class="caption">Harbor</div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div class="list-row"><span class="ico">🛒</span><span class="space">Grocery</span><span class="val mono">6</span></div>
+              <div class="list-row"><span class="ico">☰</span><span class="space">Tasks</span><span class="val mono">3</span></div>
+              <div class="list-row"><span class="ico hot">💳</span><span class="space">Bills</span><span class="val mono hot">1</span></div>
+            </div>
+            <div class="space"></div>
+          </div>
+          <div class="label">Small</div>
+        </div>
+        <div class="cell">
+          <div class="widget w-md pad-md stack" style="gap:8px">
+            <div class="caption">Harbor</div>
+            <div class="row-h" style="gap:8px;margin-top:2px">
+              <div class="stat"><div class="ico">🛒</div><div class="n mono">6</div><div class="l">Grocery</div></div>
+              <div class="stat"><div class="ico">✓</div><div class="n mono">3</div><div class="l">Tasks</div></div>
+              <div class="stat"><div class="ico hot">💳</div><div class="n mono hot">1</div><div class="l">Bills</div></div>
+              <div class="stat"><div class="ico">🔥</div><div class="n mono">12</div><div class="l">Streak</div></div>
+            </div>
+            <div class="space"></div>
+            <div class="muted" style="font-size:12px;font-weight:500">Make the bed</div>
+          </div>
+          <div class="label">Medium</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <p class="note">
+    Preview only — matches SwiftUI structure, accent teal, system surface + soft wash, and padding
+    (10 / 12 / 14). Real home-screen widgets use SF Symbols and system materials; this is for a quick visual check.
+  </p>
+
+  <script>
+    const root = document.documentElement;
+    const btn = document.getElementById('themeBtn');
+    btn.addEventListener('click', () => {
+      const dark = root.getAttribute('data-theme') === 'dark';
+      root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    });
+  </script>
+</body>
+</html>

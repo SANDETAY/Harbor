@@ -37,6 +37,27 @@ foreach ($f in $files) {
   }
 }
 
+New-Item -ItemType Directory -Path (Join-Path $out "js") -Force | Out-Null
+$cloudJs = Join-Path $root "js\harbor-cloud.js"
+if (Test-Path $cloudJs) {
+  Copy-Item $cloudJs (Join-Path $out "js\harbor-cloud.js") -Force
+}
+$pdfjs = Join-Path $root "js\pdfjs"
+if (Test-Path $pdfjs) {
+  New-Item -ItemType Directory -Path (Join-Path $out "js\pdfjs") -Force | Out-Null
+  Copy-Item (Join-Path $pdfjs "*") (Join-Path $out "js\pdfjs") -Force -Recurse
+  Write-Host "Included js/pdfjs (recipe PDF reader)."
+}
+
+$cfg = Join-Path $root "docs\supabase\config.local.js"
+if (Test-Path $cfg) {
+  New-Item -ItemType Directory -Path (Join-Path $out "docs\supabase") -Force | Out-Null
+  Copy-Item $cfg (Join-Path $out "docs\supabase\config.local.js") -Force
+  Write-Host "Included docs/supabase/config.local.js in native-www."
+} else {
+  Write-Warning "docs/supabase/config.local.js missing - cloud sign-in will stay unconfigured in native shell."
+}
+
 if (-not (Test-Path (Join-Path $out "index.html"))) {
   throw "index.html missing - cannot prepare Capacitor webDir"
 }

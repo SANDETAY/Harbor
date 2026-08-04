@@ -1,5 +1,14 @@
 # Harbor
 
+**Home folder:** `/Users/brittany/Desktop/Harbor`  
+**Start here:** [docs/START-HERE.md](docs/START-HERE.md)  
+**Bookmarks:** [docs/bookmarks/open-bookmarks.html](docs/bookmarks/open-bookmarks.html)  
+**Glossary:** [docs/glossary/harbor-programming-terms.md](docs/glossary/harbor-programming-terms.md)
+
+> Android is archived under `_archive/android/`. Secrets live in `private/` (gitignored).
+
+---
+
 Calm life management app: energy-based tasks, bills, grocery, streaks, calendar, and smart suggestions. **Data stays on the device** (`localStorage`).
 
 This is a **Progressive Web App (PWA)** — one responsive `index.html` that works in the browser and can be **Add to Home Screen**’d like an app. You do **not** need to rewrite it into Swift/Kotlin to try it as an “app” today.

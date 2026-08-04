@@ -1,0 +1,12 @@
+# Harbor Supabase project config (minimal)
+# project_id is set by `supabase link`
+
+[functions.calendar-oauth-start]
+verify_jwt = true
+
+[functions.calendar-oauth-callback]
+# Browser redirect from Google/Microsoft — no user JWT on first hit
+verify_jwt = false
+
+[functions.calendar-oauth-disconnect]
+verify_jwt = true

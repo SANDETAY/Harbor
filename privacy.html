@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="index, follow">
   <title>Privacy Policy — Harbor</title>
-  <meta name="description" content="Privacy Policy for Harbor life management app. Local-first; no ads; optional weather and calendar features.">
+  <meta name="description" content="Privacy Policy for Harbor. Local-first by default; optional account and cloud backup when you sign in.">
   <link rel="icon" type="image/png" sizes="32x32" href="harbor-favicon-32.png">
   <style>
     :root {
@@ -66,31 +66,45 @@
 </head>
 <body>
   <main>
-    <div class="badge">Harbor · Local-first</div>
+    <div class="badge">Harbor · Local-first · Optional cloud</div>
     <h1>Privacy Policy</h1>
-    <p class="muted">Last updated: July 10, 2026 · Full detail also in the repository <code>docs/PRIVACY.md</code>.</p>
+    <p class="muted">Last updated: July 30, 2026 · Also see repository <code>docs/PRIVACY.md</code>.</p>
 
-    <p><strong>Harbor</strong> is a calm life-management app. In version 1 it is <strong>local-first</strong>: your plans live on your device. No Harbor account is required. No ads. We do not sell personal data.</p>
+    <p><strong>Harbor</strong> is a calm life-management app. By default it is <strong>local-first</strong>: your plans live on your device. No ads. We do not sell personal data. An account is <strong>optional</strong> — only if you use Account &amp; cloud.</p>
 
     <h2>Data on your device</h2>
-    <p>Tasks, streaks, bills, groceries, subscriptions, household labels, calendar events you create or import, calendar feed URLs you paste, themes, and optional profile fields are stored in <strong>on-device storage</strong> (for example browser local storage or app storage). Clearing site data, uninstalling, or losing a device without a backup can erase this data.</p>
+    <p>Tasks (including Morning / Evening lists), energy preference, streaks, bills, groceries, subscriptions, local household color tags, calendar events you create or import, calendar feed URLs, themes, Harbor Day progress, and optional profile fields are stored in <strong>on-device storage</strong> (for example browser local storage or app storage). Clearing site data, uninstalling, or losing a device without a backup can erase this data.</p>
+
+    <h2>Optional Account &amp; cloud</h2>
+    <p>If you open <strong>Account &amp; cloud</strong> and sign in (when the app is configured with a backend), Harbor may use a hosted service (<strong>Supabase</strong>) for:</p>
+    <ul>
+      <li>Sign-in with Apple, Google, or email and password</li>
+      <li>Optional backup snapshots you choose to push or pull</li>
+      <li>Optional household membership and invite codes (sharing structure — not automatic full task sync of everything on your phone)</li>
+      <li>Optional Google Calendar connect (Pro) when you link it — read-only calendar events for Schedule</li>
+    </ul>
+    <p>If you never sign in, this path is unused. <strong>Export / Import Profile</strong> files still work fully offline and you choose who receives them.</p>
 
     <h2>What may leave your device</h2>
     <ul>
-      <li><strong>Weather:</strong> if you allow location, approximate location may be sent to a forecast provider (such as Open-Meteo) to show a forecast.</li>
-      <li><strong>Calendar URL:</strong> Harbor fetches feeds <strong>directly</strong> from the calendar host by default. A <strong>network helper</strong> (third-party proxy) is <strong>off unless you enable it</strong> in Settings; if enabled, that helper may see the full feed URL (including secret tokens). Prefer <strong>Import file (.ics)</strong> for maximum privacy.</li>
+      <li><strong>Weather:</strong> if you allow location, approximate location may be sent to a forecast provider (such as Open-Meteo).</li>
+      <li><strong>Calendar URL:</strong> Harbor fetches feeds <strong>directly</strong> from the calendar host by default. A <strong>network helper</strong> (third-party proxy) is <strong>off unless you enable it</strong> in Settings; if enabled, that helper may see the full feed URL. Prefer <strong>Import file (.ics)</strong> for maximum privacy.</li>
+      <li><strong>Device calendars</strong> (store app): read on-device calendars so Schedule can match appointments; event copies stay on the device.</li>
+      <li><strong>Camera / mic:</strong> only when you use recipe photo or voice features; not used for ads.</li>
+      <li><strong>Local reminders</strong> (store app): scheduled on the device; no remote push server for those alerts.</li>
       <li><strong>Feedback:</strong> messages you send may go through a feedback delivery service. Do not include secrets.</li>
       <li><strong>Hosting / updates:</strong> loading the web app or store updates may create ordinary server or CDN logs under those providers’ policies.</li>
+      <li><strong>Cloud account path:</strong> only when you sign in — auth and any snapshots/household records you create with the backend provider.</li>
     </ul>
 
     <h2>Sharing with others</h2>
-    <p>Profile or data export creates a file on your device. You choose how to share it. v1 does not provide live cloud couple-sync.</p>
+    <p>Profile export creates a file on your device; you choose how to share it. Household invites (when cloud is enabled) use invite codes you create. Local household color tags on Schedule are separate and stay on device unless you also use cloud household features.</p>
 
     <h2>Children</h2>
     <p>Harbor is not directed at children under 13.</p>
 
     <h2>Changes</h2>
-    <p>If we add accounts, cloud sync, or change calendar networking defaults, we will update this policy before those features ship.</p>
+    <p>If we expand cloud sync, change calendar networking defaults, or change what household sharing includes, we will update this policy before those changes ship.</p>
 
     <h2>Contact</h2>
     <p>Use in-app Feedback, or the support contact on the App Store / Play listing when published.</p>

@@ -30,3 +30,15 @@ scripts/_debug-*
 scripts/_test-*
 scripts/_probe-*
 Harbor-debug-*.apk
+# Supabase local secrets (URL + publishable key)
+docs/supabase/config.local.js
+**/*config.local.js
+build/
+
+# Local secrets (never push)
+private/
+*.p8
+*secret*.txt
+AuthKey_*.p8
+apple-supabase-secret.txt
+supabase/.temp/

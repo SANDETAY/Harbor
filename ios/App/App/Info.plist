@@ -48,20 +48,19 @@
 	<!-- Privacy — required for App Store review when features use these APIs -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Harbor uses your location to show a local weather forecast for outdoor task timing. Location stays on your device and is not used for ads.</string>
+	<!-- Voice add (Web Speech / mic) on Task toolbar -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Harbor uses the microphone so you can add tasks or grocery items by voice. Audio is processed on device for recognition and is not stored.</string>
 	<!-- Recipe photos (camera + library via file picker in Grocery) -->
 	<key>NSCameraUsageDescription</key>
 	<string>Harbor uses the camera so you can snap a recipe card or dish photo when adding a custom dinner recipe. Photos stay on this device.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Harbor lets you attach a recipe photo from your library when adding a custom dinner recipe. Photos stay on this device.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Harbor only reads photos you choose for recipes; it does not save new photos to your library.</string>
-	<!-- Device calendars (EventKit) — read events already on this iPhone -->
+	<!-- Device calendars (EventKit) — read-only in v1 -->
 	<key>NSCalendarsUsageDescription</key>
 	<string>Harbor shows events from calendars on this iPhone so you can plan tasks around real appointments. Calendar data stays on your device.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Harbor shows events from calendars on this iPhone so you can plan tasks around real appointments. Calendar data stays on your device.</string>
-	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-	<string>Harbor can add events you create in Schedule to your device calendar when you choose. Calendar data stays on your device.</string>
 	<!-- Export compliance: no custom encryption beyond HTTPS -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
@@ -71,5 +70,19 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 	</dict>
+	<!-- Deep links: OAuth return (Google/Microsoft) + household invite share -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.sandetay.harbor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.sandetay.harbor</string>
+				<string>Harbor</string>
+				<string>capacitor</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
