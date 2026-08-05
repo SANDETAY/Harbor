@@ -7490,13 +7490,14 @@
         flex-shrink: 0;
       }
     }
-    /* Desktop / wide: roomy floating Brief (not phone-width sheet) */
+    /* Desktop / wide: roomy floating Brief (fits viewport — padding in max-height) */
     @media (min-width: 768px) {
       #summary-modal {
         align-items: center !important;
         justify-content: center !important;
         background: rgba(18, 40, 37, 0.42) !important;
         padding: 1.5rem !important;
+        box-sizing: border-box !important;
       }
       #summary-modal .summary-modal-backdrop {
         pointer-events: auto;
@@ -7505,10 +7506,10 @@
       #summary-modal .summary-sheet,
       .summary-sheet {
         height: auto !important;
-        min-height: min(72vh, 640px) !important;
-        max-height: min(90vh, 860px) !important;
-        width: min(42rem, calc(100vw - 3rem)) !important;
-        max-width: min(42rem, calc(100vw - 3rem)) !important;
+        min-height: min(36rem, calc(100dvh - 3rem)) !important;
+        max-height: min(52rem, calc(100dvh - 3rem)) !important;
+        width: min(44rem, calc(100vw - 3rem)) !important;
+        max-width: min(44rem, calc(100vw - 3rem)) !important;
         border-radius: var(--harbor-radius-xl) !important;
         border-top: 1px solid rgb(var(--harbor-primary) / 0.14) !important;
         padding-top: 1.15rem !important;
@@ -7529,15 +7530,20 @@
       justify-content: center !important;
       background: rgba(18, 40, 37, 0.42) !important;
       padding: 1.5rem !important;
+      box-sizing: border-box !important;
     }
     html.layout-wide #summary-modal .summary-sheet {
       height: auto !important;
-      min-height: min(72vh, 640px) !important;
-      max-height: min(90vh, 860px) !important;
-      width: min(42rem, calc(100vw - 3rem)) !important;
-      max-width: min(42rem, calc(100vw - 3rem)) !important;
+      min-height: min(36rem, calc(100dvh - 3rem)) !important;
+      max-height: min(52rem, calc(100dvh - 3rem)) !important;
+      width: min(44rem, calc(100vw - 3rem)) !important;
+      max-width: min(44rem, calc(100vw - 3rem)) !important;
       border-radius: var(--harbor-radius-xl) !important;
-      min-height: min(72vh, 640px) !important;
+      border-top: 1px solid rgb(var(--harbor-primary) / 0.14) !important;
+      padding-top: 1.15rem !important;
+      padding-left: 1.35rem !important;
+      padding-right: 1.35rem !important;
+      box-shadow: var(--harbor-shadow-md), 0 16px 48px rgb(var(--harbor-text) / 0.14) !important;
     }
     html.layout-wide #summary-modal .summary-sheet-dismiss-hint,
     html.layout-wide #summary-modal .modal-grab-pill {
@@ -7568,14 +7574,20 @@
       justify-content: center !important;
       background: rgba(18, 40, 37, 0.42) !important;
       padding: 1.5rem !important;
+      box-sizing: border-box !important;
     }
     #summary-modal.summary-modal--wide .summary-sheet {
       height: auto !important;
-      min-height: min(72vh, 640px) !important;
-      max-height: min(90vh, 860px) !important;
-      width: min(42rem, calc(100vw - 3rem)) !important;
-      max-width: min(42rem, calc(100vw - 3rem)) !important;
+      min-height: min(36rem, calc(100dvh - 3rem)) !important;
+      max-height: min(52rem, calc(100dvh - 3rem)) !important;
+      width: min(44rem, calc(100vw - 3rem)) !important;
+      max-width: min(44rem, calc(100vw - 3rem)) !important;
       border-radius: var(--harbor-radius-xl) !important;
+      border-top: 1px solid rgb(var(--harbor-primary) / 0.14) !important;
+      padding-top: 1.15rem !important;
+      padding-left: 1.35rem !important;
+      padding-right: 1.35rem !important;
+      box-shadow: var(--harbor-shadow-md), 0 16px 48px rgb(var(--harbor-text) / 0.14) !important;
     }
     #summary-modal.summary-modal--wide .summary-sheet-dismiss-hint,
     #summary-modal.summary-modal--wide .modal-grab-pill {
@@ -8262,7 +8274,7 @@
 
     /* ── Full month calendar (Daily Brief → Open Calendar) ── */
     #harbor-month-cal-modal {
-      z-index: 92;
+      z-index: 310;
     }
     .harbor-month-cal-sheet {
       position: relative;
@@ -8286,6 +8298,60 @@
         margin-bottom: 1.25rem;
         max-height: min(88vh, 46rem);
       }
+    }
+    /* Website / desktop: wide floating calendar (not phone bottom-sheet width) */
+    @media (min-width: 768px) {
+      #harbor-month-cal-modal {
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 1.5rem !important;
+        box-sizing: border-box !important;
+      }
+      #harbor-month-cal-modal .harbor-month-cal-sheet {
+        width: min(52rem, calc(100vw - 3rem)) !important;
+        max-width: min(52rem, calc(100vw - 3rem)) !important;
+        max-height: min(52rem, calc(100dvh - 3rem)) !important;
+        margin: 0 !important;
+        border-radius: var(--harbor-radius-xl) !important;
+        box-shadow: var(--harbor-shadow-md), 0 16px 48px rgb(var(--harbor-text) / 0.16) !important;
+      }
+      #harbor-month-cal-modal .modal-grab-pill {
+        display: none !important;
+      }
+      #harbor-month-cal-modal .harbor-month-cal-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(15rem, 0.95fr);
+        gap: 0.75rem 1.1rem;
+        align-items: start;
+      }
+      #harbor-month-cal-modal .harbor-month-cal-grid {
+        margin-bottom: 0.35rem;
+      }
+      #harbor-month-cal-modal .harbor-month-cal-footer {
+        padding-bottom: 0.85rem;
+      }
+    }
+    html.layout-wide #harbor-month-cal-modal {
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 1.5rem !important;
+      box-sizing: border-box !important;
+    }
+    html.layout-wide #harbor-month-cal-modal .harbor-month-cal-sheet {
+      width: min(52rem, calc(100vw - 3rem)) !important;
+      max-width: min(52rem, calc(100vw - 3rem)) !important;
+      max-height: min(52rem, calc(100dvh - 3rem)) !important;
+      margin: 0 !important;
+      border-radius: var(--harbor-radius-xl) !important;
+    }
+    html.layout-wide #harbor-month-cal-modal .modal-grab-pill {
+      display: none !important;
+    }
+    html.layout-wide #harbor-month-cal-modal .harbor-month-cal-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(15rem, 0.95fr);
+      gap: 0.75rem 1.1rem;
+      align-items: start;
     }
     html[data-theme="dark"] .harbor-month-cal-sheet {
       box-shadow:
@@ -15790,7 +15856,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 504;
+    const HARBOR_BUILD_NUMBER = 505;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -15843,6 +15909,24 @@
      * Product train is 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '1.0',
+        date: '2026-08-05',
+        title: 'Calendar mirror · desktop Brief · build 505',
+        intro: 'Signed-in website pulls app calendars on refresh; Daily Brief and month calendar fit desktop screens.',
+        sections: [{
+          heading: 'Web',
+          items: [
+            'Phone/app calendars mirror to the website when signed in (refresh, focus, every 5 minutes)',
+            'Daily Brief and Open Calendar use desktop-sized windows (no more phone-cropped sheet)'
+          ]
+        }, {
+          heading: 'Taskers',
+          items: [
+            'Later/Skip and bills Paid chips from recent builds'
+          ]
+        }]
+      },
       {
         version: '1.0',
         date: '2026-08-05',
@@ -23220,6 +23304,275 @@
         return data;
       }
       return null;
+    }
+
+    // ==================== CALENDAR CLOUD MIRROR (app → website) ====================
+    // Phone calendars live on the app; when signed in we push them (with backup snapshot)
+    // and the website pulls/merges on load, focus, and a quiet interval — not full restore.
+    let _calendarMirrorPushTimer = null;
+    let _calendarMirrorPullTimer = null;
+    let _calendarMirrorPolling = false;
+    let _calendarMirrorPullInFlight = false;
+
+    function buildCalendarMirrorPayload() {
+      const s = state.settings || {};
+      return {
+        v: 1,
+        mirroredAt: new Date().toISOString(),
+        deviceCalendarEnabled: !!s.deviceCalendarEnabled,
+        deviceCalendarEvents: Array.isArray(s.deviceCalendarEvents) ? s.deviceCalendarEvents : [],
+        deviceCalendarLastSyncedAt: s.deviceCalendarLastSyncedAt || null,
+        importedCalendarEvents: Array.isArray(s.importedCalendarEvents) ? s.importedCalendarEvents : [],
+        calendarFeeds: Array.isArray(s.calendarFeeds) ? s.calendarFeeds : [],
+        calendarEventOverrides: (s.calendarEventOverrides && typeof s.calendarEventOverrides === 'object')
+          ? s.calendarEventOverrides
+          : {},
+        suppressedCalendarEventKeys: Array.isArray(s.suppressedCalendarEventKeys)
+          ? s.suppressedCalendarEventKeys
+          : [],
+        mockCalendarEvents: Array.isArray(s.mockCalendar?.events) ? s.mockCalendar.events : []
+      };
+    }
+
+    function applyCalendarMirrorPayload(mirror, opts = {}) {
+      if (!mirror || typeof mirror !== 'object') return { applied: false, reason: 'empty' };
+      if (!state.settings) state.settings = {};
+      const localTs = String(state.settings.deviceCalendarLastSyncedAt || state.settings.lastCalendarMirrorSourceAt || '');
+      const remoteTs = String(mirror.deviceCalendarLastSyncedAt || mirror.mirroredAt || '');
+      const localCount = (state.settings.deviceCalendarEvents || []).length
+        + (state.settings.importedCalendarEvents || []).length;
+      const remoteCount = (mirror.deviceCalendarEvents || []).length
+        + (mirror.importedCalendarEvents || []).length;
+      if (!opts.force && remoteTs && localTs && remoteTs <= localTs && localCount >= remoteCount && localCount > 0) {
+        return { applied: false, reason: 'local-newer' };
+      }
+      if (!opts.force && remoteCount === 0 && localCount > 0) {
+        return { applied: false, reason: 'remote-empty' };
+      }
+
+      if (Array.isArray(mirror.deviceCalendarEvents)) {
+        state.settings.deviceCalendarEvents = typeof normalizeCalendarEvents === 'function'
+          ? normalizeCalendarEvents(mirror.deviceCalendarEvents)
+          : mirror.deviceCalendarEvents.slice();
+      }
+      if (mirror.deviceCalendarEnabled != null) {
+        state.settings.deviceCalendarEnabled = !!mirror.deviceCalendarEnabled
+          || (state.settings.deviceCalendarEvents || []).length > 0;
+      } else if ((state.settings.deviceCalendarEvents || []).length > 0) {
+        state.settings.deviceCalendarEnabled = true;
+      }
+      if (mirror.deviceCalendarLastSyncedAt) {
+        state.settings.deviceCalendarLastSyncedAt = mirror.deviceCalendarLastSyncedAt;
+      }
+      if (Array.isArray(mirror.importedCalendarEvents)) {
+        state.settings.importedCalendarEvents = typeof normalizeCalendarEvents === 'function'
+          ? normalizeCalendarEvents(mirror.importedCalendarEvents)
+          : mirror.importedCalendarEvents.slice();
+      }
+      if (Array.isArray(mirror.calendarFeeds)) {
+        state.settings.calendarFeeds = mirror.calendarFeeds;
+      }
+      if (mirror.calendarEventOverrides && typeof mirror.calendarEventOverrides === 'object') {
+        state.settings.calendarEventOverrides = {
+          ...(state.settings.calendarEventOverrides || {}),
+          ...mirror.calendarEventOverrides
+        };
+      }
+      if (Array.isArray(mirror.suppressedCalendarEventKeys) && mirror.suppressedCalendarEventKeys.length) {
+        const set = new Set([
+          ...(state.settings.suppressedCalendarEventKeys || []),
+          ...mirror.suppressedCalendarEventKeys
+        ]);
+        state.settings.suppressedCalendarEventKeys = Array.from(set);
+      }
+      if (Array.isArray(mirror.mockCalendarEvents) && mirror.mockCalendarEvents.length) {
+        if (!state.settings.mockCalendar) {
+          state.settings.mockCalendar = { events: [], freeMinutes: 0, note: '', weekAhead: [] };
+        }
+        const byId = new Map((state.settings.mockCalendar.events || []).map((e) => [e.id, e]));
+        mirror.mockCalendarEvents.forEach((e) => {
+          if (e && e.id) byId.set(e.id, e);
+        });
+        const merged = Array.from(byId.values());
+        state.settings.mockCalendar.events = typeof normalizeCalendarEvents === 'function'
+          ? normalizeCalendarEvents(merged)
+          : merged;
+      }
+
+      state.settings.lastCalendarMirrorAt = new Date().toISOString();
+      state.settings.lastCalendarMirrorSourceAt = remoteTs || mirror.mirroredAt || null;
+      try { saveState({ skipLifeShare: true }); } catch (_) { /* ignore */ }
+      return {
+        applied: true,
+        deviceN: (state.settings.deviceCalendarEvents || []).length,
+        importN: (state.settings.importedCalendarEvents || []).length
+      };
+    }
+
+    function scheduleCalendarMirrorPush(/* reason */) {
+      try {
+        if (typeof HarborCloud === 'undefined' || !HarborCloud.configured || !HarborCloud.configured()) return;
+        if (!HarborCloud.isSignedIn || !HarborCloud.isSignedIn()) return;
+      } catch (_) { return; }
+      if (_calendarMirrorPushTimer) clearTimeout(_calendarMirrorPushTimer);
+      _calendarMirrorPushTimer = setTimeout(() => {
+        _calendarMirrorPushTimer = null;
+        pushCalendarMirrorToCloud().catch((err) => {
+          console.warn('[Harbor] calendar mirror push', err && err.message);
+        });
+      }, 2200);
+    }
+
+    async function pushCalendarMirrorToCloud() {
+      try {
+        if (typeof HarborCloud === 'undefined' || !HarborCloud.configured || !HarborCloud.configured()) return null;
+        if (!HarborCloud.isSignedIn || !HarborCloud.isSignedIn()) return null;
+        await HarborCloud.init();
+        // Phone is source of truth for EventKit — push full snapshot so backup stays useful.
+        // Website only merges calendar fields on pull (never full-replace).
+        if (typeof isHarborNativeApp === 'function' && isHarborNativeApp()) {
+          const full = buildHarborExportPayload();
+          const result = await HarborCloud.pushSnapshot(full);
+          if (state.settings) {
+            state.settings.lastCalendarMirrorPushAt = new Date().toISOString();
+            state.settings.lastCloudBackupAt = state.settings.lastCloudBackupAt || state.settings.lastCalendarMirrorPushAt;
+            try { saveState({ skipLifeShare: true }); } catch (_) { /* ignore */ }
+          }
+          return result;
+        }
+        // Web: merge calendar fields into existing cloud snapshot without wiping phone habits
+        let basePayload = null;
+        try {
+          const row = await HarborCloud.pullSnapshot();
+          if (row && row.payload) {
+            basePayload = typeof row.payload === 'string' ? JSON.parse(row.payload) : row.payload;
+          }
+        } catch (_) { /* ignore */ }
+        const cal = buildCalendarMirrorPayload();
+        let st = basePayload ? extractImportState(basePayload) : null;
+        if (!st || typeof st !== 'object') {
+          // No prior backup — only push calendar-rich local state as a thin profile
+          st = JSON.parse(JSON.stringify(state));
+        }
+        if (!st.settings) st.settings = {};
+        st.settings.deviceCalendarEnabled = cal.deviceCalendarEnabled;
+        st.settings.deviceCalendarEvents = cal.deviceCalendarEvents;
+        st.settings.deviceCalendarLastSyncedAt = cal.deviceCalendarLastSyncedAt;
+        st.settings.importedCalendarEvents = cal.importedCalendarEvents;
+        st.settings.calendarFeeds = cal.calendarFeeds;
+        st.settings.calendarEventOverrides = cal.calendarEventOverrides;
+        st.settings.suppressedCalendarEventKeys = cal.suppressedCalendarEventKeys;
+        if (!st.settings.mockCalendar) {
+          st.settings.mockCalendar = { events: [], freeMinutes: 0, note: '', weekAhead: [] };
+        }
+        const mockById = new Map((st.settings.mockCalendar.events || []).map((e) => [e.id, e]));
+        (cal.mockCalendarEvents || []).forEach((e) => { if (e && e.id) mockById.set(e.id, e); });
+        st.settings.mockCalendar.events = Array.from(mockById.values());
+        const payload = {
+          format: 'harbor-profile',
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          app: 'Harbor',
+          build: typeof HARBOR_BUILD !== 'undefined' ? HARBOR_BUILD : null,
+          appVersion: typeof HARBOR_VERSION !== 'undefined' ? HARBOR_VERSION : null,
+          state: st,
+          calendarMirror: true
+        };
+        const result = await HarborCloud.pushSnapshot(payload);
+        if (state.settings) {
+          state.settings.lastCalendarMirrorPushAt = new Date().toISOString();
+          try { saveState({ skipLifeShare: true }); } catch (_) { /* ignore */ }
+        }
+        return result;
+      } catch (err) {
+        console.warn('[Harbor] calendar mirror push failed', err);
+        throw err;
+      }
+    }
+
+    async function pullAndMergeCalendarMirror(opts = {}) {
+      const silent = opts.silent !== false;
+      if (_calendarMirrorPullInFlight) return { applied: false, reason: 'in-flight' };
+      try {
+        if (typeof HarborCloud === 'undefined' || !HarborCloud.configured || !HarborCloud.configured()) {
+          return { applied: false, reason: 'not-configured' };
+        }
+        if (!HarborCloud.isSignedIn || !HarborCloud.isSignedIn()) {
+          return { applied: false, reason: 'not-signed-in' };
+        }
+        _calendarMirrorPullInFlight = true;
+        await HarborCloud.init();
+        const row = await HarborCloud.pullSnapshot();
+        if (!row || !row.payload) return { applied: false, reason: 'no-backup' };
+        let payload = row.payload;
+        if (typeof payload === 'string') {
+          try { payload = JSON.parse(payload); } catch (_) {
+            return { applied: false, reason: 'bad-json' };
+          }
+        }
+        const incoming = extractImportState(payload);
+        if (!incoming || !incoming.settings) return { applied: false, reason: 'no-state' };
+        const s = incoming.settings;
+        const mirror = {
+          v: 1,
+          mirroredAt: row.updated_at || s.deviceCalendarLastSyncedAt || null,
+          deviceCalendarEnabled: s.deviceCalendarEnabled,
+          deviceCalendarEvents: s.deviceCalendarEvents || [],
+          deviceCalendarLastSyncedAt: s.deviceCalendarLastSyncedAt || null,
+          importedCalendarEvents: s.importedCalendarEvents || [],
+          calendarFeeds: s.calendarFeeds || [],
+          calendarEventOverrides: s.calendarEventOverrides || {},
+          suppressedCalendarEventKeys: s.suppressedCalendarEventKeys || [],
+          mockCalendarEvents: (s.mockCalendar && s.mockCalendar.events) || []
+        };
+        // Phone with fresher EventKit: keep local device calendars
+        if (typeof isHarborNativeApp === 'function' && isHarborNativeApp() && !opts.force) {
+          const localTs = state.settings?.deviceCalendarLastSyncedAt || '';
+          const remoteTs = mirror.deviceCalendarLastSyncedAt || '';
+          if (localTs && (!remoteTs || localTs >= remoteTs)) {
+            return { applied: false, reason: 'native-local-fresher' };
+          }
+        }
+        const result = applyCalendarMirrorPayload(mirror, opts);
+        if (result.applied) {
+          try { if (typeof refreshCalendarCache === 'function') refreshCalendarCache(); } catch (_) { /* ignore */ }
+          try { if (typeof renderSchedule === 'function') renderSchedule(); } catch (_) { /* ignore */ }
+          try { if (typeof renderTodayFeed === 'function') renderTodayFeed(); } catch (_) { /* ignore */ }
+          try { if (typeof updateSmartBanner === 'function') updateSmartBanner(); } catch (_) { /* ignore */ }
+          try { if (typeof updateCalendarStatusUI === 'function') updateCalendarStatusUI(); } catch (_) { /* ignore */ }
+          if (!silent) {
+            const n = (result.deviceN || 0) + (result.importN || 0);
+            showToast(n ? `Calendars synced · ${n} events` : 'Calendars synced', 'success', { durationMs: 3200 });
+          }
+        }
+        return result;
+      } catch (err) {
+        console.warn('[Harbor] calendar mirror pull', err && err.message);
+        return { applied: false, reason: 'error', error: err };
+      } finally {
+        _calendarMirrorPullInFlight = false;
+      }
+    }
+
+    function startCalendarMirrorPolling() {
+      if (_calendarMirrorPolling) return;
+      _calendarMirrorPolling = true;
+      try {
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            pullAndMergeCalendarMirror({ silent: true }).catch(() => {});
+          }
+        });
+      } catch (_) { /* ignore */ }
+      try {
+        window.addEventListener('focus', () => {
+          pullAndMergeCalendarMirror({ silent: true }).catch(() => {});
+        });
+      } catch (_) { /* ignore */ }
+      // Quiet refresh while the tab stays open (website)
+      _calendarMirrorPullTimer = setInterval(() => {
+        pullAndMergeCalendarMirror({ silent: true }).catch(() => {});
+      }, 5 * 60 * 1000);
     }
 
     function mergeHouseholdProfilesFromImport(incoming) {
@@ -34593,6 +34946,8 @@
         if (typeof renderTodayFeed === 'function') renderTodayFeed();
         if (typeof updateSmartBanner === 'function') updateSmartBanner();
         if (typeof updateCalendarStatusUI === 'function') updateCalendarStatusUI();
+        // Push phone calendars to cloud so signed-in website can pull on refresh
+        try { if (typeof scheduleCalendarMirrorPush === 'function') scheduleCalendarMirrorPush('device-sync'); } catch (_) { /* ignore */ }
         // Schedule appointment alerts for newly synced events
         if (typeof syncHarborNotifications === 'function') {
           try { syncHarborNotifications({ silent: true }); } catch (_) { /* ignore */ }
@@ -47293,7 +47648,8 @@
       document.body.classList.add('harbor-modal-open');
       const modal = document.createElement('div');
       modal.id = 'harbor-month-cal-modal';
-      modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end sm:items-center justify-center z-[92]';
+      modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end sm:items-center justify-center z-[310]'
+        + ((typeof isWideLayout === 'function' && isWideLayout()) ? ' harbor-month-cal--wide' : '');
       modal.setAttribute('role', 'dialog');
       modal.setAttribute('aria-modal', 'true');
       modal.setAttribute('aria-label', `Calendar · ${pack.monthTitle}`);
@@ -50256,6 +50612,11 @@
       const root = document.documentElement;
       root.classList.toggle('layout-wide', wide);
       root.classList.toggle('layout-narrow', !wide);
+      // Keep Daily Brief chrome in sync when resizing while open
+      try {
+        const sm = document.getElementById('summary-modal');
+        if (sm) sm.classList.toggle('summary-modal--wide', wide);
+      } catch (_) { /* ignore */ }
 
       const orb = document.getElementById('summary-launcher');
       const slot = document.getElementById('main-nav-fab-slot');
@@ -56800,7 +57161,19 @@
               ? `Opening ${label}… finish sign-in, then Harbor will reopen`
               : `Opening ${label}…`, 'info');
             await HarborCloud.signInWithOAuth(provider);
-            setTimeout(() => { try { paint(); } catch (_) {} }, 1200);
+            setTimeout(() => {
+              try { paint(); } catch (_) {}
+              try {
+                if (typeof pullAndMergeCalendarMirror === 'function') {
+                  pullAndMergeCalendarMirror({ silent: true }).catch(() => {});
+                }
+                if (typeof startCalendarMirrorPolling === 'function') startCalendarMirrorPolling();
+                if (typeof isHarborNativeApp === 'function' && isHarborNativeApp()
+                    && typeof scheduleCalendarMirrorPush === 'function') {
+                  scheduleCalendarMirrorPush('oauth-signin');
+                }
+              } catch (_) { /* ignore */ }
+            }, 1200);
           } catch (err) {
             console.warn('[Harbor] OAuth', err);
             const msg = err?.message || `${label} sign-in failed`;
@@ -62038,6 +62411,7 @@
       state.settings.mockCalendar.note = n
         ? `On this device · ${n} event${n === 1 ? '' : 's'}${suppressedN ? ` · ${suppressedN} hidden` : ''}`
         : '';
+      try { if (typeof scheduleCalendarMirrorPush === 'function') scheduleCalendarMirrorPush('import'); } catch (_) { /* ignore */ }
       return filterSuppressedCalendarEvents(tagged).length;
     }
 
@@ -63606,6 +63980,22 @@
                   try { if (typeof linkMyProfileToCloudUser === 'function') linkMyProfileToCloudUser(); } catch (_) {}
                   if (typeof pullHouseholdLifeShare === 'function') {
                     await pullHouseholdLifeShare({ silent: true });
+                  }
+                }
+              } catch (_) { /* ignore */ }
+              // Calendar mirror: website pulls phone/app calendars on load; app pushes when signed in
+              try {
+                if (HarborCloud.isSignedIn && HarborCloud.isSignedIn()) {
+                  if (typeof pullAndMergeCalendarMirror === 'function') {
+                    await pullAndMergeCalendarMirror({ silent: true });
+                  }
+                  if (typeof startCalendarMirrorPolling === 'function') {
+                    startCalendarMirrorPolling();
+                  }
+                  // App: ensure latest phone calendars are on cloud for the website
+                  if (typeof isHarborNativeApp === 'function' && isHarborNativeApp()
+                      && typeof scheduleCalendarMirrorPush === 'function') {
+                    scheduleCalendarMirrorPush('boot');
                   }
                 }
               } catch (_) { /* ignore */ }
