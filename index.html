@@ -1258,10 +1258,16 @@
         display: flex !important;
       }
       .habit-overdue-btn {
-        min-height: 0;
-        height: 1.4rem;
+        min-height: 1.4rem;
+        height: auto;
         padding: 0.18rem 0.48rem;
         font-size: 0.58rem;
+      }
+      /* Phone: no Edit/Info/Delete strip — chips still right-aligned under meta */
+      .habit-card-side .habit-defer-actions {
+        margin-top: 0.15rem;
+        padding-top: 0;
+        border-top: none;
       }
       /* Bills: Paid chip stays visible on phone (row-inline-actions are swipe-hidden) */
       .bill-pay-actions {
@@ -2066,9 +2072,9 @@
         font-size: 0.95rem;
       }
       .habit-overdue-btn {
-        min-height: 1.9rem;
-        padding: 0.32rem 0.65rem;
-        font-size: 0.65rem;
+        min-height: 1.75rem;
+        padding: 0.28rem 0.6rem;
+        font-size: 0.62rem;
       }
       .habit-row-action-btn {
         min-height: 1.9rem;
@@ -11901,27 +11907,40 @@
       margin-top: 0;
     }
     /*
-     * Overdue-only Later + Skip on Taskers (tasks / habits / chores).
-     * Anchored to the far bottom-right of the card so row height barely grows.
+     * Overdue-only Later + Skip on Taskers.
+     * In-flow under Edit/Info/Delete (never absolute — absolute sat on top of those
+     * chips and got clipped by .swipe-row overflow:hidden, which also hurt scroll feel).
      */
     .swipe-row-content.habit-card {
       position: relative;
     }
-    .swipe-row-content.habit-card.has-overdue-actions {
-      /* Room for absolute chips without wrapping meta — compact strip */
-      padding-bottom: 1.7rem !important;
-    }
     .habit-defer-actions {
-      position: absolute;
-      right: 0.5rem;
-      bottom: 0.35rem;
-      z-index: 3;
+      position: static;
       display: flex;
       flex-wrap: nowrap;
       align-items: center;
       justify-content: flex-end;
       gap: 0.28rem;
+      margin-top: 0.35rem;
       pointer-events: auto;
+      flex-shrink: 0;
+    }
+    /* When Edit/Info/Delete show, sit on a quiet line below them */
+    .habit-card-side .row-inline-actions + .habit-defer-actions {
+      margin-top: 0.4rem;
+      padding-top: 0.35rem;
+      border-top: 1px solid rgb(var(--harbor-border) / 0.55);
+      width: 100%;
+    }
+    .habit-card-side {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 0.25rem;
+      flex-shrink: 0;
+      align-self: stretch;
+      min-width: 0;
     }
     .habit-overdue-btn {
       appearance: none;
@@ -11936,8 +11955,8 @@
       background: rgb(var(--harbor-surface) / 0.95);
       color: rgb(var(--harbor-muted));
       line-height: 1.1;
-      min-height: 0;
-      height: 1.35rem;
+      min-height: 1.35rem;
+      height: auto;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
@@ -15732,7 +15751,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 502;
+    const HARBOR_BUILD_NUMBER = 503;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -43498,7 +43517,7 @@
           </div>
           ${typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit) && habit.note ? `<div class="text-[10px] text-harbor-muted mt-0.5 leading-snug">${escapeBriefHtml(habit.note)}</div>` : ''}
         </div>
-        <div class="text-right flex flex-col items-end justify-between gap-1 self-stretch">
+        <div class="habit-card-side">
           ${habit.target_value ? `<div class="text-xs text-harbor-primary-light font-semibold tabular-nums">${habit.target_value} ${habit.unit}</div>` : ''}
           ${syncedStats ? `<div class="text-[9px] harbor-tag-sync mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
           <div class="row-inline-actions flex flex-wrap items-center justify-end gap-1.5 mt-auto" onclick="event.stopPropagation()">
@@ -43516,8 +43535,8 @@
             </button>
             <button type="button" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); deleteHabitFromToday('${safeHabitId}', event)" class="habit-row-action-btn is-delete" title="Remove task">Delete</button>
           </div>
+          ${overdueActionsHtml}
         </div>
-        ${overdueActionsHtml}
       `;
 
       row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
