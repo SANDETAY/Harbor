@@ -14146,6 +14146,8 @@
       min-height: 0;
       /* Parent doesn’t scroll — #task-list does; keep chrome tight */
       padding-bottom: 0.35rem;
+      overflow-x: hidden;
+      overflow-y: hidden; /* one scroll owner: #task-list (nested dual-scroll trapped the end) */
       /* Invisible scrollbar — still scrollable */
       scrollbar-width: none;
       -ms-overflow-style: none;
@@ -14161,16 +14163,17 @@
       flex: 1 1 auto;
       min-height: 0;
       overflow-y: auto;
+      overflow-x: hidden;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
       -ms-overflow-style: none;
       /*
-        Coming up sits at the bottom of the list — need clear space past the fixed
-        cradle dock + FAB so expanded items can scroll fully into view.
+        Coming up + last Taskers need clear space past the fixed cradle dock + FAB.
+        (Mobile overrides used to wipe this to 1.25rem — last cards sat under the dock.)
       */
-      padding-bottom: calc(8.75rem + env(safe-area-inset-bottom, 0px));
-      scroll-padding-bottom: calc(8.75rem + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(9.75rem + env(safe-area-inset-bottom, 0px));
+      scroll-padding-bottom: calc(9.75rem + env(safe-area-inset-bottom, 0px));
     }
     #tab-content-today:not(.hidden) #task-list::-webkit-scrollbar {
       width: 0;
@@ -14185,6 +14188,13 @@
     #task-list .later-routines-block {
       margin-bottom: 0.35rem;
       padding-bottom: 0.25rem;
+    }
+    /* Version foot lives under the list — pad so it can clear the dock when scrolled into view via list end */
+    #tab-content-today:not(.hidden) > #app-version-foot {
+      flex-shrink: 0;
+      /* Visually tucked; real scroll clearance is on #task-list */
+      padding-bottom: 0.15rem;
+      margin-top: 0;
     }
 
     /* ── Mobile-first: phone layout (default + small screens) ── */
@@ -14387,12 +14397,15 @@
         min-height: 0;
         flex: 1 1 auto;
         padding-top: 0.15rem;
+        overflow-y: hidden;
       }
       #tab-content-today #task-list {
         flex: 1 1 auto;
         min-height: 0;
         padding-top: 0.05rem;
-        padding-bottom: 1.25rem;
+        /* Must clear fixed cradle (~dock + FAB + safe area). Do NOT shrink this. */
+        padding-bottom: calc(9.75rem + env(safe-area-inset-bottom, 0px)) !important;
+        scroll-padding-bottom: calc(9.75rem + env(safe-area-inset-bottom, 0px));
         gap: 0.45rem;
       }
       #tab-content-today #harbor-rest-strip-host:empty {
@@ -14837,6 +14850,32 @@
         margin-right: auto;
         width: 100%;
         box-sizing: border-box;
+      }
+
+      /*
+        Desktop website: page (body) scrolls the whole Task list.
+        Nested #task-list overflow:auto inside height:auto shells was trapping
+        scroll so the last cards never reached the bottom of the viewport.
+      */
+      #tab-content-today:not(.hidden) {
+        overflow: visible !important;
+        flex: 0 0 auto;
+        min-height: auto;
+        max-height: none;
+        height: auto;
+        padding-bottom: 0 !important;
+      }
+      #tab-content-today:not(.hidden) #task-list {
+        overflow: visible !important;
+        flex: 0 0 auto;
+        min-height: auto;
+        max-height: none;
+        height: auto;
+        padding-bottom: 2.5rem !important;
+        scroll-padding-bottom: 0;
+      }
+      #tab-content-today:not(.hidden) > #app-version-foot {
+        padding-bottom: 1rem;
       }
       /* Life / library can use the wider canvas */
       #tab-content-life:not(.hidden),
@@ -15751,7 +15790,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 503;
+    const HARBOR_BUILD_NUMBER = 504;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
