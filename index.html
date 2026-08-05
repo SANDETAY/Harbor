@@ -1247,8 +1247,13 @@
         pointer-events: auto;
       }
 
+      /* Hide desktop Edit/Delete/Details strip on phone — swipe owns those.
+         Overdue/due chips (Skip · Later) stay visible via .habit-defer-actions */
       .row-inline-actions {
         display: none !important;
+      }
+      .habit-defer-actions {
+        display: flex !important;
       }
 
       .swipe-row-content {
@@ -11883,8 +11888,20 @@
     #task-list > .feed-section-kind:first-child {
       margin-top: 0;
     }
-    /* Overdue: Skip / Tomorrow sit bottom-right with row actions (no Lighter) */
+    /* Due / overdue: Skip + Later chips (bottom-right). Visible on phone too. */
+    .habit-defer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.35rem;
+      margin-top: 0.15rem;
+      flex-shrink: 0;
+    }
     .habit-overdue-btn {
+      appearance: none;
+      -webkit-appearance: none;
+      font-family: var(--harbor-font);
       font-size: 0.62rem;
       font-weight: 650;
       padding: 0.28rem 0.55rem;
@@ -11894,6 +11911,7 @@
       color: rgb(var(--harbor-muted));
       line-height: 1.15;
       min-height: 1.75rem;
+      cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
     .habit-overdue-btn:active { opacity: 0.88; }
@@ -11901,6 +11919,11 @@
       border-color: rgb(var(--harbor-primary) / 0.28);
       background: rgb(var(--harbor-primary) / 0.08);
       color: rgb(var(--harbor-primary-light));
+    }
+    .habit-overdue-btn.is-skip {
+      border-color: rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-text));
     }
     .habit-assignee-tag {
       display: inline-flex;
@@ -15629,7 +15652,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 499;
+    const HARBOR_BUILD_NUMBER = 500;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -23936,6 +23959,7 @@
         d.setDate(d.getDate() + 1);
         habit.snoozeUntil = typeof dateStrLocal === 'function' ? dateStrLocal(d) : d.toISOString().slice(0, 10);
         if (habit.pullToToday) delete habit.pullToToday;
+        try { delete habit.laterDeferDate; } catch (_) {}
       } catch (_) {
         showToast('Couldn’t move it', 'warn');
         return;
@@ -23944,6 +23968,40 @@
       renderTasks();
       updateSmartBanner?.();
       showToast(`Moved to tomorrow · ${habit.title}`);
+    }
+
+    /**
+     * Later — soft defer for the rest of today (no streak break).
+     * Hides from main Task list; lands under Coming up until tomorrow.
+     */
+    function deferHabitToLater(habitId, ev) {
+      try { if (ev) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); } } catch (_) {}
+      const habit = (state.habits || []).find(h => String(h.id) === String(habitId));
+      if (!habit) { showToast('Task not found'); return; }
+      try {
+        habit.laterDeferDate = todayStr();
+        if (habit.pullToToday) delete habit.pullToToday;
+        // Don't use snoozeUntil — that was the old “Tomorrow” path
+        try { delete habit.snoozeUntil; } catch (_) {}
+      } catch (_) {
+        showToast('Couldn’t move it', 'warn');
+        return;
+      }
+      try { laterRoutinesExpanded = true; } catch (_) {}
+      saveState();
+      renderTasks();
+      updateSmartBanner?.();
+      showToast(`Later · ${habit.title} — under Coming up`);
+      try {
+        if (typeof scrollComingUpSectionIntoView === 'function') {
+          setTimeout(() => scrollComingUpSectionIntoView(), 80);
+        }
+      } catch (_) { /* ignore */ }
+    }
+
+    function isHabitDeferredToLater(habit, dateStr = todayStr()) {
+      if (!habit) return false;
+      return String(habit.laterDeferDate || '') === String(dateStr || todayStr());
     }
 
     function shrinkHabitForToday(habitId, ev) {
@@ -23969,9 +24027,10 @@
       try { if (ev) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); } } catch (_) {}
       const habit = (state.habits || []).find(h => String(h.id) === String(habitId));
       if (!habit) return;
+      try { delete habit.laterDeferDate; } catch (_) {}
       if (typeof isOneOffTask === 'function' && isOneOffTask(habit)) {
-        // One-time: snooze to tomorrow rather than delete
-        snoozeHabitToTomorrow(habitId, ev);
+        // One-time: soft later (Coming up) rather than hard-delete
+        deferHabitToLater(habitId, ev);
         return;
       }
       if (typeof skipRecurringHabit === 'function') skipRecurringHabit(habitId, ev);
@@ -41765,36 +41824,44 @@
           const comps = typeof getCompletions === 'function' ? (getCompletions(h.id) || []) : [];
           if (comps.length > 0) return;
         }
+        // Soft “Later” today — always list under Coming up
+        const deferredLater = typeof isHabitDeferredToLater === 'function' && isHabitDeferredToLater(h, today);
         // Already on the main Today list
-        if (belongsOnTodayTab(h)) return;
+        if (!deferredLater && belongsOnTodayTab(h)) return;
 
         const periodDone = typeof isCompletedToday === 'function' && isCompletedToday(h.id);
         // Finished dailies land in “Completed today” — not here
         if (periodDone && !isNonDailyRecurring(h) && !isOneOffTask(h)) return;
 
         const parkedReady = !periodDone
+          && !deferredLater
           && typeof isParkedForSummary === 'function'
           && isParkedForSummary(h)
           && isDueToday(h)
           && !isPulledToToday(h);
         // Weekly / monthly / custom interval — not due right now, or resting after period complete
-        const laterWeekly = isNonDailyRecurring(h) && (!isDueToday(h) || periodDone);
+        const laterWeekly = !deferredLater && isNonDailyRecurring(h) && (!isDueToday(h) || periodDone);
         // Preferred-day dailies (e.g. trash on Tue) when today isn’t their day
         const preferredOffDay = !periodDone
+          && !deferredLater
           && !isNonDailyRecurring(h)
           && typeof getHabitWeekdays === 'function'
           && getHabitWeekdays(h)
           && !isDueToday(h)
           && !isOneOffTask(h);
-        // Catch-all: anything owned but not on Today (seasonal off-window, etc.)
+        // Catch-all: deferred “Later”, seasonal off-window, etc.
         // so “I added laundry and it disappeared” can’t happen
-        const catchAllMissing = !parkedReady && !laterWeekly && !preferredOffDay;
+        const catchAllMissing = deferredLater
+          || (!parkedReady && !laterWeekly && !preferredOffDay);
         if (!parkedReady && !laterWeekly && !preferredOffDay && !catchAllMissing) return;
 
         let nextLabel = '';
         let kind = 'later';
         try {
-          if (parkedReady) {
+          if (deferredLater) {
+            kind = 'deferred';
+            nextLabel = 'Later today';
+          } else if (parkedReady) {
             kind = 'parked';
             nextLabel = 'Ready when you can';
           } else if (periodDone && isNonDailyRecurring(h)) {
@@ -41830,7 +41897,7 @@
         });
       });
 
-      const kindRank = { parked: 0, later: 1, resting: 2 };
+      const kindRank = { deferred: 0, parked: 1, later: 2, resting: 3 };
       out.sort((a, b) => {
         const kr = (kindRank[a.kind] ?? 9) - (kindRank[b.kind] ?? 9);
         if (kr !== 0) return kr;
@@ -42353,6 +42420,10 @@
       if (isCompletedToday(habit.id)) return false;
       if (getHabitSkips(habit.id).includes(today)) return false;
       if (getHabitPasses(habit.id).includes(today)) return false;
+      // Soft “Later” — hide from main Task for the rest of today (not a streak skip)
+      if (typeof isHabitDeferredToLater === 'function' && isHabitDeferredToLater(habit, today)) {
+        return false;
+      }
       // User moved to tomorrow (or later)
       if (habit.snoozeUntil) {
         if (String(habit.snoozeUntil) > today) return false;
@@ -42622,6 +42693,11 @@
           delete h.pullToToday;
           changed = true;
         }
+        // Later defer only lasts the calendar day it was set
+        if (h.laterDeferDate && String(h.laterDeferDate) !== today) {
+          delete h.laterDeferDate;
+          changed = true;
+        }
       });
       // Persist so yesterday’s pull flags don’t reappear after reload
       if (changed && opts.save !== false) {
@@ -42650,6 +42726,8 @@
         return;
       }
       const force = options.force === true;
+      // Undo soft “Later” so the card can return to Task
+      try { delete habit.laterDeferDate; } catch (_) {}
       if (!force && !isDueToday(habit)) {
         showToast('Not due right now — check back in season');
         return;
@@ -42836,7 +42914,7 @@
       // (Label used to be a <button class="grocery-check-hit"> which blocked all swipes.)
       if (t.closest('.grocery-check-hit--label, .grocery-name-hit')) return false;
       return !!t.closest(
-        'button, a, input, textarea, select, [data-sync-health], .row-inline-actions, .swipe-action, .grocery-check-hit, .budget-tx-edit-btn, [data-budget-edit]'
+        'button, a, input, textarea, select, [data-sync-health], .row-inline-actions, .habit-defer-actions, .habit-overdue-btn, .swipe-action, .grocery-check-hit, .budget-tx-edit-btn, [data-budget-edit]'
       );
     }
 
@@ -43288,18 +43366,24 @@
         <div class="text-right flex flex-col items-end justify-between gap-1 self-stretch">
           ${habit.target_value ? `<div class="text-xs text-harbor-primary-light font-semibold tabular-nums">${habit.target_value} ${habit.unit}</div>` : ''}
           ${syncedStats ? `<div class="text-[9px] harbor-tag-sync mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
+          ${(() => {
+            // Skip + Later chips — shown for overdue OR due-today incomplete (not completed)
+            const showDefer = !completed && !selectMode && showOverdueActions
+              && !isBudgetReview
+              && (dueToday || (typeof isHabitOverdue === 'function' && isHabitOverdue(habit)));
+            if (!showDefer) return '';
+            return `<div class="habit-defer-actions" onclick="event.stopPropagation()">
+              <button type="button" class="habit-overdue-btn is-soft" title="Do later today — moves to Coming up (keeps streak)"
+                onclick="event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();deferHabitToLater('${safeHabitId}', event)">Later</button>
+              <button type="button" class="habit-overdue-btn is-skip" title="Skip for today — clears the queue (breaks streak on habits)"
+                onclick="event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();skipOrClearToday('${safeHabitId}', event)">Skip</button>
+            </div>`;
+          })()}
           <div class="row-inline-actions flex flex-wrap items-center justify-end gap-1.5 mt-auto" onclick="event.stopPropagation()">
-            ${!completed && showOverdueActions && typeof isHabitOverdue === 'function' && isHabitOverdue(habit)
-              ? `<button type="button" class="habit-overdue-btn is-soft" title="Move to tomorrow" onclick="event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();snoozeHabitToTomorrow('${safeHabitId}', event)">Tomorrow</button>
-                 <button type="button" class="habit-overdue-btn" title="Skip or clear for today" onclick="event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();skipOrClearToday('${safeHabitId}', event)">Skip</button>`
-              : ''}
             ${typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit) && !completed
               ? `<button type="button" onclick="event.stopImmediatePropagation(); openBudgetFromReviewTask()" class="text-[10px] text-harbor-primary-light font-semibold px-1" title="Open Budget">Budget</button>
                  <button type="button" onclick="event.stopImmediatePropagation(); markBudgetReviewCompleteFromImport()" class="text-[10px] text-harbor-primary-light font-semibold px-1" title="Mark reviewed for this month">Done</button>
                  <button type="button" onclick="event.stopImmediatePropagation(); showBudgetReviewTaskSheet('${safeHabitId}')" class="text-[10px] text-harbor-muted hover:text-harbor-primary-light px-1" title="Mute or more options">More</button>`
-              : ''}
-            ${dueToday && !isOneOffTask(habit) && !(showOverdueActions && typeof isHabitOverdue === 'function' && isHabitOverdue(habit))
-              ? `<button type="button" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); skipRecurringHabit('${safeHabitId}', event)" class="text-[10px] text-harbor-muted hover:text-harbor-primary-light px-1" title="Skip this cycle — resets streak">Skip</button>`
               : ''}
             ${dueToday && shouldTrackStreak(habit) && (ensureRewardBank().skipToken || 0) > 0 ? `<button type="button" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); useSkipToken('${safeHabitId}', event)" class="text-[10px] text-harbor-primary-light hover:text-harbor-text px-1" title="Pass — keeps your streak (rare)">Pass</button>` : ''}
             ${!(typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit))
@@ -45112,6 +45196,7 @@
 
       // One-day pull expires only when fully done for today
       if (fullyDone && habit.pullToToday) delete habit.pullToToday;
+      try { delete habit.laterDeferDate; } catch (_) {}
 
       logMetricOnComplete(habit);
       // Award on full completion only — tasks, habits, and chores all contribute
