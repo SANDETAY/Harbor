@@ -153,6 +153,27 @@ function extractFn(src, name) {
   console.log('OK · daily rhythm titles');
 }
 
+// ── Multi×/day completion merge (feed dogs 2×) ─────────────────────
+{
+  const fns = ['countCompletionDates', 'mergeCompletionDateLists', 'mergeCompletionsMaps']
+    .map((n) => extractFn(html, n)).join('\n');
+  // eslint-disable-next-line no-new-func
+  const api = new Function(`${fns}; return { mergeCompletionDateLists, mergeCompletionsMaps };`)();
+  const merged = api.mergeCompletionDateLists(
+    ['2026-08-04', '2026-08-04'],
+    ['2026-08-04']
+  );
+  assert.equal(merged.filter((d) => d === '2026-08-04').length, 2, 'keeps 2 logs for same day');
+  const maps = api.mergeCompletionsMaps(
+    { dogs: ['2026-08-04', '2026-08-04'] },
+    { dogs: ['2026-08-04'] }
+  );
+  assert.equal(maps.dogs.filter((d) => d === '2026-08-04').length, 2, 'map merge keeps multi count');
+  // Set-style collapse would yield length 1 — regression guard
+  assert.notEqual(new Set(maps.dogs).size, maps.dogs.length || 0, 'multiset not unique-only');
+  console.log('OK · multi×/day completion merge');
+}
+
 // ── Build number ────────────────────────────────────────────────────
 {
   const m = html.match(/const HARBOR_BUILD_NUMBER = (\d+);/);
@@ -165,6 +186,8 @@ function extractFn(src, name) {
   assert.match(html, /habitHasCarryForwardDue/, 'carry-forward helper present');
   assert.match(html, /startHouseholdLifeSharePolling/, 'household poll present');
   assert.match(html, /poppi/, 'poppi grocery keyword present');
+  assert.match(html, /subs-renewing-section/, 'renewing soon section present');
+  assert.match(html, /toggleTaskSelectMode/, 'task select mode present');
   console.log('OK · build ' + build + ' markers');
 }
 

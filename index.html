@@ -13460,6 +13460,113 @@
     .student-pricing-toggle input.student-pricing-switch:checked::after {
       transform: translateX(0.9rem);
     }
+    /* Subscriptions — Renewing soon (smart-banner destination) */
+    .subs-renewing-section {
+      scroll-margin-top: 0.75rem;
+    }
+    .subs-renewing-section-title {
+      color: rgb(var(--harbor-primary-light));
+      font-weight: 700;
+    }
+    .subs-renewing-section-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.25rem;
+      height: 1.15rem;
+      padding: 0 0.35rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      background: rgb(var(--harbor-primary) / 0.14);
+      color: rgb(var(--harbor-primary-light));
+    }
+    .sub-renewing-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.1rem 0.4rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      background: rgb(var(--harbor-primary) / 0.14);
+      color: rgb(var(--harbor-primary-light));
+      border: 1px solid rgb(var(--harbor-primary) / 0.22);
+    }
+    .sub-tracked-card--renewing {
+      border-color: rgb(var(--harbor-primary) / 0.35) !important;
+      box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.08);
+    }
+
+    /* Task select mode — multi-delete stuck / unwanted tasks */
+    .task-select-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.55rem 0.75rem;
+      margin: 0 0 0.65rem;
+      border-radius: 14px;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-surface));
+    }
+    .task-select-bar.hidden { display: none !important; }
+    .task-select-bar-count {
+      font-size: 0.78rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-text));
+    }
+    .task-select-bar-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .task-select-bar-actions button {
+      appearance: none;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-text));
+      font-size: 0.72rem;
+      font-weight: 650;
+      padding: 0.4rem 0.7rem;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .task-select-bar-actions button.is-danger {
+      border-color: rgb(244 63 94 / 0.35);
+      background: rgb(244 63 94 / 0.1);
+      color: rgb(225 29 72);
+    }
+    .habit-select-check {
+      flex-shrink: 0;
+      width: 1.35rem;
+      height: 1.35rem;
+      border-radius: 0.4rem;
+      border: 1.5px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.15rem;
+      color: transparent;
+      font-size: 0.7rem;
+    }
+    .swipe-row.is-task-selected .habit-select-check,
+    .habit-card.is-task-selected .habit-select-check {
+      background: rgb(var(--harbor-primary));
+      border-color: rgb(var(--harbor-primary));
+      color: #fff;
+    }
+    .swipe-row.is-task-selected > .swipe-row-content,
+    .habit-card.is-task-selected {
+      border-color: rgb(var(--harbor-primary) / 0.4) !important;
+      background: rgb(var(--harbor-primary) / 0.06);
+    }
+    body.is-task-select-mode #task-list .swipe-row-actions {
+      display: none !important;
+    }
+
     /* Compact Student chip on the subscriptions toolbar */
     .student-pricing-chip {
       max-width: 7.5rem;
@@ -15009,6 +15116,9 @@
       <div id="task-action-bar" class="task-action-bar hidden" aria-label="Task tools">
         <div id="task-person-filter-host" class="task-person-filter-host hidden" aria-label="Filter by person"></div>
         <div class="task-add-tools today-toolbar panel-toolbar">
+          <button type="button" onclick="toggleTaskSelectMode()" class="chip-tool-btn today-select-btn" id="today-select-btn" aria-label="Select tasks to remove" aria-pressed="false">
+            Select
+          </button>
           <button type="button" onclick="showQuickTaskModal({ mode: 'habit' })" class="chip-add-btn today-add-btn" id="today-add-btn" aria-label="Add task">
             <i class="fa-solid fa-plus"></i>Add
           </button>
@@ -15025,6 +15135,13 @@
       <div id="tab-content-today" class="tab-content px-5 bg-transparent">
         <!-- Harbor Day rest meter — progress toward treat while on Task -->
         <div id="harbor-rest-strip-host"></div>
+        <div id="task-select-bar" class="task-select-bar hidden" role="toolbar" aria-label="Selected tasks">
+          <span class="task-select-bar-count" id="task-select-count">0 selected</span>
+          <div class="task-select-bar-actions">
+            <button type="button" id="task-select-cancel-btn">Cancel</button>
+            <button type="button" class="is-danger" id="task-select-delete-btn">Remove</button>
+          </div>
+        </div>
         <!-- Task List (swipe hint is injected just above the first active task) -->
         <div id="task-list"></div>
         <div id="app-version-foot" class="app-version-foot" aria-label="App version">
@@ -15512,7 +15629,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 497;
+    const HARBOR_BUILD_NUMBER = 499;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -15565,6 +15682,25 @@
      * Product train is 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '1.0',
+        date: '2026-08-04',
+        title: 'Multi-log fix · task Select · renewing subs · build 498',
+        intro: 'Feed dogs 2×/day no longer resets after household sync; Select tasks to remove; Subscriptions highlights renewing soon.',
+        sections: [{
+          heading: 'Task',
+          items: [
+            'Fixed multi×/day completions (e.g. feed dogs 2/2) being collapsed back to 1/2 after household sync',
+            'Select on Task — pick one or more tasks and Remove them in bulk'
+          ]
+        }, {
+          heading: 'Subscriptions',
+          items: [
+            'Renewing soon section at the top (within 7 days)',
+            'Smart banner renewing chip scrolls you straight to that section'
+          ]
+        }]
+      },
       {
         version: '1.0',
         date: '2026-08-04',
@@ -18678,7 +18814,11 @@
     }
 
     function getCompletions(habitId) {
-      return state.completions[habitId] || [];
+      if (habitId == null || !state.completions) return [];
+      const direct = state.completions[habitId];
+      if (Array.isArray(direct)) return direct;
+      const asStr = state.completions[String(habitId)];
+      return Array.isArray(asStr) ? asStr : [];
     }
 
     function getHabitSkips(habitId) {
@@ -21451,8 +21591,10 @@
           if (tomb.has(String(hid))) return;
           const dates = state.completions[hid];
           if (!Array.isArray(dates) || !dates.length) return;
-          const set = new Set([...(completions[hid] || []), ...dates]);
-          completions[hid] = Array.from(set).filter(Boolean).sort();
+          // Preserve multi×/day (same date repeated) — Set would drop feed dogs 2/2 → 1/2
+          completions[hid] = typeof mergeCompletionDateLists === 'function'
+            ? mergeCompletionDateLists(completions[hid] || [], dates)
+            : [...(completions[hid] || []), ...dates].filter(Boolean).sort();
         });
         // Drop completions for tombstoned ids
         tomb.forEach(id => { try { delete completions[id]; } catch (_) {} });
@@ -21480,7 +21622,34 @@
       return Array.from(map.values());
     }
 
-    /** Union completion date lists per habit id. */
+    /**
+     * Count how many times each date appears (multi×/day stores the same date N times).
+     * NEVER use Set-union alone — that collapsed feed-dogs 2×/day back to 1/2 after sync.
+     */
+    function countCompletionDates(arr) {
+      const m = new Map();
+      (arr || []).forEach((d) => {
+        if (!d) return;
+        const key = String(d);
+        m.set(key, (m.get(key) || 0) + 1);
+      });
+      return m;
+    }
+
+    /** Merge two completion date arrays preserving multi-log counts (max of each side). */
+    function mergeCompletionDateLists(localArr, remoteArr) {
+      const a = countCompletionDates(localArr);
+      const b = countCompletionDates(remoteArr);
+      const keys = new Set([...a.keys(), ...b.keys()]);
+      const out = [];
+      [...keys].sort().forEach((d) => {
+        const n = Math.max(a.get(d) || 0, b.get(d) || 0);
+        for (let i = 0; i < n; i++) out.push(d);
+      });
+      return out;
+    }
+
+    /** Union completion date lists per habit id (preserves multi×/day duplicates). */
     function mergeCompletionsMaps(localMap, remoteMap) {
       const out = {};
       const keys = new Set([
@@ -21488,11 +21657,10 @@
         ...Object.keys(remoteMap || {})
       ]);
       keys.forEach(hid => {
-        const set = new Set([
-          ...((localMap && localMap[hid]) || []),
-          ...((remoteMap && remoteMap[hid]) || [])
-        ]);
-        const arr = Array.from(set).filter(Boolean).sort();
+        const arr = mergeCompletionDateLists(
+          (localMap && localMap[hid]) || [],
+          (remoteMap && remoteMap[hid]) || []
+        );
         if (arr.length) out[hid] = arr;
       });
       return out;
@@ -38125,14 +38293,19 @@
         }
       }
 
-      // Active first (newest), then paused/cancelled at the bottom
+      // Renewing soon first, then other active, then paused
       const sortSubs = (list) => list.slice().sort((a, b) => {
         const ta = a.addedAt || '';
         const tb = b.addedAt || '';
         if (ta && tb) return tb.localeCompare(ta);
         return String(b.id || '').localeCompare(String(a.id || ''));
       });
-      const activeSubs = sortSubs(subs.filter(s => s.active !== false));
+      // 7-day window so “renewing soon” is easy to scan after the smart banner tap
+      const renewingRows = typeof getSubscriptionsRenewingSoon === 'function'
+        ? getSubscriptionsRenewingSoon(7)
+        : [];
+      const renewingIds = new Set(renewingRows.map(r => String(r.sub?.id)));
+      const activeSubs = sortSubs(subs.filter(s => s.active !== false && !renewingIds.has(String(s.id))));
       const inactiveSubs = sortSubs(subs.filter(s => s.active === false));
 
       if (subs.length === 0) {
@@ -38148,27 +38321,42 @@
         return;
       }
 
-      const appendSubRow = (sub) => {
+      const formatRenewingIn = (days) => {
+        if (days <= 0) return 'Renews today';
+        if (days === 1) return 'Renews tomorrow';
+        return `Renews in ${days}d`;
+      };
+
+      const appendSubRow = (sub, opts = {}) => {
         const active = sub.active !== false;
         const preset = resolveSubscriptionPreset(sub);
         const cycleLabel = formatSubscriptionCycleLabel(sub.cycle || 'monthly');
         const safeId = escapeBriefHtml(String(sub.id || ''));
+        const renewing = !!opts.renewing;
+        const daysUntil = Number.isFinite(opts.daysUntil) ? opts.daysUntil : null;
         const row = document.createElement('div');
         row.className = 'swipe-row';
         row.dataset.swipeId = sub.id;
         row.dataset.swipeType = 'subscription';
+        if (renewing) row.dataset.subsRenewing = '1';
         row.style.setProperty('--swipe-reveal', '9.75rem');
         const actionsHtml = `
           <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit subscription"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>
           <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove subscription"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Remove</span></button>
         `;
+        const renewPill = renewing && daysUntil != null
+          ? `<span class="sub-renewing-pill">${escapeSubscriptionHtml(formatRenewingIn(daysUntil))}</span>`
+          : '';
         const statusLine = active
           ? `${sub.tierLabel ? `${escapeSubscriptionHtml(sub.tierLabel)} · ` : ''}${cycleLabel} · renews ${escapeSubscriptionHtml(formatSubscriptionRenewalShort(sub))}`
           : `Paused${sub.pausedAt ? ` · ${escapeSubscriptionHtml(String(sub.pausedAt).slice(0, 10))}` : ''}${sub.tierLabel ? ` · ${escapeSubscriptionHtml(sub.tierLabel)}` : ''}`;
         const contentHtml = `
           <div class="flex-shrink-0" data-sub-edit="${safeId}">${subscriptionBrandLogoHtml(preset || sub, 'md')}</div>
           <div class="flex-1 min-w-0" data-sub-edit="${safeId}" role="button" tabindex="0" aria-label="Edit ${escapeSubscriptionHtml(sub.name)}">
-            <div class="font-medium truncate text-[0.9rem] ${active ? '' : 'text-harbor-muted'}">${escapeSubscriptionHtml(sub.name)}</div>
+            <div class="font-medium truncate text-[0.9rem] ${active ? '' : 'text-harbor-muted'} flex items-center gap-1.5 flex-wrap">
+              <span class="truncate">${escapeSubscriptionHtml(sub.name)}</span>
+              ${renewPill}
+            </div>
             <div class="text-[11px] text-harbor-muted truncate">${statusLine}</div>
           </div>
           <div class="text-right flex-shrink-0 flex flex-col items-end gap-0.5">
@@ -38182,7 +38370,7 @@
         row.innerHTML = buildSwipeRowHtml(
           actionsHtml,
           contentHtml,
-          `sub-tracked-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 ${active ? '' : 'opacity-60'}`
+          `sub-tracked-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 ${active ? '' : 'opacity-60'}${renewing ? ' sub-tracked-card--renewing' : ''}`
         );
         row.querySelectorAll('[data-sub-edit]').forEach(el => {
           el.addEventListener('click', (e) => {
@@ -38200,12 +38388,28 @@
         container.appendChild(row);
       };
 
+      if (renewingRows.length) {
+        const renewWrap = document.createElement('div');
+        renewWrap.id = 'subs-renewing-section';
+        renewWrap.className = 'subs-renewing-section';
+        renewWrap.setAttribute('role', 'region');
+        renewWrap.setAttribute('aria-label', 'Renewing soon');
+        const renewLabel = document.createElement('div');
+        renewLabel.className = 'feed-section-label text-harbor-muted mb-2 mt-1 flex items-center gap-2';
+        renewLabel.innerHTML = `<span class="subs-renewing-section-title">Renewing soon</span><span class="subs-renewing-section-count">${renewingRows.length}</span>`;
+        renewWrap.appendChild(renewLabel);
+        container.appendChild(renewWrap);
+        // Append rows into container after the section header (same list)
+        renewingRows.forEach(r => appendSubRow(r.sub, { renewing: true, daysUntil: r.days }));
+      }
+
       if (activeSubs.length) {
         const trackedLabel = document.createElement('div');
         trackedLabel.className = 'feed-section-label text-harbor-muted mb-2 mt-1';
-        trackedLabel.textContent = 'Active';
+        trackedLabel.textContent = renewingRows.length ? 'Active · later' : 'Active';
+        if (renewingRows.length) trackedLabel.classList.add('mt-4');
         container.appendChild(trackedLabel);
-        activeSubs.forEach(appendSubRow);
+        activeSubs.forEach(sub => appendSubRow(sub));
       }
 
       if (inactiveSubs.length) {
@@ -38213,10 +38417,21 @@
         inactiveLabel.className = 'feed-section-label text-harbor-muted mb-2 mt-4';
         inactiveLabel.textContent = `Paused / cancelled · ${inactiveSubs.length}`;
         container.appendChild(inactiveLabel);
-        inactiveSubs.forEach(appendSubRow);
+        inactiveSubs.forEach(sub => appendSubRow(sub));
       }
 
       bindSwipeRows(container);
+
+      // Smart banner / chip: scroll to Renewing soon after open
+      if (window.__harborScrollSubsRenewing) {
+        window.__harborScrollSubsRenewing = false;
+        requestAnimationFrame(() => {
+          try {
+            document.getElementById('subs-renewing-section')
+              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } catch (_) { /* ignore */ }
+        });
+      }
     }
 
     /** Soft-pause: keeps the row under Inactive so you remember what you cancelled. */
@@ -41358,13 +41573,16 @@
           ? getSubscriptionsRenewingSoon(3)
           : [];
         if (renewing.length) {
-          // No “tmw / today / 3d” timing on the chip — just “Renewing soon”
+          const firstName = renewing[0]?.sub?.name || '';
+          const meta = renewing.length === 1
+            ? firstName
+            : (firstName ? `${firstName} +${renewing.length - 1}` : '');
           chips.push({
             id: 'renewing',
             count: renewing.length,
             label: 'Renewing soon',
-            meta: '',
-            aria: `Renewing soon: ${renewing.length} subscription${renewing.length === 1 ? '' : 's'}. Tap to open Subscriptions.`,
+            meta,
+            aria: `Renewing soon: ${renewing.length} subscription${renewing.length === 1 ? '' : 's'}${firstName ? ` including ${firstName}` : ''}. Tap to open Renewing soon.`,
             action: 'life-subs',
             className: 'smart-life-chip--renew'
           });
@@ -41385,8 +41603,18 @@
       }
       if (action === 'life-subs') {
         try {
+          // Land on Renewing soon so you don’t hunt through Active
+          window.__harborScrollSubsRenewing = true;
           if (typeof switchTab === 'function') switchTab('life');
           if (typeof switchLifePanel === 'function') switchLifePanel('subscriptions');
+          else if (typeof selectLifeSection === 'function') selectLifeSection('subscriptions');
+          setTimeout(() => {
+            try {
+              if (typeof renderSubscriptions === 'function') renderSubscriptions();
+              document.getElementById('subs-renewing-section')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (_) { /* ignore */ }
+          }, 80);
         } catch (_) { /* ignore */ }
       }
     }
@@ -42859,6 +43087,111 @@
       }
     }
 
+    // ── Task multi-select (clear / remove stuck tasks) ─────────────────
+    let taskSelectMode = false;
+    const taskSelectIds = new Set();
+
+    function isTaskSelectMode() {
+      return !!taskSelectMode;
+    }
+
+    function updateTaskSelectChrome() {
+      document.body.classList.toggle('is-task-select-mode', taskSelectMode);
+      const bar = document.getElementById('task-select-bar');
+      const countEl = document.getElementById('task-select-count');
+      const selectBtn = document.getElementById('today-select-btn');
+      const n = taskSelectIds.size;
+      if (bar) bar.classList.toggle('hidden', !taskSelectMode);
+      if (countEl) countEl.textContent = n === 1 ? '1 selected' : `${n} selected`;
+      if (selectBtn) {
+        selectBtn.textContent = taskSelectMode ? 'Done' : 'Select';
+        selectBtn.setAttribute('aria-pressed', taskSelectMode ? 'true' : 'false');
+        selectBtn.classList.toggle('is-active', taskSelectMode);
+      }
+      const delBtn = document.getElementById('task-select-delete-btn');
+      if (delBtn) {
+        delBtn.disabled = n === 0;
+        delBtn.style.opacity = n === 0 ? '0.45' : '1';
+        delBtn.textContent = n > 0 ? `Remove (${n})` : 'Remove';
+      }
+    }
+
+    function toggleTaskSelectMode(force) {
+      const next = force == null ? !taskSelectMode : !!force;
+      taskSelectMode = next;
+      if (!taskSelectMode) taskSelectIds.clear();
+      updateTaskSelectChrome();
+      try { renderTasks(); } catch (_) { /* ignore */ }
+    }
+
+    function toggleTaskSelectId(habitId) {
+      if (!taskSelectMode || habitId == null) return;
+      const id = String(habitId);
+      if (taskSelectIds.has(id)) taskSelectIds.delete(id);
+      else taskSelectIds.add(id);
+      updateTaskSelectChrome();
+      // Lightweight class toggle without full re-render
+      document.querySelectorAll(`[data-habit-id="${CSS.escape ? CSS.escape(id) : id}"], [data-swipe-id="${CSS.escape ? CSS.escape(id) : id}"]`).forEach(el => {
+        el.classList.toggle('is-task-selected', taskSelectIds.has(id));
+      });
+    }
+
+    async function deleteSelectedTasks() {
+      const ids = [...taskSelectIds];
+      if (!ids.length) {
+        showToast('Select at least one task', 'info');
+        return;
+      }
+      const titles = ids.map(id => {
+        const h = (state.habits || []).find(x => String(x.id) === String(id));
+        return h?.title || 'Task';
+      });
+      const preview = titles.slice(0, 3).join(', ') + (titles.length > 3 ? ` +${titles.length - 3}` : '');
+      const ok = await showHarborConfirm({
+        title: ids.length === 1 ? 'Remove task?' : `Remove ${ids.length} tasks?`,
+        message: `Remove from your list:\n${preview}\n\nShared household tasks won’t reappear after sync.`,
+        confirmLabel: ids.length === 1 ? 'Remove' : `Remove ${ids.length}`,
+        danger: true
+      });
+      if (!ok) return;
+      ids.forEach(id => {
+        const habit = (state.habits || []).find(h => String(h.id) === String(id));
+        if (!habit) return;
+        if (typeof habitIsHouseholdShared === 'function' && habitIsHouseholdShared(habit)) {
+          try { recordSharedHabitTombstone(id, habit); } catch (_) { /* ignore */ }
+        }
+        if (typeof purgeHabitSideData === 'function') purgeHabitSideData(id);
+      });
+      const idSet = new Set(ids.map(String));
+      state.habits = (state.habits || []).filter(h => !idSet.has(String(h.id)));
+      taskSelectIds.clear();
+      taskSelectMode = false;
+      saveState();
+      updateTaskSelectChrome();
+      renderTasks();
+      renderStreaks();
+      renderLibrary();
+      updateSmartBanner();
+      if (typeof updateSummaryLauncher === 'function') updateSummaryLauncher();
+      showToast(ids.length === 1 ? 'Task removed' : `${ids.length} tasks removed`);
+    }
+
+    function wireTaskSelectBar() {
+      document.getElementById('task-select-cancel-btn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleTaskSelectMode(false);
+      });
+      document.getElementById('task-select-delete-btn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        deleteSelectedTasks();
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', wireTaskSelectBar);
+    } else {
+      try { wireTaskSelectBar(); } catch (_) { /* ignore */ }
+    }
+
     function renderHabitCard(habit, container, options = {}) {
       const { muted = false, upcomingLabel = '', completed = false, showOverdueActions = true } = options;
       const today = todayStr();
@@ -42876,14 +43209,18 @@
         ? `<span class="${dueTag.cls.includes('harbor-tag') ? dueTag.cls : `harbor-tag ${dueTag.cls}`}">${dueTag.text}</span>`
         : '';
 
+      const selectMode = typeof isTaskSelectMode === 'function' && isTaskSelectMode();
+      const isSelected = selectMode && taskSelectIds.has(String(habit.id));
       const row = document.createElement('div');
-      row.className = 'swipe-row';
+      row.className = 'swipe-row' + (isSelected ? ' is-task-selected' : '');
       row.dataset.habitId = habit.id;
       row.dataset.swipeId = habit.id;
       row.dataset.feedType = 'habit';
       row.dataset.swipeType = completed ? 'habit-done' : 'habit';
 
-      const actionsHtml = completed
+      const actionsHtml = selectMode
+        ? '' // no swipe actions while selecting
+        : (completed
         ? `
         <button type="button" class="swipe-action swipe-action-edit" data-action="undo" aria-label="Undo complete"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i><span class="swipe-action-label">Undo</span></button>
         <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove task"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Delete</span></button>
@@ -42891,7 +43228,7 @@
         : `
         <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit task"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>
         <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Remove task"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Delete</span></button>
-      `;
+      `);
 
       const timesNeed = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
       const timesDone = typeof countCompletionsInPeriod === 'function'
@@ -42922,10 +43259,14 @@
         && typeof renderHabitAssigneeTagsHtml === 'function')
         ? renderHabitAssigneeTagsHtml(habit)
         : '';
+      const selectCheck = selectMode
+        ? `<span class="habit-select-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>`
+        : '';
       const contentHtml = `
+        ${selectCheck}
         <div class="flex-1 min-w-0 habit-main-tap">
           <div class="font-medium leading-tight flex items-center gap-1.5 flex-wrap min-w-0"
-            title="${completed ? 'Completed today' : (isBudgetReview ? 'Tap to open Budget' : 'Tap to Complete — Swipe to Edit')}">
+            title="${selectMode ? 'Tap to select' : (completed ? 'Completed today' : (isBudgetReview ? 'Tap to open Budget' : 'Tap to Complete — Swipe to Edit'))}">
             ${assigneeTag}
             <span class="habit-title-text min-w-0${showMuted || completed ? ' text-harbor-muted' : ''}${completed ? ' line-through decoration-harbor-muted/40' : ''}"
               data-habit-title="1">${safeTitle}</span>
@@ -42973,24 +43314,39 @@
       `;
 
       row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
-        `habit-card harbor-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 active:bg-harbor-raised${showMuted || completed ? ' opacity-45' : ''}${completed ? ' is-completed-today' : ''}${!completed ? ' is-tap-complete' : ''}`);
+        `habit-card harbor-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 active:bg-harbor-raised${showMuted || completed ? ' opacity-45' : ''}${completed ? ' is-completed-today' : ''}${!completed && !selectMode ? ' is-tap-complete' : ''}${isSelected ? ' is-task-selected' : ''}`);
       const content = row.querySelector('.swipe-row-content');
-      content?.addEventListener('contextmenu', (e) => { e.preventDefault(); showHabitDetail(habit.id); });
-      // Tap card → complete. Swipe left → Edit / Delete.
-      // Guards: open/swiping/suppress never complete (so Edit is never buggy).
-      if (content && !completed) {
+      content?.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        if (selectMode) {
+          toggleTaskSelectId(habit.id);
+          return;
+        }
+        showHabitDetail(habit.id);
+      });
+      // Tap card → complete (or select in multi-select mode). Swipe left → Edit / Delete.
+      if (content) {
         content.setAttribute('role', 'button');
-        content.setAttribute('aria-label', isBudgetReview
-          ? `Open budget review: ${habit.title}`
-          : (isMulti
-            ? `Complete ${habit.title}, ${timesDone} of ${timesNeed} ${periodWord}`
-            : `Complete ${habit.title}`));
+        content.setAttribute('aria-label', selectMode
+          ? `${isSelected ? 'Deselect' : 'Select'} ${habit.title}`
+          : (completed
+            ? `Completed: ${habit.title}`
+            : (isBudgetReview
+              ? `Open budget review: ${habit.title}`
+              : (isMulti
+                ? `Complete ${habit.title}, ${timesDone} of ${timesNeed} ${periodWord}`
+                : `Complete ${habit.title}`))));
         content.addEventListener('click', (e) => {
           if (row.dataset.swipeSuppressClick === '1') return;
           if (row.classList.contains('is-open') || row.classList.contains('is-swiping')) return;
           if (e.target.closest('.row-inline-actions, .swipe-action, button, a')) return;
           e.preventDefault();
           e.stopPropagation();
+          if (selectMode) {
+            toggleTaskSelectId(habit.id);
+            return;
+          }
+          if (completed) return;
           if (isBudgetReview) {
             showBudgetReviewTaskSheet(habit.id);
             return;
@@ -44680,6 +45036,11 @@
         e.stopImmediatePropagation();
         e.stopPropagation();
       }
+      // Multi-select mode: never complete — toggle selection instead
+      if (typeof isTaskSelectMode === 'function' && isTaskSelectMode()) {
+        toggleTaskSelectId(habitId);
+        return;
+      }
       // Guard: swipe Edit/Delete / open slide must never count as a completion.
       const swipeRow = (e?.target instanceof Element ? e.target.closest('.swipe-row') : null)
         || document.querySelector(`.swipe-row[data-habit-id="${habitId}"], .swipe-row[data-swipe-id="${habitId}"]`);
@@ -44713,9 +45074,18 @@
       }
       
       const today = todayStr();
-      if (!state.completions[habitId]) state.completions[habitId] = [];
+      // Always store under string key so household merge / re-import can't miss logs
+      const compKey = String(habitId);
+      if (!state.completions[compKey] && Array.isArray(state.completions[habitId])) {
+        state.completions[compKey] = state.completions[habitId];
+      }
+      if (!state.completions[compKey]) state.completions[compKey] = [];
+      // Keep both keys pointing at the same array when id was non-string historically
+      if (habitId != null && state.completions[habitId] !== state.completions[compKey]) {
+        state.completions[habitId] = state.completions[compKey];
+      }
       
-      const comps = state.completions[habitId];
+      const comps = state.completions[compKey];
       const need = getTimesPerPeriod(habit);
       const doneCount = countCompletionsInPeriod(habit, today);
       const periodLabel = getFrequencyPeriodLabel(habit);
@@ -44729,9 +45099,13 @@
       }
       
       comps.push(today);
+      // Do NOT unique-sort: multi×/day needs duplicate same-day entries (2/2 feed dogs)
       comps.sort();
       const afterCount = doneCount + 1;
       const fullyDone = afterCount >= need;
+      try {
+        habit.updatedAt = new Date().toISOString();
+      } catch (_) { /* ignore */ }
       if (fullyDone && typeof noteFirstWeekCompletion === 'function') {
         try { noteFirstWeekCompletion(); } catch (_) {}
       }
