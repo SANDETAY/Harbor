@@ -1263,12 +1263,6 @@
         padding: 0.18rem 0.48rem;
         font-size: 0.58rem;
       }
-      /* Phone: no Edit/Info/Delete strip — chips still right-aligned under meta */
-      .habit-card-side .habit-defer-actions {
-        margin-top: 0.15rem;
-        padding-top: 0;
-        border-top: none;
-      }
       /* Bills: Paid chip stays visible on phone (row-inline-actions are swipe-hidden) */
       .bill-pay-actions {
         display: flex !important;
@@ -11973,30 +11967,30 @@
       margin-top: 0;
     }
     /*
-     * Overdue-only Later + Skip on Taskers.
-     * In-flow under Edit/Info/Delete (never absolute — absolute sat on top of those
-     * chips and got clipped by .swipe-row overflow:hidden, which also hurt scroll feel).
+     * Overdue-only Later + Skip — bottom-right of the Tasker card (no divider line).
+     * Phone hides Edit/Info/Delete strip; chips sit clear of swipe actions.
      */
     .swipe-row-content.habit-card {
       position: relative;
     }
+    .swipe-row-content.habit-card.has-overdue-actions {
+      padding-bottom: 1.75rem !important;
+    }
     .habit-defer-actions {
-      position: static;
+      position: absolute;
+      right: 0.45rem;
+      bottom: 0.32rem;
+      z-index: 3;
       display: flex;
       flex-wrap: nowrap;
       align-items: center;
       justify-content: flex-end;
       gap: 0.28rem;
-      margin-top: 0.35rem;
+      margin: 0;
+      padding: 0;
+      border: none;
       pointer-events: auto;
       flex-shrink: 0;
-    }
-    /* When Edit/Info/Delete show, sit on a quiet line below them */
-    .habit-card-side .row-inline-actions + .habit-defer-actions {
-      margin-top: 0.4rem;
-      padding-top: 0.35rem;
-      border-top: 1px solid rgb(var(--harbor-border) / 0.55);
-      width: 100%;
     }
     .habit-card-side {
       display: flex;
@@ -15856,7 +15850,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 505;
+    const HARBOR_BUILD_NUMBER = 506;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -34932,7 +34926,12 @@
         const withEdits = typeof applyCalendarEventOverrides === 'function'
           ? applyCalendarEventOverrides(mapped)
           : mapped;
-        const cleaned = filterSuppressedCalendarEvents(normalizeCalendarEvents(withEdits));
+        // Collapse same holiday on multiple phone calendars before storing
+        const normalized = normalizeCalendarEvents(withEdits);
+        const deduped = typeof dedupeCalendarEvents === 'function'
+          ? dedupeCalendarEvents(normalized)
+          : normalized;
+        const cleaned = filterSuppressedCalendarEvents(deduped);
 
         state.settings.deviceCalendarEnabled = true;
         state.settings.deviceCalendarEvents = cleaned;
@@ -36040,6 +36039,61 @@
         if (e?.recurrenceUntil) out.recurrenceUntil = e.recurrenceUntil;
         return out;
       });
+    }
+
+    /**
+     * Collapse same-day same-title holidays that appear on multiple phone calendars
+     * (e.g. your Holidays + spouse Holidays both show “Halloween”).
+     */
+    function normalizeEventTitleForDedupe(title) {
+      return String(title || '')
+        .toLowerCase()
+        // strip common emoji / symbols so “🎃 Halloween” matches “Halloween”
+        .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}]/gu, '')
+        .replace(/[^\p{L}\p{N}\s']/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function calendarEventDedupeKey(e) {
+      if (!e) return '';
+      const date = getEventDate(e);
+      const title = normalizeEventTitleForDedupe(e.title);
+      const isAllDay = !!(e.isAllDay || e.allDay || Number(e.durationMin) >= 1439);
+      const time = isAllDay ? 'allday' : String(e.time || '00:00').slice(0, 5);
+      return `${date}|${time}|${title}`;
+    }
+
+    function calendarEventSourceScore(e) {
+      if (!e) return 0;
+      // Prefer Harbor-owned / editable over read-only phone copies
+      if (!e.readOnly && e.calendarSource !== 'device') return 4;
+      if (e.calendarSource && e.calendarSource !== 'device' && e.calendarSource !== 'local') return 3;
+      if (e.calendarSource === 'device') return 2;
+      return 1;
+    }
+
+    function dedupeCalendarEvents(events) {
+      const seen = new Map();
+      (events || []).forEach((e) => {
+        if (!e || !e.title) return;
+        const key = calendarEventDedupeKey(e);
+        if (!key || key.endsWith('|')) {
+          // no usable title — keep unique by id
+          const idKey = `id:${e.id || Math.random()}`;
+          if (!seen.has(idKey)) seen.set(idKey, e);
+          return;
+        }
+        const prev = seen.get(key);
+        if (!prev) {
+          seen.set(key, e);
+          return;
+        }
+        if (calendarEventSourceScore(e) > calendarEventSourceScore(prev)) {
+          seen.set(key, e);
+        }
+      });
+      return Array.from(seen.values());
     }
 
     function filterCalendarEventsById(events, eventId) {
@@ -43929,8 +43983,8 @@
             </button>
             <button type="button" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); deleteHabitFromToday('${safeHabitId}', event)" class="habit-row-action-btn is-delete" title="Remove task">Delete</button>
           </div>
-          ${overdueActionsHtml}
         </div>
+        ${overdueActionsHtml}
       `;
 
       row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
@@ -59414,7 +59468,10 @@
       const mockWithEdits = typeof applyCalendarEventOverrides === 'function'
         ? applyCalendarEventOverrides(mockEvents)
         : mockEvents;
-      const all = [...importedWithEdits, ...mockWithEdits, ...device];
+      // Dedupe shared holidays that appear on multiple calendars (yours + spouse, etc.)
+      const all = typeof dedupeCalendarEvents === 'function'
+        ? dedupeCalendarEvents([...importedWithEdits, ...mockWithEdits, ...device])
+        : [...importedWithEdits, ...mockWithEdits, ...device];
       const feeds = typeof getCalendarFeeds === 'function' ? getCalendarFeeds() : [];
       const deviceOn = !!(state.settings.deviceCalendarEnabled && device.length);
       const localNote = feeds.length || imported.length || deviceOn
