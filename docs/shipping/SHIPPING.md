@@ -15,7 +15,7 @@ Do **not** start ads or complex pricing before a **TestFlight** (iOS) / internal
 | **Apple Developer** | ~$99/year for TestFlight + App Store |
 | **Mac + Xcode** | Required to archive iOS (or a cloud Mac CI later) |
 | **Google Play Console** | ~$25 one-time for Android |
-| **Privacy URL** | Use `https://sandetay.github.io/Harbor/privacy.html` (or your domain) after deploy |
+| **Privacy URL** | Use `https://harborlife.app/privacy.html` after deploy |
 | **Support email** | Real inbox you monitor |
 
 **This machine snapshot:** Node was not available when the scaffold was added. Install Node, then run the setup steps below.

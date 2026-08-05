@@ -9,8 +9,8 @@ Bookmark these. Group names match a professional ops folder.
 | Name | URL | Why |
 |------|-----|-----|
 | **GitHub repo** | https://github.com/SANDETAY/Harbor | Source, PRs, issues |
-| **Live PWA** | https://sandetay.github.io/Harbor/ | Public web app / tester link |
-| **Privacy policy (live)** | https://sandetay.github.io/Harbor/privacy.html | Store listing + in-app |
+| **Live PWA** | https://harborlife.app/ | Public web app / tester link |
+| **Privacy policy (live)** | https://harborlife.app/privacy.html | Store listing + in-app |
 | **GitHub Pages settings** | https://github.com/SANDETAY/Harbor/settings/pages | If deploy 404s |
 | **Actions (deploys)** | https://github.com/SANDETAY/Harbor/actions | CI / Pages workflow status |
 

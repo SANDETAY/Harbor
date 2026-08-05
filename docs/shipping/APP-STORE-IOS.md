@@ -15,7 +15,7 @@ This machine (Windows) can **scaffold** the project; **building and uploading re
 | Build number | `350` (bump each upload) |
 | Capacitor | 6.x + SplashScreen, StatusBar, App, Geolocation |
 | Native HTTP | `CapacitorHttp` enabled (needed for iCloud calendar URLs) |
-| Privacy policy | https://sandetay.github.io/Harbor/privacy.html |
+| Privacy policy | https://harborlife.app/privacy.html |
 | Location string | Weather-only purpose (in `Info.plist`) |
 | Encryption export | `ITSAppUsesNonExemptEncryption = false` |
 | App icon | 1024×1024 in `ios/App/App/Assets.xcassets/AppIcon.appiconset/` |
@@ -45,7 +45,7 @@ Without an active **Apple Developer Program** membership you cannot ship TestFli
    - Name: **Harbor** (if taken, e.g. Harbor Daily / Harbor Life)  
    - Bundle ID: **com.sandetay.harbor** (create in Certificates, Identifiers & Profiles if needed)  
    - SKU: `harbor-ios-001`  
-3. Privacy Policy URL: `https://sandetay.github.io/Harbor/privacy.html`  
+3. Privacy Policy URL: `https://harborlife.app/privacy.html`  
 4. Support URL / email: your real inbox  
 
 ---

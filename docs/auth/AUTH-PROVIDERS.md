@@ -17,17 +17,20 @@ Leave **Azure**, **SAML**, and **Web3** off.
 
 | Field | Example |
 |-------|---------|
-| **Site URL** | Your live app URL, e.g. `https://sandetay.github.io/Harbor/` or local `http://localhost:3000` |
+| **Site URL** | `https://harborlife.app/` (or local `http://localhost:3000`) |
 | **Redirect URLs** | Add every place users return after login |
 
 Add all of these that you use:
 
 ```text
+https://harborlife.app/**
+https://harborlife.app/
+https://harborlife.app/index.html
 http://localhost:3000/**
 http://127.0.0.1:3000/**
 http://localhost:5500/**
-https://YOUR_PRODUCTION_DOMAIN/**
-https://YOUR_PRODUCTION_DOMAIN/index.html
+https://sandetay.github.io/Harbor/**
+https://sandetay.github.io/Harbor/index.html
 ```
 
 **Required for TestFlight / native app (especially Google):**
@@ -65,7 +68,7 @@ You’ll paste that into Google Cloud and Apple Developer as the authorized redi
 4. **Authorized redirect URIs** → paste Supabase callback:  
    `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`  
 5. **Authorized JavaScript origins** (no path):  
-   `https://YOUR_PROJECT_REF.supabase.co` and `http://localhost:3000`  
+   `https://YOUR_PROJECT_REF.supabase.co`, `https://harborlife.app`, and `http://localhost:3000`  
 6. Copy **Client ID** + **Client secret**.  
 7. Supabase → **Authentication → Providers → Google** → Enable → paste ID + secret → Save.
 

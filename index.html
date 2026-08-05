@@ -73,23 +73,25 @@
     })();
   </script>
   <meta name="description" content="Harbor — a gentle daily life organizer. Energy-based tasks, bills, grocery, streaks, and Smart Suggestions in one calm place.">
-  <meta name="robots" content="noindex, nofollow">
+  <meta name="robots" content="index, follow">
   <meta property="og:title" content="Harbor — Steady Seas for Busy Homes">
   <meta property="og:description" content="Harbor — energy-based tasks, bills, grocery, streaks, and Smart Suggestions in one calm app.">
   <meta property="og:site_name" content="Harbor">
-  <meta property="og:image" content="https://sandetay.github.io/Harbor/harbor-icon-512.png">
+  <meta property="og:image" content="https://harborlife.app/harbor-icon-512.png">
   <meta property="og:image:alt" content="Harbor app logo">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://harborlife.app/">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Harbor — Steady Seas for Busy Homes">
-  <meta name="twitter:image" content="https://sandetay.github.io/Harbor/harbor-icon-512.png">
+  <meta name="twitter:image" content="https://harborlife.app/harbor-icon-512.png">
   <link rel="icon" type="image/png" sizes="32x32" href="harbor-favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="harbor-apple-touch.png">
 
   <link rel="manifest" href="manifest.webmanifest">
   <title>Harbor · Steady Seas for Busy Homes</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase (optional cloud). config.local.js is gitignored — create from config.example.js -->
+  <!-- Supabase cloud: public (Pages) then optional local override (gitignored) -->
+  <script src="./docs/supabase/config.public.js"></script>
   <script src="./docs/supabase/config.local.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.min.js"></script>
   <script src="./js/harbor-cloud.js"></script>
@@ -1253,6 +1255,16 @@
         display: none !important;
       }
       .habit-defer-actions {
+        display: flex !important;
+      }
+      .habit-overdue-btn {
+        min-height: 0;
+        height: 1.4rem;
+        padding: 0.18rem 0.48rem;
+        font-size: 0.58rem;
+      }
+      /* Bills: Paid chip stays visible on phone (row-inline-actions are swipe-hidden) */
+      .bill-pay-actions {
         display: flex !important;
       }
 
@@ -11888,43 +11900,111 @@
     #task-list > .feed-section-kind:first-child {
       margin-top: 0;
     }
-    /* Due / overdue: Skip + Later chips (bottom-right). Visible on phone too. */
+    /*
+     * Overdue-only Later + Skip on Taskers (tasks / habits / chores).
+     * Anchored to the far bottom-right of the card so row height barely grows.
+     */
+    .swipe-row-content.habit-card {
+      position: relative;
+    }
+    .swipe-row-content.habit-card.has-overdue-actions {
+      /* Room for absolute chips without wrapping meta — compact strip */
+      padding-bottom: 1.7rem !important;
+    }
     .habit-defer-actions {
+      position: absolute;
+      right: 0.5rem;
+      bottom: 0.35rem;
+      z-index: 3;
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
       justify-content: flex-end;
-      gap: 0.35rem;
-      margin-top: 0.15rem;
-      flex-shrink: 0;
+      gap: 0.28rem;
+      pointer-events: auto;
     }
     .habit-overdue-btn {
       appearance: none;
       -webkit-appearance: none;
       font-family: var(--harbor-font);
-      font-size: 0.62rem;
-      font-weight: 650;
-      padding: 0.28rem 0.55rem;
-      border-radius: 0.65rem;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      padding: 0.18rem 0.45rem;
+      border-radius: 999px;
       border: 1px solid rgb(var(--harbor-border));
-      background: rgb(var(--harbor-raised) / 0.85);
+      background: rgb(var(--harbor-surface) / 0.95);
       color: rgb(var(--harbor-muted));
-      line-height: 1.15;
-      min-height: 1.75rem;
+      line-height: 1.1;
+      min-height: 0;
+      height: 1.35rem;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+      white-space: nowrap;
     }
     .habit-overdue-btn:active { opacity: 0.88; }
     .habit-overdue-btn.is-soft {
-      border-color: rgb(var(--harbor-primary) / 0.28);
-      background: rgb(var(--harbor-primary) / 0.08);
+      border-color: rgb(var(--harbor-primary) / 0.3);
+      background: rgb(var(--harbor-primary) / 0.12);
       color: rgb(var(--harbor-primary-light));
     }
     .habit-overdue-btn.is-skip {
       border-color: rgb(var(--harbor-border));
-      background: rgb(var(--harbor-raised));
+      background: rgb(var(--harbor-raised) / 0.95);
       color: rgb(var(--harbor-text));
     }
+
+    /* Bills — mark paid (manual only; autopay stays quiet) */
+    .bill-pay-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 0.25rem;
+      flex-shrink: 0;
+      margin-left: 0.15rem;
+    }
+    .bill-pay-btn {
+      appearance: none;
+      -webkit-appearance: none;
+      font-family: var(--harbor-font);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      padding: 0.28rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      line-height: 1.1;
+      min-height: 1.55rem;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+    }
+    .bill-pay-btn.is-mark {
+      background: rgb(var(--harbor-primary));
+      color: #fff;
+      border-color: rgb(var(--harbor-primary));
+    }
+    .bill-pay-btn.is-mark:active {
+      opacity: 0.9;
+    }
+    .bill-pay-btn.is-undo {
+      background: transparent;
+      color: rgb(var(--harbor-muted));
+      border-color: rgb(var(--harbor-border));
+    }
+    .bill-pay-btn.is-undo:active {
+      opacity: 0.85;
+    }
+    .bill-pay-auto {
+      font-size: 0.58rem;
+      font-weight: 600;
+      color: rgb(var(--harbor-muted));
+      letter-spacing: 0.02em;
+      padding: 0.15rem 0.2rem;
+    }
+
     .habit-assignee-tag {
       display: inline-flex;
       align-items: center;
@@ -15652,7 +15732,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 500;
+    const HARBOR_BUILD_NUMBER = 502;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -15690,7 +15770,7 @@
     // Feedback delivery (tried in order): Web3Forms → FormSubmit → mailto backup.
     // Web3Forms access_key is PUBLIC by design (not a secret API key). Get one free at
     // https://web3forms.com — use the same inbox as recipientEmail. Optional Pro feature:
-    // restrict the key to sandetay.github.io / your domain to cut spam abuse.
+    // restrict the key to harborlife.app / your domain to cut spam abuse.
     const FEEDBACK_CONFIG = {
       recipientEmail: 'Taylorsanders12360@gmail.com',
       // Public Web3Forms access key (safe client-side; binds submissions to this inbox)
@@ -15705,6 +15785,25 @@
      * Product train is 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '1.0',
+        date: '2026-08-05',
+        title: 'Web domain · overdue chips · bills Paid · build 502',
+        intro: 'harborlife.app ships with cloud sign-in, overdue Later/Skip on Taskers, and always-visible Paid on bills — same calm look as the app.',
+        sections: [{
+          heading: 'Web',
+          items: [
+            'Live site on harborlife.app with cloud config for Google account sign-in',
+            'Calendars: Google OAuth + .ics on the web; phone calendars stay in the iPhone app'
+          ]
+        }, {
+          heading: 'Taskers',
+          items: [
+            'Later and Skip sit on overdue Taskers only (bottom-right, compact chips)',
+            'Bills: Paid / Undo chip always visible on phone (not buried in swipe-only actions)'
+          ]
+        }]
+      },
       {
         version: '1.0',
         date: '2026-08-04',
@@ -28786,14 +28885,22 @@
         row.dataset.swipeType = 'bill';
         row.style.setProperty('--swipe-reveal', '9.75rem');
         const actionsHtml = `
-          <button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit bill"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>
+          ${!isPaid && !isAutopay
+            ? `<button type="button" class="swipe-action swipe-action-edit" data-action="paid" aria-label="Mark paid"><i class="fa-solid fa-check" aria-hidden="true"></i><span class="swipe-action-label">Paid</span></button>`
+            : `<button type="button" class="swipe-action swipe-action-edit" data-action="edit" aria-label="Edit bill"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="swipe-action-label">Edit</span></button>`}
           <button type="button" class="swipe-action swipe-action-delete" data-action="delete" aria-label="Delete bill"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="swipe-action-label">Delete</span></button>
         `;
+        // Always-visible Paid control (not in .row-inline-actions — those hide on phone)
+        const payChip = !isPaid && !isAutopay
+          ? `<button type="button" class="bill-pay-btn is-mark" data-bill-pay="${safeId}" aria-label="Mark ${safeName} paid">Paid</button>`
+          : isPaid
+            ? `<button type="button" class="bill-pay-btn is-undo" data-bill-unpay="${safeId}" aria-label="Undo paid for ${safeName}">Undo</button>`
+            : `<span class="bill-pay-auto" title="Autopay on">Auto</span>`;
         const contentHtml = `
-          <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-harbor-border flex items-center justify-center text-lg" onclick="editBillFromList('${safeId}')">
+          <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-harbor-border flex items-center justify-center text-lg" data-bill-edit="${safeId}">
             <i class="fa-solid fa-file-invoice-dollar ${isPaid ? 'text-harbor-muted' : 'text-harbor-primary-light'}"></i>
           </div>
-          <div class="flex-1 min-w-0" onclick="editBillFromList('${safeId}')">
+          <div class="flex-1 min-w-0" data-bill-edit="${safeId}">
             <div class="font-medium leading-tight ${isPaid ? 'text-harbor-muted' : ''}">${safeName}</div>
             <div class="flex items-center gap-x-1.5 mt-0.5 flex-wrap">
               <span class="text-[10px] px-1.5 py-px rounded-full ${style.badge}">${style.label}</span>
@@ -28801,17 +28908,12 @@
               <span class="text-[11px] text-harbor-muted">${escapeBriefHtml(dueLabel)}</span>
             </div>
           </div>
-          <div class="bill-amount-stack ${isPaid ? 'bill-row-is-paid' : ''}" onclick="editBillFromList('${safeId}')">
+          <div class="bill-amount-stack ${isPaid ? 'bill-row-is-paid' : ''}" data-bill-edit="${safeId}">
             ${amtParts.main ? `<div class="bill-amount-main">${escapeBriefHtml(amtParts.main)}</div>` : ''}
             ${amtParts.sub ? `<div class="bill-amount-sub">${escapeBriefHtml(amtParts.sub)}</div>` : ''}
           </div>
-          <div class="row-inline-actions flex flex-col gap-y-1 items-end flex-shrink-0">
-            ${!isPaid && !isAutopay
-              ? `<button type="button" onclick="event.stopImmediatePropagation(); markBillPaid('${safeId}')" class="text-[10px] px-2 py-1 bg-harbor-primary hover:bg-harbor-primary-light text-white rounded-xl font-medium">Paid</button>`
-              : isPaid
-                ? `<button type="button" onclick="event.stopImmediatePropagation(); markBillUnpaid('${safeId}')" class="text-[10px] px-2 py-1 rounded-xl border border-harbor-border text-harbor-muted font-medium">Undo</button>`
-                : `<span class="text-[10px] text-harbor-muted font-medium">Auto</span>`}
-            <button type="button" onclick="event.stopImmediatePropagation(); editBillFromList('${safeId}')" class="text-[10px] text-harbor-primary-light font-medium">Edit</button>
+          <div class="bill-pay-actions">
+            ${payChip}
           </div>
         `;
         row.innerHTML = buildSwipeRowHtml(
@@ -28819,6 +28921,23 @@
           contentHtml,
           `bg-harbor-surface border border-harbor-border rounded-3xl px-4 py-3 flex items-center gap-x-3 ${isPaid ? 'opacity-80' : ''}`
         );
+        row.querySelectorAll('[data-bill-edit]').forEach(el => {
+          el.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            editBillFromList(bill.id);
+          });
+        });
+        row.querySelector('[data-bill-pay]')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          markBillPaid(bill.id);
+        });
+        row.querySelector('[data-bill-unpay]')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          markBillUnpaid(bill.id);
+        });
         container.appendChild(row);
       });
       bindSwipeRows(container);
@@ -42844,7 +42963,9 @@
         if (action === 'view') showProjections(id);
         else if (action === 'delete') deleteStreak(id, null);
       } else if (type === 'bill') {
-        if (action === 'edit') {
+        if (action === 'paid') {
+          markBillPaid(id);
+        } else if (action === 'edit') {
           if (row.closest('#summary-kpi-detail-modal')) closeSummaryKpiDetail();
           editBillFromList(id);
         } else if (action === 'delete') {
@@ -42914,7 +43035,7 @@
       // (Label used to be a <button class="grocery-check-hit"> which blocked all swipes.)
       if (t.closest('.grocery-check-hit--label, .grocery-name-hit')) return false;
       return !!t.closest(
-        'button, a, input, textarea, select, [data-sync-health], .row-inline-actions, .habit-defer-actions, .habit-overdue-btn, .swipe-action, .grocery-check-hit, .budget-tx-edit-btn, [data-budget-edit]'
+        'button, a, input, textarea, select, [data-sync-health], .row-inline-actions, .habit-defer-actions, .habit-overdue-btn, .bill-pay-actions, .bill-pay-btn, .swipe-action, .grocery-check-hit, .budget-tx-edit-btn, [data-budget-edit]'
       );
     }
 
@@ -43340,6 +43461,20 @@
       const selectCheck = selectMode
         ? `<span class="habit-select-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>`
         : '';
+      // Later + Skip only on OVERDUE Taskers (not due-today / active-until-overdue)
+      const isOverdueTasker = !completed && !selectMode && showOverdueActions
+        && !isBudgetReview
+        && typeof isHabitOverdue === 'function'
+        && isHabitOverdue(habit);
+      const overdueActionsHtml = isOverdueTasker
+        ? `<div class="habit-defer-actions" onclick="event.stopPropagation()">
+            <button type="button" class="habit-overdue-btn is-soft" title="Later today — Coming up (keeps streak)"
+              onclick="event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();deferHabitToLater('${safeHabitId}', event)">Later</button>
+            <button type="button" class="habit-overdue-btn is-skip" title="Skip for today (breaks streak on habits)"
+              onclick="event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();skipOrClearToday('${safeHabitId}', event)">Skip</button>
+          </div>`
+        : '';
+
       const contentHtml = `
         ${selectCheck}
         <div class="flex-1 min-w-0 habit-main-tap">
@@ -43366,19 +43501,6 @@
         <div class="text-right flex flex-col items-end justify-between gap-1 self-stretch">
           ${habit.target_value ? `<div class="text-xs text-harbor-primary-light font-semibold tabular-nums">${habit.target_value} ${habit.unit}</div>` : ''}
           ${syncedStats ? `<div class="text-[9px] harbor-tag-sync mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
-          ${(() => {
-            // Skip + Later chips — shown for overdue OR due-today incomplete (not completed)
-            const showDefer = !completed && !selectMode && showOverdueActions
-              && !isBudgetReview
-              && (dueToday || (typeof isHabitOverdue === 'function' && isHabitOverdue(habit)));
-            if (!showDefer) return '';
-            return `<div class="habit-defer-actions" onclick="event.stopPropagation()">
-              <button type="button" class="habit-overdue-btn is-soft" title="Do later today — moves to Coming up (keeps streak)"
-                onclick="event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();deferHabitToLater('${safeHabitId}', event)">Later</button>
-              <button type="button" class="habit-overdue-btn is-skip" title="Skip for today — clears the queue (breaks streak on habits)"
-                onclick="event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();skipOrClearToday('${safeHabitId}', event)">Skip</button>
-            </div>`;
-          })()}
           <div class="row-inline-actions flex flex-wrap items-center justify-end gap-1.5 mt-auto" onclick="event.stopPropagation()">
             ${typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit) && !completed
               ? `<button type="button" onclick="event.stopImmediatePropagation(); openBudgetFromReviewTask()" class="text-[10px] text-harbor-primary-light font-semibold px-1" title="Open Budget">Budget</button>
@@ -43395,10 +43517,11 @@
             <button type="button" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); deleteHabitFromToday('${safeHabitId}', event)" class="habit-row-action-btn is-delete" title="Remove task">Delete</button>
           </div>
         </div>
+        ${overdueActionsHtml}
       `;
 
       row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
-        `habit-card harbor-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 active:bg-harbor-raised${showMuted || completed ? ' opacity-45' : ''}${completed ? ' is-completed-today' : ''}${!completed && !selectMode ? ' is-tap-complete' : ''}${isSelected ? ' is-task-selected' : ''}`);
+        `habit-card harbor-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 active:bg-harbor-raised${showMuted || completed ? ' opacity-45' : ''}${completed ? ' is-completed-today' : ''}${!completed && !selectMode ? ' is-tap-complete' : ''}${isSelected ? ' is-task-selected' : ''}${isOverdueTasker ? ' has-overdue-actions' : ''}`);
       const content = row.querySelector('.swipe-row-content');
       content?.addEventListener('contextmenu', (e) => {
         e.preventDefault();
@@ -56492,7 +56615,7 @@
           : cloudOk
             ? `<div class="text-[11px] font-semibold text-orange-500 mb-2" id="hc-conn-status">Disconnected</div>`
             : `<div class="text-[11px] font-semibold text-orange-500 mb-2" id="hc-conn-status">Disconnected</div>
-               <div class="text-[10px] text-harbor-muted mb-2 leading-snug">Cloud keys missing on this build. Add <code class="text-harbor-text">docs/supabase/config.local.js</code> before shipping.</div>`;
+               <div class="text-[10px] text-harbor-muted mb-2 leading-snug">Cloud keys missing on this build. Production needs <code class="text-harbor-text">docs/supabase/config.public.js</code>.</div>`;
 
         const mode = modal.dataset.hcMode || 'signin';
         const emailPanel = (() => {
@@ -56659,7 +56782,7 @@
         };
         const requireCloud = () => {
           if (!cloudOk || typeof HarborCloud === 'undefined') {
-            setAuthFeedback('Cloud is not configured on this build. Add docs/supabase/config.local.js and reload.', 'err');
+            setAuthFeedback('Cloud is not configured on this build. Add docs/supabase/config.public.js and reload.', 'err');
             return false;
           }
           return true;
@@ -62557,12 +62680,15 @@
 
       const renderHome = () => {
         titleEl.textContent = 'Calendars';
-        subEl.textContent = 'One tap to sync what’s on this phone.';
         const feeds = getCalendarFeeds();
         const imported = state.settings.importedCalendarEvents?.length || 0;
         const deviceOn = isDeviceCalendarConnected();
         const deviceN = (state.settings.deviceCalendarEvents || []).length;
         const native = isHarborNativeApp();
+        // Web: Google + files. Native: phone calendars first (EventKit).
+        subEl.textContent = native
+          ? 'One tap to sync what’s on this phone.'
+          : 'Connect Google or import a calendar file — same Schedule as the app.';
         const lastSync = state.settings.deviceCalendarLastSyncedAt
           ? (() => {
               try {
@@ -62571,8 +62697,7 @@
               } catch (_) { return ''; }
             })()
           : '';
-        body.innerHTML = `
-          ${deviceOn ? `
+        const phoneBlock = deviceOn ? `
             <div class="mb-4 px-3.5 py-3 rounded-2xl bg-harbor-raised border border-harbor-border">
               <div class="flex items-start gap-2.5">
                 <span class="cal-connect-provider-icon is-apple flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
@@ -62602,13 +62727,19 @@
                   Harbor asks for calendar permission, then shows events from calendars already on this phone — iCloud, Google, work, and more. Nothing leaves your device.
                 </p>
               ` : `
-                <div class="px-3.5 py-3 rounded-2xl bg-harbor-raised border border-harbor-border text-[12px] text-harbor-muted leading-relaxed">
-                  <strong class="text-harbor-text">Sync iPhone calendars</strong> works in the Harbor app on your phone (TestFlight / App Store). Open this screen there and tap Sync.
+                <div class="px-3.5 py-3 rounded-2xl bg-harbor-raised/80 border border-harbor-border text-[12px] text-harbor-muted leading-relaxed">
+                  <div class="flex items-start gap-2.5">
+                    <span class="w-8 h-8 rounded-xl bg-harbor-surface border border-harbor-border flex items-center justify-center flex-shrink-0 text-harbor-primary-light" aria-hidden="true"><i class="fa-solid fa-mobile-screen"></i></span>
+                    <div>
+                      <div class="text-sm font-semibold text-harbor-text">iPhone calendars</div>
+                      <p class="mt-0.5 leading-snug">Syncing calendars already on your phone works in the <strong class="text-harbor-text">Harbor iPhone app</strong> (TestFlight / App Store). On the web, use <strong class="text-harbor-text">Google Calendar</strong> or a calendar file below.</p>
+                    </div>
+                  </div>
                 </div>
               `}
             </div>
-          `}
-
+          `;
+        const googleBlock = `
           <div class="mb-4" id="cal-oauth-section">
             <div class="text-[10px] font-semibold uppercase tracking-wide text-harbor-muted mb-1.5 flex items-center gap-1.5">
               <span>Google Calendar</span>
@@ -62620,9 +62751,15 @@
               </div>
             </div>
             <p class="text-[10px] text-harbor-muted mt-2 leading-relaxed px-0.5">
-              Prefer phone sync above when calendars are already on this device. Google connect is for calendars that aren’t on the phone yet. Outlook uses phone calendars or a calendar file.
+              ${native
+                ? 'Prefer phone sync above when calendars are already on this device. Google connect is for calendars that aren’t on the phone yet. Outlook uses phone calendars or a calendar file.'
+                : 'Best path on the web: sign in under Account &amp; cloud, then connect Google here (Harbor Pro). Free option: import a calendar file under More options.'}
             </p>
           </div>
+        `;
+        // Native: phone first. Web: Google first so OAuth is the clear path.
+        body.innerHTML = `
+          ${native ? phoneBlock + googleBlock : googleBlock + phoneBlock}
 
           ${(feeds.length || imported) ? `
             <div class="mb-4">
@@ -62643,7 +62780,9 @@
             </summary>
             <div class="px-3 pb-3 space-y-2 border-t border-harbor-border/70 pt-2.5">
               <p class="text-[10px] text-harbor-muted leading-relaxed px-0.5">
-                Optional. Most people only need Sync above — if calendars are already on this iPhone, you’re done.
+                ${native
+                  ? 'Optional. Most people only need Sync above — if calendars are already on this iPhone, you’re done.'
+                  : 'Import a .ics file or paste a public calendar link. Good free option when you’re not using Google connect.'}
               </p>
               <button type="button" class="cal-connect-provider" data-cal-view="file">
                 <span class="cal-connect-provider-icon is-file" aria-hidden="true"><i class="fa-solid fa-file-import"></i></span>

@@ -53,7 +53,7 @@
 
     async _doInit() {
       if (!this.configured()) {
-        log('Not configured — add docs/supabase/config.local.js');
+        log('Not configured — add docs/supabase/config.public.js or config.local.js');
         return false;
       }
       const createClient = global.supabase && global.supabase.createClient;

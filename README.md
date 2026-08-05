@@ -39,7 +39,7 @@ Your repo: **https://github.com/SANDETAY/Harbor**
 1. On GitHub, open the repo → **Settings** → **Pages**
 2. Under **Build and deployment**, set **Source** to **GitHub Actions**
 3. Push to `main` — the workflow in `.github/workflows/deploy-pages.yml` deploys automatically
-4. After 1–2 minutes, share: **https://sandetay.github.io/Harbor/**
+4. After 1–2 minutes, share: **https://harborlife.app/**
 
 Every `git push` to `main` updates the live site. Testers can also **Add to Home Screen** on iPhone/Android for a full-screen app experience.
 
@@ -137,7 +137,7 @@ Rythm/   (repo: SANDETAY/Harbor)
 | [privacy.html](privacy.html) | Live privacy page for store listings |
 | [docs/SHIPPING.md](docs/SHIPPING.md) | Capacitor, TestFlight, Play |
 
-Privacy URL after Pages deploy: **https://sandetay.github.io/Harbor/privacy.html**
+Privacy URL after Pages deploy: **https://harborlife.app/privacy.html**
 
 ### Capacitor (needs Node.js 20+)
 
