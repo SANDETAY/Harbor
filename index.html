@@ -15847,7 +15847,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 509;
+    const HARBOR_BUILD_NUMBER = 510;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -15901,6 +15901,21 @@
      */
     const HARBOR_CHANGELOG = [
       {
+        version: '1.0',
+        date: '2026-08-06',
+        title: 'Professional widgets · live calendar · build 510',
+        intro: 'Home Screen widgets look sharper, drop past events correctly, and refresh next appointments from your calendars without reopening Harbor.',
+        sections: [{
+          heading: 'Widgets',
+          items: [
+            'Past events no longer stick as “in 1m” after they start',
+            'Military times like 0900 parse correctly for countdowns',
+            'Widgets re-read device calendars on refresh (EventKit) so Next up stays current',
+            'Cleaner Calendar/Reminders-style layout and typography'
+          ]
+        }]
+      },
+            {
         version: '1.0',
         date: '2026-08-05',
         title: 'Taskers sync web ↔ app · build 509',
@@ -18410,27 +18425,31 @@
           return am - bm;
         });
         const now = typeof getNowMinutes === 'function' ? getNowMinutes() : 0;
-        // Prefer remaining (upcoming) events; if all past, still show today's next-ish
+        // Only events that have not ended (start+duration still ahead) — never stale “in 1m”
         const upcoming = raw.filter(ev => {
           const start = typeof parseTimeMins === 'function' ? parseTimeMins(ev.time) : NaN;
-          return !Number.isFinite(start) || start >= now - 15;
+          if (!Number.isFinite(start)) return true;
+          const dur = Math.max(5, Number(ev.durationMin) || Number(ev.duration) || 45);
+          return start + dur > now;
         });
-        const pick = upcoming.length ? upcoming : raw;
-        events = pick.slice(0, 4).map(ev => {
+        events = upcoming.slice(0, 4).map(ev => {
           const start = typeof parseTimeMins === 'function' ? parseTimeMins(ev.time) : NaN;
+          const dur = Math.max(5, Number(ev.durationMin) || Number(ev.duration) || 45);
           let who = '';
           try {
             const p = typeof getHouseholdPerson === 'function' ? getHouseholdPerson(ev.personId) : null;
             if (p?.name && !/^(me|you)$/i.test(p.name)) who = p.name;
           } catch (_) {}
+          const title = String(ev.title || '').trim() || 'Event';
           return {
-            title: String(ev.title || 'Event').slice(0, 48),
+            title: title.slice(0, 48),
             time: ev.time && ev.time !== '—'
               ? (typeof formatScheduleEventTime === 'function' ? formatScheduleEventTime(ev.time) : ev.time)
               : '',
-            // Absolute start (minutes from midnight) so widgets can recompute “in Xm” live
+            // Absolute start/end (minutes from midnight) so widgets recompute live without reopening the app
             startMins: Number.isFinite(start) ? start : null,
-            minsUntil: Number.isFinite(start) ? Math.max(0, start - now) : null,
+            endMins: Number.isFinite(start) ? start + dur : null,
+            minsUntil: Number.isFinite(start) ? (start - now) : null,
             who
           };
         });
@@ -34293,6 +34312,15 @@
         if (!Number.isFinite(h) || !Number.isFinite(min)) return 0;
         return Math.max(0, Math.min(24 * 60 - 1, h * 60 + min));
       }
+      // Military compact: "0900", "1430" (common calendar export / display)
+      const mMil = s.match(/^(\d{1,2})(\d{2})$/);
+      if (mMil && s.length >= 3 && s.length <= 4) {
+        const h = parseInt(mMil[1], 10);
+        const min = parseInt(mMil[2], 10) || 0;
+        if (Number.isFinite(h) && Number.isFinite(min) && h >= 0 && h < 24 && min >= 0 && min < 60) {
+          return h * 60 + min;
+        }
+      }
       const nOnly = Number(s);
       if (Number.isFinite(nOnly) && nOnly >= 0 && nOnly < 24) return Math.round(nOnly * 60);
       return 0;
@@ -36162,14 +36190,21 @@
 
     function formatScheduleEventTime(time24) {
       if (!time24) return '—';
-      const [h, m] = time24.split(':').map(Number);
-      if (isNaN(h)) return time24;
+      // Prefer parseTimeMins so "0900" / "9:00 AM" all format cleanly
+      let mins = typeof parseTimeMins === 'function' ? parseTimeMins(time24) : NaN;
+      if (!Number.isFinite(mins) || mins < 0) {
+        const [h, m] = String(time24).split(':').map(Number);
+        if (isNaN(h)) return String(time24);
+        mins = h * 60 + (m || 0);
+      }
+      const h = Math.floor(mins / 60) % 24;
+      const m = mins % 60;
       if (getEventTimeFormat() === '24h') {
-        return `${String(h).padStart(2, '0')}:${String(m || 0).padStart(2, '0')}`;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       }
       const ampm = h >= 12 ? 'PM' : 'AM';
       const h12 = h % 12 || 12;
-      const min = String(m || 0).padStart(2, '0');
+      const min = String(m).padStart(2, '0');
       return min === '00' ? `${h12} ${ampm}` : `${h12}:${min} ${ampm}`;
     }
 

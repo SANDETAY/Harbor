@@ -17,6 +17,11 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- Live calendar for widgets (same permission as the main app; no reopen required) -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>Harbor widgets show your next appointments from calendars on this iPhone. Calendar data stays on your device.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Harbor widgets show your next appointments from calendars on this iPhone. Calendar data stays on your device.</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>

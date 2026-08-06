@@ -27,12 +27,12 @@ struct TodayWidgetView: View {
         let tasks = Array((snap.tasks ?? []).prefix(limit))
         let open = snap.tasksOpen ?? tasks.count
 
-        VStack(alignment: .leading, spacing: family == .systemSmall ? 6 : 8) {
+        VStack(alignment: .leading, spacing: family == .systemSmall ? 8 : 10) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                HarborCaption(text: "Today")
+                HarborCaption(text: "Tasks")
                 Spacer(minLength: 4)
                 Text("\(open)")
-                    .font(.system(size: family == .systemSmall ? 18 : 22, weight: .semibold, design: .rounded))
+                    .font(.system(size: family == .systemSmall ? 20 : 24, weight: .semibold, design: .rounded))
                     .foregroundStyle(HarborWidgetTheme.primary)
                     .monospacedDigit()
                     .minimumScaleFactor(0.8)
@@ -41,15 +41,15 @@ struct TodayWidgetView: View {
 
             if tasks.isEmpty {
                 Spacer(minLength: 0)
-                HarborEmptyLine(text: open == 0 ? "All clear" : "Open Harbor")
+                HarborEmptyLine(text: open == 0 ? "All clear for now" : "Open Harbor")
                 Spacer(minLength: 0)
             } else {
-                VStack(alignment: .leading, spacing: family == .systemSmall ? 5 : 7) {
+                VStack(alignment: .leading, spacing: family == .systemSmall ? 7 : 9) {
                     ForEach(Array(tasks.enumerated()), id: \.offset) { _, t in
-                        HStack(alignment: .center, spacing: 8) {
+                        HStack(alignment: .center, spacing: 9) {
                             Circle()
-                                .strokeBorder(HarborWidgetTheme.accent.opacity(0.65), lineWidth: 1.5)
-                                .frame(width: 11, height: 11)
+                                .strokeBorder(HarborWidgetTheme.accent.opacity(0.75), lineWidth: 1.6)
+                                .frame(width: 12, height: 12)
                             Text(t.displayTitle)
                                 .font(.system(size: HarborWidgetTheme.bodySize(for: family), weight: .medium))
                                 .foregroundStyle(HarborWidgetTheme.primary)
