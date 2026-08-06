@@ -10,7 +10,10 @@ Skim the **Harbor-specific** notes; the rest is industry standard.
 | Term | Plain English | Harbor note |
 |------|----------------|-------------|
 | **PWA** | Progressive Web App — a website that can install and work offline-ish | Harbor’s core is a PWA (`index.html` + `sw.js`) |
-| **Service worker** | Background script that caches files for offline / faster loads | `sw.js`; cache name must bump with builds |
+| **Website** (Brittany language) | Changes for the **live web only** | `harborlife.app` / Pages — do **not** mix with app-only work unless she says both |
+| **App** (Brittany language) | Changes for the **iPhone app only** | Capacitor / TestFlight / store — do **not** treat as a website-only deploy |
+| **Ship Harbor** | Full **app** path: Xcode archive → App Store Connect → TestFlight | **Never** website/Pages deploy; skill: `.grok/skills/ship-harbor/` |
+| **Service worker** | Background script that caches files for offline / faster loads | `sw.js`; cache name must bump with builds (web); native does not rely on it |
 | **Capacitor** | Toolkit that wraps a web app in a real iOS/Android app | Active: `ios/` + `capacitor.config.json`. Android parked in `_archive/android/` |
 | **Native shell** | The thin real-app wrapper around the web UI | Xcode for iOS (Android Studio later) |
 | **Bundle ID** | Unique app ID on Apple/Google | `com.sandetay.harbor` |
@@ -36,6 +39,7 @@ Skim the **Harbor-specific** notes; the rest is industry standard.
 
 | Term | Plain English | Harbor note |
 |------|----------------|-------------|
+| **Tasker** | Any actionable item on the Task tab | **Umbrella term** for **tasks + habits + chores**. When someone says “change Taskers,” apply to all three kinds unless they specify one. |
 | **Splash screen** | Logo/color shown while the app boots | Capacitor SplashScreen + native launch image |
 | **Toast** | Small temporary message (bottom/top), auto-dismisses | e.g. “Undo” after completing a task |
 | **Chip** | Small rounded tappable label/filter pill | Energy, filters, categories |

@@ -1,7 +1,7 @@
 /* Harbor service worker — cache-bust + activate promptly for testers.
  * Capacitor iOS does not rely on this; web/PWA does.
  */
-const CACHE_NAME = 'harbor-v506';
+const CACHE_NAME = 'harbor-v509';
 
 self.addEventListener('install', (event) => {
   // Activate new SW immediately on install

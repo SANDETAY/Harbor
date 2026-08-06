@@ -1,18 +1,28 @@
 ---
 name: ship-harbor
 description: >
-  Archive Harbor for iOS and distribute/upload to App Store Connect so it appears in TestFlight.
+  App-only: archive Harbor in Xcode and upload to App Store Connect for TestFlight.
   Use when the user says "Ship Harbor", "ship harbor", "Ship Harbor to TestFlight", "archive and
   distribute Harbor", "upload Harbor to App Store Connect", or runs /ship-harbor.
-  Single home is always ~/Desktop/Harbor. Prepares web→native, bumps build if needed, archives,
-  and uploads for TestFlight distribution.
+  Single home is always ~/Desktop/Harbor. Does NOT deploy the website (harborlife.app / GitHub Pages).
+  Prepares web assets into the native shell, bumps app build if needed, archives, and uploads for TestFlight.
 ---
 
-# Ship Harbor
+# Ship Harbor (app / TestFlight only)
 
 **Trigger phrases:** `Ship Harbor`, `/ship-harbor`, ship to TestFlight, archive + distribute Harbor.
 
-When this skill is invoked, **execute the full ship** (do not only print the checklist) unless the user said “dry run” or “don’t upload yet”.
+## Scope (critical)
+
+| In scope | Out of scope |
+|----------|----------------|
+| iOS Capacitor app | **Website** (`harborlife.app`, GitHub Pages) |
+| `cap prepare` / `cap sync ios` → `native-www` + Xcode | Pushing `main` for Pages deploy |
+| Archive → App Store Connect → **TestFlight** | Android / Play (parked) |
+
+**Ship Harbor means the phone app only.** Brittany’s **website** work is separate — never treat “Ship Harbor” as a web deploy. Copying `index.html` into the app shell for the archive is expected; that is not publishing the live site.
+
+When this skill is invoked, **execute the full app ship** (do not only print the checklist) unless the user said “dry run” or “don’t upload yet”.
 
 ## Absolute home (never use Projects)
 
@@ -130,6 +140,7 @@ Tell the user:
 
 ## Safety rules
 
+- **Do not** deploy GitHub Pages / harborlife.app as part of Ship Harbor (app-only).  
 - **Do not** run hard-reset / git wipe scripts as part of ship.  
 - **Do not** delete `private/` or `docs/supabase/config.local.js`.  
 - **Do not** ship from any path except Desktop Harbor.  
@@ -144,4 +155,4 @@ Tell the user:
 
 ## Done definition
 
-Harbor is **shipped** when an archive for build **N** has been **uploaded to App Store Connect** (or the user has Organizer open on a successful archive with clear “click Upload” if auth blocked you). Partial prepare without archive is **not** done.
+Harbor **app** is shipped when an archive for build **N** has been **uploaded to App Store Connect** for TestFlight (or the user has Organizer open on a successful archive with clear “click Upload” if auth blocked you). Partial prepare without archive is **not** done. Website status is irrelevant to this skill.

@@ -11567,12 +11567,9 @@
       text-transform: none;
       letter-spacing: 0;
     }
-    body.is-first-week .later-routines-block,
-    body.is-first-week #later-routines-section,
-    body.is-first-week [data-section="coming-up"],
-    body.is-first-week .coming-up-section {
-      display: none !important;
-    }
+    /* First week: keep Coming up discoverable when it has items (never hide a
+       parked / Later / person-filtered Tasker — that made tasks “vanish”).
+       Empty Coming up still isn’t rendered by JS. */
     body.is-first-week .first-week-card {
       margin-bottom: 0.55rem;
       padding: 0.6rem 0.7rem 0.5rem;
@@ -15850,7 +15847,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 506;
+    const HARBOR_BUILD_NUMBER = 509;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -15903,6 +15900,26 @@
      * Product train is 1.0 — day-to-day ships bump HARBOR_BUILD_NUMBER only.
      */
     const HARBOR_CHANGELOG = [
+      {
+        version: '1.0',
+        date: '2026-08-05',
+        title: 'Taskers sync web ↔ app · build 509',
+        intro: 'Website and app share the same build. Complete, delete, or edit a Tasker on either — the other catches up in seconds when you’re signed in.',
+        sections: [{
+          heading: 'Web ↔ app',
+          items: [
+            'Near-live Tasker sync: push within ~½s of a change; pull about every 5s while open',
+            'Completes and deletes push immediately so the other device sees them on the next poll',
+            'Same signed-in account required on website and app'
+          ]
+        }, {
+          heading: 'Taskers',
+          items: [
+            'Light one-time tasks stay on the active Task list',
+            'People filter and Coming up no longer hide work with nowhere to find it'
+          ]
+        }]
+      },
       {
         version: '1.0',
         date: '2026-08-05',
@@ -18284,7 +18301,8 @@
     let _lifeShareSyncing = false;
 
     /** Persist state. Returns true on success, false if storage failed (quota/private mode).
-     *  opts.skipLifeShare — don't schedule cloud Life push (used after pull). */
+     *  opts.skipLifeShare — don't schedule cloud Life push (used after pull).
+     *  opts.skipTaskerMirror — don't schedule personal Tasker web↔app sync. */
     function saveState(opts) {
       try {
         if (state.settings?.onboarded) {
@@ -18295,6 +18313,14 @@
         try { if (typeof pushHarborWidgetSnapshot === 'function') pushHarborWidgetSnapshot(); } catch (_) { /* ignore */ }
         if (!(opts && opts.skipLifeShare)) {
           try { if (typeof scheduleHouseholdLifeSharePush === 'function') scheduleHouseholdLifeSharePush(); } catch (_) { /* ignore */ }
+        }
+        // Personal Tasker mirror (web ↔ app) — independent of household share
+        if (!(opts && opts.skipTaskerMirror)) {
+          try {
+            if (typeof scheduleTaskerMirrorPush === 'function') {
+              scheduleTaskerMirrorPush(opts && opts.taskerImmediate ? { immediate: true } : undefined);
+            }
+          } catch (_) { /* ignore */ }
         }
         return true;
       } catch (err) {
@@ -18651,12 +18677,14 @@
         } else {
           startLiveClock();
           try { if (typeof scheduleHouseholdLifeSharePullOnResume === 'function') scheduleHouseholdLifeSharePullOnResume(); } catch (_) {}
+          try { if (typeof pullAndMergeTaskerMirror === 'function') pullAndMergeTaskerMirror({ silent: true }).catch(() => {}); } catch (_) {}
         }
       });
       window.addEventListener('pageshow', () => {
         kick(true);
         startLiveClock();
         try { if (typeof scheduleHouseholdLifeSharePullOnResume === 'function') scheduleHouseholdLifeSharePullOnResume(); } catch (_) {}
+        try { if (typeof pullAndMergeTaskerMirror === 'function') pullAndMergeTaskerMirror({ silent: true }).catch(() => {}); } catch (_) {}
       });
       window.addEventListener('pagehide', () => {
         kick(true);
@@ -18670,6 +18698,8 @@
         kick(true);
         startLiveClock();
         try { if (typeof scheduleHouseholdLifeSharePullOnResume === 'function') scheduleHouseholdLifeSharePullOnResume(); } catch (_) {}
+        try { if (typeof startTaskerMirrorPolling === 'function') startTaskerMirrorPolling(); } catch (_) {}
+        try { if (typeof pullAndMergeTaskerMirror === 'function') pullAndMergeTaskerMirror({ silent: true }).catch(() => {}); } catch (_) {}
       }, 4000);
       // Calendar-day rollover while app stays open (vitamins/dailies must reappear at midnight)
       let _harborDayWatch = typeof todayStr === 'function' ? todayStr() : '';
@@ -18698,6 +18728,7 @@
             if (isActive) {
               startLiveClock();
               try { if (typeof scheduleHouseholdLifeSharePullOnResume === 'function') scheduleHouseholdLifeSharePullOnResume(); } catch (_) {}
+              try { if (typeof pullAndMergeTaskerMirror === 'function') pullAndMergeTaskerMirror({ silent: true }).catch(() => {}); } catch (_) {}
             } else stopLiveClock();
           });
           App.addListener('pause', () => { kick(true); stopLiveClock(); });
@@ -18705,6 +18736,7 @@
             kick(true);
             startLiveClock();
             try { if (typeof scheduleHouseholdLifeSharePullOnResume === 'function') scheduleHouseholdLifeSharePullOnResume(); } catch (_) {}
+            try { if (typeof pullAndMergeTaskerMirror === 'function') pullAndMergeTaskerMirror({ silent: true }).catch(() => {}); } catch (_) {}
           });
         }
       } catch (_) {}
@@ -20558,8 +20590,53 @@
       const f = filter || 'me';
       if (f === 'all') return true;
       const ids = getHabitPersonIds(habit);
-      if (f === 'me') return ids.includes('me');
+      if (f === 'me') {
+        // Me includes tags that resolve to the signed-in user (partner named “Brittany”, etc.)
+        try {
+          if (typeof habitAssignedToCurrentUser === 'function' && habitAssignedToCurrentUser(habit)) {
+            return true;
+          }
+        } catch (_) { /* fall through */ }
+        return ids.includes('me');
+      }
       return ids.includes(String(f));
+    }
+
+    /**
+     * True when Task’s person filter would hide this habit from the active list.
+     * Used so filtered-out due tasks still land under Coming up (never vanish).
+     */
+    function isHiddenByTaskPersonFilter(habit) {
+      try {
+        if (!habit) return false;
+        if (typeof householdHasMultiplePeople === 'function' && !householdHasMultiplePeople()) return false;
+        const filter = typeof getTaskPersonFilter === 'function' ? getTaskPersonFilter() : 'me';
+        if (!filter || filter === 'all') return false;
+        if (typeof matchesHabitPersonFilter === 'function') {
+          return !matchesHabitPersonFilter(habit, filter);
+        }
+        return false;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    /**
+     * Light one-time / short Taskers should never leave the main Task list for
+     * “plan ahead” parking (e.g. “buy shoes · 15 min · medium”).
+     */
+    function isLightStayOnTaskHabit(habit) {
+      if (!habit) return false;
+      if (habit.parkOnSummary === true) return false; // explicit park still honored
+      if (habit.is_pro_reminder || String(habit.id || '').startsWith('pro-schedule-')) return false;
+      const mins = Number(habit.est_minutes) || 0;
+      const diff = Number(habit.difficulty) || 2;
+      const oneOff = typeof isOneOffTask === 'function' && isOneOffTask(habit);
+      // Short one-offs always stay; short non-project dailies/chores with low effort too
+      if (oneOff && mins > 0 && mins <= 30 && diff <= 2) return true;
+      if (oneOff && mins > 0 && mins <= 20) return true;
+      if (mins > 0 && mins <= 15 && diff <= 2) return true;
+      return false;
     }
     function getTaskPersonFilter() {
       return state.settings?.taskPersonFilter || 'me';
@@ -22162,6 +22239,13 @@
     let _lifeSharePollTimer = null;
     function scheduleHouseholdLifeSharePullOnResume() {
       try {
+        // Always try personal Tasker mirror on resume (web ↔ app), even without household
+        try {
+          if (typeof pullAndMergeTaskerMirror === 'function') {
+            pullAndMergeTaskerMirror({ silent: true }).catch(() => {});
+          }
+          if (typeof startTaskerMirrorPolling === 'function') startTaskerMirrorPolling();
+        } catch (_) { /* ignore */ }
         if (!isHouseholdLifeShareActive()) return;
         const ls = ensureLifeShareSettings();
         if (ls.autoSync === false) return;
@@ -23555,18 +23639,424 @@
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') {
             pullAndMergeCalendarMirror({ silent: true }).catch(() => {});
+            try { if (typeof pullAndMergeTaskerMirror === 'function') pullAndMergeTaskerMirror({ silent: true }).catch(() => {}); } catch (_) {}
           }
         });
       } catch (_) { /* ignore */ }
       try {
         window.addEventListener('focus', () => {
           pullAndMergeCalendarMirror({ silent: true }).catch(() => {});
+          try { if (typeof pullAndMergeTaskerMirror === 'function') pullAndMergeTaskerMirror({ silent: true }).catch(() => {}); } catch (_) {}
         });
       } catch (_) { /* ignore */ }
       // Quiet refresh while the tab stays open (website)
       _calendarMirrorPullTimer = setInterval(() => {
         pullAndMergeCalendarMirror({ silent: true }).catch(() => {});
       }, 5 * 60 * 1000);
+      try { if (typeof startTaskerMirrorPolling === 'function') startTaskerMirrorPolling(); } catch (_) { /* ignore */ }
+    }
+
+    // ==================== PERSONAL TASKER MIRROR (web ↔ app) ====================
+    // Same signed-in account: complete / delete / edit Taskers on either surface,
+    // then the other picks up on resume, focus, or a short poll.
+    let _taskerMirrorPushTimer = null;
+    let _taskerMirrorPullInFlight = false;
+    let _taskerMirrorPollTimer = null;
+    let _taskerMirrorPolling = false;
+    let _taskerMirrorLastPushAt = 0;
+
+    function getPersonalDeletedHabitIds() {
+      if (!state.settings) state.settings = {};
+      if (!Array.isArray(state.settings.personalDeletedHabitIds)) {
+        state.settings.personalDeletedHabitIds = [];
+      }
+      return state.settings.personalDeletedHabitIds;
+    }
+
+    /** Soft-delete id so the other device does not re-import this Tasker. */
+    function recordPersonalHabitTombstone(habitId) {
+      if (habitId == null || habitId === '') return;
+      const id = String(habitId);
+      const list = getPersonalDeletedHabitIds();
+      if (!list.includes(id)) {
+        list.push(id);
+        if (list.length > 300) {
+          state.settings.personalDeletedHabitIds = list.slice(-300);
+        }
+      }
+    }
+
+    /** User re-created a Tasker with the same id — allow it on other devices again. */
+    function clearPersonalHabitTombstone(habitId) {
+      if (habitId == null) return;
+      const id = String(habitId);
+      const list = getPersonalDeletedHabitIds();
+      const next = list.filter((x) => String(x) !== id);
+      if (next.length !== list.length) {
+        state.settings.personalDeletedHabitIds = next;
+      }
+    }
+
+    function mergeDeletedIdLists(a, b, cap = 300) {
+      const set = new Set([...(a || []), ...(b || [])].map(String).filter(Boolean));
+      return Array.from(set).slice(-cap);
+    }
+
+    function habitUpdatedMs(h) {
+      if (!h) return 0;
+      const t = Date.parse(h.updatedAt || h.updated_at || h.added_at || 0);
+      return Number.isFinite(t) ? t : 0;
+    }
+
+    function mergeSkipPassMaps(localMap, remoteMap) {
+      const out = {};
+      const keys = new Set([
+        ...Object.keys(localMap || {}),
+        ...Object.keys(remoteMap || {})
+      ]);
+      keys.forEach((hid) => {
+        const a = (localMap && localMap[hid]) || [];
+        const b = (remoteMap && remoteMap[hid]) || [];
+        const dates = [...new Set([...a, ...b].map(String).filter(Boolean))].sort();
+        if (dates.length) out[hid] = dates;
+      });
+      return out;
+    }
+
+    /**
+     * Merge habit rows by id. Prefer newer updatedAt; union personIds when both exist.
+     * Tombstoned ids are dropped.
+     */
+    function mergeHabitsForTaskerSync(localArr, remoteArr, tombSet) {
+      const tomb = tombSet instanceof Set ? tombSet : new Set((tombSet || []).map(String));
+      const map = new Map();
+      const put = (item) => {
+        if (!item || item.id == null) return;
+        const id = String(item.id);
+        if (tomb.has(id)) return;
+        const prev = map.get(id);
+        if (!prev) {
+          map.set(id, JSON.parse(JSON.stringify(item)));
+          return;
+        }
+        const pt = habitUpdatedMs(prev);
+        const rt = habitUpdatedMs(item);
+        let base;
+        if (rt > pt) base = { ...prev, ...item };
+        else if (pt > rt) base = { ...item, ...prev };
+        else base = { ...prev, ...item };
+        // Prefer non-empty titles / person lists
+        if (!base.title && (prev.title || item.title)) base.title = item.title || prev.title;
+        try {
+          if (typeof getHabitPersonIds === 'function') {
+            const ids = [...new Set([
+              ...getHabitPersonIds(prev),
+              ...getHabitPersonIds(item)
+            ].map(String).filter(Boolean))];
+            if (ids.length) {
+              base.personIds = ids;
+              base.personId = ids[0];
+            }
+          }
+        } catch (_) { /* ignore */ }
+        map.set(id, base);
+      };
+      (localArr || []).forEach(put);
+      (remoteArr || []).forEach(put);
+      return Array.from(map.values());
+    }
+
+    function buildTaskerMirrorSlice() {
+      const deleted = mergeDeletedIdLists(
+        getPersonalDeletedHabitIds(),
+        (typeof ensureLifeShareSettings === 'function'
+          ? (ensureLifeShareSettings().deletedHabitIds || [])
+          : [])
+      );
+      return {
+        v: 1,
+        mirroredAt: new Date().toISOString(),
+        habits: JSON.parse(JSON.stringify(state.habits || [])),
+        completions: JSON.parse(JSON.stringify(state.completions || {})),
+        habitSkips: JSON.parse(JSON.stringify(state.habitSkips || {})),
+        habitPasses: JSON.parse(JSON.stringify(state.habitPasses || {})),
+        deletedHabitIds: deleted
+      };
+    }
+
+    /**
+     * Apply remote Tasker slice into local state (merge, never full wipe).
+     * @returns {{ changed: boolean }}
+     */
+    function applyTaskerMirrorSlice(slice, opts = {}) {
+      if (!slice || typeof slice !== 'object') return { changed: false };
+      let changed = false;
+      const remoteDeleted = Array.isArray(slice.deletedHabitIds) ? slice.deletedHabitIds : [];
+      const localDeleted = getPersonalDeletedHabitIds().slice();
+      const mergedDeleted = mergeDeletedIdLists(localDeleted, remoteDeleted);
+      if (JSON.stringify(mergedDeleted) !== JSON.stringify(localDeleted)) {
+        state.settings.personalDeletedHabitIds = mergedDeleted;
+        changed = true;
+      }
+      // Fold into household tombstones too so household re-import can’t resurrect
+      try {
+        if (typeof ensureLifeShareSettings === 'function' && remoteDeleted.length) {
+          const ls = ensureLifeShareSettings();
+          const before = (ls.deletedHabitIds || []).slice();
+          ls.deletedHabitIds = typeof mergeDeletedHabitIdLists === 'function'
+            ? mergeDeletedHabitIdLists(ls.deletedHabitIds, remoteDeleted)
+            : mergeDeletedIdLists(ls.deletedHabitIds, remoteDeleted);
+          if (JSON.stringify(before) !== JSON.stringify(ls.deletedHabitIds)) changed = true;
+        }
+      } catch (_) { /* ignore */ }
+
+      const tomb = new Set(mergedDeleted.map(String));
+      // Drop locally deleted
+      if (tomb.size && Array.isArray(state.habits)) {
+        const kept = state.habits.filter((h) => h && !tomb.has(String(h.id)));
+        if (kept.length !== state.habits.length) {
+          state.habits = kept;
+          changed = true;
+        }
+      }
+
+      if (Array.isArray(slice.habits)) {
+        const next = mergeHabitsForTaskerSync(state.habits || [], slice.habits, tomb)
+          .filter((h) => h && !tomb.has(String(h.id)));
+        if (JSON.stringify(next) !== JSON.stringify(state.habits || [])) {
+          state.habits = next;
+          changed = true;
+        }
+      }
+
+      if (slice.completions && typeof slice.completions === 'object') {
+        // Drop completions for tombstoned habits
+        const remoteComps = { ...slice.completions };
+        tomb.forEach((id) => {
+          try { delete remoteComps[id]; } catch (_) {}
+        });
+        const next = typeof mergeCompletionsMaps === 'function'
+          ? mergeCompletionsMaps(state.completions || {}, remoteComps)
+          : { ...(state.completions || {}), ...remoteComps };
+        tomb.forEach((id) => {
+          try { delete next[id]; } catch (_) {}
+        });
+        if (JSON.stringify(next) !== JSON.stringify(state.completions || {})) {
+          state.completions = next;
+          changed = true;
+        }
+      }
+
+      if (slice.habitSkips && typeof slice.habitSkips === 'object') {
+        const next = mergeSkipPassMaps(state.habitSkips || {}, slice.habitSkips);
+        if (JSON.stringify(next) !== JSON.stringify(state.habitSkips || {})) {
+          state.habitSkips = next;
+          changed = true;
+        }
+      }
+      if (slice.habitPasses && typeof slice.habitPasses === 'object') {
+        const next = mergeSkipPassMaps(state.habitPasses || {}, slice.habitPasses);
+        if (JSON.stringify(next) !== JSON.stringify(state.habitPasses || {})) {
+          state.habitPasses = next;
+          changed = true;
+        }
+      }
+
+      if (changed && !opts.skipSave) {
+        try { saveState({ skipLifeShare: true, skipTaskerMirror: true }); } catch (_) { /* ignore */ }
+      }
+      return { changed };
+    }
+
+    function scheduleTaskerMirrorPush(opts = {}) {
+      try {
+        if (typeof HarborCloud === 'undefined' || !HarborCloud.configured?.() || !HarborCloud.isSignedIn?.()) {
+          return;
+        }
+      } catch (_) { return; }
+      if (_taskerMirrorPushTimer) clearTimeout(_taskerMirrorPushTimer);
+      // Completes/deletes use a short delay so the other device can pick up within ~1–2s of its poll
+      const delay = opts.immediate ? 150 : 400;
+      _taskerMirrorPushTimer = setTimeout(() => {
+        _taskerMirrorPushTimer = null;
+        pushTaskerMirrorToCloud().catch((err) => {
+          console.warn('[Harbor] tasker mirror push', err && err.message);
+        });
+      }, delay);
+    }
+
+    async function pushTaskerMirrorToCloud() {
+      try {
+        if (typeof HarborCloud === 'undefined' || !HarborCloud.configured?.() || !HarborCloud.isSignedIn?.()) {
+          return null;
+        }
+        await HarborCloud.init();
+        const localSlice = buildTaskerMirrorSlice();
+        let basePayload = null;
+        try {
+          const row = await HarborCloud.pullSnapshot();
+          if (row && row.payload) {
+            basePayload = typeof row.payload === 'string' ? JSON.parse(row.payload) : row.payload;
+          }
+        } catch (_) { /* first push may be empty */ }
+
+        let st = basePayload ? (typeof extractImportState === 'function' ? extractImportState(basePayload) : null) : null;
+        if (!st || typeof st !== 'object') {
+          st = JSON.parse(JSON.stringify(state));
+        }
+        // Merge our live Taskers into the snapshot state
+        const tomb = new Set((localSlice.deletedHabitIds || []).map(String));
+        const remoteSlice = (basePayload && basePayload.taskerMirror && typeof basePayload.taskerMirror === 'object')
+          ? basePayload.taskerMirror
+          : {
+              habits: st.habits || [],
+              completions: st.completions || {},
+              habitSkips: st.habitSkips || {},
+              habitPasses: st.habitPasses || {},
+              deletedHabitIds: st.settings?.personalDeletedHabitIds || []
+            };
+        const mergedDeleted = mergeDeletedIdLists(remoteSlice.deletedHabitIds, localSlice.deletedHabitIds);
+        const tombAll = new Set(mergedDeleted.map(String));
+        st.habits = mergeHabitsForTaskerSync(remoteSlice.habits || st.habits || [], localSlice.habits, tombAll);
+        st.completions = typeof mergeCompletionsMaps === 'function'
+          ? mergeCompletionsMaps(remoteSlice.completions || st.completions || {}, localSlice.completions)
+          : { ...(remoteSlice.completions || {}), ...localSlice.completions };
+        st.habitSkips = mergeSkipPassMaps(remoteSlice.habitSkips || st.habitSkips || {}, localSlice.habitSkips);
+        st.habitPasses = mergeSkipPassMaps(remoteSlice.habitPasses || st.habitPasses || {}, localSlice.habitPasses);
+        tombAll.forEach((id) => {
+          st.habits = (st.habits || []).filter((h) => h && String(h.id) !== id);
+          try { delete st.completions[id]; } catch (_) {}
+        });
+        if (!st.settings) st.settings = {};
+        st.settings.personalDeletedHabitIds = mergedDeleted;
+
+        const outSlice = {
+          v: 1,
+          mirroredAt: new Date().toISOString(),
+          habits: st.habits,
+          completions: st.completions,
+          habitSkips: st.habitSkips,
+          habitPasses: st.habitPasses,
+          deletedHabitIds: mergedDeleted
+        };
+
+        const payload = {
+          format: 'harbor-profile',
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          app: 'Harbor',
+          build: typeof HARBOR_BUILD !== 'undefined' ? HARBOR_BUILD : null,
+          appVersion: typeof HARBOR_VERSION !== 'undefined' ? HARBOR_VERSION : null,
+          state: st,
+          taskerMirror: outSlice,
+          taskerMirroredAt: outSlice.mirroredAt,
+          // Preserve calendar mirror flags if present
+          calendarMirror: !!(basePayload && basePayload.calendarMirror)
+        };
+        // Keep calendar fields from base when we rebuilt state thinly
+        if (basePayload && basePayload.state && basePayload.state.settings && st.settings) {
+          const bs = basePayload.state.settings;
+          ['deviceCalendarEvents', 'deviceCalendarEnabled', 'deviceCalendarLastSyncedAt',
+            'importedCalendarEvents', 'calendarFeeds', 'calendarEventOverrides',
+            'suppressedCalendarEventKeys'].forEach((k) => {
+            if (st.settings[k] == null && bs[k] != null) st.settings[k] = bs[k];
+          });
+          if (bs.mockCalendar && !st.settings.mockCalendar) st.settings.mockCalendar = bs.mockCalendar;
+        }
+
+        const result = await HarborCloud.pushSnapshot(payload);
+        _taskerMirrorLastPushAt = Date.now();
+        if (state.settings) {
+          state.settings.lastTaskerMirrorPushAt = new Date().toISOString();
+          try { saveState({ skipLifeShare: true, skipTaskerMirror: true }); } catch (_) { /* ignore */ }
+        }
+        return result;
+      } catch (err) {
+        console.warn('[Harbor] tasker mirror push failed', err);
+        throw err;
+      }
+    }
+
+    async function pullAndMergeTaskerMirror(opts = {}) {
+      const silent = opts.silent !== false;
+      if (_taskerMirrorPullInFlight) return { applied: false, reason: 'in-flight' };
+      // Skip pull right after our own push (avoid echo thrash) — keep short so
+      // the *other* device’s changes still land quickly if both are open.
+      if (!opts.force && _taskerMirrorLastPushAt && (Date.now() - _taskerMirrorLastPushAt) < 1200) {
+        return { applied: false, reason: 'just-pushed' };
+      }
+      try {
+        if (typeof HarborCloud === 'undefined' || !HarborCloud.configured?.() || !HarborCloud.isSignedIn?.()) {
+          return { applied: false, reason: 'not-signed-in' };
+        }
+        _taskerMirrorPullInFlight = true;
+        await HarborCloud.init();
+        const row = await HarborCloud.pullSnapshot();
+        if (!row || !row.payload) return { applied: false, reason: 'no-backup' };
+        let payload = row.payload;
+        if (typeof payload === 'string') {
+          try { payload = JSON.parse(payload); } catch (_) {
+            return { applied: false, reason: 'bad-json' };
+          }
+        }
+        let slice = payload.taskerMirror;
+        if (!slice || typeof slice !== 'object') {
+          const st = typeof extractImportState === 'function' ? extractImportState(payload) : null;
+          if (!st) return { applied: false, reason: 'no-state' };
+          slice = {
+            v: 1,
+            mirroredAt: row.updated_at || null,
+            habits: st.habits || [],
+            completions: st.completions || {},
+            habitSkips: st.habitSkips || {},
+            habitPasses: st.habitPasses || {},
+            deletedHabitIds: st.settings?.personalDeletedHabitIds || []
+          };
+        }
+        // Ignore empty remote that would wipe nothing useful
+        if (!Array.isArray(slice.habits) && !slice.completions) {
+          return { applied: false, reason: 'empty' };
+        }
+        const applied = applyTaskerMirrorSlice(slice, { skipSave: false });
+        if (applied.changed) {
+          try { renderTasks?.(); } catch (_) {}
+          try { renderTodayFeed?.(); } catch (_) {}
+          try { renderStreaks?.(); } catch (_) {}
+          try { renderLibrary?.(); } catch (_) {}
+          try { updateSmartBanner?.(); } catch (_) {}
+          try { updateSummaryLauncher?.(); } catch (_) {}
+          if (!silent) {
+            showToast('Taskers synced from your other device', 'success', { durationMs: 2800 });
+          }
+        }
+        if (state.settings) {
+          state.settings.lastTaskerMirrorPullAt = new Date().toISOString();
+          try { saveState({ skipLifeShare: true, skipTaskerMirror: true }); } catch (_) { /* ignore */ }
+        }
+        return { applied: !!applied.changed };
+      } catch (err) {
+        console.warn('[Harbor] tasker mirror pull', err && err.message);
+        return { applied: false, reason: 'error', error: err };
+      } finally {
+        _taskerMirrorPullInFlight = false;
+      }
+    }
+
+    function startTaskerMirrorPolling() {
+      if (_taskerMirrorPolling) return;
+      _taskerMirrorPolling = true;
+      // Initial pull shortly after boot (after auth settles)
+      setTimeout(() => {
+        pullAndMergeTaskerMirror({ silent: true }).catch(() => {});
+      }, 900);
+      if (_taskerMirrorPollTimer) clearInterval(_taskerMirrorPollTimer);
+      // ~5s while visible — feels near-live for complete/delete across web ↔ app
+      _taskerMirrorPollTimer = setInterval(() => {
+        try {
+          if (document.hidden) return;
+          pullAndMergeTaskerMirror({ silent: true }).catch(() => {});
+        } catch (_) { /* ignore */ }
+      }, 5000);
     }
 
     function mergeHouseholdProfilesFromImport(incoming) {
@@ -27882,8 +28372,11 @@
         const isRhythmTitle = typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(title);
         // New heavy freeform work: nudge park scoring so Today stays light.
         // Never inflate Swim/Walk/Gym etc. — that parked them in Summary after add.
+        // Never inflate when the user already set a short explicit duration (≤30 min) —
+        // that turned “buy shoes · 15 min” into a parked 90-min hard job.
         let difficulty = selectedDiff;
         if (!isEdit && !isRhythmTitle) {
+          const userPickedShort = minutes > 0 && minutes <= 30;
           const parkProbe = {
             title,
             note: '',
@@ -27892,7 +28385,9 @@
             difficulty,
             is_preset: false
           };
-          if (typeof getTaskParkScore === 'function' && getTaskParkScore(parkProbe) >= 2) {
+          if (!userPickedShort
+              && typeof getTaskParkScore === 'function'
+              && getTaskParkScore(parkProbe) >= 2) {
             if (!minutes || minutes < 60) minutes = Math.max(minutes || 0, 90);
             if (difficulty < 3) difficulty = 3;
           }
@@ -27910,12 +28405,25 @@
           trackStreak,
           listKind,
           personId: (selectedPersonIds && selectedPersonIds[0]) || 'me',
-          personIds: normalizeHabitPersonIds(selectedPersonIds || ['me'])
+          personIds: normalizeHabitPersonIds(selectedPersonIds || ['me']),
+          updatedAt: new Date().toISOString()
         };
+        // Re-adding after a delete should clear personal tombstone so it can sync again
+        if (!isEdit && typeof clearPersonalHabitTombstone === 'function') {
+          try { clearPersonalHabitTombstone(task.id); } catch (_) {}
+        }
         // Daily fitness always lands on Today (not Summary-only)
         if (isRhythmTitle && selectedKind === 'habit') {
           task.parkOnSummary = false;
           task.pullToToday = todayStr();
+        }
+        // Light / one-time Taskers (errands, “buy shoes”, short medium work) always
+        // land on the active list — never only under Coming up / Brief.
+        if (!isEdit && (selectedKind === 'task' || interval === 0
+            || (typeof isLightStayOnTaskHabit === 'function' && isLightStayOnTaskHabit(task)))) {
+          task.parkOnSummary = false;
+          task.pullToToday = todayStr();
+          try { delete task.laterDeferDate; } catch (_) {}
         }
         // Frequency (stored as times_per_day) for Daily / Weekly / Monthly
         const keepFrequency = (selectedKind === 'habit' || selectedKind === 'chore' || selectedKind === 'morning' || selectedKind === 'evening')
@@ -42412,8 +42920,14 @@
         }
         // Soft “Later” today — always list under Coming up
         const deferredLater = typeof isHabitDeferredToLater === 'function' && isHabitDeferredToLater(h, today);
-        // Already on the main Today list
-        if (!deferredLater && belongsOnTodayTab(h)) return;
+        // Due on Task but hidden by Me / person filter → still list so it never vanishes
+        const personHidden = !deferredLater
+          && typeof belongsOnTodayTab === 'function'
+          && belongsOnTodayTab(h)
+          && typeof isHiddenByTaskPersonFilter === 'function'
+          && isHiddenByTaskPersonFilter(h);
+        // Already on the main Today list (and visible under current person filter)
+        if (!deferredLater && !personHidden && belongsOnTodayTab(h)) return;
 
         const periodDone = typeof isCompletedToday === 'function' && isCompletedToday(h.id);
         // Finished dailies land in “Completed today” — not here
@@ -42421,30 +42935,49 @@
 
         const parkedReady = !periodDone
           && !deferredLater
+          && !personHidden
           && typeof isParkedForSummary === 'function'
           && isParkedForSummary(h)
           && isDueToday(h)
           && !isPulledToToday(h);
         // Weekly / monthly / custom interval — not due right now, or resting after period complete
-        const laterWeekly = !deferredLater && isNonDailyRecurring(h) && (!isDueToday(h) || periodDone);
+        const laterWeekly = !deferredLater && !personHidden && isNonDailyRecurring(h) && (!isDueToday(h) || periodDone);
         // Preferred-day dailies (e.g. trash on Tue) when today isn’t their day
         const preferredOffDay = !periodDone
           && !deferredLater
+          && !personHidden
           && !isNonDailyRecurring(h)
           && typeof getHabitWeekdays === 'function'
           && getHabitWeekdays(h)
           && !isDueToday(h)
           && !isOneOffTask(h);
-        // Catch-all: deferred “Later”, seasonal off-window, etc.
+        // Catch-all: deferred “Later”, seasonal off-window, person-filter orphans, etc.
         // so “I added laundry and it disappeared” can’t happen
         const catchAllMissing = deferredLater
+          || personHidden
           || (!parkedReady && !laterWeekly && !preferredOffDay);
         if (!parkedReady && !laterWeekly && !preferredOffDay && !catchAllMissing) return;
 
         let nextLabel = '';
         let kind = 'later';
         try {
-          if (deferredLater) {
+          if (personHidden) {
+            kind = 'person-filter';
+            const ids = typeof getHabitPersonIds === 'function' ? getHabitPersonIds(h) : [];
+            const names = ids
+              .filter((id) => id && id !== 'me')
+              .map((id) => {
+                try {
+                  return (typeof getPersonLabel === 'function' && getPersonLabel(id))
+                    || (typeof personChipLabel === 'function' && personChipLabel(getHouseholdPerson?.(id)))
+                    || '';
+                } catch (_) { return ''; }
+              })
+              .filter(Boolean);
+            nextLabel = names.length
+              ? `For ${names.slice(0, 2).join(' · ')} · switch People filter`
+              : 'Hidden by People filter · tap All';
+          } else if (deferredLater) {
             kind = 'deferred';
             nextLabel = 'Later today';
           } else if (parkedReady) {
@@ -42473,7 +43006,9 @@
             }
           }
         } catch (_) {
-          nextLabel = parkedReady ? 'Ready when you can' : (periodDone ? 'Done this period' : 'Coming up');
+          nextLabel = personHidden
+            ? 'Hidden by People filter'
+            : (parkedReady ? 'Ready when you can' : (periodDone ? 'Done this period' : 'Coming up'));
         }
 
         out.push({
@@ -42483,7 +43018,7 @@
         });
       });
 
-      const kindRank = { deferred: 0, parked: 1, later: 2, resting: 3 };
+      const kindRank = { deferred: 0, 'person-filter': 1, parked: 2, later: 3, resting: 4 };
       out.sort((a, b) => {
         const kr = (kindRank[a.kind] ?? 9) - (kindRank[b.kind] ?? 9);
         if (kr !== 0) return kr;
@@ -43227,7 +43762,18 @@
       // Hire reminders always stay on Task
       if (habit.is_pro_reminder || String(habit.id || '').startsWith('pro-schedule-')) return false;
       if (habit.parkOnSummary === false) return false;
-      if (habit.parkOnSummary === true) return true;
+      // Explicit park flag still wins — unless this is a light stay-on-Task item the user just added
+      if (habit.parkOnSummary === true) {
+        if (typeof isLightStayOnTaskHabit === 'function' && isLightStayOnTaskHabit({ ...habit, parkOnSummary: false })) {
+          return false;
+        }
+        return true;
+      }
+
+      // Short / light one-offs (errands, “buy shoes”, 15-min medium) never leave Task
+      if (typeof isLightStayOnTaskHabit === 'function' && isLightStayOnTaskHabit(habit)) {
+        return false;
+      }
 
       // Swim / walk / gym / floss etc. always stay on Today — never bury in Summary
       // (long pool sessions used to score as long-block and disappear after add).
@@ -43287,6 +43833,56 @@
       });
       // Persist so yesterday’s pull flags don’t reappear after reload
       if (changed && opts.save !== false) {
+        try { saveState(); } catch (_) { /* ignore */ }
+      }
+      return changed;
+    }
+
+    /**
+     * One-time repair: light short Taskers that were force-parked (or inflated to
+     * 90 min) get pulled back onto the active Task list so they stop “vanishing”.
+     */
+    function repairLightTasksStuckOffToday() {
+      if (!Array.isArray(state.habits)) return false;
+      const today = todayStr();
+      let changed = false;
+      state.habits.forEach((h) => {
+        if (!h) return;
+        try {
+          // Explicit park flag on a short one-off → clear park + pull today
+          const lightProbe = { ...h, parkOnSummary: false };
+          const isLight = typeof isLightStayOnTaskHabit === 'function' && isLightStayOnTaskHabit(lightProbe);
+          const oneOff = typeof isOneOffTask === 'function' && isOneOffTask(h);
+          const mins = Number(h.est_minutes) || 0;
+          const diff = Number(h.difficulty) || 2;
+          // Inflated “15 min errand → 90 min hard” recovery: one-off with hard+long
+          // and a title that doesn’t look like a real project
+          const looksInflated = oneOff && mins >= 60 && diff >= 3
+            && !(typeof getTaskParkScore === 'function' && getTaskParkScore({
+              ...h, est_minutes: 15, difficulty: 2, parkOnSummary: false
+            }) >= 2);
+          if (!isLight && !looksInflated) return;
+          if (h.parkOnSummary === true) {
+            h.parkOnSummary = false;
+            changed = true;
+          }
+          // Only force-show if still unfinished and not soft-Later
+          const done = typeof isCompletedToday === 'function' && isCompletedToday(h.id);
+          const deferred = typeof isHabitDeferredToLater === 'function' && isHabitDeferredToLater(h, today);
+          if (done || deferred) return;
+          if (looksInflated && mins >= 60) {
+            // Restore a sensible short estimate so parking stays off
+            h.est_minutes = Math.min(mins, 30);
+            if (diff >= 3) h.difficulty = 2;
+            changed = true;
+          }
+          if (!h.pullToToday || h.pullToToday !== today) {
+            h.pullToToday = today;
+            changed = true;
+          }
+        } catch (_) { /* ignore one habit */ }
+      });
+      if (changed) {
         try { saveState(); } catch (_) { /* ignore */ }
       }
       return changed;
@@ -43823,6 +44419,7 @@
       ids.forEach(id => {
         const habit = (state.habits || []).find(h => String(h.id) === String(id));
         if (!habit) return;
+        try { if (typeof recordPersonalHabitTombstone === 'function') recordPersonalHabitTombstone(id); } catch (_) { /* ignore */ }
         if (typeof habitIsHouseholdShared === 'function' && habitIsHouseholdShared(habit)) {
           try { recordSharedHabitTombstone(id, habit); } catch (_) { /* ignore */ }
         }
@@ -43832,7 +44429,7 @@
       state.habits = (state.habits || []).filter(h => !idSet.has(String(h.id)));
       taskSelectIds.clear();
       taskSelectMode = false;
-      saveState();
+      saveState({ taskerImmediate: true });
       updateTaskSelectChrome();
       renderTasks();
       renderStreaks();
@@ -44102,6 +44699,7 @@
       if (!habit) return;
       const parked = item.kind === 'parked';
       const resting = item.kind === 'resting';
+      const personFilter = item.kind === 'person-filter';
       const mins = habit.est_minutes ? `${habit.est_minutes} min` : '';
       const freq = isOneOffTask(habit)
         ? 'One-time'
@@ -44109,10 +44707,11 @@
       const meta = [item.nextLabel || (parked ? 'Ready when you can' : 'Later'), freq, mins]
         .filter(Boolean)
         .join(' · ');
-      const icon = parked ? '🧰' : (resting ? '✓' : '🗓️');
+      const icon = personFilter ? '👤' : (parked ? '🧰' : (resting ? '✓' : '🗓️'));
       const safeId = String(habit.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
       const titleSafe = escapeBriefHtml(habit.title || 'routine');
       // Resting = done this period — no open card on Task until next cycle
+      // Person-filter: Add still pulls to Task; also offer switching filter via label
       const canAdd = !resting;
       const row = document.createElement('div');
       row.className = 'swipe-row';
@@ -45558,6 +46157,9 @@
       if (typeof clearExpiredPullToTodayFlags === 'function') {
         try { clearExpiredPullToTodayFlags(); } catch (_) { /* ignore */ }
       }
+      if (typeof repairLightTasksStuckOffToday === 'function') {
+        try { repairLightTasksStuckOffToday(); } catch (_) { /* ignore */ }
+      }
       if (typeof repairDailyRhythmOneOffHabits === 'function') {
         try { repairDailyRhythmOneOffHabits(); } catch (_) { /* ignore */ }
       }
@@ -45801,7 +46403,8 @@
         : false;
       
       // If recurring, we don't add it again until next due — handled by isDueToday
-      saveState();
+      // Immediate Tasker mirror so website ↔ app pick up completion quickly
+      saveState({ taskerImmediate: true });
       
       // UI feedback: full complete animation only when all times-per-day are done
       const card = document.querySelector(`[data-habit-id="${habitId}"]`);
@@ -54524,18 +55127,58 @@
 
     function focusHabitOnToday(habitId) {
       switchTab('today');
+      const habit = (state.habits || []).find(h => String(h.id) === String(habitId));
+      // If Brief can see it but Task cannot: un-park / clear Later / widen People filter
+      try {
+        if (habit) {
+          let changed = false;
+          if (habit.laterDeferDate) {
+            try { delete habit.laterDeferDate; changed = true; } catch (_) {}
+          }
+          if (typeof isParkedForSummary === 'function' && isParkedForSummary(habit) && !isPulledToToday(habit)) {
+            habit.pullToToday = todayStr();
+            habit.parkOnSummary = false;
+            changed = true;
+          }
+          if (typeof isLightStayOnTaskHabit === 'function' && isLightStayOnTaskHabit(habit)) {
+            habit.parkOnSummary = false;
+            habit.pullToToday = todayStr();
+            changed = true;
+          }
+          if (typeof isHiddenByTaskPersonFilter === 'function' && isHiddenByTaskPersonFilter(habit)) {
+            if (typeof setTaskPersonFilter === 'function') setTaskPersonFilter('all');
+            else if (state.settings) state.settings.taskPersonFilter = 'all';
+            changed = true;
+          }
+          if (changed) {
+            try { saveState(); } catch (_) {}
+          }
+        }
+      } catch (_) { /* ignore */ }
       renderTasks();
-      const row = document.querySelector(`#task-list .swipe-row[data-habit-id="${habitId}"]`);
+      let row = document.querySelector(`#task-list .swipe-row[data-habit-id="${habitId}"]`);
+      // Still missing → expand Coming up and try again
+      if (!row) {
+        try {
+          laterRoutinesExpanded = true;
+          if (typeof renderTodayFeed === 'function') renderTodayFeed();
+          row = document.querySelector(`#task-list .swipe-row[data-habit-id="${habitId}"]`);
+          if (row && typeof scrollComingUpSectionIntoView === 'function') {
+            scrollComingUpSectionIntoView();
+          }
+        } catch (_) { /* ignore */ }
+      }
       const card = row?.querySelector('.swipe-row-content') || row;
       if (card) {
         document.querySelectorAll('#task-list .is-smart-focus').forEach(el => el.classList.remove('is-smart-focus'));
         card.classList.add('is-smart-focus');
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setTimeout(() => card.classList.remove('is-smart-focus'), 2600);
-        const habit = state.habits.find(h => h.id === habitId);
         showToast(habit ? `Next up: ${habit.title}` : 'Task found', 'info');
       } else {
-        showToast('Open Task to see that task', 'info');
+        showToast(habit
+          ? `“${habit.title}” is still in Harbor — check Coming up or People → All`
+          : 'Open Task to see that task', 'info');
       }
     }
 
@@ -59673,10 +60316,12 @@
         danger: true
       });
       if (!ok) return;
+      // Personal tombstone so website ↔ app both drop this Tasker after sync
+      try { if (typeof recordPersonalHabitTombstone === 'function') recordPersonalHabitTombstone(habitId); } catch (_) {}
       if (shared) recordSharedHabitTombstone(habitId, habit);
       state.habits = state.habits.filter(h => h.id !== habitId);
       purgeHabitSideData(habitId);
-      saveState();
+      saveState({ taskerImmediate: true });
       renderTasks();
       renderStreaks();
       renderLibrary();
@@ -59698,10 +60343,11 @@
         danger: true
       });
       if (!ok) return;
+      try { if (typeof recordPersonalHabitTombstone === 'function') recordPersonalHabitTombstone(habitId); } catch (_) {}
       if (shared) recordSharedHabitTombstone(habitId, habit);
       state.habits = state.habits.filter(h => h.id !== habitId);
       purgeHabitSideData(habitId);
-      saveState();
+      saveState({ taskerImmediate: true });
       
       if (btnEl?.closest) btnEl.closest('.fixed')?.remove();
       renderTasks();
