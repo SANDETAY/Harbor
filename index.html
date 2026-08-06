@@ -1014,7 +1014,8 @@
       padding: 0.42rem 0.55rem;
     }
 
-    #task-list .habit-card .font-medium {
+    #task-list .habit-card .font-medium,
+    #task-list .habit-card .habit-title-row {
       font-size: 0.95rem;
       letter-spacing: -0.015em;
       line-height: 1.3;
@@ -1027,11 +1028,120 @@
       word-break: break-word;
       overflow-wrap: anywhere;
       cursor: pointer;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: rgb(var(--harbor-text));
     }
     #task-list .habit-title-text.is-expanded {
       display: block;
       -webkit-line-clamp: unset;
       overflow: visible;
+    }
+
+    /* ── Tasker card visual hierarchy (dense but scannable) ── */
+    #task-list .habit-card.habit-card-v2,
+    #task-list .swipe-row-content.habit-card.habit-card-v2 {
+      padding: 0.8rem 0.9rem !important;
+      gap: 0.55rem !important;
+      align-items: flex-start !important;
+    }
+    #task-list .habit-card-v2 .habit-main-tap {
+      display: flex;
+      flex-direction: column;
+      gap: 0.38rem;
+      min-width: 0;
+      flex: 1;
+    }
+    #task-list .habit-card-v2 .habit-title-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.4rem;
+      min-width: 0;
+    }
+    #task-list .habit-card-v2 .habit-title-row .habit-title-text {
+      flex: 1;
+      min-width: 0;
+    }
+    /* Status chips — only the loud ones (due / overdue / multi) */
+    #task-list .habit-card-v2 .habit-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.28rem;
+      min-width: 0;
+    }
+    #task-list .habit-card-v2 .habit-chip-row .harbor-tag,
+    #task-list .habit-card-v2 .habit-chip-row .habit-multi-pill {
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 0.14rem 0.45rem;
+      border-radius: 999px;
+      letter-spacing: 0.01em;
+    }
+    /* Quiet facts line: cadence · time · energy (no chip noise) */
+    #task-list .habit-card-v2 .habit-meta-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.2rem 0.15rem;
+      font-size: 0.68rem;
+      font-weight: 550;
+      color: rgb(var(--harbor-muted));
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+    }
+    #task-list .habit-card-v2 .habit-meta-line .habit-meta-dot {
+      opacity: 0.45;
+      margin: 0 0.22rem;
+      font-weight: 400;
+      user-select: none;
+    }
+    #task-list .habit-card-v2 .habit-meta-line .habit-energy {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-primary-light));
+    }
+    #task-list .habit-card-v2 .habit-meta-line .habit-energy-dot {
+      width: 0.4rem;
+      height: 0.4rem;
+      border-radius: 999px;
+      flex-shrink: 0;
+      background: rgb(var(--harbor-primary));
+    }
+    #task-list .habit-card-v2 .habit-meta-line .habit-energy.is-low .habit-energy-dot {
+      background: rgb(var(--harbor-high, 47 155 140));
+    }
+    #task-list .habit-card-v2 .habit-meta-line .habit-energy.is-med .habit-energy-dot {
+      background: rgb(var(--harbor-med, 212 168 67));
+    }
+    #task-list .habit-card-v2 .habit-meta-line .habit-energy.is-high .habit-energy-dot {
+      background: rgb(var(--harbor-low, 196 92 74));
+    }
+    #task-list .habit-card-v2 .habit-meta-line .habit-streak-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.18rem;
+      font-weight: 700;
+      color: rgb(var(--harbor-med));
+    }
+    html:not([data-theme="dark"]) #task-list .habit-card-v2 .habit-meta-line .habit-streak-inline {
+      color: rgb(var(--harbor-primary-light));
+    }
+    /* Soft left rail on overdue — status without more text */
+    #task-list .habit-card-v2.has-overdue-actions,
+    #task-list .swipe-row-content.habit-card-v2.has-overdue-actions {
+      border-left: 3px solid rgb(var(--harbor-low) / 0.75) !important;
+      padding-left: 0.78rem !important;
+    }
+    /* Meta row clears Later chip */
+    #task-list .habit-card-v2.has-overdue-actions .habit-meta-line,
+    #task-list .habit-card-v2.has-overdue-actions .habit-chip-row {
+      padding-right: 3.9rem;
+    }
+    #task-list .habit-card-v2 .habit-card-side {
+      padding-top: 0.05rem;
     }
     #task-list .habit-card.is-smart-focus,
     #task-list .swipe-row-content.habit-card.is-smart-focus {
@@ -1250,7 +1360,7 @@
       }
 
       /* Hide desktop Edit/Delete/Details strip on phone — swipe owns those.
-         Overdue/due chips (Skip · Later) stay visible via .habit-defer-actions */
+         Overdue Later chip stays visible via .habit-defer-actions */
       .row-inline-actions {
         display: none !important;
       }
@@ -1258,10 +1368,11 @@
         display: flex !important;
       }
       .habit-overdue-btn {
-        min-height: 1.4rem;
+        min-height: 1.95rem;
+        min-width: 3.25rem;
         height: auto;
-        padding: 0.18rem 0.48rem;
-        font-size: 0.58rem;
+        padding: 0.34rem 0.72rem;
+        font-size: 0.68rem;
       }
       /* Bills: Paid chip stays visible on phone (row-inline-actions are swipe-hidden) */
       .bill-pay-actions {
@@ -2066,9 +2177,10 @@
         font-size: 0.95rem;
       }
       .habit-overdue-btn {
-        min-height: 1.75rem;
-        padding: 0.28rem 0.6rem;
-        font-size: 0.62rem;
+        min-height: 2rem;
+        min-width: 3.35rem;
+        padding: 0.36rem 0.75rem;
+        font-size: 0.7rem;
       }
       .habit-row-action-btn {
         min-height: 1.9rem;
@@ -11964,19 +12076,21 @@
       margin-top: 0;
     }
     /*
-     * Overdue-only Later + Skip — bottom-right of the Tasker card (no divider line).
-     * Phone hides Edit/Info/Delete strip; chips sit clear of swipe actions.
+     * Overdue-only Later — bottom-right of the Tasker card (thumb-friendly).
+     * Phone hides Edit/Info/Delete strip; chip sits clear of swipe actions.
+     * Later is soft defer for today only → Coming up until midnight (never deleted).
      */
     .swipe-row-content.habit-card {
       position: relative;
     }
     .swipe-row-content.habit-card.has-overdue-actions {
-      padding-bottom: 1.75rem !important;
+      /* Room for Later chip under content */
+      padding-bottom: 2rem !important;
     }
     .habit-defer-actions {
       position: absolute;
-      right: 0.45rem;
-      bottom: 0.32rem;
+      right: 0.4rem;
+      bottom: 0.3rem;
       z-index: 3;
       display: flex;
       flex-wrap: nowrap;
@@ -12003,16 +12117,18 @@
       appearance: none;
       -webkit-appearance: none;
       font-family: var(--harbor-font);
-      font-size: 0.58rem;
+      font-size: 0.66rem;
       font-weight: 700;
       letter-spacing: 0.01em;
-      padding: 0.18rem 0.45rem;
+      padding: 0.32rem 0.7rem;
       border-radius: 999px;
       border: 1px solid rgb(var(--harbor-border));
       background: rgb(var(--harbor-surface) / 0.95);
       color: rgb(var(--harbor-muted));
-      line-height: 1.1;
-      min-height: 1.35rem;
+      line-height: 1.15;
+      /* Between original tiny chip and full thumb pad — still easy to hit */
+      min-height: 1.85rem;
+      min-width: 3.15rem;
       height: auto;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
@@ -12021,14 +12137,9 @@
     }
     .habit-overdue-btn:active { opacity: 0.88; }
     .habit-overdue-btn.is-soft {
-      border-color: rgb(var(--harbor-primary) / 0.3);
-      background: rgb(var(--harbor-primary) / 0.12);
+      border-color: rgb(var(--harbor-primary) / 0.35);
+      background: rgb(var(--harbor-primary) / 0.14);
       color: rgb(var(--harbor-primary-light));
-    }
-    .habit-overdue-btn.is-skip {
-      border-color: rgb(var(--harbor-border));
-      background: rgb(var(--harbor-raised) / 0.95);
-      color: rgb(var(--harbor-text));
     }
 
     /* Bills — mark paid (manual only; autopay stays quiet) */
@@ -15847,7 +15958,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 510;
+    const HARBOR_BUILD_NUMBER = 511;
     // Fallback wind-down / bedtime when settings missing (local minutes)
     const HARBOR_DEFAULT_BEDTIME_MINS = 21 * 60; // 9:00 PM
     const HARBOR_DEFAULT_MORNING_START = 6 * 60;
@@ -15901,6 +16012,20 @@
      */
     const HARBOR_CHANGELOG = [
       {
+        version: '1.0',
+        date: '2026-08-06',
+        title: 'Tasker cards · Later chip · build 511',
+        intro: 'Cleaner Tasker cards with clearer hierarchy, thumb-friendly Later (no Skip), and soft later that always returns tomorrow.',
+        sections: [{
+          heading: 'Task',
+          items: [
+            'Tasker cards: title first, status chips only when needed, quiet meta line for cadence · time · energy',
+            'Overdue cards: soft left rail + Later under Coming up until tomorrow (never deleted)',
+            'Skip chip removed from overdue Taskers'
+          ]
+        }]
+      },
+            {
         version: '1.0',
         date: '2026-08-06',
         title: 'Professional widgets · live calendar · build 510',
@@ -24984,27 +25109,32 @@
     }
 
     /**
-     * Later — soft defer for the rest of today (no streak break).
-     * Hides from main Task list; lands under Coming up until tomorrow.
+     * Later — soft defer for the rest of *today only* (no streak break, never deleted).
+     * Leaves active Task list → Coming up with Add. At midnight laterDeferDate is cleared
+     * (see clearExpiredPullToTodayFlags) so the Tasker returns on its own.
      */
     function deferHabitToLater(habitId, ev) {
       try { if (ev) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); } } catch (_) {}
       const habit = (state.habits || []).find(h => String(h.id) === String(habitId));
       if (!habit) { showToast('Task not found'); return; }
       try {
+        // Soft flag for this calendar day only — NOT snoozeUntil (that postponed to tomorrow permanently)
         habit.laterDeferDate = todayStr();
         if (habit.pullToToday) delete habit.pullToToday;
-        // Don't use snoozeUntil — that was the old “Tomorrow” path
         try { delete habit.snoozeUntil; } catch (_) {}
+        // Never park / tombstone on Later
+        if (habit.parkOnSummary === true) {
+          try { habit.parkOnSummary = false; } catch (_) {}
+        }
       } catch (_) {
         showToast('Couldn’t move it', 'warn');
         return;
       }
       try { laterRoutinesExpanded = true; } catch (_) {}
-      saveState();
+      saveState({ taskerImmediate: true });
       renderTasks();
       updateSmartBanner?.();
-      showToast(`Later · ${habit.title} — under Coming up`);
+      showToast(`Later · ${habit.title} — under Coming up until tomorrow`, 'info');
       try {
         if (typeof scrollComingUpSectionIntoView === 'function') {
           setTimeout(() => scrollComingUpSectionIntoView(), 80);
@@ -44543,11 +44673,18 @@
       const multiPill = isMulti && !completed
         ? `<span class="habit-multi-pill" title="${timesDone} of ${timesNeed} ${periodWord}">${timesDone}/${timesNeed}</span>`
         : '';
-      // Show cadence chip for weekly/monthly even when multi-frequency (e.g. 2/3 this week)
-      const freqChip = isRecurring ? formatIntervalLabel(habit.interval_days, habit) : '';
+      // Cadence for quiet meta line (Weekly / Monthly) — not a second loud chip
+      const freqLabel = isRecurring ? formatIntervalLabel(habit.interval_days, habit) : '';
+      const isOneOff = typeof isOneOffTask === 'function' && isOneOffTask(habit)
+        && !(typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit));
       const completedPill = completed
-        ? `<span class="text-[10px] font-bold uppercase tracking-wide text-harbor-primary-light px-1.5 py-0.5 rounded-full bg-harbor-primary/12 border border-harbor-primary/20">Completed</span>`
+        ? `<span class="harbor-tag harbor-tag-soon">Completed</span>`
         : '';
+      const energyShort = difficultyLabel === 'Medium' ? 'Med' : difficultyLabel;
+      const energyClass = (Number(habit.difficulty) || 2) <= 1
+        ? 'is-low'
+        : (Number(habit.difficulty) || 2) >= 3 ? 'is-high' : 'is-med';
+      const mins = Number(habit.est_minutes) || 0;
 
       const safeTitle = typeof escapeBriefHtml === 'function' ? escapeBriefHtml(habit.title) : habit.title;
       const safeHabitId = String(habit.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
@@ -44560,54 +44697,70 @@
       const selectCheck = selectMode
         ? `<span class="habit-select-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>`
         : '';
-      // Later + Skip only on OVERDUE Taskers (not due-today / active-until-overdue)
+      // Later only on OVERDUE Taskers — soft park under Coming up until tomorrow (never deleted)
       const isOverdueTasker = !completed && !selectMode && showOverdueActions
         && !isBudgetReview
         && typeof isHabitOverdue === 'function'
         && isHabitOverdue(habit);
       const overdueActionsHtml = isOverdueTasker
         ? `<div class="habit-defer-actions" onclick="event.stopPropagation()">
-            <button type="button" class="habit-overdue-btn is-soft" title="Later today — Coming up (keeps streak)"
+            <button type="button" class="habit-overdue-btn is-soft" title="Later today — stays under Coming up until tomorrow"
               onclick="event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();deferHabitToLater('${safeHabitId}', event)">Later</button>
-            <button type="button" class="habit-overdue-btn is-skip" title="Skip for today (breaks streak on habits)"
-              onclick="event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();skipOrClearToday('${safeHabitId}', event)">Skip</button>
           </div>`
+        : '';
+
+      // Loud chips only: status that needs color (due/overdue/completed/budget/multi)
+      const chipParts = [];
+      if (completedPill) chipParts.push(completedPill);
+      if (isBudgetReview) chipParts.push(`<span class="harbor-tag harbor-tag-budget">Budget</span>`);
+      if (dueNote) chipParts.push(dueNote);
+      if (multiPill) chipParts.push(multiPill);
+      const chipRow = chipParts.length
+        ? `<div class="habit-chip-row">${chipParts.join('')}</div>`
+        : '';
+
+      // Quiet secondary facts — one scannable line
+      const metaBits = [];
+      if (freqLabel) metaBits.push(`<span>${escapeBriefHtml(freqLabel)}</span>`);
+      else if (isOneOff) metaBits.push(`<span>One-time</span>`);
+      if (mins > 0) metaBits.push(`<span>${mins} min</span>`);
+      metaBits.push(
+        `<span class="habit-energy ${energyClass}" title="${escapeBriefHtml(difficultyLabel)} energy">` +
+        `<span class="habit-energy-dot" aria-hidden="true"></span>${escapeBriefHtml(energyShort)}</span>`
+      );
+      if (streak > 0) {
+        metaBits.push(
+          `<span class="habit-streak-inline" title="Streak"><i class="fa-solid fa-fire" aria-hidden="true"></i>${streak}</span>`
+        );
+      }
+      const metaLine = metaBits.length
+        ? `<div class="habit-meta-line">${metaBits.join('<span class="habit-meta-dot" aria-hidden="true">·</span>')}</div>`
         : '';
 
       const contentHtml = `
         ${selectCheck}
         <div class="flex-1 min-w-0 habit-main-tap">
-          <div class="font-medium leading-tight flex items-center gap-1.5 flex-wrap min-w-0"
+          <div class="habit-title-row"
             title="${selectMode ? 'Tap to select' : (completed ? 'Completed today' : (isBudgetReview ? 'Tap to open Budget' : 'Tap to Complete — Swipe to Edit'))}">
             ${assigneeTag}
             <span class="habit-title-text min-w-0${showMuted || completed ? ' text-harbor-muted' : ''}${completed ? ' line-through decoration-harbor-muted/40' : ''}"
               data-habit-title="1">${safeTitle}</span>
           </div>
-          <div class="flex items-center gap-x-2 mt-0.5 flex-wrap">
-            ${completedPill}
-            ${typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit)
-              ? `<span class="harbor-tag harbor-tag-budget">Budget</span>`
-              : ''}
-            ${multiPill}
-            ${freqChip ? `<span class="harbor-tag harbor-tag-soon">${freqChip}</span>` : ''}
-            ${isOneOffTask(habit) && !(typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit)) ? `<span class="harbor-tag harbor-tag-muted">One-time</span>` : ''}
-            ${dueNote}
-            <span class="text-xs text-harbor-muted">${habit.est_minutes} min • ${difficultyLabel} energy</span>
-            ${streak > 0 ? `<span class="harbor-tag-streak text-xs flex items-center gap-x-0.5 font-semibold"><i class="fa-solid fa-fire"></i> ${streak}</span>` : ''}
-          </div>
-          ${typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit) && habit.note ? `<div class="text-[10px] text-harbor-muted mt-0.5 leading-snug">${escapeBriefHtml(habit.note)}</div>` : ''}
+          ${chipRow}
+          ${metaLine}
+          ${isBudgetReview && habit.note ? `<div class="text-[10px] text-harbor-muted leading-snug">${escapeBriefHtml(habit.note)}</div>` : ''}
         </div>
         <div class="habit-card-side">
           ${habit.target_value ? `<div class="text-xs text-harbor-primary-light font-semibold tabular-nums">${habit.target_value} ${habit.unit}</div>` : ''}
           ${syncedStats ? `<div class="text-[9px] harbor-tag-sync mt-0.5">${syncedStats.steps} steps • ${syncedStats.distance} mi</div>` : ''}
           <div class="row-inline-actions flex flex-wrap items-center justify-end gap-1.5 mt-auto" onclick="event.stopPropagation()">
-            ${typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit) && !completed
+            ${isBudgetReview && !completed
               ? `<button type="button" onclick="event.stopImmediatePropagation(); openBudgetFromReviewTask()" class="text-[10px] text-harbor-primary-light font-semibold px-1" title="Open Budget">Budget</button>
                  <button type="button" onclick="event.stopImmediatePropagation(); markBudgetReviewCompleteFromImport()" class="text-[10px] text-harbor-primary-light font-semibold px-1" title="Mark reviewed for this month">Done</button>
                  <button type="button" onclick="event.stopImmediatePropagation(); showBudgetReviewTaskSheet('${safeHabitId}')" class="text-[10px] text-harbor-muted hover:text-harbor-primary-light px-1" title="Mute or more options">More</button>`
               : ''}
             ${dueToday && shouldTrackStreak(habit) && (ensureRewardBank().skipToken || 0) > 0 ? `<button type="button" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); useSkipToken('${safeHabitId}', event)" class="text-[10px] text-harbor-primary-light hover:text-harbor-text px-1" title="Pass — keeps your streak (rare)">Pass</button>` : ''}
-            ${!(typeof isBudgetReviewHabit === 'function' && isBudgetReviewHabit(habit))
+            ${!isBudgetReview
               ? `<button type="button" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); editHabitFromToday('${safeHabitId}')" class="habit-row-action-btn is-edit" title="Edit task">Edit</button>`
               : ''}
             <button type="button" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); showHabitDetail('${safeHabitId}')" class="habit-row-action-btn is-muted" title="Details" aria-label="Details">
@@ -44620,7 +44773,7 @@
       `;
 
       row.innerHTML = buildSwipeRowHtml(actionsHtml, contentHtml,
-        `habit-card harbor-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-center gap-x-3 active:bg-harbor-raised${showMuted || completed ? ' opacity-45' : ''}${completed ? ' is-completed-today' : ''}${!completed && !selectMode ? ' is-tap-complete' : ''}${isSelected ? ' is-task-selected' : ''}${isOverdueTasker ? ' has-overdue-actions' : ''}`);
+        `habit-card habit-card-v2 harbor-card habit-row bg-harbor-surface border border-harbor-border rounded-3xl px-3.5 py-3 flex items-start gap-x-3 active:bg-harbor-raised${showMuted || completed ? ' opacity-45' : ''}${completed ? ' is-completed-today' : ''}${!completed && !selectMode ? ' is-tap-complete' : ''}${isSelected ? ' is-task-selected' : ''}${isOverdueTasker ? ' has-overdue-actions' : ''}`);
       const content = row.querySelector('.swipe-row-content');
       content?.addEventListener('contextmenu', (e) => {
         e.preventDefault();
