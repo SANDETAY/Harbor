@@ -2494,6 +2494,24 @@
       gap: 0.25rem;
       margin-top: 1rem;
     }
+    .budget-flow-hint {
+      grid-column: 1 / -1;
+      margin-top: 0.45rem;
+      font-size: 0.65rem;
+      line-height: 1.35;
+      color: rgb(var(--harbor-muted));
+      text-align: center;
+    }
+    .budget-flow-hint button {
+      appearance: none;
+      border: none;
+      background: none;
+      padding: 0;
+      font: inherit;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
     .budget-flow-card {
       border-radius: 0.95rem;
       border: 1px solid rgb(var(--harbor-border) / 0.85);
@@ -17096,7 +17114,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 538;
+    const HARBOR_BUILD_NUMBER = 539;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -40563,15 +40581,38 @@
           const debit = parseMoneyValue(cols[debitCol]);
           if (debit > 0) expense = debit;
         }
-        // Credit-only rows are income — skip
+        // Credit-only rows are income — include so Budget can show money in
         if (expense == null && creditCol >= 0) {
           const credit = parseMoneyValue(cols[creditCol]);
-          if (credit > 0) continue;
+          if (credit > 0) {
+            const date = dateCol >= 0 ? parseFlexibleDate(cols[dateCol]) : null;
+            transactions.push({
+              date,
+              description: desc,
+              amount: Math.round(credit * 100) / 100,
+              isCredit: true
+            });
+            continue;
+          }
+        }
+        // Signed amount: positive with no debit col can still be income (checking exports)
+        if (expense == null && amountCol >= 0) {
+          const amt = parseMoneyValue(cols[amountCol]);
+          if (amt > 0 && /salary|paycheck|payroll|dfas|deposit|direct\s*dep|ach\s*credit|interest|dividend|refund/i.test(desc)) {
+            const date = dateCol >= 0 ? parseFlexibleDate(cols[dateCol]) : null;
+            transactions.push({
+              date,
+              description: desc,
+              amount: Math.round(amt * 100) / 100,
+              isCredit: true
+            });
+            continue;
+          }
         }
         if (expense == null || expense < 0.5) continue;
 
         const date = dateCol >= 0 ? parseFlexibleDate(cols[dateCol]) : null;
-        transactions.push({ date, description: desc, amount: Math.round(expense * 100) / 100 });
+        transactions.push({ date, description: desc, amount: Math.round(expense * 100) / 100, isCredit: false });
       }
       return transactions;
     }
@@ -42271,10 +42312,18 @@
         else if (indicator === 'debit' || indicator === 'dr' || indicator === 'd') isCredit = false;
         else if (/ach\s*credit/i.test(typeStr) || /^credit$/i.test(typeStr)) isCredit = true;
         else if (isBudgetIncomeBankCategory(bankCategory)) isCredit = true;
-        else if (/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|direct\s*deposit|dividend/i.test(typeBlob)
-          && !/debit/i.test(typeStr)) isCredit = true;
-        else if (amtRaw < 0) isCredit = false;
-        else isCredit = false;
+        else if (/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|direct\s*deposit|dividend|interest\s*paid|atm\s*rebate/i.test(typeBlob)
+          && !/debit|pos|purchase/i.test(typeStr + ' ' + desc)) isCredit = true;
+        else if (indicatorCol < 0 && amtRaw > 0
+          && /salary|paycheck|payroll|dfas|veteran|deposit|ach\s*credit|direct\s*dep|interest|dividend|refund|ssa\s*treas|social\s*security/i.test(typeBlob)) {
+          // Single Amount column (no Debit/Credit indicator): positive + money-in wording → income
+          isCredit = true;
+        } else if (amtRaw < 0) {
+          // Signed export: negative usually money out
+          isCredit = false;
+        } else {
+          isCredit = false;
+        }
 
         const dateObj = dateCol >= 0 ? parseBudgetDate(cols[dateCol]) : null;
         let category = categorizeBudgetDescription(desc, bankCategory, {
@@ -42533,9 +42582,11 @@
           date: tx.date,
           description: tx.description,
           amount: tx.amount,
-          isCredit: false,
+          isCredit: !!tx.isCredit,
           bankCategory: '',
-          category: categorizeBudgetDescription(tx.description, '')
+          category: tx.isCredit
+            ? 'income'
+            : categorizeBudgetDescription(tx.description, '')
         }));
       }
       if (!parsed.length) {
@@ -43615,40 +43666,83 @@
         else rangeLabel.textContent = 'All time';
       }
 
-      // Money flow + needs/wants split + pace (visual, not a text wall)
+      // Money flow: Income → Spent → Left/Short (clearer than In / Out / Over)
       let flowOutSum = 0;
       let flowInSum = 0;
+      let incomeAllMonths = 0;
       try {
         const outTxs = getBudgetViewTransactions(budgetMonthRange, 'overview');
         const inTxs = getBudgetViewTransactions(budgetMonthRange, 'income');
-        flowOutSum = outTxs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
-        flowInSum = inTxs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+        flowOutSum = outTxs.reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
+        flowInSum = inTxs.reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
+        // Fallback: any money-in in this month that bucket rules missed
+        if (flowInSum < 0.005) {
+          getBudgetTransactionsInMonth(budgetMonthRange).forEach((t) => {
+            if (!t) return;
+            const amt = Math.abs(Number(t.amount) || 0);
+            if (amt < 0.005) return;
+            if (t.isCredit === true || t.category === 'income' || t.categoryAuto === 'income'
+              || (typeof isBudgetIncomeTransaction === 'function' && isBudgetIncomeTransaction(t))
+              || (typeof detectBudgetIsCredit === 'function' && detectBudgetIsCredit(t))) {
+              flowInSum += amt;
+            }
+          });
+        }
+        incomeAllMonths = getBudgetViewTransactions('all', 'income')
+          .reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
       } catch (_) { /* ignore */ }
       const flowNet = flowInSum - flowOutSum;
       const flowEl = document.getElementById('budget-flow');
       if (flowEl) {
-        const keptCls = flowNet > 0.005 ? 'is-kept-pos' : flowNet < -0.005 ? 'is-kept-neg' : '';
-        const keptIcon = flowNet >= -0.005 ? 'fa-piggy-bank' : 'fa-arrow-trend-down';
-        const keptLabel = flowNet >= -0.005 ? 'Kept' : 'Over';
-        const keptPrefix = flowNet > 0.005 ? '+' : flowNet < -0.005 ? '−' : '';
+        // Third card: Left (income covers spend) · Short (spent more than income) · — if no income logged
+        let thirdCls = '';
+        let thirdIcon = 'fa-piggy-bank';
+        let thirdLabel = 'Left';
+        let thirdAmt = formatBudgetMoney(0);
+        let thirdTitle = 'Income minus what you spent this period';
+        if (flowInSum < 0.005) {
+          thirdCls = '';
+          thirdIcon = 'fa-circle-question';
+          thirdLabel = 'Left';
+          thirdAmt = '—';
+          thirdTitle = incomeAllMonths > 0.005
+            ? 'No income in this month — try Last month or All (pay may post on a different month)'
+            : 'No income found in this import yet — paychecks/deposits show here when tagged as money in';
+        } else if (flowNet >= -0.005) {
+          thirdCls = 'is-kept-pos';
+          thirdIcon = 'fa-piggy-bank';
+          thirdLabel = 'Left';
+          thirdAmt = formatBudgetMoney(Math.abs(flowNet));
+          thirdTitle = 'Income − spent = what you kept this period';
+        } else {
+          thirdCls = 'is-kept-neg';
+          thirdIcon = 'fa-arrow-trend-down';
+          thirdLabel = 'Short';
+          thirdAmt = formatBudgetMoney(Math.abs(flowNet));
+          thirdTitle = 'You spent more than income this period (gap)';
+        }
+        const incomeHint = (flowInSum < 0.005 && incomeAllMonths > 0.005)
+          ? `<div class="budget-flow-hint">Pay may be under <button type="button" class="text-harbor-primary-light font-semibold" onclick="setBudgetMonthRange('last')">Last month</button> or <button type="button" class="text-harbor-primary-light font-semibold" onclick="setBudgetMonthRange('all')">All</button></div>`
+          : '';
         flowEl.innerHTML = `
-          <div class="budget-flow-card is-in">
+          <div class="budget-flow-card is-in" title="Paychecks, deposits, and other money in">
             <i class="fa-solid fa-arrow-down budget-flow-icon" aria-hidden="true"></i>
             <div class="budget-flow-amt">${formatBudgetMoney(flowInSum)}</div>
-            <div class="budget-flow-label">In</div>
+            <div class="budget-flow-label">Income</div>
           </div>
           <div class="budget-flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
-          <div class="budget-flow-card is-out">
+          <div class="budget-flow-card is-out" title="Everything that left your accounts (bills, shopping, transfers…)">
             <i class="fa-solid fa-arrow-up budget-flow-icon" aria-hidden="true"></i>
             <div class="budget-flow-amt">${formatBudgetMoney(flowOutSum)}</div>
-            <div class="budget-flow-label">Out</div>
+            <div class="budget-flow-label">Spent</div>
           </div>
           <div class="budget-flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
-          <div class="budget-flow-card ${keptCls}">
-            <i class="fa-solid ${keptIcon} budget-flow-icon" aria-hidden="true"></i>
-            <div class="budget-flow-amt">${keptPrefix}${formatBudgetMoney(Math.abs(flowNet))}</div>
-            <div class="budget-flow-label">${keptLabel}</div>
-          </div>`;
+          <div class="budget-flow-card ${thirdCls}" title="${escapeBriefHtml(thirdTitle)}">
+            <i class="fa-solid ${thirdIcon} budget-flow-icon" aria-hidden="true"></i>
+            <div class="budget-flow-amt">${thirdAmt}</div>
+            <div class="budget-flow-label">${thirdLabel}</div>
+          </div>
+          ${incomeHint}`;
       }
       const autoNote = document.getElementById('budget-auto-note');
       if (autoNote) {
