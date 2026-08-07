@@ -7276,11 +7276,45 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      /* Kill iOS long-press gray flash / image callout / text select on hold-to-speak */
       -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
       isolation: isolate;
       transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
       pointer-events: auto !important;
       flex-shrink: 0;
+    }
+    button.summary-orb *,
+    .summary-orb * {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    /* While holding Brief for voice: no system highlight bleed onto Streaks / dock tabs */
+    body.is-brief-hold {
+      -webkit-user-select: none !important;
+      user-select: none !important;
+      -webkit-touch-callout: none !important;
+    }
+    body.is-brief-hold #main-nav-bar,
+    body.is-brief-hold .main-nav-tab,
+    body.is-brief-hold .main-nav-tab * {
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-touch-callout: none !important;
+      -webkit-user-select: none !important;
+      user-select: none !important;
+    }
+    /* Keep hold focus on the orb — dock tabs ignore this touch so Streaks doesn’t flash */
+    body.is-brief-hold .main-nav-tab {
+      pointer-events: none;
+    }
+    body.is-brief-hold #summary-launcher,
+    body.is-brief-hold .main-nav-fab-slot {
+      pointer-events: auto;
     }
     /* Docked FAB: hide caption — aria-label remains */
     .summary-orb--dock .summary-orb-label {
@@ -7400,7 +7434,9 @@
       object-position: center center;
       pointer-events: none;
       user-select: none;
+      -webkit-user-select: none;
       -webkit-user-drag: none;
+      -webkit-touch-callout: none;
       filter: brightness(0) invert(1);
       opacity: 0.96;
       animation: harborMarkBob 3.8s ease-in-out infinite;
@@ -16704,7 +16740,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 533;
+    const HARBOR_BUILD_NUMBER = 534;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -16766,7 +16802,7 @@
       {
         version: '1.0',
         date: '2026-08-06',
-        title: 'iPhone voice mic · build 533',
+        title: 'iPhone voice mic · build 534',
         intro: 'Native speech on iOS so hold-Brief voice works and Harbor appears under Microphone & Speech Recognition in Settings.',
         sections: [{
           heading: 'Voice (iPhone)',
@@ -52573,13 +52609,21 @@
       let fired = false;
       let startX = 0;
       let startY = 0;
+      let holdActive = false;
       const HOLD_MS = 420;
       const MOVE_CANCEL_PX = 12;
+      const setBriefHoldChrome = (on) => {
+        holdActive = !!on;
+        try {
+          document.body.classList.toggle('is-brief-hold', !!on);
+        } catch (_) { /* ignore */ }
+      };
       const clear = () => {
         if (timer) { clearTimeout(timer); timer = null; }
       };
       /** Push-to-talk: release ends capture and closes the listening meter. */
       const endHoldVoice = () => {
+        setBriefHoldChrome(false);
         try {
           if (typeof endHarborVoiceHold === 'function') endHarborVoiceHold();
           else if (typeof stopHarborVoice === 'function' && harborVoiceActive) {
@@ -52592,6 +52636,9 @@
         fired = false;
         startX = e.clientX;
         startY = e.clientY;
+        // Block iOS image/text callouts on the anchor (and nearby dock) while holding
+        setBriefHoldChrome(true);
+        try { el.setPointerCapture?.(e.pointerId); } catch (_) { /* ignore */ }
         clear();
         timer = setTimeout(() => {
           fired = true;
@@ -52610,6 +52657,7 @@
           clear();
           // If already listening via hold, cancel on drag-away
           if (fired) endHoldVoice();
+          else setBriefHoldChrome(false);
         }
       };
       const end = (e) => {
@@ -52618,6 +52666,8 @@
           e.preventDefault();
           e.stopPropagation();
           endHoldVoice();
+        } else {
+          setBriefHoldChrome(false);
         }
       };
       el.addEventListener('pointerdown', start);
@@ -52626,10 +52676,12 @@
       el.addEventListener('pointerleave', (e) => {
         clear();
         if (fired) endHoldVoice();
+        else setBriefHoldChrome(false);
       });
       el.addEventListener('pointercancel', (e) => {
         clear();
         if (fired) endHoldVoice();
+        else setBriefHoldChrome(false);
       });
       el.addEventListener('click', (e) => {
         if (fired) {
@@ -52637,7 +52689,23 @@
           e.stopPropagation();
           fired = false;
         }
+        setBriefHoldChrome(false);
       }, true);
+      // iOS long-press menu / image preview on the anchor art
+      el.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      el.addEventListener('dragstart', (e) => {
+        e.preventDefault();
+      });
+      el.querySelectorAll('img').forEach((img) => {
+        img.setAttribute('draggable', 'false');
+        img.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
+      });
       // Accessibility: long-press isn’t keyboard-friendly — keep voice on desktop top mic
       el.setAttribute('title', 'Brief · hold to speak, release when done');
     }
