@@ -2586,6 +2586,40 @@
       font-size: 0.55rem;
       padding: 0 0.05rem;
     }
+    /* Quiet chips under flow: savings / card pays / moves (not counted as Spent) */
+    .budget-flow-meta {
+      margin-top: 0.45rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      justify-content: center;
+      align-items: center;
+    }
+    .budget-flow-meta-chip {
+      font-size: 0.62rem;
+      font-weight: 650;
+      letter-spacing: 0.01em;
+      color: rgb(var(--harbor-muted));
+      background: rgb(var(--harbor-raised) / 0.65);
+      border: 1px solid rgb(var(--harbor-border) / 0.75);
+      border-radius: 999px;
+      padding: 0.22rem 0.55rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+    .budget-flow-meta-chip strong {
+      color: rgb(var(--harbor-text) / 0.88);
+      font-weight: 700;
+    }
+    .budget-flow-meta-note {
+      width: 100%;
+      text-align: center;
+      font-size: 0.6rem;
+      line-height: 1.35;
+      color: rgb(var(--harbor-muted));
+      margin-top: 0.15rem;
+      padding: 0 0.35rem;
+    }
     /* Needs · Wants · Bills split (Monarch-style flex, Harbor calm) */
     .budget-split {
       margin-top: 0.85rem;
@@ -16925,7 +16959,8 @@
                   <div class="budget-hero-sub" id="budget-tx-count"></div>
                 </div>
               </div>
-              <div id="budget-flow" class="budget-flow" aria-label="Money in, out, and kept"></div>
+              <div id="budget-flow" class="budget-flow" aria-label="Income, living spend, and what’s left"></div>
+              <div id="budget-flow-meta" class="budget-flow-meta hidden" aria-label="Moves not counted as spent"></div>
               <div id="budget-split" class="budget-split hidden" aria-label="Needs, wants, and bills"></div>
               <div id="budget-pace" class="budget-pace hidden" aria-live="polite"></div>
               <div id="budget-legend" class="budget-legend"></div>
@@ -17211,7 +17246,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 544;
+    const HARBOR_BUILD_NUMBER = 545;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -41603,13 +41638,13 @@
     // Primary lenses: Overview = full money-out pie for the month range.
     // Fine-tune filters narrow that picture (Income → Spending → Bills → …).
     const BUDGET_KIND_OPTIONS = [
-      { id: 'overview', label: 'Full picture', short: 'Full picture', hint: 'All money out — the simple default view', totalLabel: 'Total money out' },
-      { id: 'income', label: 'Income', short: 'Income', hint: 'Paychecks, deposits & money in', totalLabel: 'Total income' },
+      { id: 'overview', label: 'Full picture', short: 'Full picture', hint: 'Living costs only — transfers & card payments excluded', totalLabel: 'Living spend' },
+      { id: 'income', label: 'Income', short: 'Income', hint: 'Paychecks, benefits, interest — not card payments or transfers in', totalLabel: 'Total income' },
       { id: 'spending', label: 'Day-to-day', short: 'Day-to-day', hint: 'Groceries, dining, shopping, gas — everyday spending', totalLabel: 'Day-to-day spending' },
       { id: 'bills', label: 'Bills', short: 'Bills', hint: 'Rent, utilities, phone, insurance, car…', totalLabel: 'Total bills' },
       { id: 'subscriptions', label: 'Subscriptions', short: 'Subs', hint: 'Streaming, software, memberships', totalLabel: 'Total subscriptions' },
-      { id: 'savings', label: 'Savings', short: 'Savings', hint: 'Transfers to savings', totalLabel: 'Total to savings' },
-      { id: 'expenses', label: 'Other out', short: 'Other out', hint: 'Debt, transfers, fees, ATM & misc', totalLabel: 'Other money out' }
+      { id: 'savings', label: 'Savings', short: 'Savings', hint: 'Transfers to savings buckets', totalLabel: 'Total to savings' },
+      { id: 'expenses', label: 'Moves', short: 'Moves', hint: 'Transfers, card payments & other account moves (not living spend)', totalLabel: 'Account moves' }
     ];
 
     // Bank “Category” column → Harbor ids (Navy Fed / similar exports)
@@ -42009,26 +42044,56 @@
 
     /**
      * Score a transaction into a Harbor category.
-     * Bank Category is used when trustworthy; “Other Expenses” / empty always re-scored
-     * from Description + Type / Type Group (POS, ACH, Transfer, ATM…).
+     * Description critical rules beat wrong bank tags (e.g. Mint “Dues & Subscriptions”
+     * on a mortgage). Soft bank tags always re-score from Description + Type.
+     * Built for multi-bank CSVs — not one institution.
      */
     function categorizeBudgetDescription(description, bankCategory, meta = {}) {
       const bankKey = String(bankCategory || '').trim().toLowerCase();
       const fromBank = mapBankCategoryToHarbor(bankCategory);
-      // Hard bank tags win (groceries, mortgages, etc.)
-      if (fromBank && !BUDGET_SOFT_BANK_CATEGORIES.has(bankKey)) return fromBank;
-
       const text = String(description || '');
       const typeStr = String(meta.type || meta.bankType || '').toLowerCase();
       const typeGroup = String(meta.typeGroup || meta.bankTypeGroup || '').toLowerCase();
       const blob = `${text} ${typeStr} ${typeGroup}`;
 
+      // 1) Description overrides that beat bad bank categories (any CSV brand)
+      //    Order matters: more specific money-moves / bills before generic “transfer”.
+      const critical = [
+        // Real income first
+        [/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|regular\s*income|direct\s*deposit|ssa\s*treas|social\s*security|interest\s*paid|\bdividend\b/i, 'income'],
+        // Mortgage / housing lenders (often mis-tagged Dues/Subscriptions)
+        [/\bmortgage\b|freedom\s*mortgage|rocket\s*mortgage|quicken\s*loans|mr\.?\s*cooper|loan\s*depot|penny\mac|caliber\s*home|nationstar|newrez|lakeview\s*loan|carrington\s*mortgage|phh\s*mortgage|ocwen|wells\s*fargo\s*home|chase\s*mortgage|bank\s*of\s*america\s*home/i, 'mortgage'],
+        // Car / auto loan service
+        [/\bcar\s*loan\b|car\s*payment|auto\s*loan|vehicle\s*loan|toyota\s*financial|honda\s*financial|ford\s*credit|ally\s*auto|gm\s*financial|capital\s*one\s*auto|chase\s*auto|santander\s*consumer|westlake\s*financial|carmax\s*auto|\btoyota\s*motor\b|\bhonda\s*finance\b/i, 'car_payment'],
+        // Bare “Toyota” / “Honda” loan drafts (common on credit-union CSVs)
+        [/^(toyota|honda|ford|hyundai|kia|nissan|bmw|mercedes|subaru|vw|volkswagen|ally)\b/i, 'car_payment'],
+        // Card / revolving payments (checking side) — not living spend
+        [/payment\s+to\s+(american\s*express|amex|chase|citi|citibank|capital\s*one|discover|bank\s*of\s*america|wells\s*fargo|us\s*bank|synchrony|barclays|apple\s*card|goldman|marcus|navy\s*federal|penfed|usaa\s*card)/i, 'credit_cards'],
+        [/amex\s*epayment|amex\s*payment|credit\s*card\s*pmt|credit\s*card\s*payment|credit\s*card\s*bill|cc\s*payment|card\s*payment|transfer\s+to\s+credit\s*card|trf\s*to\s*credit\s*card/i, 'credit_cards'],
+        [/^(american\s*express|amex|chase|citi|citibank|capital\s*one|discover|synchrony|barclays|apple\s*card)\b/i, 'credit_cards'],
+        [/mobile\s*payment\s*-\s*thank|payment\s*thank\s*you|thank\s*you[-\s]*mobile|nfo\s*payment\s*received/i, 'credit_cards'],
+        // Savings buckets
+        [/transfer\s*to\s*savings|transfer\s*to\s*certificate|to\s*savings|savings\s*share|certificate\s*share/i, 'savings'],
+        // Internal multi-account moves
+        [/transfer\s+(to|from)\s+(other|checking|shares|savings)|tfr\s*(fr|to)\s*(other|shares)|trf\s*(fr|to)\s*(other|shares|checking)/i, 'transfers'],
+        [/zelle|venmo|cash\s*app|apple\s*cash|paypal|ach\s*p2p|peer\s*to\s*peer/i, 'transfers'],
+        [/\btransfer\b|tfr\s|trf\s/i, 'transfers']
+      ];
+      for (const [re, id] of critical) {
+        if (re.test(text) || re.test(blob)) return id;
+      }
+
+      // 2) Trustworthy bank Category (skip soft / often-wrong tags)
+      const softOrNoisyBank = BUDGET_SOFT_BANK_CATEGORIES.has(bankKey)
+        || /dues\s*&?\s*subscriptions|other\s*expenses|uncategorized|miscellaneous/i.test(bankKey);
+      if (fromBank && !softOrNoisyBank) return fromBank;
+
       const rules = [
         // Money movement first (often mis-tagged Other Expenses)
         [/withdrawal\s*by\s*wire|wire\s*transfer|wire\s*out/i, 'transfers'],
-        [/ach\s*orig\s*debit|ach\s*debit\s*-\s*taylor|orig\s*debit/i, 'transfers'],
+        [/ach\s*orig\s*debit|ach\s*debit|orig\s*debit/i, 'transfers'],
         [/zelle|venmo|cash\s*app|apple\s*cash|paypal|p2p|peer\s*to\s*peer/i, 'transfers'],
-        // Credit card / debt payments — “Payment to American Express”, “Payment to Chase”, etc.
+        // Credit card / debt payments
         [/payment\s+to\s+(american\s*express|amex|chase|citi|citibank|capital\s*one|discover|bank\s*of\s*america|wells\s*fargo|us\s*bank|synchrony|barclays|apple\s*card|goldman|marcus|navy\s*federal|penfed|usaa\s*card)/i, 'credit_cards'],
         [/american\s*express|amex\s*epayment|amex\s*payment|payment\s*to\s*chase|payment\s*to\s*american|payment\s*to\s*citi|payment\s*to\s*discover|payment\s*to\s*capital|credit\s*card\s*pmt|credit\s*card\s*payment|credit\s*card\s*bill|cc\s*payment|card\s*payment/i, 'credit_cards'],
         [/transfer\s+to\s+credit\s*card/i, 'credit_cards'],
@@ -42036,7 +42101,6 @@
         [/transfer\s*to\s*loan|transfer\s*to\s*credit\s*card/i, 'transfers'],
         [/\btransfer\b/i, 'transfers'],
         // Fixed bills — US-wide keywords + major national/regional providers
-        // (local co-ops still match via electric|water|mortgage|utility words)
         [/\bmortgage\b|freedom\s*mortgage|rocket\s*mortgage|quicken\s*loans|mr\.?\s*cooper|loan\s*depot|penny\mac|caliber\s*home|nationstar|newrez|lakeview\s*loan|carrington\s*mortgage|phh\s*mortgage|ocwen|wells\s*fargo\s*home|chase\s*mortgage|bank\s*of\s*america\s*home/i, 'mortgage'],
         [/\brent\b|landlord|hoa\b|property\s*manag|pyl\*property|apartments?\.com|cozy\s*co|avail\b|buildium|appfolio|yardi/i, 'rent'],
         // Electric — generic words + major US utilities (local co-ops still match “electric”)
@@ -42052,7 +42116,7 @@
         // Insurance — national carriers
         [/\binsurance\b|geico|state\s*farm|progressive|allstate|usaa|liberty\s*mutual|nationwide|farmers\s*ins|auto\s*ins|homeowners|travelers\b|hartford|progressive|erie\s*ins|american\s*family|amfam|metlife|prudential|aflac|lemonade\s*ins|root\s*ins/i, 'insurance'],
         // Car payments
-        [/car\s*payment|auto\s*loan|vehicle\s*loan|toyota\s*financial|honda\s*financial|ford\s*credit|ally\s*auto|gm\s*financial|capital\s*one\s*auto|chase\s*auto|santander\s*consumer|westlake\s*financial|carmax\s*auto/i, 'car_payment'],
+        [/car\s*payment|auto\s*loan|vehicle\s*loan|toyota\s*financial|honda\s*financial|ford\s*credit|ally\s*auto|gm\s*financial|capital\s*one\s*auto|chase\s*auto|santander\s*consumer|westlake\s*financial|carmax\s*auto|\bcar\s*loan\b/i, 'car_payment'],
         [/klarna|affirm|afterpay|sofi\s*loan|upstart|lendingclub|\bloan\b/i, 'loans'],
         // Groceries — national + major regional chains (not one-state only)
         [/publix|instacart|kroger|safeway|aldi|whole\s*foods|trader\s*joe|food\s*lion|heb|meijer|sprouts|winn[\s-]?dixie|albertsons|vons|ralphs|fred\s*meyer|king\s*soopers|smith'?s\s*food|qfc\b|harris\s*teeter|wegmans|shoprite|stop\s*&\s*shop|giant\s*eagle|giant\s*food|food\s*4\s*less|winco|sprouts|market\s*basket|hannaford|piggly|save\s*a\s*lot|grocery|supermarket/i, 'groceries'],
@@ -42174,21 +42238,22 @@
     /**
      * Credit-card / internal transfers that look like “money in” on multi-account
      * Mint exports (positive amount on the card/savings side) — not household pay.
+     * Also loan-side “Transfer Pymt” credits and share-to-share credits.
      */
     function isBudgetInternalOrCardCredit(t) {
       if (!t) return false;
-      const d = `${t.bankDescription || ''} ${t.description || ''} ${t.bankCategory || ''}`;
+      const d = `${t.bankDescription || ''} ${t.description || ''} ${t.bankCategory || ''} ${t.accountName || ''}`;
       // Card payment received / mobile thank-you (not a paycheck)
       if (/mobile\s*payment|payment\s*thank|thank\s*you[-\s]*mobile|nfo\s*payment\s*received|payment\s*received/i.test(d)
         && !/paycheck|salary|dfas|veteran|payroll/i.test(d)) {
         return true;
       }
       // Internal share/account transfers (multi-account export double-entry)
-      if (/transfer\s+from\s+(other|checking|shares|savings)|tfr\s*fr\s*other|trf\s*fr\s*other|transfer\s+to\s+other/i.test(d)) {
+      if (/transfer\s+from\s+(other|checking|shares|savings)|tfr\s*fr\s*(other|shares)|trf\s*fr\s*(other|shares)|transfer\s+to\s+other|transfer\s+pymt|loan\s*pymt/i.test(d)) {
         return true;
       }
       if (/^transfers?$/i.test(String(t.bankCategory || '').trim())
-        && /transfer|tfr|trf|p2p|zelle|ach\s*p2p/i.test(d)
+        && /transfer|tfr|trf|p2p|zelle|ach\s*p2p|cash\s*app|venmo/i.test(d)
         && !/paycheck|salary|dfas|veteran|interest\s*paid|dividend/i.test(d)) {
         return true;
       }
@@ -42212,7 +42277,213 @@
       if (/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|regular\s*income|direct\s*deposit|ssa\s*treas|social\s*security|interest\s*paid|dividend/i.test(desc)) {
         return true;
       }
+      // Merchant refunds / rebates (real money back — not card payment credits)
+      if (/refund|reimburs|cash\s*back|rebate/i.test(desc)
+        && !/transfer|payment\s*thank|mobile\s*payment|nfo\s*payment/i.test(desc)) {
+        return true;
+      }
       return false;
+    }
+
+    /** Blob used by cash-flow classifiers (bank line + display name + bank category). */
+    function getBudgetTxBlob(t) {
+      if (!t) return '';
+      return `${t.bankDescription || ''} ${t.description || ''} ${t.bankCategory || ''} ${t.accountName || ''} ${t.bankType || ''}`;
+    }
+
+    /**
+     * External bills/debt service that leave the household (mortgage, car loan to a lender).
+     * Counts as living spend — NOT the same as paying your own credit card.
+     */
+    function isBudgetExternalBillOrDebtService(t) {
+      if (!t) return false;
+      const cat = t.category || t.categoryAuto || '';
+      // Fixed bills & loan payments to a lender = real living costs
+      if (cat && cat !== 'credit_cards' && cat !== 'transfers' && cat !== 'savings'
+        && (isBudgetFixedBillCategory(cat)
+          || cat === 'mortgage' || cat === 'rent' || cat === 'car_payment'
+          || cat === 'loans' || cat === 'housing')) {
+        return true;
+      }
+      const d = getBudgetTxBlob(t);
+      if (/\bmortgage\b|freedom\s*mortgage|rocket\s*mortgage|quicken\s*loans|mr\.?\s*cooper/i.test(d)) return true;
+      if (/\bcar\s*loan\b|car\s*payment|auto\s*loan|toyota\s*financial|honda\s*financial|ford\s*credit|ally\s*auto|gm\s*financial/i.test(d)) return true;
+      if (/student\s*loan|navient|nelnet|great\s*lakes|aidvantage|mohela|sallie\s*mae/i.test(d)) return true;
+      // Bare auto-lender draft lines common on credit-union CSVs
+      if (/^(toyota|honda|ford|hyundai|kia|nissan|ally)\b/i.test(String(t.bankDescription || t.description || '').trim())) {
+        return true;
+      }
+      return false;
+    }
+
+    /** Paying your own credit cards / revolving accounts (settling spend already on the card). */
+    function isBudgetCardPaymentOutflow(t) {
+      if (!t) return false;
+      const cat = t.category || t.categoryAuto || '';
+      if (cat === 'credit_cards') return true;
+      const bank = String(t.bankCategory || '');
+      if (/credit\s*card\s*payment/i.test(bank)) return true;
+      const d = getBudgetTxBlob(t);
+      if (/payment\s*thank|mobile\s*payment|nfo\s*payment\s*received|thank\s*you[-\s]*mobile/i.test(d)) return true;
+      if (/transfer\s+to\s+credit\s*card|trf\s*to\s*credit\s*card|credit\s*card\s*pmt|credit\s*card\s*payment|cc\s*payment|card\s*payment/i.test(d)) return true;
+      if (/payment\s+to\s+(american\s*express|amex|chase|citi|capital\s*one|discover|bank\s*of\s*america|wells\s*fargo|synchrony|barclays|apple\s*card)/i.test(d)) return true;
+      if (/amex\s*epayment|amex\s*payment/i.test(d)) return true;
+      // Bare card-issuer payee from checking (common multi-account CSV)
+      if (/^(american\s*express|amex|chase|citi|citibank|capital\s*one|discover|synchrony|barclays|apple\s*card)\b/i.test(String(t.bankDescription || t.description || '').trim())) {
+        return true;
+      }
+      return false;
+    }
+
+    /** Moving money into savings / certificates (not living spend). */
+    function isBudgetSavingsOutflow(t) {
+      if (!t) return false;
+      const cat = t.category || t.categoryAuto || '';
+      if (cat === 'savings') return true;
+      const d = getBudgetTxBlob(t);
+      if (/transfer\s*to\s*savings|transfer\s*to\s*certificate|to\s*savings|savings\s*share|certificate\s*share/i.test(d)) return true;
+      if (/^savings$/i.test(String(t.bankCategory || '').trim())) return true;
+      return false;
+    }
+
+    /**
+     * Internal account-to-account / P2P moves (multi-account double-entry, Zelle to family, etc.).
+     * Not living spend — shown under Moves.
+     */
+    function isBudgetInternalTransferOutflow(t) {
+      if (!t) return false;
+      if (isBudgetExternalBillOrDebtService(t)) return false;
+      if (isBudgetCardPaymentOutflow(t)) return false;
+      if (isBudgetSavingsOutflow(t)) return false;
+      const cat = t.category || t.categoryAuto || '';
+      if (cat === 'transfers') return true;
+      const d = getBudgetTxBlob(t);
+      if (/transfer\s+(to|from)\s+(other|checking|shares|savings)|tfr\s*(fr|to)|trf\s*(fr|to)|transfer\s+pymt/i.test(d)) return true;
+      if (/zelle|venmo|cash\s*app|apple\s*cash|paypal|ach\s*p2p|peer\s*to\s*peer|p2p/i.test(d)) return true;
+      if (/withdrawal\s*by\s*wire|wire\s*transfer|wire\s*out/i.test(d)) return true;
+      if (/^transfers?$/i.test(String(t.bankCategory || '').trim())) return true;
+      if (/\btransfer\b/i.test(d) && !isBudgetExternalBillOrDebtService(t)) return true;
+      return false;
+    }
+
+    /**
+     * True when this row is money leaving an account (debit), not a credit/inflow.
+     * Works for indicator columns, signed-amount Mint exports, and isCredit flags.
+     */
+    function isBudgetMoneyOutTransaction(t) {
+      if (!t) return false;
+      if (isBudgetHouseholdIncomeTransaction(t)) return false;
+      if (isBudgetInternalOrCardCredit(t)) return false;
+      const ind = String(t.creditDebitIndicator || t.indicator || '').trim().toLowerCase();
+      if (ind === 'credit' || ind === 'cr' || ind === 'c') return false;
+      if (ind === 'debit' || ind === 'dr' || ind === 'd') return true;
+      if (t.isCredit === true) return false;
+      if (detectBudgetIsCredit(t)) return false;
+      return true;
+    }
+
+    /**
+     * Household cash-flow role for one row (any bank CSV):
+     *   income      — pay / benefits / interest / refunds
+     *   spend       — living costs (goods, services, bills, car/mortgage to a lender)
+     *   savings     — moved into savings buckets
+     *   debt_pay    — paid your own credit cards (purchases already counted as spend)
+     *   transfer    — internal / P2P account moves
+     *   exclude_in  — credits that are not income (card thank-you, transfer-in)
+     *
+     * Multi-account CSVs list both sides of a move; only one side is money-out,
+     * and money-out transfers are never “spent.”
+     */
+    function getBudgetCashFlowRole(t) {
+      if (!t) return 'exclude_in';
+      const amt = Math.abs(Number(t.amount) || 0);
+      if (amt < 0.005) return 'exclude_in';
+
+      if (isBudgetHouseholdIncomeTransaction(t)) return 'income';
+
+      // Remaining credits: never count as living spend
+      if (!isBudgetMoneyOutTransaction(t)) {
+        if (isBudgetTrueIncomeSignal(t)) return 'income';
+        const d = getBudgetTxBlob(t);
+        if (/refund|reimburs|cash\s*back|rebate/i.test(d)
+          && !/transfer|payment\s*thank|mobile\s*payment|nfo\s*payment/i.test(d)) {
+          return 'income';
+        }
+        return 'exclude_in';
+      }
+
+      // Money out — external obligations first (mortgage / car loan to lender)
+      if (isBudgetExternalBillOrDebtService(t)) return 'spend';
+      if (isBudgetSavingsOutflow(t)) return 'savings';
+      if (isBudgetCardPaymentOutflow(t)) return 'debt_pay';
+      if (isBudgetInternalTransferOutflow(t)) return 'transfer';
+
+      const cat = t.category || t.categoryAuto || 'other';
+      if (cat === 'savings') return 'savings';
+      if (cat === 'credit_cards') return 'debt_pay';
+      if (cat === 'transfers' || isBudgetMoneyMoveCategory(cat)) return 'transfer';
+      return 'spend';
+    }
+
+    /**
+     * Income → living Spent → What’s left for a month range.
+     * Transfers, savings moves, and card payments are tracked separately so
+     * multi-account CSVs don’t inflate “Spent” to nonsense.
+     */
+    function getBudgetHouseholdCashFlow(range) {
+      const r = range || budgetMonthRange || 'current';
+      let income = 0;
+      let spent = 0;
+      let savings = 0;
+      let debtPay = 0;
+      let transfers = 0;
+      let excludeIn = 0;
+      const roles = { income: 0, spend: 0, savings: 0, debt_pay: 0, transfer: 0, exclude_in: 0 };
+
+      const addTx = (t) => {
+        if (!t) return;
+        const amt = Math.abs(Number(t.amount) || 0);
+        if (amt < 0.005) return;
+        const role = getBudgetCashFlowRole(t);
+        roles[role] = (roles[role] || 0) + 1;
+        if (role === 'income') income += amt;
+        else if (role === 'spend') spent += amt;
+        else if (role === 'savings') savings += amt;
+        else if (role === 'debt_pay') debtPay += amt;
+        else if (role === 'transfer') transfers += amt;
+        else excludeIn += amt;
+      };
+
+      getBudgetTransactionsInMonth(r).forEach(addTx);
+
+      // Undated money-in still counts for this/last month (CSV missing post date)
+      if ((r === 'current' || r === 'last') && income < 0.005) {
+        (ensureBudgetState().transactions || []).forEach((t) => {
+          if (!t || t.date) return;
+          if (getBudgetCashFlowRole(t) === 'income') {
+            const amt = Math.abs(Number(t.amount) || 0);
+            if (amt >= 0.005) {
+              income += amt;
+              roles.income += 1;
+            }
+          }
+        });
+      }
+
+      const left = income - spent;
+      const moved = savings + debtPay + transfers;
+      return {
+        income,
+        spent,
+        left,
+        savings,
+        debtPay,
+        transfers,
+        excludeIn,
+        moved,
+        hasIncome: income >= 0.005,
+        roles
+      };
     }
 
     /**
@@ -42309,8 +42580,8 @@
      */
     function reclassifyAllBudgetTransactions(force = false) {
       const budget = ensureBudgetState();
-      if (!force && budget._fullRecatV12) return false;
-      budget._fullRecatV12 = true;
+      if (!force && budget._fullRecatV14) return false;
+      budget._fullRecatV14 = true;
       let changed = 0;
       (budget.transactions || []).forEach(t => {
         if (!t) return;
@@ -42678,13 +42949,23 @@
         cards: 'expenses'
       };
       const bucket = legacy[k] || k;
-      // Full picture: everything leaving the account (all money-out categories on the pie)
+      // Full picture = living spend only (matches Income → Spent). Transfers / card
+      // payments / savings moves are under Moves & Savings lenses — not double-counted.
       if (bucket === 'overview' || bucket === 'all' || bucket === 'full') {
-        return txs.filter(t => !isBudgetIncomeTransaction(t) && getBudgetBucket(t) !== 'income');
+        return txs.filter(t => {
+          if (typeof getBudgetCashFlowRole === 'function') {
+            return getBudgetCashFlowRole(t) === 'spend';
+          }
+          return !isBudgetIncomeTransaction(t) && getBudgetBucket(t) !== 'income'
+            && !isBudgetMoneyMoveCategory(t.category || t.categoryAuto);
+        });
       }
       // Income: household pay/benefits/interest — not card payments or internal transfers
       if (bucket === 'income') {
         return txs.filter(t => {
+          if (typeof getBudgetCashFlowRole === 'function') {
+            return getBudgetCashFlowRole(t) === 'income';
+          }
           if (typeof isBudgetHouseholdIncomeTransaction === 'function') {
             return isBudgetHouseholdIncomeTransaction(t);
           }
@@ -42694,6 +42975,25 @@
           if (/salary|paycheck|payroll|dfas|veteran|vacp|regular\s*income|direct\s*deposit|ssa\s*treas|interest\s*paid|dividend/i.test(d)) return true;
           if (/paycheck|salary|investment\s*income|^interest$|refund/i.test(String(t?.bankCategory || ''))) return true;
           return false;
+        });
+      }
+      // Moves lens: transfers + card payments (money that moved, not living costs)
+      if (bucket === 'expenses') {
+        return txs.filter(t => {
+          if (typeof getBudgetCashFlowRole === 'function') {
+            const role = getBudgetCashFlowRole(t);
+            return role === 'transfer' || role === 'debt_pay';
+          }
+          return getBudgetBucket(t) === 'expenses';
+        });
+      }
+      // Savings lens: only savings outflows (not transfer-in credits)
+      if (bucket === 'savings') {
+        return txs.filter(t => {
+          if (typeof getBudgetCashFlowRole === 'function') {
+            return getBudgetCashFlowRole(t) === 'savings';
+          }
+          return getBudgetBucket(t) === 'savings' && isBudgetMoneyOutTransaction(t);
         });
       }
       return txs.filter(t => getBudgetBucket(t) === bucket);
@@ -42950,6 +43250,8 @@
       delete budget._fullRecatV10;
       delete budget._fullRecatV11;
       delete budget._fullRecatV12;
+      delete budget._fullRecatV13;
+      delete budget._fullRecatV14;
       delete budget._budgetLogicBuild;
       // Any successful CSV import finishes the monthly budget-review task
       if (typeof markBudgetReviewCompleteFromImport === 'function') {
@@ -44018,9 +44320,9 @@
       }
       // Re-run income/category repair whenever the app build changes (Mint signed-amount + household income)
       const buildTag = String(typeof HARBOR_BUILD_NUMBER !== 'undefined' ? HARBOR_BUILD_NUMBER : '');
-      if (state.budget._budgetLogicBuild !== buildTag || !state.budget._fullRecatV13) {
+      if (state.budget._budgetLogicBuild !== buildTag || !state.budget._fullRecatV14) {
         state.budget._budgetLogicBuild = buildTag;
-        state.budget._fullRecatV13 = true;
+        state.budget._fullRecatV14 = true;
         reclassifyAllBudgetTransactions(true);
       } else if (!state.budget._otherRecatV2) {
         state.budget._otherRecatV2 = true;
@@ -44059,57 +44361,33 @@
         else rangeLabel.textContent = 'All time';
       }
 
-      // Money flow: Income → Spent → Left/Short
-      // Left only makes sense when we have income this period.
+      // Money flow: Income → living Spent → What’s left / Overspent
+      // Household model: transfers, savings moves, and card payments are NOT “Spent”
+      // (multi-account CSVs list both sides of every move — counting them as spend is wrong).
       let flowOutSum = 0;
       let flowInSum = 0;
-      let incomeAllMonths = 0;
-      let incomeLastMonth = 0;
-      const looksLikeMoneyIn = (t) => {
-        if (!t) return false;
-        try {
-          if (typeof isBudgetHouseholdIncomeTransaction === 'function') {
-            return isBudgetHouseholdIncomeTransaction(t);
-          }
-          if (typeof isBudgetIncomeTransaction === 'function' && isBudgetIncomeTransaction(t)) return true;
-        } catch (_) { /* ignore */ }
-        const d = `${t.bankDescription || ''} ${t.description || ''} ${t.bankCategory || ''}`;
-        return /salary|paycheck|payroll|dfas|veteran|vacp|direct\s*dep|interest\s*paid|dividend|ssa\s*treas|social\s*security/i.test(d)
-          || /paycheck|salary|investment\s*income|^interest$|interest\s*paid/i.test(String(t.bankCategory || ''));
-      };
+      let flowSavings = 0;
+      let flowDebtPay = 0;
+      let flowTransfers = 0;
       try {
-        const monthAll = getBudgetTransactionsInMonth(budgetMonthRange);
-        monthAll.forEach((t) => {
-          const amt = Math.abs(Number(t?.amount) || 0);
-          if (amt < 0.005) return;
-          if (looksLikeMoneyIn(t)) flowInSum += amt;
-          else flowOutSum += amt;
-        });
-        // Undated money-in still counts for “this month” (CSV missing post date)
-        if ((budgetMonthRange === 'current' || budgetMonthRange === 'last') && flowInSum < 0.005) {
-          (ensureBudgetState().transactions || []).forEach((t) => {
-            if (!t || t.date) return;
-            const amt = Math.abs(Number(t.amount) || 0);
+        const flow = typeof getBudgetHouseholdCashFlow === 'function'
+          ? getBudgetHouseholdCashFlow(budgetMonthRange)
+          : null;
+        if (flow) {
+          flowInSum = flow.income;
+          flowOutSum = flow.spent;
+          flowSavings = flow.savings;
+          flowDebtPay = flow.debtPay;
+          flowTransfers = flow.transfers;
+        } else {
+          // Fallback: household income + non–money-move outflows
+          getBudgetTransactionsInMonth(budgetMonthRange).forEach((t) => {
+            const amt = Math.abs(Number(t?.amount) || 0);
             if (amt < 0.005) return;
-            if (looksLikeMoneyIn(t)) flowInSum += amt;
-          });
-        }
-        // Prefer dedicated income lens if it found more (keeps transfer-in edge cases)
-        try {
-          const lensIn = getBudgetViewTransactions(budgetMonthRange, 'income')
-            .reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
-          if (lensIn > flowInSum) flowInSum = lensIn;
-          const lensOut = getBudgetViewTransactions(budgetMonthRange, 'overview')
-            .reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
-          if (lensOut > flowOutSum) flowOutSum = lensOut;
-        } catch (_) { /* ignore */ }
-        incomeLastMonth = getBudgetViewTransactions('last', 'income')
-          .reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
-        incomeAllMonths = getBudgetViewTransactions('all', 'income')
-          .reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
-        if (incomeAllMonths < 0.005) {
-          (ensureBudgetState().transactions || []).forEach((t) => {
-            if (looksLikeMoneyIn(t)) incomeAllMonths += Math.abs(Number(t.amount) || 0);
+            if (isBudgetHouseholdIncomeTransaction(t)) flowInSum += amt;
+            else if (isBudgetMoneyOutTransaction(t) && !isBudgetMoneyMoveCategory(t.category || t.categoryAuto)) {
+              flowOutSum += amt;
+            }
           });
         }
       } catch (_) { /* ignore */ }
@@ -44119,45 +44397,64 @@
         const hasIncome = flowInSum >= 0.005;
         let thirdHtml = '';
         let flowCls = 'budget-flow';
-        let hint = '';
         if (hasIncome) {
           if (flowNet >= -0.005) {
             thirdHtml = `
               <div class="budget-flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
-              <div class="budget-flow-card is-kept-pos" title="Income − spent = what you kept">
+              <div class="budget-flow-card is-kept-pos" title="Income minus living spend — money you still had after costs">
                 <i class="fa-solid fa-piggy-bank budget-flow-icon" aria-hidden="true"></i>
                 <div class="budget-flow-amt">${formatBudgetMoney(Math.abs(flowNet))}</div>
                 <div class="budget-flow-label">What’s left</div>
               </div>`;
           } else {
+            // Clear language: spent more than income on living costs (not “Short”)
             thirdHtml = `
               <div class="budget-flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
-              <div class="budget-flow-card is-kept-neg" title="Spent more than income this period">
+              <div class="budget-flow-card is-kept-neg" title="Living spend was higher than income this period">
                 <i class="fa-solid fa-arrow-trend-down budget-flow-icon" aria-hidden="true"></i>
                 <div class="budget-flow-amt">${formatBudgetMoney(Math.abs(flowNet))}</div>
-                <div class="budget-flow-label">Short</div>
+                <div class="budget-flow-label">Overspent</div>
               </div>`;
           }
         } else {
-          // No income this period — Income + Spent only (no third card, no hint clutter)
+          // No income this period — Income + Spent only
           flowCls = 'budget-flow is-two-up';
-          hint = '';
         }
         flowEl.className = flowCls;
         flowEl.innerHTML = `
-          <div class="budget-flow-card is-in${hasIncome ? '' : ' is-muted'}" title="Paychecks, deposits, and other money in">
+          <div class="budget-flow-card is-in${hasIncome ? '' : ' is-muted'}" title="Paychecks, benefits, interest, refunds — not card payments or transfers in">
             <i class="fa-solid fa-arrow-down budget-flow-icon" aria-hidden="true"></i>
             <div class="budget-flow-amt">${formatBudgetMoney(flowInSum)}</div>
             <div class="budget-flow-label">Income</div>
           </div>
           <div class="budget-flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
-          <div class="budget-flow-card is-out" title="Everything that left your accounts">
+          <div class="budget-flow-card is-out" title="Living costs only — groceries, bills, shopping. Transfers & card payments are not counted here">
             <i class="fa-solid fa-arrow-up budget-flow-icon" aria-hidden="true"></i>
             <div class="budget-flow-amt">${formatBudgetMoney(flowOutSum)}</div>
             <div class="budget-flow-label">Spent</div>
           </div>
-          ${thirdHtml}
-          ${hint}`;
+          ${thirdHtml}`;
+      }
+      // Chips: savings / card pays / internal moves (excluded from Spent)
+      const flowMetaEl = document.getElementById('budget-flow-meta');
+      if (flowMetaEl) {
+        const chips = [];
+        if (flowSavings >= 0.5) {
+          chips.push(`<span class="budget-flow-meta-chip">Saved <strong>${formatBudgetMoney(flowSavings)}</strong></span>`);
+        }
+        if (flowDebtPay >= 0.5) {
+          chips.push(`<span class="budget-flow-meta-chip">Card pays <strong>${formatBudgetMoney(flowDebtPay)}</strong></span>`);
+        }
+        if (flowTransfers >= 0.5) {
+          chips.push(`<span class="budget-flow-meta-chip">Moves <strong>${formatBudgetMoney(flowTransfers)}</strong></span>`);
+        }
+        if (chips.length) {
+          flowMetaEl.classList.remove('hidden');
+          flowMetaEl.innerHTML = `${chips.join('')}<div class="budget-flow-meta-note">Not counted as spent · transfers &amp; paying your own cards</div>`;
+        } else {
+          flowMetaEl.classList.add('hidden');
+          flowMetaEl.innerHTML = '';
+        }
       }
       const autoNote = document.getElementById('budget-auto-note');
       if (autoNote) {
@@ -44168,11 +44465,16 @@
           ? (srcN > 1 ? `${n} lines · ${srcN} accounts stacked` : `${n} line${n === 1 ? '' : 's'} on this device`)
           : '';
       }
-      // Soft tip when stacking — one quiet line
+      // Soft tip when stacking multi-account exports
       const stackTip = document.getElementById('budget-stack-tip');
       if (stackTip) {
         const srcN = (ensureBudgetState().importSources || []).length;
-        if (srcN > 1 && budgetKindFilter === 'overview') {
+        const multiAcct = srcN > 1
+          || (ensureBudgetState().transactions || []).some(t => t && t.accountName);
+        if (multiAcct && budgetKindFilter === 'overview' && (flowSavings + flowDebtPay + flowTransfers) >= 0.5) {
+          stackTip.classList.remove('hidden');
+          stackTip.innerHTML = `Stacked accounts · transfers &amp; card payments sit under <button type="button" class="text-harbor-primary-light font-semibold" onclick="setBudgetKindFilter('expenses')">Moves</button> and <button type="button" class="text-harbor-primary-light font-semibold" onclick="setBudgetKindFilter('savings')">Savings</button> — not Spent.`;
+        } else if (srcN > 1 && budgetKindFilter === 'overview') {
           stackTip.classList.remove('hidden');
           stackTip.innerHTML = `Several accounts stacked · try <button type="button" class="text-harbor-primary-light font-semibold" onclick="setBudgetKindFilter('spending')">Day-to-day</button> for purchases only.`;
         } else {
@@ -44225,14 +44527,15 @@
             || !!c.custom;
         }
         if (budgetKindFilter === 'expenses') {
-          return ['credit_cards', 'transfers', 'fees', 'cash', 'loans', 'other', 'charity'].includes(c.id);
+          return ['credit_cards', 'transfers', 'fees', 'cash', 'other'].includes(c.id);
         }
-        return c.id !== 'income';
+        return c.id !== 'income' && c.id !== 'transfers' && c.id !== 'credit_cards' && c.id !== 'savings';
       });
       const grand = pieCats.reduce((s, c) => s + (totals[c.id] || 0), 0)
         || txs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
       if (totalLabelEl) {
-        totalLabelEl.textContent = budgetKindFilter === 'income' ? 'In' : 'Out';
+        totalLabelEl.textContent = budgetKindFilter === 'income' ? 'In'
+          : (budgetKindFilter === 'expenses' ? 'Moves' : 'Out');
       }
       if (totalEl) totalEl.textContent = formatBudgetMoney(grand);
       const headline = document.getElementById('budget-hero-headline');
@@ -44240,10 +44543,11 @@
       if (countEl) {
         if (!txs.length) {
           countEl.textContent = budgetKindFilter === 'overview'
-            ? 'Nothing out this period'
+            ? 'No living spend this period'
             : `No ${String(kindOpt.short || kindOpt.label || 'items').toLowerCase()} yet`;
         } else {
-          countEl.textContent = `${txs.length} move${txs.length === 1 ? '' : 's'} · ${kindOpt.short || kindOpt.label}`;
+          const unit = budgetKindFilter === 'income' ? 'deposit' : 'item';
+          countEl.textContent = `${txs.length} ${unit}${txs.length === 1 ? '' : 's'} · ${kindOpt.short || kindOpt.label}`;
         }
       }
 
