@@ -1132,10 +1132,53 @@
       border-left: 3px solid rgb(var(--harbor-low) / 0.75) !important;
       padding-left: 0.78rem !important;
     }
-    /* Meta row clears Later chip */
+    /* Meta row clears Later chip (phone: Later is bottom-right) */
     #task-list .habit-card-v2.has-overdue-actions .habit-meta-line,
     #task-list .habit-card-v2.has-overdue-actions .habit-chip-row {
       padding-right: 3.9rem;
+    }
+    /*
+     * Website / desktop only: Later was absolute bottom-right and clipped
+     * under Edit · Delete. Park Later bottom-left; keep Delete free on the right.
+     * Phone (max-width 767) unchanged — no inline Delete strip there.
+     */
+    @media (min-width: 768px) {
+      #task-list .habit-card-v2.has-overdue-actions .habit-meta-line,
+      #task-list .habit-card-v2.has-overdue-actions .habit-chip-row {
+        padding-right: 0.25rem;
+        padding-left: 0;
+      }
+      #task-list .habit-card-v2.has-overdue-actions .habit-defer-actions,
+      #task-list .swipe-row-content.habit-card-v2.has-overdue-actions .habit-defer-actions {
+        right: auto;
+        left: 0.55rem;
+        bottom: 0.4rem;
+        z-index: 2;
+      }
+      #task-list .habit-card-v2.has-overdue-actions .habit-card-side,
+      #task-list .swipe-row-content.habit-card-v2.has-overdue-actions .habit-card-side {
+        position: relative;
+        z-index: 4;
+        min-width: 5.75rem;
+        padding-bottom: 0.1rem;
+      }
+      #task-list .habit-card-v2.has-overdue-actions .row-inline-actions,
+      #task-list .swipe-row-content.habit-card-v2.has-overdue-actions .row-inline-actions {
+        position: relative;
+        z-index: 5;
+        flex-wrap: nowrap;
+        gap: 0.4rem;
+      }
+      #task-list .habit-card-v2.has-overdue-actions,
+      #task-list .swipe-row-content.habit-card-v2.has-overdue-actions {
+        padding-bottom: 2.2rem !important;
+      }
+    }
+    html.layout-wide #task-list .habit-card-v2.has-overdue-actions .habit-defer-actions,
+    html.layout-wide #task-list .swipe-row-content.habit-card-v2.has-overdue-actions .habit-defer-actions {
+      right: auto;
+      left: 0.55rem;
+      bottom: 0.4rem;
     }
     #task-list .habit-card-v2 .habit-card-side {
       padding-top: 0.05rem;
@@ -17053,7 +17096,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 537;
+    const HARBOR_BUILD_NUMBER = 538;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
