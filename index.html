@@ -2980,6 +2980,86 @@
       background: rgb(var(--harbor-primary) / 0.12);
       box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.2);
     }
+    /* Category search in edit sheet */
+    .budget-cat-search-wrap {
+      position: relative;
+      margin-bottom: 0.55rem;
+    }
+    .budget-cat-search-wrap > i {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.7rem;
+      color: rgb(var(--harbor-muted));
+      pointer-events: none;
+    }
+    .budget-cat-search {
+      width: 100%;
+      background: rgb(var(--harbor-raised));
+      border: 1px solid rgb(var(--harbor-border));
+      border-radius: 1rem;
+      padding: 0.7rem 0.85rem 0.7rem 2.15rem;
+      font-size: 0.85rem;
+      font-weight: 550;
+      color: rgb(var(--harbor-text));
+      font-family: var(--harbor-font);
+      outline: none;
+    }
+    .budget-cat-search:focus {
+      border-color: rgb(var(--harbor-primary) / 0.55);
+      box-shadow: 0 0 0 3px rgb(var(--harbor-primary) / 0.12);
+    }
+    .budget-cat-results {
+      max-height: 11.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      margin-bottom: 0.45rem;
+      -webkit-overflow-scrolling: touch;
+    }
+    .budget-cat-result {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.85rem;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-surface));
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: rgb(var(--harbor-text));
+      font-family: var(--harbor-font);
+      cursor: pointer;
+    }
+    .budget-cat-result:hover,
+    .budget-cat-result.is-active {
+      border-color: rgb(var(--harbor-primary) / 0.45);
+      background: rgb(var(--harbor-primary) / 0.1);
+    }
+    .budget-cat-result.is-active {
+      box-shadow: 0 0 0 1px rgb(var(--harbor-primary) / 0.2);
+    }
+    .budget-cat-result-add {
+      border-style: dashed;
+      color: rgb(var(--harbor-primary-light));
+    }
+    .budget-cat-selected {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.72rem;
+      color: rgb(var(--harbor-muted));
+      margin-bottom: 0.65rem;
+      min-height: 1.1rem;
+    }
+    .budget-cat-selected strong {
+      color: rgb(var(--harbor-text));
+      font-weight: 700;
+    }
     .budget-insight-avg {
       font-weight: 500;
       opacity: 0.85;
@@ -17131,7 +17211,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 540;
+    const HARBOR_BUILD_NUMBER = 541;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -41610,14 +41690,58 @@
 
     function ensureBudgetState() {
       if (!state.budget || typeof state.budget !== 'object') {
-        state.budget = { transactions: [], importedAt: null, merchantRules: {}, importSources: [] };
+        state.budget = {
+          transactions: [],
+          importedAt: null,
+          merchantRules: {},
+          importSources: [],
+          customCategories: []
+        };
       }
       if (!Array.isArray(state.budget.transactions)) state.budget.transactions = [];
       if (!state.budget.merchantRules || typeof state.budget.merchantRules !== 'object') {
         state.budget.merchantRules = {};
       }
       if (!Array.isArray(state.budget.importSources)) state.budget.importSources = [];
+      if (!Array.isArray(state.budget.customCategories)) state.budget.customCategories = [];
       return state.budget;
+    }
+
+    /** User-created categories (search “add new” in transaction editor). */
+    function ensureBudgetCustomCategories() {
+      return ensureBudgetState().customCategories;
+    }
+
+    function getBudgetCustomCategory(id) {
+      const list = ensureBudgetCustomCategories();
+      return (list || []).find(c => c && c.id === id) || null;
+    }
+
+    function addBudgetCustomCategory(label) {
+      const name = String(label || '').trim().slice(0, 40);
+      if (!name) return null;
+      const list = ensureBudgetCustomCategories();
+      const existing = list.find(c => String(c.label || '').toLowerCase() === name.toLowerCase());
+      if (existing) return existing;
+      const id = 'custom-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 28)
+        + '-' + Date.now().toString(36).slice(-4);
+      const colors = ['#6BA3BC', '#C9A06B', '#8B6BC9', '#E0A0B0', '#5E9E6B', '#6A8EC9', '#A07070', '#5A9E8E'];
+      const color = colors[list.length % colors.length];
+      const row = { id, label: name, color, pie: true, custom: true };
+      list.push(row);
+      return row;
+    }
+
+    /** Built-in + custom categories for labels / pie / editor. */
+    function getAllBudgetCategories() {
+      const custom = (ensureBudgetCustomCategories() || []).map(c => ({
+        id: c.id,
+        label: c.label,
+        color: c.color || '#9AA3A0',
+        pie: true,
+        custom: true
+      }));
+      return [...BUDGET_CATEGORIES, ...custom];
     }
 
     /** Stable de-dupe key so stacking the same CSV twice doesn’t double-count. */
@@ -41669,44 +41793,69 @@
       return String(name || '').toLowerCase().trim();
     }
 
+    /**
+     * Keys for merchant memory: exact bank line (as in next CSV) + normalized brand.
+     * Exact key wins so “AMZN Mktp US*AB12” keeps the name you set when that string returns.
+     */
+    function getBudgetMerchantRuleKeys(description) {
+      const raw = String(description || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 160);
+      const norm = getBudgetMerchantRuleKey(description);
+      const keys = [];
+      if (raw && raw.length >= 2) keys.push(raw);
+      if (norm && norm !== 'purchase' && norm !== raw) keys.push(norm);
+      return keys;
+    }
+
     function ensureBudgetMerchantRules() {
       return ensureBudgetState().merchantRules;
     }
 
     /**
      * Remember a user category/name for this merchant.
-     * Survives CSV replace imports so next month’s file keeps your edits.
+     * Survives CSV re-import so next month’s file keeps your display name + category
+     * when the bank description matches.
      */
     function rememberBudgetMerchantRule(description, opts = {}) {
-      const key = getBudgetMerchantRuleKey(description);
-      if (!key || key === 'purchase') return null;
+      const keys = getBudgetMerchantRuleKeys(description);
+      if (!keys.length) return null;
       const rules = ensureBudgetMerchantRules();
-      const prev = rules[key] || {};
-      const next = { ...prev, updatedAt: new Date().toISOString() };
-      if (opts.category != null && opts.category !== '') next.category = opts.category;
-      if (opts.forgetCategory) delete next.category;
-      if (opts.displayName) next.displayName = String(opts.displayName).trim().slice(0, 140);
-      if (opts.clearDisplayName) delete next.displayName;
-      if (!next.category && !next.displayName) {
-        delete rules[key];
-        return null;
-      }
-      rules[key] = next;
-      return key;
+      let lastKey = null;
+      keys.forEach((key) => {
+        if (!key || key === 'purchase') return;
+        const prev = rules[key] || {};
+        const next = { ...prev, updatedAt: new Date().toISOString() };
+        if (opts.category != null && opts.category !== '') next.category = opts.category;
+        if (opts.forgetCategory) delete next.category;
+        if (opts.displayName) next.displayName = String(opts.displayName).trim().slice(0, 140);
+        if (opts.clearDisplayName) delete next.displayName;
+        if (!next.category && !next.displayName) {
+          delete rules[key];
+          return;
+        }
+        rules[key] = next;
+        lastKey = key;
+      });
+      return lastKey;
     }
 
     function forgetBudgetMerchantRule(description) {
-      const key = getBudgetMerchantRuleKey(description);
-      if (!key) return;
+      const keys = getBudgetMerchantRuleKeys(description);
+      if (!keys.length) return;
       const rules = ensureBudgetMerchantRules();
-      if (rules[key]) delete rules[key];
+      keys.forEach((key) => {
+        if (rules[key]) delete rules[key];
+      });
     }
 
     function getBudgetMerchantRule(description) {
-      const key = getBudgetMerchantRuleKey(description);
-      if (!key) return null;
+      const keys = getBudgetMerchantRuleKeys(description);
+      if (!keys.length) return null;
       const rules = ensureBudgetMerchantRules();
-      return rules[key] || null;
+      // Prefer exact bank-line match, then normalized brand
+      for (let i = 0; i < keys.length; i++) {
+        if (rules[keys[i]]) return rules[keys[i]];
+      }
+      return null;
     }
 
     /** Apply learned category / display name after auto-categorize */
@@ -41754,7 +41903,10 @@
     }
 
     function getBudgetCategory(id) {
-      return BUDGET_CATEGORIES.find(c => c.id === id) || BUDGET_CATEGORIES.find(c => c.id === 'other');
+      const all = typeof getAllBudgetCategories === 'function' ? getAllBudgetCategories() : BUDGET_CATEGORIES;
+      return all.find(c => c.id === id)
+        || BUDGET_CATEGORIES.find(c => c.id === id)
+        || BUDGET_CATEGORIES.find(c => c.id === 'other');
     }
 
     function getBudgetKindOption(id) {
@@ -43499,15 +43651,20 @@
       }
       // Allow moving any debit into bills / spending / subs / savings / debt / etc.
       const isIn = !!(tx.isCredit || (typeof detectBudgetIsCredit === 'function' && detectBudgetIsCredit(tx)));
-      const editable = BUDGET_CATEGORIES.filter(c => {
-        if (c.id === 'income') return isIn;
-        if (isIn) return c.id === 'income' || c.id === 'transfers' || c.id === 'savings' || c.id === 'other';
-        if (c.id === 'housing') return false; // prefer mortgage/rent
-        return c.pie !== false;
-      });
+      const listEditableCats = () => {
+        const all = typeof getAllBudgetCategories === 'function' ? getAllBudgetCategories() : BUDGET_CATEGORIES;
+        return all.filter(c => {
+          if (c.id === 'income') return isIn;
+          if (isIn) return c.id === 'income' || c.id === 'transfers' || c.id === 'savings' || c.id === 'other' || c.custom;
+          if (c.id === 'housing') return false; // prefer mortgage/rent
+          return c.pie !== false || c.custom;
+        });
+      };
+      let editable = listEditableCats();
       let selectedCat = tx.category || (isIn ? 'income' : 'other');
       if (selectedCat === 'housing') selectedCat = 'mortgage';
       const typeLabel = getBudgetTxTypeLabel(tx);
+      const bankDesc = tx.bankDescription || tx.description || '';
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-harbor-bg/70 modal-overlay-blur flex items-end z-[70]';
       modal.innerHTML = `
@@ -43524,19 +43681,21 @@
             <span class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted">Name</span>
             <input id="budget-edit-name" type="text" maxlength="140" value="${escapeBriefHtml(tx.description || '')}"
               class="mt-1 w-full bg-harbor-raised border border-harbor-border rounded-2xl px-3.5 py-2.5 text-sm text-harbor-text outline-none focus:border-harbor-primary" />
+            <span class="block text-[10px] text-harbor-muted mt-1 leading-snug">Saved for this bank line on future CSV imports.</span>
           </label>
           <div class="text-[10px] uppercase tracking-wider font-bold text-harbor-muted mb-1.5">Category</div>
-          <div class="budget-cat-grid mb-2" id="budget-edit-cat-grid">
-            ${editable.map(c => `
-              <button type="button" class="budget-cat-pick${selectedCat === c.id ? ' is-active' : ''}" data-cat="${c.id}">
-                <span class="budget-tx-cat-dot" style="background:${c.color}"></span>
-                ${escapeBriefHtml(c.label)}
-              </button>`).join('')}
+          <div class="budget-cat-search-wrap">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input id="budget-edit-cat-search" type="search" autocomplete="off" enterkeyhint="search"
+              class="budget-cat-search" placeholder="Search categories…"
+              aria-label="Search categories" />
           </div>
+          <div class="budget-cat-selected" id="budget-edit-cat-selected"></div>
+          <div class="budget-cat-results" id="budget-edit-cat-results" role="listbox" aria-label="Categories"></div>
           <button type="button" class="w-full py-3 mt-2 rounded-2xl bg-harbor-primary text-white font-semibold" data-save="1">
             Save
           </button>
-          <p class="text-[10px] text-harbor-muted text-center mt-1.5 leading-snug">Category &amp; name stick for this merchant on future CSV imports.</p>
+          <p class="text-[10px] text-harbor-muted text-center mt-1.5 leading-snug">Name &amp; category stick when next month’s CSV has the same bank description.</p>
           <button type="button" class="w-full py-2.5 mt-2 rounded-2xl bg-harbor-raised border border-harbor-border text-[11px] text-harbor-muted font-semibold" data-reset="1">
             Reset to auto category
           </button>
@@ -43547,19 +43706,88 @@
       document.body.appendChild(modal);
       const close = () => modal.remove();
       const nameInput = modal.querySelector('#budget-edit-name');
-      const bankDesc = tx.bankDescription || tx.description || '';
-      const refreshCatActive = () => {
-        modal.querySelectorAll('[data-cat]').forEach(btn => {
-          btn.classList.toggle('is-active', btn.getAttribute('data-cat') === selectedCat);
+      const catSearch = modal.querySelector('#budget-edit-cat-search');
+      const catResults = modal.querySelector('#budget-edit-cat-results');
+      const catSelected = modal.querySelector('#budget-edit-cat-selected');
+
+      const paintSelected = () => {
+        const c = getBudgetCategory(selectedCat);
+        if (catSelected) {
+          catSelected.innerHTML = c
+            ? `Selected · <span class="budget-tx-cat-dot" style="background:${c.color}"></span> <strong>${escapeBriefHtml(c.label)}</strong>`
+            : '';
+        }
+      };
+
+      const paintCatResults = () => {
+        if (!catResults) return;
+        editable = listEditableCats();
+        const q = String(catSearch?.value || '').trim().toLowerCase();
+        let list = editable;
+        if (q) {
+          list = editable.filter(c => String(c.label || '').toLowerCase().includes(q)
+            || String(c.id || '').toLowerCase().includes(q));
+        }
+        // Always surface selected at top when no query
+        if (!q && selectedCat) {
+          list = [
+            ...list.filter(c => c.id === selectedCat),
+            ...list.filter(c => c.id !== selectedCat)
+          ];
+        }
+        const canAdd = q.length >= 1
+          && !editable.some(c => String(c.label || '').toLowerCase() === q);
+        const addLabel = q ? q.replace(/\b\w/g, ch => ch.toUpperCase()).slice(0, 40) : '';
+        catResults.innerHTML = `
+          ${list.slice(0, 24).map(c => `
+            <button type="button" class="budget-cat-result${selectedCat === c.id ? ' is-active' : ''}" data-cat="${escapeBriefHtml(c.id)}" role="option" aria-selected="${selectedCat === c.id ? 'true' : 'false'}">
+              <span class="budget-tx-cat-dot" style="background:${c.color}"></span>
+              ${escapeBriefHtml(c.label)}
+            </button>`).join('')}
+          ${canAdd ? `
+            <button type="button" class="budget-cat-result budget-cat-result-add" data-add-cat="1" role="option">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i>
+              Add “${escapeBriefHtml(addLabel)}”
+            </button>` : ''}
+          ${!list.length && !canAdd ? `<div class="text-[11px] text-harbor-muted px-1 py-2">No categories match</div>` : ''}
+        `;
+        catResults.querySelectorAll('[data-cat]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            selectedCat = btn.getAttribute('data-cat') || selectedCat;
+            paintSelected();
+            paintCatResults();
+          });
+        });
+        catResults.querySelector('[data-add-cat]')?.addEventListener('click', () => {
+          const created = addBudgetCustomCategory(addLabel || catSearch?.value);
+          if (!created) {
+            showToast('Enter a category name', 'warn');
+            return;
+          }
+          selectedCat = created.id;
+          editable = listEditableCats();
+          if (catSearch) catSearch.value = '';
+          paintSelected();
+          paintCatResults();
+          showToast(`Category “${created.label}” added`, 'success');
         });
       };
+
+      paintSelected();
+      paintCatResults();
       modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
-      modal.querySelectorAll('[data-cat]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          selectedCat = btn.getAttribute('data-cat');
-          refreshCatActive();
-        });
+      catSearch?.addEventListener('input', () => paintCatResults());
+      catSearch?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const first = catResults?.querySelector('[data-cat], [data-add-cat]');
+          first?.click();
+        }
       });
+      setTimeout(() => {
+        try { catSearch?.focus(); } catch (_) { /* ignore */ }
+      }, 80);
+
       modal.querySelector('[data-save]')?.addEventListener('click', () => {
         const name = String(nameInput?.value || '').trim().slice(0, 140);
         if (!name) {
@@ -43567,39 +43795,43 @@
           nameInput?.focus();
           return;
         }
+        // Keep original bank line for matching next month’s CSV
         if (!tx.bankDescription) tx.bankDescription = bankDesc;
+        const ruleSrc = String(tx.bankDescription || bankDesc || '').trim();
         tx.description = name;
         tx.category = selectedCat || tx.category || 'other';
         // If user marks as transfer-style category, keep as debit flow
         if (tx.category === 'income') tx.isCredit = true;
-        else if (tx.isCredit && tx.category !== 'income') tx.isCredit = false;
+        else if (tx.isCredit && tx.category !== 'income' && tx.category !== 'transfers' && tx.category !== 'savings') {
+          tx.isCredit = false;
+        }
 
         const autoCat = tx.categoryAuto || categorizeBudgetDescription(
-          tx.bankDescription || bankDesc,
+          ruleSrc,
           tx.bankCategory,
           { type: tx.bankType, typeGroup: tx.bankTypeGroup }
         );
         const isAutoCat = tx.category === autoCat;
-        const isAutoName = name === (tx.bankDescription || bankDesc);
-        const ruleSrc = tx.bankDescription || bankDesc;
+        const isAutoName = name === ruleSrc;
         if (isAutoCat && isAutoName) {
           forgetBudgetMerchantRule(ruleSrc);
           tx.categoryFromRule = false;
         } else {
+          // Always remember name + category against the bank description for re-import
           rememberBudgetMerchantRule(ruleSrc, {
             category: isAutoCat ? undefined : tx.category,
             forgetCategory: isAutoCat,
             displayName: isAutoName ? undefined : name,
             clearDisplayName: isAutoName
           });
-          // Ensure category is stored when only name was custom before
           if (!isAutoCat) rememberBudgetMerchantRule(ruleSrc, { category: tx.category });
+          if (!isAutoName) rememberBudgetMerchantRule(ruleSrc, { displayName: name });
           tx.categoryFromRule = true;
         }
         saveState();
         close();
         renderBudget();
-        showToast(isAutoCat && isAutoName ? 'Reset for this merchant' : 'Saved · will apply on next import');
+        showToast(isAutoCat && isAutoName ? 'Reset for this merchant' : 'Saved · name & category stick on next CSV');
       });
       modal.querySelector('[data-reset]')?.addEventListener('click', () => {
         const src = tx.bankDescription || bankDesc || tx.description;
@@ -43609,7 +43841,9 @@
         });
         if (tx.isCredit) selectedCat = 'income';
         if (nameInput && tx.bankDescription) nameInput.value = tx.bankDescription;
-        refreshCatActive();
+        if (catSearch) catSearch.value = '';
+        paintSelected();
+        paintCatResults();
         showToast('Category reset — tap Save to keep (and forget for next import)');
       });
       modal.querySelector('[data-delete]')?.addEventListener('click', () => {
@@ -43751,7 +43985,7 @@
               <div class="budget-flow-card is-kept-pos" title="Income − spent = what you kept">
                 <i class="fa-solid fa-piggy-bank budget-flow-icon" aria-hidden="true"></i>
                 <div class="budget-flow-amt">${formatBudgetMoney(Math.abs(flowNet))}</div>
-                <div class="budget-flow-label">Left</div>
+                <div class="budget-flow-label">What’s left</div>
               </div>`;
           } else {
             thirdHtml = `
@@ -43763,13 +43997,9 @@
               </div>`;
           }
         } else {
-          // No income this period — don’t show a broken “?” Left card
+          // No income this period — Income + Spent only (no third card, no hint clutter)
           flowCls = 'budget-flow is-two-up';
-          if (incomeLastMonth > 0.005 || incomeAllMonths > 0.005) {
-            hint = `<div class="budget-flow-hint">Left needs income this month. Try <button type="button" onclick="setBudgetMonthRange('last')">Last month</button> or <button type="button" onclick="setBudgetMonthRange('all')">All</button>.</div>`;
-          } else {
-            hint = `<div class="budget-flow-hint">Left needs income — import a CSV that includes paychecks/deposits, or add income under the Income view.</div>`;
-          }
+          hint = '';
         }
         flowEl.className = flowCls;
         flowEl.innerHTML = `
@@ -43814,9 +44044,10 @@
         searchEl.value = budgetSearchQuery || '';
       }
 
-      // Totals by category for current view
+      // Totals by category for current view (built-in + custom)
+      const allCats = typeof getAllBudgetCategories === 'function' ? getAllBudgetCategories() : BUDGET_CATEGORIES;
       const totals = {};
-      BUDGET_CATEGORIES.forEach(c => { totals[c.id] = 0; });
+      allCats.forEach(c => { totals[c.id] = 0; });
       txs.forEach(t => {
         let cat = t.category || 'other';
         if (budgetKindFilter === 'income') {
@@ -43826,12 +44057,13 @@
         } else if ((budgetKindFilter === 'bills' || budgetKindFilter === 'overview') && cat === 'housing') {
           cat = 'mortgage'; // legacy → show under Mortgage when possible
         }
+        if (totals[cat] == null) totals[cat] = 0;
         totals[cat] = (totals[cat] || 0) + (Number(t.amount) || 0);
       });
 
       // Pie: full picture = every money-out category; fine-tune lenses narrow slices
-      const pieCats = BUDGET_CATEGORIES.filter(c => {
-        if (c.pie === false) return false;
+      const pieCats = allCats.filter(c => {
+        if (c.pie === false && !c.custom) return false;
         if (budgetKindFilter === 'overview') {
           // Full money-out pie — all categories except income
           return c.id !== 'income';
@@ -43840,13 +44072,15 @@
           return c.id === 'income' || c.id === 'transfers' || c.id === 'savings';
         }
         if (c.id === 'income') return false;
+        if (c.custom) return true; // custom cats appear in overview / spend-ish views
         if (budgetKindFilter === 'bills') return !!c.fixedBill;
         if (budgetKindFilter === 'subscriptions') {
           return c.id === 'subscriptions' || c.id === 'entertainment';
         }
         if (budgetKindFilter === 'savings') return c.id === 'savings';
         if (budgetKindFilter === 'spending') {
-          return ['dining', 'shopping', 'personal', 'groceries', 'transport', 'entertainment', 'education', 'charity', 'health', 'other'].includes(c.id);
+          return ['dining', 'shopping', 'personal', 'groceries', 'transport', 'entertainment', 'education', 'charity', 'health', 'other'].includes(c.id)
+            || !!c.custom;
         }
         if (budgetKindFilter === 'expenses') {
           return ['credit_cards', 'transfers', 'fees', 'cash', 'loans', 'other', 'charity'].includes(c.id);
