@@ -9,8 +9,10 @@
 
 | Tier | Promise |
 |------|---------|
-| **Harbor Free** | Calm daily life OS on *this* device. No account required. |
-| **Harbor Pro** | Same calm UI — plus backup/sync, seamless calendars, household, and native power features. |
+| **Harbor Free** | Calm daily life OS on *this* device. No account required. Local file export for backup. |
+| **Harbor Pro** | Same calm UI — plus **cloud backup/restore** (main sell), multi-device peace of mind, seamless calendars, household, and native power features. |
+
+**Hard rule:** A free account is **not** free cloud data sync. Signing in without Pro does not unlock multi-device restore. Cloud backup/restore is the core Harbor Pro wedge. Free backup = export a file on this device.
 
 **Suggested price (indie starting point):**  
 ~$3.99/mo · ~$29.99/yr · optional early lifetime ~$49–$79  

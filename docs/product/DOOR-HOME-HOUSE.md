@@ -256,12 +256,12 @@ After graduate:
 |--------|------|--------|
 | **What’s heaviest** | First week, after a real complete | Only First-week pitch |
 | **First week done** | Graduate | Toast only — no sheet |
-| **Harbor Pro** | Deferred to a later open | Not on graduate beat |
-| **Harbor Day intro** | First Streaks visit after First week | Waits if Pro still deferred; uses day budget |
+| **Harbor Pro** | Optional onboarding step + Menu / feature gates | Soft deferred invites **retired** |
+| **Harbor Day intro** | First Streaks visit after First week (if Day enabled) | Day budget only; no Pro wait |
 | **Beta check-in** | Open, day 2+, not on complete | Never stacks on First week completes |
 | Harbor Day “i” tip | Inline on Streaks | Not a full-screen pitch |
 
-Helpers: `canShowSoftPrompt`, `markSoftPromptShown`, `maybeFlushDeferredProInvite`.
+Helpers: `canShowSoftPrompt`, `markSoftPromptShown`. `maybeFlushDeferredProInvite` only clears legacy flags.
 
 ---
 
