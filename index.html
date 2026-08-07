@@ -17211,7 +17211,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 543;
+    const HARBOR_BUILD_NUMBER = 544;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -41655,7 +41655,22 @@
       'deposits': 'income',
       'investment income': 'income',
       'interest': 'income',
-      'refunds/adjustments': 'income'
+      'interest paid': 'income',
+      'refunds/adjustments': 'income',
+      'refunds & reimbursements': 'income',
+      'refunds and reimbursements': 'income',
+      // Mint / multi-account exports (common labels)
+      'dues & subscriptions': 'subscriptions',
+      'dues and subscriptions': 'subscriptions',
+      'amazon': 'shopping',
+      'spirits': 'dining',
+      'movie': 'entertainment',
+      'movies': 'entertainment',
+      'games': 'entertainment',
+      'church': 'charity',
+      'postage & shipping': 'shopping',
+      'postage and shipping': 'shopping',
+      'uncategorized': 'other'
     };
 
     // Soft bank tags: never trust alone — always try merchant/description rules first
@@ -42157,30 +42172,65 @@
     }
 
     /**
-     * Income lens: paychecks, deposits, benefits, and other money-in.
-     * Intentionally broad so corrupted isCredit / indicator flags still surface pay.
+     * Credit-card / internal transfers that look like “money in” on multi-account
+     * Mint exports (positive amount on the card/savings side) — not household pay.
+     */
+    function isBudgetInternalOrCardCredit(t) {
+      if (!t) return false;
+      const d = `${t.bankDescription || ''} ${t.description || ''} ${t.bankCategory || ''}`;
+      // Card payment received / mobile thank-you (not a paycheck)
+      if (/mobile\s*payment|payment\s*thank|thank\s*you[-\s]*mobile|nfo\s*payment\s*received|payment\s*received/i.test(d)
+        && !/paycheck|salary|dfas|veteran|payroll/i.test(d)) {
+        return true;
+      }
+      // Internal share/account transfers (multi-account export double-entry)
+      if (/transfer\s+from\s+(other|checking|shares|savings)|tfr\s*fr\s*other|trf\s*fr\s*other|transfer\s+to\s+other/i.test(d)) {
+        return true;
+      }
+      if (/^transfers?$/i.test(String(t.bankCategory || '').trim())
+        && /transfer|tfr|trf|p2p|zelle|ach\s*p2p/i.test(d)
+        && !/paycheck|salary|dfas|veteran|interest\s*paid|dividend/i.test(d)) {
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Real household income for the Income total: pay, benefits, interest, dividends, refunds.
+     * Excludes credit-card payments and internal account transfers.
+     */
+    function isBudgetHouseholdIncomeTransaction(t) {
+      if (!t) return false;
+      if (isBudgetInternalOrCardCredit(t)) return false;
+      // Explicit income category
+      if (t.category === 'income' || t.categoryAuto === 'income') return true;
+      if (isBudgetTrueIncomeSignal(t)) return true;
+      if (isBudgetIncomeBankCategory(t.bankCategory)) return true;
+      const bank = String(t.bankCategory || '').toLowerCase();
+      if (/paycheck|salary|investment\s*income|^interest$|refund/i.test(bank)) return true;
+      const desc = `${t.bankDescription || ''} ${t.description || ''}`;
+      if (/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|regular\s*income|direct\s*deposit|ssa\s*treas|social\s*security|interest\s*paid|dividend/i.test(desc)) {
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Income lens: household pay/benefits first; also other genuine money-in credits.
+     * Intentionally excludes multi-account “Payment Thank You” / internal transfers.
      */
     function isBudgetIncomeTransaction(t) {
       if (!t) return false;
-      // Explicit income category
-      if (t.category === 'income' || t.categoryAuto === 'income') return true;
-      // Paychecks / VA / DFAS / bank income tags (do not require isCredit)
-      if (isBudgetTrueIncomeSignal(t)) return true;
-      if (isBudgetIncomeBankCategory(t.bankCategory)) return true;
-      // Any stored credit flag
-      if (t.isCredit === true) return true;
-      if (detectBudgetIsCredit(t)) return true;
+      if (isBudgetHouseholdIncomeTransaction(t)) return true;
+      if (isBudgetInternalOrCardCredit(t)) return false;
+      // Other credits (isCredit) that aren’t internal moves
+      if (t.isCredit === true && t.category !== 'transfers' && t.category !== 'credit_cards') return true;
+      if (detectBudgetIsCredit(t) && !isBudgetInternalOrCardCredit(t)
+        && t.category !== 'transfers' && t.category !== 'credit_cards') return true;
       const ind = String(t.creditDebitIndicator || t.indicator || '').trim().toLowerCase();
-      if (ind === 'credit' || ind === 'cr' || ind === 'c') return true;
-      // ACH Credit / Credit type from bank CSV
+      if ((ind === 'credit' || ind === 'cr' || ind === 'c') && !isBudgetInternalOrCardCredit(t)) return true;
       const typeStr = String(t.bankType || '');
       if (/ach\s*credit/i.test(typeStr)) return true;
-      if (/^credit$/i.test(typeStr.trim()) && !/debit/i.test(typeStr)) return true;
-      // Description fallbacks (even if bank fields were stripped on an old import)
-      const desc = `${t.bankDescription || ''} ${t.description || ''}`;
-      if (/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|regular\s*income|direct\s*deposit|ssa\s*treas|social\s*security/i.test(desc)) {
-        return true;
-      }
       return false;
     }
 
@@ -42422,7 +42472,8 @@
       return changed;
     }
 
-    /** Dedicated budget CSV reader — prefers Posting Date + Credit/Debit Indicator */
+    /** Dedicated budget CSV reader — prefers Posting Date + Credit/Debit Indicator.
+     *  Also supports Mint multi-account exports: signed Amount (+ = in, − = out), title row, Category. */
     function parseBudgetCsv(text) {
       const raw = String(text || '').replace(/^\uFEFF/, '').replace(/\t/g, ',');
       const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -42432,8 +42483,10 @@
       let headers = [];
       for (let i = 0; i < Math.min(12, lines.length); i++) {
         const cols = parseCsvLine(lines[i]).map(h => h.toLowerCase().replace(/[_]+/g, ' ').trim());
+        // Real header has Date + Amount (skip title rows like “Transactions For All Accounts…”)
         if (cols.some(c => /posting date|transaction date|^date$/.test(c)) &&
-            cols.some(c => /amount|description|debit|credit/.test(c))) {
+            cols.some(c => /^amount$|transaction amount|debit|credit|value/.test(c)) &&
+            cols.some(c => /description|memo|payee|merchant|details|narrative|category/.test(c))) {
           headerIdx = i;
           headers = cols;
           break;
@@ -42453,6 +42506,20 @@
       const bankCatCol = findCol([/^category$/, /merchant category/, /mcc description/]);
       const typeCol = findCol([/^type$/]);
       const typeGroupCol = findCol([/^type group$/, /type group/]);
+      const accountCol = findCol([/^account name$/, /^account$/, /account nickname/]);
+
+      // Detect Mint-style signed Amount (+ money in, − money out) when no indicator column
+      let signedPos = 0;
+      let signedNeg = 0;
+      if (indicatorCol < 0 && amountCol >= 0) {
+        for (let i = headerIdx + 1; i < Math.min(lines.length, headerIdx + 400); i++) {
+          const cols = parseCsvLine(lines[i]);
+          const a = parseMoneyValue(cols[amountCol]);
+          if (a > 0.005) signedPos++;
+          else if (a < -0.005) signedNeg++;
+        }
+      }
+      const signedAmountExport = indicatorCol < 0 && signedPos >= 3 && signedNeg >= 3;
 
       const out = [];
       for (let i = headerIdx + 1; i < lines.length; i++) {
@@ -42463,7 +42530,7 @@
           desc = (cols.find((c, idx) => idx !== dateCol && idx !== amountCol && /[a-zA-Z]{3,}/.test(c || '')) || '').trim();
         }
         if (!desc || desc.length < 2) continue;
-        if (/^balance|^total|^opening|^closing/i.test(desc)) continue;
+        if (/^balance|^total|^opening|^closing|^transactions for/i.test(desc)) continue;
 
         const amtRaw = amountCol >= 0 ? parseMoneyValue(cols[amountCol]) : 0;
         if (!amtRaw || Math.abs(amtRaw) < 0.005) continue;
@@ -42473,22 +42540,24 @@
         const typeStr = (typeCol >= 0 ? cols[typeCol] : '').trim();
         const typeGroupStr = (typeGroupCol >= 0 ? cols[typeGroupCol] : '').trim();
         const bankCategory = bankCatCol >= 0 ? String(cols[bankCatCol] || '').trim() : '';
+        const accountName = accountCol >= 0 ? String(cols[accountCol] || '').trim() : '';
         const typeBlob = `${typeStr} ${typeGroupStr} ${desc} ${bankCategory}`.toLowerCase();
 
-        // Credit vs debit — bank indicator first, then type / income signals
+        // Credit vs debit
         let isCredit = false;
         if (indicator === 'credit' || indicator === 'cr' || indicator === 'c') isCredit = true;
         else if (indicator === 'debit' || indicator === 'dr' || indicator === 'd') isCredit = false;
-        else if (/ach\s*credit/i.test(typeStr) || /^credit$/i.test(typeStr)) isCredit = true;
+        else if (signedAmountExport) {
+          // Mint multi-account: positive = money into that account, negative = money out
+          isCredit = amtRaw > 0;
+        } else if (/ach\s*credit/i.test(typeStr) || /^credit$/i.test(typeStr)) isCredit = true;
         else if (isBudgetIncomeBankCategory(bankCategory)) isCredit = true;
         else if (/salary|paycheck|payroll|dfas|veteran\s*affairs|vacp|direct\s*deposit|dividend|interest\s*paid|atm\s*rebate/i.test(typeBlob)
           && !/debit|pos|purchase/i.test(typeStr + ' ' + desc)) isCredit = true;
         else if (indicatorCol < 0 && amtRaw > 0
           && /salary|paycheck|payroll|dfas|veteran|deposit|ach\s*credit|direct\s*dep|interest|dividend|refund|ssa\s*treas|social\s*security/i.test(typeBlob)) {
-          // Single Amount column (no Debit/Credit indicator): positive + money-in wording → income
           isCredit = true;
         } else if (amtRaw < 0) {
-          // Signed export: negative usually money out
           isCredit = false;
         } else {
           isCredit = false;
@@ -42500,20 +42569,30 @@
           typeGroup: typeGroupStr
         });
 
-        // Credits: map real income bank tags (and unknowns) to income; keep transfer-in as transfers
+        // Credits: real income vs internal/card payment vs transfer
         if (isCredit) {
           const fromBank = mapBankCategoryToHarbor(bankCategory);
-          if (isBudgetIncomeBankCategory(bankCategory) || fromBank === 'income') {
-            category = 'income';
-          } else if (fromBank === 'transfers' || fromBank === 'savings') {
-            category = fromBank; // Zelle in / transfer from savings — money in, not a paycheck
-          } else if (!fromBank || fromBank === 'other' || category === 'other' || category === 'transfers') {
-            // Default inbound money → income unless clearly a transfer description
-            if (/transfer\s+from|from\s+savings|from\s+checking|zelle|venmo|cash\s*app/i.test(desc)) {
-              category = 'transfers';
-            } else {
-              category = 'income';
-            }
+          const probe = {
+            description: desc,
+            bankDescription: desc,
+            bankCategory,
+            category: fromBank || category,
+            isCredit: true
+          };
+          if (isBudgetIncomeBankCategory(bankCategory) || fromBank === 'income'
+            || /paycheck|salary|dfas|veteran|interest\s*paid|dividend/i.test(typeBlob)) {
+            // Real pay / interest / dividends
+            if (!isBudgetInternalOrCardCredit(probe)) category = 'income';
+            else category = /payment\s*thank|mobile\s*payment|nfo\s*payment/i.test(desc) ? 'credit_cards' : 'transfers';
+          } else if (/payment\s*thank|mobile\s*payment|nfo\s*payment\s*received|payment\s*received/i.test(desc)) {
+            category = 'credit_cards'; // card payment posted as + on card account
+          } else if (fromBank === 'transfers' || fromBank === 'savings' || /\btransfer\b|tfr\s*fr|trf\s*fr|p2p|zelle/i.test(desc)) {
+            category = fromBank === 'savings' ? 'savings' : 'transfers';
+          } else if (fromBank && fromBank !== 'other') {
+            category = fromBank; // e.g. refund under shopping still credit
+          } else if (!fromBank || fromBank === 'other' || category === 'other') {
+            if (/transfer|tfr|trf|zelle|venmo|cash\s*app/i.test(desc)) category = 'transfers';
+            else category = 'income';
           }
         } else if (category === 'income') {
           // Don't tag money-out as income
@@ -42527,8 +42606,9 @@
           isCredit,
           creditDebitIndicator: indicator || (isCredit ? 'credit' : 'debit'),
           bankCategory,
-          bankType: typeStr,
-          bankTypeGroup: typeGroupStr,
+          bankType: typeStr || (signedAmountExport ? (isCredit ? 'Credit' : 'Debit') : ''),
+          bankTypeGroup: typeGroupStr || (accountName ? 'Account' : ''),
+          accountName: accountName || '',
           category
         });
       }
@@ -42602,17 +42682,17 @@
       if (bucket === 'overview' || bucket === 'all' || bucket === 'full') {
         return txs.filter(t => !isBudgetIncomeTransaction(t) && getBudgetBucket(t) !== 'income');
       }
-      // Income: cast a wide net — paychecks/VA/deposits even if flags were corrupted
+      // Income: household pay/benefits/interest — not card payments or internal transfers
       if (bucket === 'income') {
         return txs.filter(t => {
-          if (isBudgetIncomeTransaction(t)) return true;
-          if (t && t.isCredit === true) return true;
+          if (typeof isBudgetHouseholdIncomeTransaction === 'function') {
+            return isBudgetHouseholdIncomeTransaction(t);
+          }
+          if (typeof isBudgetIncomeTransaction === 'function') return isBudgetIncomeTransaction(t);
           if (t && (t.category === 'income' || t.categoryAuto === 'income')) return true;
           const d = `${t?.bankDescription || ''} ${t?.description || ''} ${t?.bankCategory || ''}`;
-          if (/salary|paycheck|payroll|dfas|veteran|vacp|regular\s*income|direct\s*deposit|ssa\s*treas/i.test(d)) return true;
-          if (/paycheck|salary|deposit|investment\s*income|interest|refund/i.test(String(t?.bankCategory || ''))) return true;
-          if (/ach\s*credit/i.test(String(t?.bankType || ''))) return true;
-          if (/^(credit|cr|c)$/i.test(String(t?.creditDebitIndicator || '').trim())) return true;
+          if (/salary|paycheck|payroll|dfas|veteran|vacp|regular\s*income|direct\s*deposit|ssa\s*treas|interest\s*paid|dividend/i.test(d)) return true;
+          if (/paycheck|salary|investment\s*income|^interest$|refund/i.test(String(t?.bankCategory || ''))) return true;
           return false;
         });
       }
@@ -43936,11 +44016,11 @@
       if (!state.budget._rulesHarvested) {
         harvestBudgetMerchantRulesFromTransactions();
       }
-      // Re-run income/category repair whenever the app build changes (and once for V12)
+      // Re-run income/category repair whenever the app build changes (Mint signed-amount + household income)
       const buildTag = String(typeof HARBOR_BUILD_NUMBER !== 'undefined' ? HARBOR_BUILD_NUMBER : '');
-      if (state.budget._budgetLogicBuild !== buildTag || !state.budget._fullRecatV12) {
+      if (state.budget._budgetLogicBuild !== buildTag || !state.budget._fullRecatV13) {
         state.budget._budgetLogicBuild = buildTag;
-        state.budget._fullRecatV12 = true;
+        state.budget._fullRecatV13 = true;
         reclassifyAllBudgetTransactions(true);
       } else if (!state.budget._otherRecatV2) {
         state.budget._otherRecatV2 = true;
@@ -43987,15 +44067,15 @@
       let incomeLastMonth = 0;
       const looksLikeMoneyIn = (t) => {
         if (!t) return false;
-        if (t.isCredit === true) return true;
-        if (t.category === 'income' || t.categoryAuto === 'income') return true;
         try {
+          if (typeof isBudgetHouseholdIncomeTransaction === 'function') {
+            return isBudgetHouseholdIncomeTransaction(t);
+          }
           if (typeof isBudgetIncomeTransaction === 'function' && isBudgetIncomeTransaction(t)) return true;
-          if (typeof detectBudgetIsCredit === 'function' && detectBudgetIsCredit(t)) return true;
         } catch (_) { /* ignore */ }
-        const d = `${t.bankDescription || ''} ${t.description || ''} ${t.bankCategory || ''} ${t.bankType || ''}`;
-        return /salary|paycheck|payroll|dfas|veteran|vacp|direct\s*dep|ach\s*credit|deposit|interest\s*paid|dividend|ssa\s*treas|social\s*security|refund/i.test(d)
-          && !/pos|debit-?dc|purchase|payment\s+to/i.test(d);
+        const d = `${t.bankDescription || ''} ${t.description || ''} ${t.bankCategory || ''}`;
+        return /salary|paycheck|payroll|dfas|veteran|vacp|direct\s*dep|interest\s*paid|dividend|ssa\s*treas|social\s*security/i.test(d)
+          || /paycheck|salary|investment\s*income|^interest$|interest\s*paid/i.test(String(t.bankCategory || ''));
       };
       try {
         const monthAll = getBudgetTransactionsInMonth(budgetMonthRange);
