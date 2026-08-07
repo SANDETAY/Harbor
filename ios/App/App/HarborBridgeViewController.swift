@@ -10,5 +10,6 @@ class HarborBridgeViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         super.capacitorDidLoad()
         bridge?.registerPluginType(HarborWidgetsPlugin.self)
+        bridge?.registerPluginType(HarborSpeechPlugin.self)
     }
 }

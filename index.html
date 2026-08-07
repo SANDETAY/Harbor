@@ -16704,7 +16704,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 532;
+    const HARBOR_BUILD_NUMBER = 533;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -16766,8 +16766,22 @@
       {
         version: '1.0',
         date: '2026-08-06',
+        title: 'iPhone voice mic · build 533',
+        intro: 'Native speech on iOS so hold-Brief voice works and Harbor appears under Microphone & Speech Recognition in Settings.',
+        sections: [{
+          heading: 'Voice (iPhone)',
+          items: [
+            'HarborSpeech plugin: real mic + speech permission prompts',
+            'Hold Brief to dictate tasks / grocery; release when done',
+            'Web Speech kept as fallback on desktop browsers'
+          ]
+        }]
+      },
+      {
+        version: '1.0',
+        date: '2026-08-06',
         title: 'Clearer open-time copy · build 532',
-        intro: 'Daily Brief and Day widget drop “free again / next free” jargon for plain open-block language. TestFlight ship with locked CFBundleVersion (no Xcode auto-bump).',
+        intro: 'Daily Brief and Day widget drop “free again / next free” jargon for plain open-block language.',
         sections: [{
           heading: 'Daily Brief',
           items: [
@@ -18856,10 +18870,30 @@
 
     function isSpeechRecognitionAvailable() {
       try {
+        if (typeof getHarborSpeechPlugin === 'function' && getHarborSpeechPlugin()) return true;
         return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
       } catch (_) {
         return false;
       }
+    }
+
+    /** iOS Capacitor native speech (SFSpeechRecognizer) — WKWebView Web Speech rarely works. */
+    function getHarborSpeechPlugin() {
+      try {
+        const cap = window.Capacitor;
+        if (!cap) return null;
+        const plat = typeof cap.getPlatform === 'function' ? cap.getPlatform() : '';
+        if (plat && plat !== 'ios' && plat !== 'android') return null;
+        try {
+          if (typeof cap.registerPlugin === 'function') {
+            const reg = cap.registerPlugin('HarborSpeech');
+            if (reg && (typeof reg.start === 'function' || typeof reg.isAvailable === 'function')) return reg;
+          }
+        } catch (_) { /* ignore */ }
+        const plugins = cap.Plugins || {};
+        if (plugins.HarborSpeech) return plugins.HarborSpeech;
+      } catch (_) { /* ignore */ }
+      return null;
     }
 
     /** Mic: desktop top chip; mobile = hold Brief anchor. Type fallback when speech unavailable. */
@@ -56715,6 +56749,10 @@
     let harborVoiceActive = false;
     /** True when listening was started by holding Brief (push-to-talk). */
     let harborVoicePushToTalk = false;
+    /** Native iOS SFSpeech path (Capacitor HarborSpeech plugin). */
+    let harborVoiceNative = false;
+    let harborNativePartialHandle = null;
+    let harborNativeTapTimer = null;
 
     function getVoiceContext() {
       if (currentTab === 'life') return currentLifePanel;
@@ -56778,6 +56816,25 @@
     }
 
     function stopHarborVoice({ silent = false } = {}) {
+      try {
+        if (harborNativeTapTimer) {
+          clearTimeout(harborNativeTapTimer);
+          harborNativeTapTimer = null;
+        }
+      } catch (_) { /* ignore */ }
+      if (harborVoiceNative) {
+        try {
+          const plugin = getHarborSpeechPlugin();
+          plugin?.cancel?.();
+        } catch (_) { /* ignore */ }
+        harborVoiceNative = false;
+        harborVoiceActive = false;
+        harborVoicePushToTalk = false;
+        harborVoiceRec = null;
+        setVoiceListeningUi(false);
+        if (!silent) showToast('Cancelled', 'info');
+        return;
+      }
       try { harborVoiceRec?.abort?.(); } catch (_) { /* ignore */ }
       try { harborVoiceRec?.stop?.(); } catch (_) { /* ignore */ }
       harborVoiceRec = null;
@@ -56792,6 +56849,15 @@
      * Prefer stop() so a final transcript can still fire; meter closes on onend.
      */
     function endHarborVoiceHold() {
+      if (harborVoiceNative) {
+        if (!harborVoicePushToTalk && !harborVoiceActive) {
+          setVoiceListeningUi(false);
+          return;
+        }
+        if (!harborVoicePushToTalk) return;
+        finishNativeVoiceListen({ cancelled: false });
+        return;
+      }
       if (!harborVoiceActive && !harborVoiceRec) {
         harborVoicePushToTalk = false;
         setVoiceListeningUi(false);
@@ -56821,6 +56887,115 @@
           }
         } catch (_) { /* ignore */ }
       }, 700);
+    }
+
+    async function ensureNativeSpeechPartialListener() {
+      const plugin = getHarborSpeechPlugin();
+      if (!plugin || typeof plugin.addListener !== 'function') return;
+      if (harborNativePartialHandle) return;
+      try {
+        harborNativePartialHandle = await plugin.addListener('partial', (e) => {
+          try {
+            const t = String(e?.transcript || '').trim();
+            if (t) setVoiceMeterHint(t, { isSpeech: true });
+          } catch (_) { /* ignore */ }
+        });
+      } catch (_) { /* ignore */ }
+    }
+
+    async function finishNativeVoiceListen({ cancelled = false } = {}) {
+      try {
+        if (harborNativeTapTimer) {
+          clearTimeout(harborNativeTapTimer);
+          harborNativeTapTimer = null;
+        }
+      } catch (_) { /* ignore */ }
+      const plugin = getHarborSpeechPlugin();
+      let text = '';
+      try {
+        if (plugin && !cancelled && typeof plugin.stop === 'function') {
+          const res = await plugin.stop();
+          text = String(res?.transcript || '').trim();
+        } else if (plugin && typeof plugin.cancel === 'function') {
+          await plugin.cancel();
+        }
+      } catch (_) { /* ignore */ }
+      harborVoiceNative = false;
+      harborVoiceActive = false;
+      harborVoicePushToTalk = false;
+      harborVoiceRec = null;
+      setVoiceListeningUi(false);
+      if (cancelled) {
+        showToast('Cancelled', 'info');
+        return;
+      }
+      if (text) {
+        try { handleVoiceCommand(text, getVoiceContext()); } catch (_) {
+          showToast("Couldn't process that", 'warn');
+        }
+      } else {
+        showToast("Didn't hear anything — try again or type", 'info');
+      }
+    }
+
+    async function startNativeVoiceAdd(opts = {}) {
+      const pushToTalk = !!opts.pushToTalk;
+      const plugin = getHarborSpeechPlugin();
+      if (!plugin) return false;
+
+      if (harborVoiceActive && harborVoiceNative) {
+        if (pushToTalk) return true;
+        // Second tap cancels
+        await finishNativeVoiceListen({ cancelled: true });
+        return true;
+      }
+
+      try {
+        await ensureNativeSpeechPartialListener();
+        // Ask permissions first so Settings → Harbor shows Microphone + Speech
+        if (typeof plugin.requestPermission === 'function') {
+          const perm = await plugin.requestPermission();
+          if (perm && perm.granted === false) {
+            const msg = !perm.microphone
+              ? 'Turn on Microphone for Harbor in Settings'
+              : 'Turn on Speech Recognition for Harbor in Settings';
+            showToast(msg, 'warn');
+            showVoiceCommandPrompt({ context: getVoiceContext() });
+            return true;
+          }
+        }
+        harborVoiceNative = true;
+        harborVoicePushToTalk = pushToTalk;
+        harborVoiceActive = true;
+        setVoiceListeningUi(true);
+        if (!pushToTalk) showToast('Listening…', 'info');
+        else {
+          setVoiceMeterHint(
+            getVoiceContext() === 'grocery' ? 'Hold… say an item' : 'Hold… speak, then release'
+          );
+        }
+        await plugin.start({});
+        // Tap-to-talk (not hold): auto-finish after a short window
+        if (!pushToTalk) {
+          harborNativeTapTimer = setTimeout(() => {
+            try { finishNativeVoiceListen({ cancelled: false }); } catch (_) { /* ignore */ }
+          }, 6500);
+        }
+        return true;
+      } catch (err) {
+        harborVoiceNative = false;
+        harborVoiceActive = false;
+        harborVoicePushToTalk = false;
+        setVoiceListeningUi(false);
+        const msg = String(err?.message || err || '');
+        if (/denied|permission/i.test(msg)) {
+          showToast('Mic blocked — enable in Settings → Harbor', 'warn');
+        } else {
+          showToast('Voice failed — type instead', 'warn');
+        }
+        showVoiceCommandPrompt({ context: getVoiceContext() });
+        return true;
+      }
     }
 
     /**
@@ -56884,9 +57059,18 @@
     }
 
     function startVoiceAdd(opts = {}) {
-      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
       const voiceContext = getVoiceContext();
       const pushToTalk = !!opts.pushToTalk;
+
+      // iOS app: native speech so Microphone appears in Settings and hold-Brief works
+      try {
+        if (typeof getHarborSpeechPlugin === 'function' && getHarborSpeechPlugin()) {
+          startNativeVoiceAdd(opts);
+          return;
+        }
+      } catch (_) { /* fall through to Web Speech */ }
+
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 
       // Second tap while listening → cancel (desktop mic / toggle)
       // Push-to-talk re-entry while already active is ignored (release ends it)

@@ -17,6 +17,7 @@
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
 		HBRW00000000000000000001 /* HarborWidgetsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = HBRW00000000000000000011 /* HarborWidgetsPlugin.swift */; };
 		HBRW0000000000000000000A /* HarborBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = HBRW0000000000000000001A /* HarborBridgeViewController.swift */; };
+		HBRS00000000000000000001 /* HarborSpeechPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = HBRS00000000000000000011 /* HarborSpeechPlugin.swift */; };
 		HBRW00000000000000000002 /* HarborWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = HBRW00000000000000000012 /* HarborWidgetsBundle.swift */; };
 		HBRW00000000000000000003 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = HBRW00000000000000000013 /* WidgetSnapshot.swift */; };
 		HBRW00000000000000000004 /* TodayWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = HBRW00000000000000000014 /* TodayWidget.swift */; };
@@ -67,6 +68,7 @@
 		HBRW00000000000000000010 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		HBRW00000000000000000011 /* HarborWidgetsPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HarborWidgetsPlugin.swift; sourceTree = "<group>"; };
 		HBRW0000000000000000001A /* HarborBridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HarborBridgeViewController.swift; sourceTree = "<group>"; };
+		HBRS00000000000000000011 /* HarborSpeechPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HarborSpeechPlugin.swift; sourceTree = "<group>"; };
 		HBRW00000000000000000012 /* HarborWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HarborWidgetsBundle.swift; sourceTree = "<group>"; };
 		HBRW00000000000000000013 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
 		HBRW00000000000000000014 /* TodayWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidget.swift; sourceTree = "<group>"; };
@@ -133,6 +135,7 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				HBRW00000000000000000011 /* HarborWidgetsPlugin.swift */,
 				HBRW0000000000000000001A /* HarborBridgeViewController.swift */,
+				HBRS00000000000000000011 /* HarborSpeechPlugin.swift */,
 				HBRW00000000000000000010 /* App.entitlements */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
@@ -317,6 +320,7 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				HBRW00000000000000000001 /* HarborWidgetsPlugin.swift in Sources */,
 				HBRW0000000000000000000A /* HarborBridgeViewController.swift in Sources */,
+				HBRS00000000000000000001 /* HarborSpeechPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -478,7 +482,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 532;
+				CURRENT_PROJECT_VERSION = 533;
 				DEVELOPMENT_TEAM = 4AY5ZRN2R7;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -506,7 +510,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 532;
+				CURRENT_PROJECT_VERSION = 533;
 				DEVELOPMENT_TEAM = 4AY5ZRN2R7;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -532,7 +536,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = HarborWidgets/HarborWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 532;
+				CURRENT_PROJECT_VERSION = 533;
 				DEVELOPMENT_TEAM = 4AY5ZRN2R7;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = HarborWidgets/Info.plist;
@@ -559,7 +563,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = HarborWidgets/HarborWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 532;
+				CURRENT_PROJECT_VERSION = 533;
 				DEVELOPMENT_TEAM = 4AY5ZRN2R7;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = HarborWidgets/Info.plist;
