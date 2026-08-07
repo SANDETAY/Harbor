@@ -17246,7 +17246,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 545;
+    const HARBOR_BUILD_NUMBER = 546;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -42236,25 +42236,37 @@
     }
 
     /**
-     * Credit-card / internal transfers that look like “money in” on multi-account
-     * Mint exports (positive amount on the card/savings side) — not household pay.
-     * Also loan-side “Transfer Pymt” credits and share-to-share credits.
+     * Credit-side only: card “Payment Thank You”, transfer-in, loan-side payment
+     * credits on multi-account CSVs — not household pay, and NEVER money-out debits.
+     * (Matching debits here used to zero out Moves/Saved chips.)
      */
     function isBudgetInternalOrCardCredit(t) {
       if (!t) return false;
-      const d = `${t.bankDescription || ''} ${t.description || ''} ${t.bankCategory || ''} ${t.accountName || ''}`;
+      // Gate: credits only. Debits are handled by savings / card-pay / transfer outflows.
+      const ind = String(t.creditDebitIndicator || t.indicator || '').trim().toLowerCase();
+      if (ind === 'debit' || ind === 'dr' || ind === 'd') return false;
+      if (t.isCredit === false) return false;
+      const creditSignal = t.isCredit === true
+        || ind === 'credit' || ind === 'cr' || ind === 'c';
+      if (!creditSignal) return false;
+
+      // Description only — do not put bankCategory in the same string as /transfer/
+      // or every “Transfers” bank-category debit would match when mis-flagged.
+      const desc = `${t.bankDescription || ''} ${t.description || ''}`;
+      const bank = String(t.bankCategory || '').trim();
       // Card payment received / mobile thank-you (not a paycheck)
-      if (/mobile\s*payment|payment\s*thank|thank\s*you[-\s]*mobile|nfo\s*payment\s*received|payment\s*received/i.test(d)
-        && !/paycheck|salary|dfas|veteran|payroll/i.test(d)) {
+      if (/mobile\s*payment|payment\s*thank|thank\s*you[-\s]*mobile|nfo\s*payment\s*received|payment\s*received/i.test(desc)
+        && !/paycheck|salary|dfas|veteran|payroll/i.test(desc)) {
         return true;
       }
-      // Internal share/account transfers (multi-account export double-entry)
-      if (/transfer\s+from\s+(other|checking|shares|savings)|tfr\s*fr\s*(other|shares)|trf\s*fr\s*(other|shares)|transfer\s+to\s+other|transfer\s+pymt|loan\s*pymt/i.test(d)) {
+      // Transfer-in / loan payment received (credit side of multi-account double-entry)
+      if (/transfer\s+from\s+(other|checking|shares|savings)|tfr\s*fr\s*(other|shares)|trf\s*fr\s*(other|shares)|transfer\s+pymt|loan\s*pymt/i.test(desc)) {
         return true;
       }
-      if (/^transfers?$/i.test(String(t.bankCategory || '').trim())
-        && /transfer|tfr|trf|p2p|zelle|ach\s*p2p|cash\s*app|venmo/i.test(d)
-        && !/paycheck|salary|dfas|veteran|interest\s*paid|dividend/i.test(d)) {
+      // Transfers bank category + transfer-like description, credit side only
+      if (/^transfers?$/i.test(bank)
+        && /transfer|tfr|trf|p2p|zelle|ach\s*p2p|cash\s*app|venmo/i.test(desc)
+        && !/paycheck|salary|dfas|veteran|interest\s*paid|dividend/i.test(desc)) {
         return true;
       }
       return false;
@@ -42368,16 +42380,19 @@
 
     /**
      * True when this row is money leaving an account (debit), not a credit/inflow.
-     * Works for indicator columns, signed-amount Mint exports, and isCredit flags.
+     * Direction first (indicator / isCredit), then income signals — never let
+     * internal-credit heuristics swallow real debits.
      */
     function isBudgetMoneyOutTransaction(t) {
       if (!t) return false;
+      const ind = String(t.creditDebitIndicator || t.indicator || '').trim().toLowerCase();
+      if (ind === 'debit' || ind === 'dr' || ind === 'd') return true;
+      if (ind === 'credit' || ind === 'cr' || ind === 'c') return false;
+      if (t.isCredit === true) return false;
+      if (t.isCredit === false) return true;
+      // No clear direction flag: treat known money-in as not-out
       if (isBudgetHouseholdIncomeTransaction(t)) return false;
       if (isBudgetInternalOrCardCredit(t)) return false;
-      const ind = String(t.creditDebitIndicator || t.indicator || '').trim().toLowerCase();
-      if (ind === 'credit' || ind === 'cr' || ind === 'c') return false;
-      if (ind === 'debit' || ind === 'dr' || ind === 'd') return true;
-      if (t.isCredit === true) return false;
       if (detectBudgetIsCredit(t)) return false;
       return true;
     }
@@ -42580,8 +42595,8 @@
      */
     function reclassifyAllBudgetTransactions(force = false) {
       const budget = ensureBudgetState();
-      if (!force && budget._fullRecatV14) return false;
-      budget._fullRecatV14 = true;
+      if (!force && budget._fullRecatV15) return false;
+      budget._fullRecatV15 = true;
       let changed = 0;
       (budget.transactions || []).forEach(t => {
         if (!t) return;
@@ -43207,6 +43222,7 @@
           bankCategory: tx.bankCategory || '',
           bankType: tx.bankType || '',
           bankTypeGroup: tx.bankTypeGroup || '',
+          accountName: tx.accountName || '',
           category: finalCat,
           categoryAuto: truePay ? 'income' : applied.categoryAuto,
           categoryFromRule: fromRule,
@@ -43252,6 +43268,7 @@
       delete budget._fullRecatV12;
       delete budget._fullRecatV13;
       delete budget._fullRecatV14;
+      delete budget._fullRecatV15;
       delete budget._budgetLogicBuild;
       // Any successful CSV import finishes the monthly budget-review task
       if (typeof markBudgetReviewCompleteFromImport === 'function') {
@@ -44320,9 +44337,9 @@
       }
       // Re-run income/category repair whenever the app build changes (Mint signed-amount + household income)
       const buildTag = String(typeof HARBOR_BUILD_NUMBER !== 'undefined' ? HARBOR_BUILD_NUMBER : '');
-      if (state.budget._budgetLogicBuild !== buildTag || !state.budget._fullRecatV14) {
+      if (state.budget._budgetLogicBuild !== buildTag || !state.budget._fullRecatV15) {
         state.budget._budgetLogicBuild = buildTag;
-        state.budget._fullRecatV14 = true;
+        state.budget._fullRecatV15 = true;
         reclassifyAllBudgetTransactions(true);
       } else if (!state.budget._otherRecatV2) {
         state.budget._otherRecatV2 = true;
