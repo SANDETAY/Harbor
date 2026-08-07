@@ -17211,7 +17211,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 541;
+    const HARBOR_BUILD_NUMBER = 542;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -43788,7 +43788,7 @@
         try { catSearch?.focus(); } catch (_) { /* ignore */ }
       }, 80);
 
-      modal.querySelector('[data-save]')?.addEventListener('click', () => {
+      modal.querySelector('[data-save]')?.addEventListener('click', async () => {
         const name = String(nameInput?.value || '').trim().slice(0, 140);
         if (!name) {
           showToast('Name can’t be empty');
@@ -43798,20 +43798,30 @@
         // Keep original bank line for matching next month’s CSV
         if (!tx.bankDescription) tx.bankDescription = bankDesc;
         const ruleSrc = String(tx.bankDescription || bankDesc || '').trim();
-        tx.description = name;
-        tx.category = selectedCat || tx.category || 'other';
-        // If user marks as transfer-style category, keep as debit flow
-        if (tx.category === 'income') tx.isCredit = true;
-        else if (tx.isCredit && tx.category !== 'income' && tx.category !== 'transfers' && tx.category !== 'savings') {
-          tx.isCredit = false;
-        }
+        const prevName = String(tx.description || '').trim();
+        const prevCat = tx.category || '';
+        const nextCat = selectedCat || tx.category || 'other';
+        const nameChanged = name !== prevName;
+        const catChanged = nextCat !== prevCat;
+
+        const applyToTx = (row, { name: n, category: cat }) => {
+          if (!row) return;
+          row.description = n;
+          row.category = cat;
+          if (cat === 'income') row.isCredit = true;
+          else if (row.isCredit && cat !== 'income' && cat !== 'transfers' && cat !== 'savings') {
+            row.isCredit = false;
+          }
+        };
+
+        applyToTx(tx, { name, category: nextCat });
 
         const autoCat = tx.categoryAuto || categorizeBudgetDescription(
           ruleSrc,
           tx.bankCategory,
           { type: tx.bankType, typeGroup: tx.bankTypeGroup }
         );
-        const isAutoCat = tx.category === autoCat;
+        const isAutoCat = nextCat === autoCat;
         const isAutoName = name === ruleSrc;
         if (isAutoCat && isAutoName) {
           forgetBudgetMerchantRule(ruleSrc);
@@ -43819,19 +43829,71 @@
         } else {
           // Always remember name + category against the bank description for re-import
           rememberBudgetMerchantRule(ruleSrc, {
-            category: isAutoCat ? undefined : tx.category,
+            category: isAutoCat ? undefined : nextCat,
             forgetCategory: isAutoCat,
             displayName: isAutoName ? undefined : name,
             clearDisplayName: isAutoName
           });
-          if (!isAutoCat) rememberBudgetMerchantRule(ruleSrc, { category: tx.category });
+          if (!isAutoCat) rememberBudgetMerchantRule(ruleSrc, { category: nextCat });
           if (!isAutoName) rememberBudgetMerchantRule(ruleSrc, { displayName: name });
           tx.categoryFromRule = true;
         }
+
+        // Offer to rename / recategorize all past rows with the same bank description
+        let bulkN = 0;
+        if ((nameChanged || catChanged) && ruleSrc) {
+          const norm = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+          const ruleKeys = typeof getBudgetMerchantRuleKeys === 'function'
+            ? getBudgetMerchantRuleKeys(ruleSrc)
+            : [norm(ruleSrc)];
+          const matches = (budget.transactions || []).filter((t) => {
+            if (!t || String(t.id) === id) return false;
+            const bank = String(t.bankDescription || '').trim();
+            const bankNorm = norm(bank || t.description || '');
+            if (!bankNorm) return false;
+            // Exact bank line (as in CSV) or same learned merchant key
+            if (norm(bank) === norm(ruleSrc)) return true;
+            if (ruleKeys.length && typeof getBudgetMerchantRuleKeys === 'function') {
+              const tk = getBudgetMerchantRuleKeys(bank || t.description);
+              if (ruleKeys.some(k => tk.includes(k))) return true;
+            }
+            return false;
+          });
+          if (matches.length) {
+            const bits = [];
+            if (nameChanged) bits.push('name');
+            if (catChanged) bits.push('category');
+            const what = bits.join(' & ');
+            const ok = await showHarborConfirm({
+              title: 'Update all matching?',
+              message: `Apply this ${what} to ${matches.length} other transaction${matches.length === 1 ? '' : 's'} from the same bank line?\n\nFuture CSV imports will still use your saved name.`,
+              confirmLabel: 'Update all',
+              cancelLabel: 'Just this one'
+            });
+            if (ok) {
+              matches.forEach((t) => {
+                if (!t.bankDescription && (t.description || bankDesc)) {
+                  t.bankDescription = t.bankDescription || bankDesc || ruleSrc;
+                }
+                applyToTx(t, {
+                  name: nameChanged ? name : (t.description || name),
+                  category: catChanged ? nextCat : (t.category || nextCat)
+                });
+                t.categoryFromRule = true;
+                bulkN++;
+              });
+            }
+          }
+        }
+
         saveState();
         close();
         renderBudget();
-        showToast(isAutoCat && isAutoName ? 'Reset for this merchant' : 'Saved · name & category stick on next CSV');
+        if (bulkN > 0) {
+          showToast(`Updated ${bulkN + 1} transactions · sticks on next CSV`);
+        } else {
+          showToast(isAutoCat && isAutoName ? 'Reset for this merchant' : 'Saved · name & category stick on next CSV');
+        }
       });
       modal.querySelector('[data-reset]')?.addEventListener('click', () => {
         const src = tx.bankDescription || bankDesc || tx.description;
