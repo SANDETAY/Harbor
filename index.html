@@ -2494,11 +2494,17 @@
       gap: 0.25rem;
       margin-top: 1rem;
     }
+    .budget-flow.is-two-up {
+      grid-template-columns: 1fr auto 1fr;
+      max-width: 16rem;
+      margin-left: auto;
+      margin-right: auto;
+    }
     .budget-flow-hint {
       grid-column: 1 / -1;
-      margin-top: 0.45rem;
-      font-size: 0.65rem;
-      line-height: 1.35;
+      margin-top: 0.5rem;
+      font-size: 0.68rem;
+      line-height: 1.4;
       color: rgb(var(--harbor-muted));
       text-align: center;
     }
@@ -2511,6 +2517,17 @@
       cursor: pointer;
       text-decoration: underline;
       text-underline-offset: 2px;
+      color: rgb(var(--harbor-primary-light));
+      font-weight: 650;
+    }
+    .budget-flow-card.is-muted {
+      opacity: 0.72;
+      border-style: dashed;
+    }
+    .budget-flow-card.is-muted .budget-flow-amt {
+      font-size: 0.72rem;
+      font-weight: 650;
+      color: rgb(var(--harbor-muted));
     }
     .budget-flow-card {
       border-radius: 0.95rem;
@@ -17114,7 +17131,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 539;
+    const HARBOR_BUILD_NUMBER = 540;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -43666,83 +43683,109 @@
         else rangeLabel.textContent = 'All time';
       }
 
-      // Money flow: Income → Spent → Left/Short (clearer than In / Out / Over)
+      // Money flow: Income → Spent → Left/Short
+      // Left only makes sense when we have income this period.
       let flowOutSum = 0;
       let flowInSum = 0;
       let incomeAllMonths = 0;
+      let incomeLastMonth = 0;
+      const looksLikeMoneyIn = (t) => {
+        if (!t) return false;
+        if (t.isCredit === true) return true;
+        if (t.category === 'income' || t.categoryAuto === 'income') return true;
+        try {
+          if (typeof isBudgetIncomeTransaction === 'function' && isBudgetIncomeTransaction(t)) return true;
+          if (typeof detectBudgetIsCredit === 'function' && detectBudgetIsCredit(t)) return true;
+        } catch (_) { /* ignore */ }
+        const d = `${t.bankDescription || ''} ${t.description || ''} ${t.bankCategory || ''} ${t.bankType || ''}`;
+        return /salary|paycheck|payroll|dfas|veteran|vacp|direct\s*dep|ach\s*credit|deposit|interest\s*paid|dividend|ssa\s*treas|social\s*security|refund/i.test(d)
+          && !/pos|debit-?dc|purchase|payment\s+to/i.test(d);
+      };
       try {
-        const outTxs = getBudgetViewTransactions(budgetMonthRange, 'overview');
-        const inTxs = getBudgetViewTransactions(budgetMonthRange, 'income');
-        flowOutSum = outTxs.reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
-        flowInSum = inTxs.reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
-        // Fallback: any money-in in this month that bucket rules missed
-        if (flowInSum < 0.005) {
-          getBudgetTransactionsInMonth(budgetMonthRange).forEach((t) => {
-            if (!t) return;
+        const monthAll = getBudgetTransactionsInMonth(budgetMonthRange);
+        monthAll.forEach((t) => {
+          const amt = Math.abs(Number(t?.amount) || 0);
+          if (amt < 0.005) return;
+          if (looksLikeMoneyIn(t)) flowInSum += amt;
+          else flowOutSum += amt;
+        });
+        // Undated money-in still counts for “this month” (CSV missing post date)
+        if ((budgetMonthRange === 'current' || budgetMonthRange === 'last') && flowInSum < 0.005) {
+          (ensureBudgetState().transactions || []).forEach((t) => {
+            if (!t || t.date) return;
             const amt = Math.abs(Number(t.amount) || 0);
             if (amt < 0.005) return;
-            if (t.isCredit === true || t.category === 'income' || t.categoryAuto === 'income'
-              || (typeof isBudgetIncomeTransaction === 'function' && isBudgetIncomeTransaction(t))
-              || (typeof detectBudgetIsCredit === 'function' && detectBudgetIsCredit(t))) {
-              flowInSum += amt;
-            }
+            if (looksLikeMoneyIn(t)) flowInSum += amt;
           });
         }
+        // Prefer dedicated income lens if it found more (keeps transfer-in edge cases)
+        try {
+          const lensIn = getBudgetViewTransactions(budgetMonthRange, 'income')
+            .reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
+          if (lensIn > flowInSum) flowInSum = lensIn;
+          const lensOut = getBudgetViewTransactions(budgetMonthRange, 'overview')
+            .reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
+          if (lensOut > flowOutSum) flowOutSum = lensOut;
+        } catch (_) { /* ignore */ }
+        incomeLastMonth = getBudgetViewTransactions('last', 'income')
+          .reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
         incomeAllMonths = getBudgetViewTransactions('all', 'income')
           .reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
+        if (incomeAllMonths < 0.005) {
+          (ensureBudgetState().transactions || []).forEach((t) => {
+            if (looksLikeMoneyIn(t)) incomeAllMonths += Math.abs(Number(t.amount) || 0);
+          });
+        }
       } catch (_) { /* ignore */ }
       const flowNet = flowInSum - flowOutSum;
       const flowEl = document.getElementById('budget-flow');
       if (flowEl) {
-        // Third card: Left (income covers spend) · Short (spent more than income) · — if no income logged
-        let thirdCls = '';
-        let thirdIcon = 'fa-piggy-bank';
-        let thirdLabel = 'Left';
-        let thirdAmt = formatBudgetMoney(0);
-        let thirdTitle = 'Income minus what you spent this period';
-        if (flowInSum < 0.005) {
-          thirdCls = '';
-          thirdIcon = 'fa-circle-question';
-          thirdLabel = 'Left';
-          thirdAmt = '—';
-          thirdTitle = incomeAllMonths > 0.005
-            ? 'No income in this month — try Last month or All (pay may post on a different month)'
-            : 'No income found in this import yet — paychecks/deposits show here when tagged as money in';
-        } else if (flowNet >= -0.005) {
-          thirdCls = 'is-kept-pos';
-          thirdIcon = 'fa-piggy-bank';
-          thirdLabel = 'Left';
-          thirdAmt = formatBudgetMoney(Math.abs(flowNet));
-          thirdTitle = 'Income − spent = what you kept this period';
+        const hasIncome = flowInSum >= 0.005;
+        let thirdHtml = '';
+        let flowCls = 'budget-flow';
+        let hint = '';
+        if (hasIncome) {
+          if (flowNet >= -0.005) {
+            thirdHtml = `
+              <div class="budget-flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
+              <div class="budget-flow-card is-kept-pos" title="Income − spent = what you kept">
+                <i class="fa-solid fa-piggy-bank budget-flow-icon" aria-hidden="true"></i>
+                <div class="budget-flow-amt">${formatBudgetMoney(Math.abs(flowNet))}</div>
+                <div class="budget-flow-label">Left</div>
+              </div>`;
+          } else {
+            thirdHtml = `
+              <div class="budget-flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
+              <div class="budget-flow-card is-kept-neg" title="Spent more than income this period">
+                <i class="fa-solid fa-arrow-trend-down budget-flow-icon" aria-hidden="true"></i>
+                <div class="budget-flow-amt">${formatBudgetMoney(Math.abs(flowNet))}</div>
+                <div class="budget-flow-label">Short</div>
+              </div>`;
+          }
         } else {
-          thirdCls = 'is-kept-neg';
-          thirdIcon = 'fa-arrow-trend-down';
-          thirdLabel = 'Short';
-          thirdAmt = formatBudgetMoney(Math.abs(flowNet));
-          thirdTitle = 'You spent more than income this period (gap)';
+          // No income this period — don’t show a broken “?” Left card
+          flowCls = 'budget-flow is-two-up';
+          if (incomeLastMonth > 0.005 || incomeAllMonths > 0.005) {
+            hint = `<div class="budget-flow-hint">Left needs income this month. Try <button type="button" onclick="setBudgetMonthRange('last')">Last month</button> or <button type="button" onclick="setBudgetMonthRange('all')">All</button>.</div>`;
+          } else {
+            hint = `<div class="budget-flow-hint">Left needs income — import a CSV that includes paychecks/deposits, or add income under the Income view.</div>`;
+          }
         }
-        const incomeHint = (flowInSum < 0.005 && incomeAllMonths > 0.005)
-          ? `<div class="budget-flow-hint">Pay may be under <button type="button" class="text-harbor-primary-light font-semibold" onclick="setBudgetMonthRange('last')">Last month</button> or <button type="button" class="text-harbor-primary-light font-semibold" onclick="setBudgetMonthRange('all')">All</button></div>`
-          : '';
+        flowEl.className = flowCls;
         flowEl.innerHTML = `
-          <div class="budget-flow-card is-in" title="Paychecks, deposits, and other money in">
+          <div class="budget-flow-card is-in${hasIncome ? '' : ' is-muted'}" title="Paychecks, deposits, and other money in">
             <i class="fa-solid fa-arrow-down budget-flow-icon" aria-hidden="true"></i>
             <div class="budget-flow-amt">${formatBudgetMoney(flowInSum)}</div>
             <div class="budget-flow-label">Income</div>
           </div>
           <div class="budget-flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
-          <div class="budget-flow-card is-out" title="Everything that left your accounts (bills, shopping, transfers…)">
+          <div class="budget-flow-card is-out" title="Everything that left your accounts">
             <i class="fa-solid fa-arrow-up budget-flow-icon" aria-hidden="true"></i>
             <div class="budget-flow-amt">${formatBudgetMoney(flowOutSum)}</div>
             <div class="budget-flow-label">Spent</div>
           </div>
-          <div class="budget-flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
-          <div class="budget-flow-card ${thirdCls}" title="${escapeBriefHtml(thirdTitle)}">
-            <i class="fa-solid ${thirdIcon} budget-flow-icon" aria-hidden="true"></i>
-            <div class="budget-flow-amt">${thirdAmt}</div>
-            <div class="budget-flow-label">${thirdLabel}</div>
-          </div>
-          ${incomeHint}`;
+          ${thirdHtml}
+          ${hint}`;
       }
       const autoNote = document.getElementById('budget-auto-note');
       if (autoNote) {
