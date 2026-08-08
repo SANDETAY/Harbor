@@ -16,11 +16,11 @@ description: >
 
 | In scope | Out of scope |
 |----------|----------------|
-| iOS Capacitor app | **Website** (`harborlife.app`, GitHub Pages) |
-| `cap prepare` / `cap sync ios` → `native-www` + Xcode | Pushing `main` for Pages deploy |
-| Archive → App Store Connect → **TestFlight** | Android / Play (parked) |
+| iOS Capacitor app | **Website** (`harborlife.app`, GitHub Pages) — **FROZEN** |
+| `cap prepare` / `cap sync ios` → `native-www` + Xcode | Pushing `main` for Pages deploy (workflow disabled) |
+| Archive → App Store Connect → **TestFlight** | Android / Play (**CI removed**; archive only) |
 
-**Ship Harbor means the phone app only.** Brittany’s **website** work is separate — never treat “Ship Harbor” as a web deploy. Copying `index.html` into the app shell for the archive is expected; that is not publishing the live site.
+**Ship Harbor means the phone app only.** Website updates are **paused until Brittany unfreezes them** — never co-ship the site with the app. Copying `index.html` into the app shell for the archive is expected; that is not publishing the live site.
 
 When this skill is invoked, **execute the full app ship** (do not only print the checklist) unless the user said “dry run” or “don’t upload yet”.
 
@@ -140,7 +140,8 @@ Tell the user:
 
 ## Safety rules
 
-- **Do not** deploy GitHub Pages / harborlife.app as part of Ship Harbor (app-only).  
+- **Do not** deploy GitHub Pages / harborlife.app as part of Ship Harbor (app-only; website is **frozen**).  
+- **Do not** re-enable `.github/workflows/deploy-pages.yml` push deploy or Android CI.  
 - **Do not** run hard-reset / git wipe scripts as part of ship.  
 - **Do not** delete `private/` or `docs/supabase/config.local.js`.  
 - **Do not** ship from any path except Desktop Harbor.  

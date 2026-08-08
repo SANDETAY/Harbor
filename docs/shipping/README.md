@@ -8,4 +8,6 @@
 
 **Day-to-day short path:** [../handbook/03-ship-ios-testflight.md](../handbook/03-ship-ios-testflight.md)
 
-**Android / Play:** parked in [`_archive/android/`](../../_archive/android/README.md)
+**Android / Play:** not shipping. CI removed. Parked only in [`_archive/android/`](../../_archive/android/README.md) — do not restore workflows.
+
+**Website:** frozen (GitHub Pages auto-deploy disabled). Active path = **TestFlight iOS only** until Brittany unfreezes.

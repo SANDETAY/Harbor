@@ -1,8 +1,12 @@
+# FROZEN — website updates paused until Brittany explicitly unfreezes them.
+# All active work is TestFlight / iOS app only. Do not re-enable push deploys
+# without her go-ahead.
+#
+# Live site stays as last successful deploy. Manual run only if she asks.
 name: Deploy GitHub Pages
 
 on:
-  push:
-    branches: [main]
+  # push to main DISABLED (website freeze)
   workflow_dispatch:
 
 permissions:
@@ -16,6 +20,9 @@ concurrency:
 
 jobs:
   deploy:
+    # Hard stop: even manual dispatch is blocked until freeze is lifted.
+    # Change `if` to `true` (or remove it) only when Brittany unfreezes the website.
+    if: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
