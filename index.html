@@ -17246,7 +17246,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 552;
+    const HARBOR_BUILD_NUMBER = 553;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -28052,18 +28052,24 @@
       const doToast = opts.toast !== false;
       if (!Array.isArray(state.habits)) state.habits = [];
       let n = 0;
+      const today = typeof todayStr === 'function' ? todayStr() : '';
       state.habits.forEach((h) => {
         if (!h) return;
+        // Always clear done stamps + forced interval 0 (mass-retire damage)
         reviveTaskerToDaily(h);
         try {
           delete h.laterDeferDate;
           if (h.snoozeUntil) delete h.snoozeUntil;
           if (h.parkOnSummary === true) h.parkOnSummary = false;
-          // Clear today's skip so items reappear
+          // Pull onto Task today so weekly/seasonal aren't stuck off-list
+          h.pullToToday = today;
           if (state.habitSkips && state.habitSkips[h.id]) {
-            const today = typeof todayStr === 'function' ? todayStr() : '';
             state.habitSkips[h.id] = (state.habitSkips[h.id] || []).filter((d) => d !== today);
             if (!state.habitSkips[h.id].length) delete state.habitSkips[h.id];
+          }
+          if (state.habitPasses && state.habitPasses[h.id]) {
+            state.habitPasses[h.id] = (state.habitPasses[h.id] || []).filter((d) => d !== today);
+            if (!state.habitPasses[h.id].length) delete state.habitPasses[h.id];
           }
         } catch (_) { /* ignore */ }
         n++;
@@ -46632,7 +46638,10 @@
 
       // Unfinished routines stay due every day until checked off (period rollover / preferred day)
       if (typeof habitHasCarryForwardDue === 'function' && habitHasCarryForwardDue(habit)) {
-        if (isOneOffTask(habit)) return comps.length === 0;
+        if (isOneOffTask(habit)) {
+          // Same rule as below — never use comps.length alone (hides half-finished / mis-tagged rows)
+          return !(typeof isOneOffFullyDone === 'function' && isOneOffFullyDone(habit));
+        }
         return typeof isNextMultiRepDueOn === 'function' ? isNextMultiRepDueOn(habit, today) : true;
       }
 
@@ -46645,9 +46654,11 @@
       }
 
       if (isOneOffTask(habit)) {
-        // Finished one-offs never return to Active (even if a completion row was lost later)
+        // Finished one-offs never return to Active.
+        // IMPORTANT: do NOT use `comps.length === 0` alone — rows with trackStreak:false
+        // and a past completion were neither “fully done” nor “due”, so they vanished.
         if (typeof isOneOffFullyDone === 'function' && isOneOffFullyDone(habit)) return false;
-        return comps.length === 0;
+        return true;
       }
       
       if (habit.interval_days == null || habit.interval_days <= 1) {
@@ -49138,20 +49149,22 @@
             : parkedDue || laterN
               ? 'Today is light'
               : 'All clear';
+        const buildN = typeof HARBOR_BUILD_NUMBER !== 'undefined' ? HARBOR_BUILD_NUMBER : '?';
         const sub = !hasAnyHabits
-          ? 'Add one small thing — Harbor will sort it by energy. If you had a list before, this device may not have your saved data.'
+          ? `Nothing saved on this browser (0 Taskers · build ${buildN}). If you had a list on the app or another device, open that same place or restore from cloud — this screen can’t invent deleted data.`
           : stuckN > 0
-            ? `${stuckN} saved Tasker${stuckN === 1 ? '' : 's'} look stuck hidden. Tap Restore to bring them back.`
+            ? `${(state.habits || []).length} saved · ${stuckN} look stuck · build ${buildN}. Tap Restore Taskers.`
             : parkedDue || laterN
               ? (laterN ? `${laterN} waiting under Coming up when you need them.` : 'Parked chores can wait until you pull them.')
-              : 'Nice work. Rest, or add something for later.';
+              : `Nice work. Rest, or add something for later. (${(state.habits || []).length} saved · build ${buildN})`;
         const actions = !hasAnyHabits
           ? `<div class="harbor-empty-actions">
             <button type="button" class="chip-add-btn" onclick="showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add</button>
             <button type="button" class="chip-tool-btn" onclick="switchTab('library')">Library</button>
+            <button type="button" class="chip-tool-btn" onclick="forceRestoreAllTaskers()">Restore</button>
           </div>`
           : `<div class="harbor-empty-actions">
-            ${stuckN > 0 || hasAnyHabits ? `<button type="button" class="chip-add-btn" onclick="forceRestoreAllTaskers()"><i class="fa-solid fa-rotate-left"></i>Restore Taskers</button>` : ''}
+            <button type="button" class="chip-add-btn" onclick="window.__harborTaskNuclearRestored=false;window.__harborTaskNuclearRestored2=false;forceRestoreAllTaskers()"><i class="fa-solid fa-rotate-left"></i>Restore Taskers</button>
             <button type="button" class="chip-add-btn" onclick="showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add</button>
             <button type="button" class="chip-tool-btn" onclick="showSummaryModal()">Brief</button>
             ${laterN ? `<button type="button" class="chip-tool-btn" onclick="laterRoutinesExpanded=true;renderTodayFeed();scrollComingUpSectionIntoView?.()">Coming up</button>` : ''}
