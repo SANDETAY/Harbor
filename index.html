@@ -17246,7 +17246,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 553;
+    const HARBOR_BUILD_NUMBER = 554;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -28052,17 +28052,18 @@
       const doToast = opts.toast !== false;
       if (!Array.isArray(state.habits)) state.habits = [];
       let n = 0;
+      let openN = 0;
       const today = typeof todayStr === 'function' ? todayStr() : '';
       state.habits.forEach((h) => {
         if (!h) return;
-        // Always clear done stamps + forced interval 0 (mass-retire damage)
+        // Clear mass-retire damage (done stamps / forced interval 0)
         reviveTaskerToDaily(h);
         try {
           delete h.laterDeferDate;
           if (h.snoozeUntil) delete h.snoozeUntil;
           if (h.parkOnSummary === true) h.parkOnSummary = false;
-          // Pull onto Task today so weekly/seasonal aren't stuck off-list
-          h.pullToToday = today;
+          // Drop bogus pull flags first (old restore pulled EVERYTHING → header 24 / list 0)
+          try { delete h.pullToToday; } catch (_) { /* ignore */ }
           if (state.habitSkips && state.habitSkips[h.id]) {
             state.habitSkips[h.id] = (state.habitSkips[h.id] || []).filter((d) => d !== today);
             if (!state.habitSkips[h.id].length) delete state.habitSkips[h.id];
@@ -28070,6 +28071,13 @@
           if (state.habitPasses && state.habitPasses[h.id]) {
             state.habitPasses[h.id] = (state.habitPasses[h.id] || []).filter((d) => d !== today);
             if (!state.habitPasses[h.id].length) delete state.habitPasses[h.id];
+          }
+          // Pull only still-open work onto Task (not period-complete weeklies)
+          const done = (typeof isCompletedToday === 'function' && isCompletedToday(h.id))
+            || (typeof isOneOffFullyDone === 'function' && isOneOffFullyDone(h));
+          if (!done) {
+            h.pullToToday = today;
+            openN++;
           }
         } catch (_) { /* ignore */ }
         n++;
@@ -28080,12 +28088,14 @@
       }
       if (doToast) {
         try {
-          showToast(n
-            ? `Force-restored ${n} Tasker${n === 1 ? '' : 's'}`
-            : 'No Taskers saved on this device — try Library or cloud backup');
+          if (!n) {
+            showToast('No Taskers saved on this device — try Library or cloud backup');
+          } else {
+            showToast(`Restored list · ${openN} open on Task`);
+          }
         } catch (_) { /* ignore */ }
       }
-      return n;
+      return openN;
     }
     try { window.forceRestoreAllTaskers = forceRestoreAllTaskers; } catch (_) { /* ignore */ }
 
@@ -46892,6 +46902,13 @@
      *  Explicit pull always wins so Coming up “Add” can put weekly/monthly on Task today.
      *  Overdue / carry-forward routines never hide in Coming up — stay until checked off. */
     function belongsOnTodayTab(habit) {
+      if (!habit) return false;
+      // Completed / finished one-offs are never “open on Task” (header count must match list)
+      try {
+        if (typeof isOneOffFullyDone === 'function' && isOneOffFullyDone(habit)) return false;
+        if (typeof isCompletedToday === 'function' && isCompletedToday(habit.id)) return false;
+      } catch (_) { /* ignore */ }
+      // Explicit pull wins only for still-open work
       if (isPulledToToday(habit)) return true;
       if (!isDueToday(habit)) return false;
       // Keep unfinished overdue work on Task (don't park heavy weekly chores that are late)
@@ -46907,9 +46924,20 @@
       const today = todayStr();
       let changed = false;
       (state.habits || []).forEach(h => {
+        if (!h) return;
         if (h.pullToToday && h.pullToToday !== today) {
           delete h.pullToToday;
           changed = true;
+        }
+        // Drop pull on work that’s already done for the period (fixes header “N Tasks” / empty list)
+        if (h.pullToToday && h.pullToToday === today) {
+          try {
+            if ((typeof isCompletedToday === 'function' && isCompletedToday(h.id))
+              || (typeof isOneOffFullyDone === 'function' && isOneOffFullyDone(h))) {
+              delete h.pullToToday;
+              changed = true;
+            }
+          } catch (_) { /* ignore */ }
         }
         // Later defer only lasts the calendar day it was set
         if (h.laterDeferDate && String(h.laterDeferDate) !== today) {
@@ -56014,10 +56042,28 @@
       };
     }
 
-    /** Habits currently on the Today list (same rules as the Today tab feed). */
+    /**
+     * Habits currently open on the Today list — MUST match buildTodayFeed active rules
+     * (header “N Tasks” was counting pulled items the list then hid as completed).
+     */
     function getTodayTabHabits() {
+      const today = typeof todayStr === 'function' ? todayStr() : '';
       return (state.habits || []).filter(h => {
+        if (!h || h.is_pro_reminder) return false;
         try {
+          if (typeof isOneOffFullyDone === 'function' && isOneOffFullyDone(h)) return false;
+          if (typeof isCompletedToday === 'function' && isCompletedToday(h.id)) return false;
+          if (typeof getHabitSkips === 'function' && getHabitSkips(h.id).includes(today)) return false;
+          if (typeof isHabitDeferredToLater === 'function' && isHabitDeferredToLater(h, today)) return false;
+          // Person filter (same as feed)
+          if (typeof householdHasMultiplePeople === 'function' && householdHasMultiplePeople()) {
+            const personFilter = typeof getTaskPersonFilter === 'function' ? getTaskPersonFilter() : 'me';
+            if (personFilter !== 'all') {
+              if (typeof matchesHabitPersonFilter === 'function') {
+                if (!matchesHabitPersonFilter(h, personFilter)) return false;
+              }
+            }
+          }
           return typeof belongsOnTodayTab === 'function' ? belongsOnTodayTab(h) : isDueToday(h);
         } catch (_) {
           return false;
