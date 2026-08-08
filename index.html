@@ -17246,7 +17246,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 550;
+    const HARBOR_BUILD_NUMBER = 551;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -27808,14 +27808,24 @@
     /**
      * One-time tasks stay done forever after first full complete.
      * Must NOT fire for daily habits / chores (see Number(null) trap above).
+     * Multi× / weekdays / streak flags mean “not a true one-off” even if interval is 0.
      */
     function isOneOffFullyDone(habit) {
       if (!habit) return false;
       if (!isOneOffTask(habit)) return false;
+      // Corrupted recurring still sitting on interval 0 — never “fully done forever”
+      if (typeof taskerLooksCorruptedRecurring === 'function' && taskerLooksCorruptedRecurring(habit)) {
+        return false;
+      }
       if (habit.completedOnce === true || habit.status === 'done') return true;
       try {
         const comps = typeof getCompletions === 'function' ? (getCompletions(habit.id) || []) : [];
-        return comps.length > 0;
+        // Only treat raw history as done when this is a clear one-time errand
+        if (comps.length > 0 && typeof isLikelyGenuineOneOffErrand === 'function'
+          && isLikelyGenuineOneOffErrand(habit)) {
+          return true;
+        }
+        return false;
       } catch (_) {
         return false;
       }
@@ -27824,11 +27834,8 @@
     function markOneOffFullyDone(habit, opts = {}) {
       if (!habit) return;
       // Only stamp genuine one-time Taskers
-      if (habit.interval_days !== 0 && habit.interval_days !== '0') {
-        if (habit.listKind !== 'task' && habit.list_kind !== 'task') return;
-        // Never stamp recurring dailies (null/1) even if listKind drifted
-        if (habit.interval_days == null || habit.interval_days === 1) return;
-      }
+      if (habit.interval_days !== 0 && habit.interval_days !== '0') return;
+      if (typeof taskerLooksCorruptedRecurring === 'function' && taskerLooksCorruptedRecurring(habit)) return;
       habit.interval_days = 0;
       habit.listKind = 'task';
       habit.completedOnce = true;
@@ -27851,89 +27858,172 @@
       } catch (_) { /* ignore */ }
     }
 
+    function taskerCompletionUniqueDays(habit) {
+      try {
+        const comps = typeof getCompletions === 'function' ? (getCompletions(habit?.id) || []) : [];
+        return new Set(comps.filter(Boolean));
+      } catch (_) {
+        return new Set();
+      }
+    }
+
+    /** Multi / weekdays / streak / presets / chore-habit titles → was recurring before corruption. */
+    function taskerLooksCorruptedRecurring(habit) {
+      if (!habit) return false;
+      const multi = Number(habit.times_per_day || habit.times_per_period) > 1
+        || (Array.isArray(habit.reminderTimes) && habit.reminderTimes.length > 1);
+      if (multi) return true;
+      try {
+        if (typeof getHabitWeekdays === 'function' && getHabitWeekdays(habit)?.length) return true;
+      } catch (_) { /* ignore */ }
+      if (habit.trackStreak === true || habit.trackStreak === false) return true;
+      if (habit.is_preset) return true;
+      const lk = String(habit.listKind || habit.list_kind || '').toLowerCase();
+      if (lk === 'habit' || lk === 'chore' || lk === 'morning' || lk === 'evening') return true;
+      const title = String(habit.title || '');
+      if (typeof isChoreTitle === 'function' && isChoreTitle(title)) return true;
+      if (typeof isCareHabit === 'function' && isCareHabit(habit)) return true;
+      if (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(title)) return true;
+      if (typeof isPhysicalActivity === 'function' && isPhysicalActivity(habit)) return true;
+      if (/\bfeed\b.*\b(dog|cat|pet)/i.test(title)) return true;
+      if (taskerCompletionUniqueDays(habit).size >= 2) return true;
+      return false;
+    }
+
     /**
-     * RECOVERY: build 547 wrongly treated interval_days:null as one-off
-     * (Number(null)===0) and stamped daily habits/chores completedOnce → Task empty.
-     * Revive anything that still looks recurring.
+     * True only for short-lived one-time errands we should leave “done”.
+     * Used so recovery can revive everything else.
+     */
+    function isLikelyGenuineOneOffErrand(habit) {
+      if (!habit) return false;
+      if (habit.interval_days !== 0 && habit.interval_days !== '0') return false;
+      if (taskerLooksCorruptedRecurring(habit)) return false;
+      const uniqueDays = taskerCompletionUniqueDays(habit);
+      if (uniqueDays.size >= 2) return false;
+      const lk = String(habit.listKind || habit.list_kind || '').toLowerCase();
+      // Explicit habit/chore buckets are never pure errands
+      if (lk === 'habit' || lk === 'chore' || lk === 'morning' || lk === 'evening') return false;
+      return true;
+    }
+
+    function reviveTaskerToDaily(habit) {
+      if (!habit) return;
+      habit.interval_days = null;
+      try {
+        delete habit.completedOnce;
+        if (habit.status === 'done') delete habit.status;
+        delete habit.completedAt;
+        delete habit.laterDeferDate;
+      } catch (_) { /* ignore */ }
+      const title = String(habit.title || '');
+      const lk = String(habit.listKind || habit.list_kind || '').toLowerCase();
+      if (lk === 'task' || !lk) {
+        if (habit.trackStreak === false || (typeof isChoreTitle === 'function' && isChoreTitle(title))) {
+          habit.listKind = 'chore';
+        } else if (habit.trackStreak === true
+          || (typeof isCareHabit === 'function' && isCareHabit(habit))
+          || (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(title))) {
+          habit.listKind = 'habit';
+        } else {
+          habit.listKind = 'chore';
+        }
+      }
+    }
+
+    /**
+     * RECOVERY: build 547 Number(null)===0 mass-retired dailies as finished one-offs.
+     * Aggressive: revive anything stamped done / interval 0 that is not a clear errand.
+     * If Task list is still empty while habits exist, emergency-revive remaining zeros.
      */
     function repairFalselyRetiredRecurringTaskers() {
-      if (!Array.isArray(state.habits)) return false;
+      if (!Array.isArray(state.habits) || !state.habits.length) return false;
       let changed = false;
-      const PRESET_DAILY = new Set([
-        'make-bed', 'drink-water', 'floss', 'vitamins', 'walk-5k', 'outdoor-time',
-        'stretch', 'feed-pets', 'feed-dog', 'feed-cat'
-      ]);
-      state.habits.forEach((h) => {
+      let revived = 0;
+
+      const tryRevive = (h, force) => {
         if (!h) return;
         const stamped = h.completedOnce === true || h.status === 'done';
-        const forcedTask = (h.listKind === 'task' || h.list_kind === 'task')
-          && (h.interval_days === 0 || h.interval_days === '0');
-        if (!stamped && !forcedTask) return;
-
-        const comps = typeof getCompletions === 'function' ? (getCompletions(h.id) || []) : [];
-        const uniqueDays = new Set(comps.filter(Boolean));
-        const multi = Number(h.times_per_day || h.times_per_period) > 1
-          || (Array.isArray(h.reminderTimes) && h.reminderTimes.length > 1);
-        const weekdays = typeof getHabitWeekdays === 'function' ? getHabitWeekdays(h) : null;
-        const title = String(h.title || '');
-        const looksRecurringTitle = (typeof isChoreTitle === 'function' && isChoreTitle(title))
-          || (typeof isCareHabit === 'function' && isCareHabit(h))
-          || (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(title))
-          || (typeof isPhysicalActivity === 'function' && isPhysicalActivity(h))
-          || /\bfeed\b.*\b(dog|cat|pet)/i.test(title);
-        const presetDaily = PRESET_DAILY.has(String(h.id || ''))
-          || (h.is_preset && /daily|habit|chore/i.test(String(h.librarySection || '')));
-        const manyDays = uniqueDays.size >= 2;
-        // Explicit recurring cadence that was wiped to 0
-        const hadRecurringFlag = h.trackStreak === true || h.trackStreak === false
-          || multi || (weekdays && weekdays.length) || looksRecurringTitle || presetDaily || manyDays
-          || h.interval_days === null || h.interval_days === 1;
-
-        // True one-off errand: keep retired (single day, no multi, not chore/habit title)
-        if (!hadRecurringFlag && uniqueDays.size <= 1 && !multi && !looksRecurringTitle && !presetDaily) {
-          // Only keep as one-off if interval is explicitly 0
-          if (h.interval_days === 0 || h.interval_days === '0') return;
-        }
-        if (!hadRecurringFlag && !looksRecurringTitle && uniqueDays.size <= 1) return;
-
-        // Revive as daily recurring
-        h.interval_days = null;
-        try {
-          delete h.completedOnce;
-          if (h.status === 'done') delete h.status;
-          delete h.completedAt;
-        } catch (_) { /* ignore */ }
-        const lk = String(h.listKind || h.list_kind || '').toLowerCase();
-        if (lk === 'task' || !lk) {
-          if (h.trackStreak === false || (typeof isChoreTitle === 'function' && isChoreTitle(title))) {
-            h.listKind = 'chore';
-          } else if (looksRecurringTitle || h.trackStreak === true) {
-            h.listKind = 'habit';
-          } else {
-            h.listKind = 'chore';
+        const isZero = h.interval_days === 0 || h.interval_days === '0';
+        if (!stamped && !isZero) return;
+        // Leave clear finished errands alone (unless emergency force)
+        if (!force && isLikelyGenuineOneOffErrand(h) && stamped) return;
+        if (!force && isLikelyGenuineOneOffErrand(h) && isZero && !stamped) return;
+        // Corrupted recurring or stamped mass-retire → revive
+        if (force || stamped || taskerLooksCorruptedRecurring(h) || isZero) {
+          // Don't revive open genuine one-offs (interval 0, no stamp, no comps)
+          if (!force && isZero && !stamped) {
+            const comps = typeof getCompletions === 'function' ? (getCompletions(h.id) || []) : [];
+            if (!comps.length && isLikelyGenuineOneOffErrand(h)) return;
+            if (!taskerLooksCorruptedRecurring(h) && comps.length <= 1 && isLikelyGenuineOneOffErrand(h)) return;
           }
+          reviveTaskerToDaily(h);
+          changed = true;
+          revived++;
         }
-        changed = true;
-      });
+      };
+
+      state.habits.forEach((h) => tryRevive(h, false));
+
+      // Emergency: nothing active on Task but habits exist → force-revive corrupted zeros/stamps
+      let dueCount = 0;
+      try {
+        (state.habits || []).forEach((h) => {
+          if (!h || h.is_pro_reminder) return;
+          try {
+            if (typeof isOneOffFullyDone === 'function' && isOneOffFullyDone(h)) return;
+            if (typeof isCompletedToday === 'function' && isCompletedToday(h.id)) return;
+            if (typeof belongsOnTodayTab === 'function' ? belongsOnTodayTab(h) : true) dueCount++;
+          } catch (_) { /* ignore */ }
+        });
+      } catch (_) { dueCount = -1; }
+
+      if (dueCount === 0 && (state.habits || []).length > 0) {
+        let emergencyN = 0;
+        (state.habits || []).forEach((h) => {
+          if (!h) return;
+          const stamped = h.completedOnce === true || h.status === 'done';
+          const isZero = h.interval_days === 0 || h.interval_days === '0';
+          if (!stamped && !isZero) return;
+          // Keep true finished errands retired (don't resurrect “buy milk” forever)
+          if (isLikelyGenuineOneOffErrand(h) && stamped) return;
+          if (isLikelyGenuineOneOffErrand(h) && isZero && !taskerLooksCorruptedRecurring(h)) return;
+          reviveTaskerToDaily(h);
+          changed = true;
+          emergencyN++;
+        });
+        if (emergencyN > 0) {
+          revived += emergencyN;
+          try {
+            console.info('[Harbor] emergency Tasker revive — empty Task list, restored', emergencyN);
+          } catch (_) { /* ignore */ }
+        }
+      }
+
       if (changed) {
         try { saveState({ skipLifeShare: true, taskerImmediate: true }); } catch (_) {
           try { saveState(); } catch (__) { /* ignore */ }
         }
+        try {
+          if (revived > 0 && typeof showToast === 'function') {
+            showToast(`Restored ${revived} Tasker${revived === 1 ? '' : 's'} to your list`);
+          }
+        } catch (_) { /* ignore */ }
       }
       return changed;
     }
 
-    /** Repair: stamp completedOnce on genuine one-offs that already have completion history. */
+    /** Repair: stamp completedOnce only on genuine one-off errands with history. */
     function repairCompletedOneOffFlags() {
       if (!Array.isArray(state.habits)) return false;
-      // First undo mass false-retire from Number(null)===0 bug
+      // Always run recovery first (can run multiple times; cheap once fixed)
       try { repairFalselyRetiredRecurringTaskers(); } catch (_) { /* ignore */ }
       let changed = false;
       state.habits.forEach((h) => {
         if (!h) return;
-        // ONLY explicit interval 0 — never Number(null)
         if (h.interval_days !== 0 && h.interval_days !== '0') return;
         if (h.completedOnce === true) return;
+        if (typeof taskerLooksCorruptedRecurring === 'function' && taskerLooksCorruptedRecurring(h)) return;
+        if (typeof isLikelyGenuineOneOffErrand === 'function' && !isLikelyGenuineOneOffErrand(h)) return;
         try {
           const comps = getCompletions(h.id) || [];
           if (comps.length > 0) {
@@ -27954,7 +28044,9 @@
      */
     function getTaskerKind(habit) {
       if (!habit) return 'task';
-      if (isOneOffTask(habit) || habit.completedOnce === true) return 'task';
+      // Do not use completedOnce alone — that hid recovered dailies as “task”
+      if (isOneOffTask(habit) && isOneOffFullyDone(habit)) return 'task';
+      if (isOneOffTask(habit)) return 'task';
       const explicit = String(habit.listKind || habit.list_kind || '').toLowerCase();
       if (explicit === 'task') return 'task';
       if (explicit === 'chore') return 'chore';
