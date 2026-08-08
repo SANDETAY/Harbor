@@ -5,7 +5,7 @@
 **Bookmarks:** [docs/bookmarks/open-bookmarks.html](docs/bookmarks/open-bookmarks.html)  
 **Glossary:** [docs/glossary/harbor-programming-terms.md](docs/glossary/harbor-programming-terms.md)
 
-> Android is archived under `_archive/android/`. Secrets live in `private/` (gitignored).
+> **Active mode:** TestFlight **iOS app only**. Website auto-deploy is **frozen**. Android CI is **removed** (archive only under `_archive/android/`). Secrets live in `private/` (gitignored).
 
 ---
 
@@ -41,7 +41,7 @@ Your repo: **https://github.com/SANDETAY/Harbor**
 3. Push to `main` — the workflow in `.github/workflows/deploy-pages.yml` deploys automatically
 4. After 1–2 minutes, share: **https://harborlife.app/**
 
-Every `git push` to `main` updates the live site. Testers can also **Add to Home Screen** on iPhone/Android for a full-screen app experience.
+**Website freeze:** pushes to `main` do **not** update the live site until Brittany unfreezes GitHub Pages. Testers on web see the last deployed build; app work ships via TestFlight only.
 
 **First-time setup (one click in GitHub UI):** If Pages shows 404, you must enable GitHub Actions as the Pages source once (step 2 above). The workflow file is already in the repo.
 
