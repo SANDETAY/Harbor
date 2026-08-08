@@ -17246,7 +17246,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 548;
+    const HARBOR_BUILD_NUMBER = 549;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -27793,22 +27793,26 @@
      * NEVER treat a partial multi× day (1/2) as fully done.
      * ═══════════════════════════════════════════════════════════════════
      */
+    /**
+     * True only for explicit one-time Taskers.
+     * CRITICAL: never use Number(interval_days) === 0 — in JS Number(null) === 0,
+     * so daily habits (interval_days: null) would look like one-offs and vanish.
+     * Daily = null / undefined / 1. One-time = exactly 0.
+     */
     function isOneOffTask(habit) {
-      // Strict one-time Taskers only (interval_days: 0). null/1 = daily.
-      // Finished Tasks keep one-time identity even if interval was corrupted.
       if (!habit) return false;
-      if (habit.completedOnce === true || habit.status === 'done') return true;
-      return Number(habit.interval_days) === 0;
+      // Explicit 0 only (string "0" from older forms). null is DAILY, not one-time.
+      return habit.interval_days === 0 || habit.interval_days === '0';
     }
 
     /**
      * One-time tasks stay done forever after first full complete.
-     * completedOnce / status=done always win — never reappear after midnight.
+     * Must NOT fire for daily habits / chores (see Number(null) trap above).
      */
     function isOneOffFullyDone(habit) {
       if (!habit) return false;
+      if (!isOneOffTask(habit)) return false;
       if (habit.completedOnce === true || habit.status === 'done') return true;
-      if (Number(habit.interval_days) !== 0) return false;
       try {
         const comps = typeof getCompletions === 'function' ? (getCompletions(habit.id) || []) : [];
         return comps.length > 0;
@@ -27819,9 +27823,11 @@
 
     function markOneOffFullyDone(habit, opts = {}) {
       if (!habit) return;
-      // Only stamp real one-time Taskers (or already-stamped recovery)
-      if (Number(habit.interval_days) !== 0 && habit.completedOnce !== true && habit.status !== 'done') {
+      // Only stamp genuine one-time Taskers
+      if (habit.interval_days !== 0 && habit.interval_days !== '0') {
         if (habit.listKind !== 'task' && habit.list_kind !== 'task') return;
+        // Never stamp recurring dailies (null/1) even if listKind drifted
+        if (habit.interval_days == null || habit.interval_days === 1) return;
       }
       habit.interval_days = 0;
       habit.listKind = 'task';
@@ -27845,20 +27851,88 @@
       } catch (_) { /* ignore */ }
     }
 
-    /** Repair: stamp completedOnce on any one-off that already has completion history. */
+    /**
+     * RECOVERY: build 547 wrongly treated interval_days:null as one-off
+     * (Number(null)===0) and stamped daily habits/chores completedOnce → Task empty.
+     * Revive anything that still looks recurring.
+     */
+    function repairFalselyRetiredRecurringTaskers() {
+      if (!Array.isArray(state.habits)) return false;
+      let changed = false;
+      const PRESET_DAILY = new Set([
+        'make-bed', 'drink-water', 'floss', 'vitamins', 'walk-5k', 'outdoor-time',
+        'stretch', 'feed-pets', 'feed-dog', 'feed-cat'
+      ]);
+      state.habits.forEach((h) => {
+        if (!h) return;
+        const stamped = h.completedOnce === true || h.status === 'done';
+        const forcedTask = (h.listKind === 'task' || h.list_kind === 'task')
+          && (h.interval_days === 0 || h.interval_days === '0');
+        if (!stamped && !forcedTask) return;
+
+        const comps = typeof getCompletions === 'function' ? (getCompletions(h.id) || []) : [];
+        const uniqueDays = new Set(comps.filter(Boolean));
+        const multi = Number(h.times_per_day || h.times_per_period) > 1
+          || (Array.isArray(h.reminderTimes) && h.reminderTimes.length > 1);
+        const weekdays = typeof getHabitWeekdays === 'function' ? getHabitWeekdays(h) : null;
+        const title = String(h.title || '');
+        const looksRecurringTitle = (typeof isChoreTitle === 'function' && isChoreTitle(title))
+          || (typeof isCareHabit === 'function' && isCareHabit(h))
+          || (typeof isDailyRhythmTitle === 'function' && isDailyRhythmTitle(title))
+          || (typeof isPhysicalActivity === 'function' && isPhysicalActivity(h))
+          || /\bfeed\b.*\b(dog|cat|pet)/i.test(title);
+        const presetDaily = PRESET_DAILY.has(String(h.id || ''))
+          || (h.is_preset && /daily|habit|chore/i.test(String(h.librarySection || '')));
+        const manyDays = uniqueDays.size >= 2;
+        // Explicit recurring cadence that was wiped to 0
+        const hadRecurringFlag = h.trackStreak === true || h.trackStreak === false
+          || multi || (weekdays && weekdays.length) || looksRecurringTitle || presetDaily || manyDays
+          || h.interval_days === null || h.interval_days === 1;
+
+        // True one-off errand: keep retired (single day, no multi, not chore/habit title)
+        if (!hadRecurringFlag && uniqueDays.size <= 1 && !multi && !looksRecurringTitle && !presetDaily) {
+          // Only keep as one-off if interval is explicitly 0
+          if (h.interval_days === 0 || h.interval_days === '0') return;
+        }
+        if (!hadRecurringFlag && !looksRecurringTitle && uniqueDays.size <= 1) return;
+
+        // Revive as daily recurring
+        h.interval_days = null;
+        try {
+          delete h.completedOnce;
+          if (h.status === 'done') delete h.status;
+          delete h.completedAt;
+        } catch (_) { /* ignore */ }
+        const lk = String(h.listKind || h.list_kind || '').toLowerCase();
+        if (lk === 'task' || !lk) {
+          if (h.trackStreak === false || (typeof isChoreTitle === 'function' && isChoreTitle(title))) {
+            h.listKind = 'chore';
+          } else if (looksRecurringTitle || h.trackStreak === true) {
+            h.listKind = 'habit';
+          } else {
+            h.listKind = 'chore';
+          }
+        }
+        changed = true;
+      });
+      if (changed) {
+        try { saveState({ skipLifeShare: true, taskerImmediate: true }); } catch (_) {
+          try { saveState(); } catch (__) { /* ignore */ }
+        }
+      }
+      return changed;
+    }
+
+    /** Repair: stamp completedOnce on genuine one-offs that already have completion history. */
     function repairCompletedOneOffFlags() {
       if (!Array.isArray(state.habits)) return false;
+      // First undo mass false-retire from Number(null)===0 bug
+      try { repairFalselyRetiredRecurringTaskers(); } catch (_) { /* ignore */ }
       let changed = false;
       state.habits.forEach((h) => {
         if (!h) return;
-        // Restore corrupted finished Tasks (promoted to daily but stamped done)
-        if ((h.completedOnce === true || h.status === 'done') && Number(h.interval_days) !== 0) {
-          h.interval_days = 0;
-          h.listKind = 'task';
-          changed = true;
-          return;
-        }
-        if (Number(h.interval_days) !== 0) return;
+        // ONLY explicit interval 0 — never Number(null)
+        if (h.interval_days !== 0 && h.interval_days !== '0') return;
         if (h.completedOnce === true) return;
         try {
           const comps = getCompletions(h.id) || [];
@@ -49038,6 +49112,10 @@
       } catch (_) { /* ignore */ }
       if (typeof clearExpiredPullToTodayFlags === 'function') {
         try { clearExpiredPullToTodayFlags(); } catch (_) { /* ignore */ }
+      }
+      // Restore dailies/chores wrongly wiped by Number(null)===0 (empty Task list)
+      if (typeof repairFalselyRetiredRecurringTaskers === 'function') {
+        try { repairFalselyRetiredRecurringTaskers(); } catch (_) { /* ignore */ }
       }
       if (typeof repairCompletedOneOffFlags === 'function') {
         try { repairCompletedOneOffFlags(); } catch (_) { /* ignore */ }
