@@ -1,12 +1,11 @@
-# FROZEN — website updates paused until Brittany explicitly unfreezes them.
-# All active work is TestFlight / iOS app only. Do not re-enable push deploys
-# without her go-ahead.
-#
-# Live site stays as last successful deploy. Manual run only if she asks.
+# Website deploy — harborlife.app via GitHub Pages.
+# Unfrozen 2026-08-12: Brittany asked to bring the live PWA in line with the app.
 name: Deploy GitHub Pages
 
 on:
-  # push to main DISABLED (website freeze)
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -20,9 +19,6 @@ concurrency:
 
 jobs:
   deploy:
-    # Hard stop: even manual dispatch is blocked until freeze is lifted.
-    # Change `if` to `true` (or remove it) only when Brittany unfreezes the website.
-    if: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

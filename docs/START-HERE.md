@@ -8,19 +8,18 @@ Open this file whenever you need to run, ship, or troubleshoot Harbor.
 |--|--|
 | **This folder** | `/Users/brittany/Desktop/Harbor` |
 | **Repo** | https://github.com/SANDETAY/Harbor |
-| **Live PWA** | https://harborlife.app / GitHub Pages — **FROZEN (no updates)** |
-| **Active surface** | **TestFlight iOS app only** (until Brittany unfreezes website) |
+| **Live PWA** | https://harborlife.app / GitHub Pages — **live** (deploys on push to `main`) |
+| **Active surfaces** | **TestFlight iOS app** + **website** |
 | **Product version** | 1.0 |
 | **Current build** | See `HARBOR_BUILD_NUMBER` in `index.html` (also `sw.js`) |
 
 ---
 
-## ACTIVE MODE — TestFlight only (until she says otherwise)
+## ACTIVE MODE
 
-1. **All work = iOS / TestFlight app.** Prefer native ship path; say **`Ship Harbor`**.  
-2. **Website frozen.** Do not deploy GitHub Pages / harborlife.app. Workflow push deploy is disabled.  
-3. **No cojoining.** Do not pair app ships with website updates.  
-4. **No Android.** Android GitHub Action removed (was emailing failures). Parked code stays in `_archive/android/` only — do not restore CI.
+1. **iOS / TestFlight** — say **`Ship Harbor`** to archive and upload.  
+2. **Website** — push to `main` deploys GitHub Pages / harborlife.app (unfrozen 2026-08-12).  
+3. **No Android.** Android GitHub Action removed. Parked under `_archive/android/` only.
 
 ---
 
@@ -28,11 +27,11 @@ Open this file whenever you need to run, ship, or troubleshoot Harbor.
 
 Calm life app (tasks, Life, streaks, grocery, bills, calendar).
 
-**Active ship path now:**
+**Active ship paths:**
 
 1. **iOS** — Capacitor + widgets → **TestFlight / App Store**  
+2. **Web / PWA** — `index.html` on GitHub Pages → **https://harborlife.app**
 
-**Paused:** Web / PWA live updates (site stays at last deploy).  
 **Removed from CI / not shipping:** Android (archive only under `_archive/android/`).
 
 Data is **on-device** by default. Cloud (Supabase) is optional via `docs/supabase/config.local.js`.
@@ -100,12 +99,13 @@ open ios/App/App.xcworkspace
 
 ## Golden rules
 
-1. Edit product UI in **`index.html`** only (feeds the **app** while website is frozen).  
-2. Ship **app only**: bump `HARBOR_BUILD_NUMBER` + `sw.js` cache + Xcode build number → TestFlight.  
-3. After `cap sync`, keep **`HarborWidgetsPlugin`** in `packageClassList`.  
-4. Never commit **`private/`** or **`config.local.js`**.  
-5. One home only: **Desktop Harbor** — do not keep a second full copy under Projects.  
-6. **Do not** re-enable Android CI or website auto-deploy without Brittany’s OK.
+1. Edit product UI in **`index.html`** only (same file powers app shell + website).  
+2. Ship **app**: bump `HARBOR_BUILD_NUMBER` + `sw.js` cache + Xcode build number → TestFlight.  
+3. Ship **website**: push to `main` (Pages workflow).  
+4. After `cap sync`, keep **`HarborWidgetsPlugin`** in `packageClassList`.  
+5. Never commit **`private/`** or **`config.local.js`**.  
+6. One home only: **Desktop Harbor** — do not keep a second full copy under Projects.  
+7. **Do not** re-enable Android CI without Brittany’s OK.
 
 ---
 
