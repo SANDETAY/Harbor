@@ -58,11 +58,13 @@
 	<string>Harbor uses the camera so you can snap a recipe card or dish photo when adding a custom dinner recipe. Photos stay on this device.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Harbor lets you attach a recipe photo from your library when adding a custom dinner recipe. Photos stay on this device.</string>
-	<!-- Device calendars (EventKit) — read-only in v1 -->
+	<!-- Device calendars (EventKit) — read + write Schedule events to phone (syncs to wall calendars) -->
 	<key>NSCalendarsUsageDescription</key>
-	<string>Harbor shows events from calendars on this iPhone so you can plan tasks around real appointments. Calendar data stays on your device.</string>
+	<string>Harbor reads and writes calendar events so Schedule stays in sync with your iPhone calendar (and devices like wall calendars that sync from your phone). Calendar data stays on this device and your chosen calendar account.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Harbor shows events from calendars on this iPhone so you can plan tasks around real appointments. Calendar data stays on your device.</string>
+	<string>Harbor reads and writes calendar events so Schedule stays in sync with your iPhone calendar (and devices like wall calendars that sync from your phone). Calendar data stays on this device and your chosen calendar account.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Harbor adds Schedule events you create to your iPhone calendar so they can appear on synced wall calendars. You can still manage those events in the Calendar app.</string>
 	<!-- Export compliance: no custom encryption beyond HTTPS -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>

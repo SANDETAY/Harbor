@@ -1,112 +1,110 @@
 import WidgetKit
 import SwiftUI
 
-/// Lists pulse — grocery, bills, streak.
+/// Smart-stack face: Grocery — open count + item chips. Small / Medium / Large.
 struct HarborListsWidget: Widget {
     let kind = "HarborStreakWidget"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: HarborProvider()) { entry in
-            ListsWidgetView(entry: entry)
-                .harborWidgetChrome()
+            GroceryWidgetView(entry: entry)
+                .harborWidgetChrome(entry.snapshot.palette)
+                .widgetURL(HarborWidgetLink.grocery)
         }
-        .configurationDisplayName("Lists")
-        .description("Grocery, bills, tasks, and streak.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .configurationDisplayName("Grocery")
+        .description("Open grocery items — tap to open Grocery in Harbor.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
         .contentMarginsDisabled()
     }
 }
 
-struct ListsWidgetView: View {
+struct GroceryWidgetView: View {
     var entry: HarborEntry
     @Environment(\.widgetFamily) var family
 
     var body: some View {
         let snap = entry.snapshot
-        let grocery = snap.groceryOpen ?? 0
-        let bills = snap.billsDue ?? 0
-        let tasks = snap.tasksOpen ?? 0
-        let streak = snap.streakActive ?? snap.streakBest ?? 0
+        let open = snap.groceryOpen ?? 0
+        let checked = snap.groceryChecked ?? 0
+        let items = Array((snap.groceryItems ?? []).prefix(family == .systemLarge ? 12 : (family == .systemMedium ? 6 : 4)))
+        let pal = snap.palette
 
-        VStack(alignment: .leading, spacing: 10) {
-            HarborCaption(text: "Harbor")
-
-            if family == .systemSmall {
-                VStack(alignment: .leading, spacing: 8) {
-                    row(icon: "cart.fill", title: "Grocery", value: "\(grocery)")
-                    row(icon: "checklist", title: "Tasks", value: "\(tasks)")
-                    if bills > 0 {
-                        row(icon: "creditcard.fill", title: "Bills", value: "\(bills)", hot: true)
-                    } else if streak > 0 {
-                        row(icon: "flame.fill", title: "Streak", value: "\(streak)d")
-                    }
-                }
-            } else {
-                HStack(alignment: .top, spacing: 8) {
-                    bigStat(icon: "cart.fill", value: "\(grocery)", label: "Grocery")
-                    bigStat(icon: "checklist", value: "\(tasks)", label: "Tasks")
-                    bigStat(icon: "creditcard.fill", value: "\(bills)", label: "Bills", hot: bills > 0)
-                    if streak > 0 {
-                        bigStat(icon: "flame.fill", value: "\(streak)", label: "Streak")
-                    }
-                }
-                Spacer(minLength: 0)
-                if let label = snap.streakLabel, !label.isEmpty, streak > 0 {
-                    Text(label)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(HarborWidgetTheme.secondary)
+        VStack(alignment: .leading, spacing: family == .systemSmall ? 6 : 8) {
+            HStack(alignment: .center, spacing: 8) {
+                HarborMark(symbol: "▣", colors: [pal.accent, pal.accentDeep],
+                           size: family == .systemSmall ? 20 : 22)
+                VStack(alignment: .leading, spacing: 1) {
+                    HarborCaption(text: "Grocery", color: pal.accent)
+                    Text(checked > 0 ? "\(checked) checked · list open" : "Shopping list")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(pal.muted)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.85)
+                        .minimumScaleFactor(0.8)
+                }
+                Spacer(minLength: 4)
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text("\(open)")
+                        .font(.system(size: HarborWidgetTheme.heroSize(for: family), weight: .bold, design: .rounded))
+                        .foregroundStyle(pal.accentDeep)
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                    Text("left")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(HarborWidgetTheme.secondary)
                 }
             }
 
-            Spacer(minLength: 0)
+            if items.isEmpty {
+                Spacer(minLength: 0)
+                HarborEmptyLine(text: open == 0 ? "List is clear" : "Open Harbor for items", color: pal.muted)
+                Spacer(minLength: 0)
+            } else if family == .systemSmall {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(Array(items.prefix(3).enumerated()), id: \.offset) { _, name in
+                        HStack(spacing: 6) {
+                            Circle()
+                                .strokeBorder(pal.accent.opacity(0.65), lineWidth: 1.4)
+                                .frame(width: 10, height: 10)
+                            Text(name)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(pal.text)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
+                        }
+                    }
+                }
+                Spacer(minLength: 0)
+            } else {
+                FlowishChips(items: items, accent: pal.accent, deep: pal.accentDeep)
+                Spacer(minLength: 0)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .harborWidgetPadding(family)
     }
+}
 
-    @ViewBuilder
-    private func row(icon: String, title: String, value: String, hot: Bool = false) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(hot ? Color.orange : HarborWidgetTheme.accent)
-                .frame(width: 18)
-            Text(title)
-                .font(.system(size: 13.5, weight: .medium))
-                .foregroundStyle(HarborWidgetTheme.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-            Spacer(minLength: 0)
-            Text(value)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                .foregroundStyle(hot ? Color.orange : HarborWidgetTheme.primary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-    }
+/// Simple chip grid without UIKit — rows of wrapped-looking chips via LazyVGrid.
+struct FlowishChips: View {
+    let items: [String]
+    let accent: Color
+    let deep: Color
 
-    @ViewBuilder
-    private func bigStat(icon: String, value: String, label: String, hot: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(hot ? Color.orange : HarborWidgetTheme.accent)
-            Text(value)
-                .font(.system(size: 22, weight: .semibold, design: .rounded))
-                .foregroundStyle(hot ? Color.orange : HarborWidgetTheme.primary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(label)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(HarborWidgetTheme.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+    var body: some View {
+        let columns = [GridItem(.adaptive(minimum: 72, maximum: 140), spacing: 5, alignment: .leading)]
+        LazyVGrid(columns: columns, alignment: .leading, spacing: 5) {
+            ForEach(Array(items.enumerated()), id: \.offset) { _, name in
+                Text(name)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(deep)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(accent.opacity(0.16), in: Capsule())
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

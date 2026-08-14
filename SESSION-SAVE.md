@@ -12,7 +12,7 @@
 |------|---------|
 | **Preview in `mobile.html`** | Day-to-day checks: local server → **http://localhost:3000/mobile.html**. Edit product UI in **`index.html`** (mobile frame loads it). |
 | **Ship app on “archive” / Ship Harbor** | Xcode archive → TestFlight when she says **archive** or **Ship Harbor**. |
-| **Website live** | `harborlife.app` / GitHub Pages deploys on push to `main` (unfrozen 2026-08-12). |
+| **Website live** | `harborlife.app` / GitHub Pages deploys on push to `main` (unfrozen with app 694). |
 | **No Android** | Android CI removed. Android stays parked under `_archive/android/` — do not restore workflows or build Android. |
 
 | | |
@@ -24,7 +24,7 @@
 | Glossary | [docs/glossary/harbor-programming-terms.md](docs/glossary/harbor-programming-terms.md) |
 | Secrets | `private/` (not in git) |
 | Android | **Removed from CI.** Archive only: `_archive/android/` (do not revive) |
-| **Current ship train** | Product **1.0** · build **587** (TestFlight + web) |
+| **Current ship train** | Product **1.0** · build **694** (TestFlight + web) |
 
 ### Language: **Taskers**
 **Taskers** = tasks + habits + chores (anything on the Task list).  

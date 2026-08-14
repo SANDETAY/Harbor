@@ -1,123 +1,120 @@
 import WidgetKit
 import SwiftUI
 
-/// Hero widget — day at a glance (calendar + free time + tasks + lists).
+/// Smart-stack face: Budget — spent / left / bills always visible. Small / Medium / Large.
 struct HarborDayWidget: Widget {
     let kind = "HarborGlanceWidget"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: HarborProvider()) { entry in
-            DayWidgetView(entry: entry)
-                .harborWidgetChrome()
+            BudgetWidgetView(entry: entry)
+                .harborWidgetChrome(entry.snapshot.palette)
+                .widgetURL(HarborWidgetLink.budget)
         }
-        .configurationDisplayName("Day")
-        .description("Next event, free time, and top tasks.")
-        .supportedFamilies([.systemMedium, .systemLarge])
+        .configurationDisplayName("Budget")
+        .description("Month spend, left, and bills due — tap to open Budget in Harbor.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
         .contentMarginsDisabled()
     }
 }
 
-struct DayWidgetView: View {
+struct BudgetWidgetView: View {
     var entry: HarborEntry
     @Environment(\.widgetFamily) var family
 
     var body: some View {
         let snap = entry.snapshot
-        let open = snap.tasksOpen ?? 0
-        let grocery = snap.groceryOpen ?? 0
+        let spent = snap.budgetSpent ?? 0
+        let limit = snap.budgetLimit ?? 0
+        let left = snap.budgetLeft ?? max(0, limit - spent)
+        let pct = snap.resolvedBudgetPct
         let bills = snap.billsDue ?? 0
-        let taskLimit = family == .systemLarge ? 4 : 2
-        let tasks = Array((snap.tasks ?? []).prefix(taskLimit))
-        let events = (snap.events ?? []).filter { $0.isStillRelevant(at: entry.date) }
-        let nextEv = snap.nextEvent.flatMap { $0.isStillRelevant(at: entry.date) ? $0 : nil }
-            ?? events.first
+        let billsAmt = snap.billsDueAmount ?? 0
+        let pal = snap.palette
 
-        VStack(alignment: .leading, spacing: 10) {
-            // Header
-            HStack(alignment: .top, spacing: 8) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(snap.greeting ?? "Harbor")
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .foregroundStyle(HarborWidgetTheme.accent)
+        VStack(alignment: .leading, spacing: family == .systemSmall ? 6 : 8) {
+            HStack(alignment: .center, spacing: 8) {
+                HarborMark(symbol: "$", colors: [pal.accent, pal.accentDeep],
+                           size: family == .systemSmall ? 20 : 22)
+                VStack(alignment: .leading, spacing: 1) {
+                    HarborCaption(text: "Budget", color: pal.accentDeep)
+                    Text(limit > 0 ? "This month · \(pct)% used" : "This month")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(pal.muted)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-                    if let shape = snap.dayShape, !shape.isEmpty {
-                        Text(shape)
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(HarborWidgetTheme.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
-                    } else {
-                        Text(weekdayLabel())
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(HarborWidgetTheme.primary)
-                            .lineLimit(1)
-                    }
+                        .minimumScaleFactor(0.8)
                 }
-                Spacer(minLength: 6)
-                HStack(spacing: 10) {
-                    metric(value: open, label: "tasks")
-                    if grocery > 0 { metric(value: grocery, label: "list") }
-                    if bills > 0 { metric(value: bills, label: "bills", hot: true) }
-                }
+                Spacer(minLength: 0)
             }
 
-            if let free = snap.freeLabel, !free.isEmpty {
-                HStack(spacing: 6) {
-                    Image(systemName: "clock.fill")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(HarborWidgetTheme.accent)
-                    Text(free)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(HarborWidgetTheme.primary)
+            // Spent hero
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(formatMoney(spent))
+                    .font(.system(size: HarborWidgetTheme.heroSize(for: family), weight: .bold, design: .rounded))
+                    .foregroundStyle(pal.text)
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                if limit > 0 {
+                    Text("of \(formatMoney(limit))")
+                        .font(.system(size: family == .systemSmall ? 11 : 12, weight: .semibold))
+                        .foregroundStyle(pal.muted)
+                        .monospacedDigit()
                         .lineLimit(1)
-                        .minimumScaleFactor(0.85)
+                        .minimumScaleFactor(0.8)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(HarborWidgetTheme.accentSoft, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                Spacer(minLength: 0)
             }
 
-            if let ev = nextEv {
-                eventRow(ev, emphasize: true)
-                if family == .systemLarge {
-                    ForEach(Array(events.dropFirst().prefix(2).enumerated()), id: \.offset) { _, e in
-                        eventRow(e, emphasize: false)
-                    }
+            // Progress bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.secondary.opacity(0.12))
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [pal.accentDeep, pal.accent],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: max(6, geo.size.width * CGFloat(pct) / 100.0))
+                }
+            }
+            .frame(height: family == .systemSmall ? 6 : 8)
+
+            // Left + Bills — always visible
+            if family == .systemSmall {
+                HStack(spacing: 8) {
+                    budgetPill(label: "Left", value: formatMoney(left), hot: false)
+                    budgetPill(
+                        label: "Bills",
+                        value: bills > 0 ? "\(bills)" : "0",
+                        hot: bills > 0
+                    )
                 }
             } else {
-                Text("No events left today")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(HarborWidgetTheme.secondary)
-                    .lineLimit(1)
+                HStack(spacing: 8) {
+                    budgetTile(
+                        label: "Left",
+                        value: formatMoney(left),
+                        hint: "room to spend",
+                        hot: false
+                    )
+                    budgetTile(
+                        label: "Bills due",
+                        value: bills > 0 ? "\(bills)" : "0",
+                        hint: billsAmt > 0 ? formatMoney(billsAmt) + " total" : "none soon",
+                        hot: bills > 0
+                    )
+                }
             }
 
-            if !tasks.isEmpty {
-                Divider().opacity(0.25)
-                ForEach(Array(tasks.enumerated()), id: \.offset) { _, t in
-                    HStack(spacing: 8) {
-                        Circle()
-                            .strokeBorder(HarborWidgetTheme.accent.opacity(0.7), lineWidth: 1.5)
-                            .frame(width: 12, height: 12)
-                        Text(t.displayTitle)
-                            .font(.system(size: 13.5, weight: .medium))
-                            .foregroundStyle(HarborWidgetTheme.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
-                        Spacer(minLength: 0)
-                        if let m = t.mins, m > 0 {
-                            Text("\(m)m")
-                                .font(.system(size: 11, weight: .regular, design: .rounded))
-                                .foregroundStyle(HarborWidgetTheme.secondary)
-                                .monospacedDigit()
-                        }
-                    }
-                }
-            } else if open == 0 {
-                Text("Tasks clear")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(HarborWidgetTheme.secondary)
+            if family == .systemLarge {
+                Spacer(minLength: 4)
+                Text("Tap to open Budget in Harbor")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(pal.muted)
             }
 
             Spacer(minLength: 0)
@@ -127,55 +124,51 @@ struct DayWidgetView: View {
     }
 
     @ViewBuilder
-    private func metric(value: Int, label: String, hot: Bool = false) -> some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            Text("\(value)")
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                .foregroundStyle(hot ? Color.orange : HarborWidgetTheme.primary)
+    private func budgetPill(label: String, value: String, hot: Bool) -> some View {
+        let pal = entry.snapshot.palette
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label.uppercased())
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(pal.muted)
+                .tracking(0.4)
+            Text(value)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(hot ? Color.orange : pal.text)
                 .monospacedDigit()
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Text(label)
-                .font(.system(size: 9, weight: .medium))
-                .foregroundStyle(HarborWidgetTheme.secondary)
-                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     @ViewBuilder
-    private func eventRow(_ ev: HarborWidgetEvent, emphasize: Bool) -> some View {
-        HStack(alignment: .center, spacing: 8) {
-            RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .fill(HarborWidgetTheme.accent)
-                .frame(width: 3, height: emphasize ? 28 : 24)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(ev.displayTitle)
-                    .font(.system(size: emphasize ? 14 : 13, weight: .semibold))
-                    .foregroundStyle(HarborWidgetTheme.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-                HStack(spacing: 5) {
-                    if let t = ev.time, !t.isEmpty {
-                        Text(t)
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
-                            .foregroundStyle(HarborWidgetTheme.secondary)
-                            .monospacedDigit()
-                    }
-                    if let until = formatEventStatus(ev, at: entry.date) {
-                        Text(until)
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
-                            .foregroundStyle(until == "now" ? HarborWidgetTheme.accent : HarborWidgetTheme.secondary)
-                    }
-                }
-            }
-            Spacer(minLength: 0)
+    private func budgetTile(label: String, value: String, hint: String, hot: Bool) -> some View {
+        let pal = entry.snapshot.palette
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label.uppercased())
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(pal.muted)
+                .tracking(0.5)
+                .lineLimit(1)
+            Text(value)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundStyle(hot ? Color.orange : pal.text)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+            Text(hint)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(pal.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
-    }
-
-    private func weekdayLabel() -> String {
-        let f = DateFormatter()
-        f.dateFormat = "EEEE"
-        return f.string(from: Date())
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

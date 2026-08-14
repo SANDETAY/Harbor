@@ -40,6 +40,8 @@ enum HarborWidgetStore {
             freeLabel: obj["freeLabel"] as? String,
             freeNowMins: intValue(obj["freeNowMins"]),
             tasksOpen: intValue(obj["tasksOpen"]),
+            tasksDone: intValue(obj["tasksDone"]),
+            tasksTotal: intValue(obj["tasksTotal"]),
             tasks: (obj["tasks"] as? [[String: Any]])?.map { t in
                 HarborWidgetTask(
                     id: t["id"] as? String ?? (t["id"] as? NSNumber)?.stringValue,
@@ -58,8 +60,16 @@ enum HarborWidgetStore {
             eveningProgress: obj["eveningProgress"] as? String,
             ritualHint: obj["ritualHint"] as? String,
             groceryOpen: intValue(obj["groceryOpen"]),
+            groceryChecked: intValue(obj["groceryChecked"]),
+            groceryItems: (obj["groceryItems"] as? [String]) ?? (obj["groceryItems"] as? [Any])?.compactMap { $0 as? String },
             billsDue: intValue(obj["billsDue"]),
-            energy: obj["energy"] as? String
+            billsDueAmount: intValue(obj["billsDueAmount"]),
+            budgetSpent: intValue(obj["budgetSpent"]),
+            budgetLimit: intValue(obj["budgetLimit"]),
+            budgetLeft: intValue(obj["budgetLeft"]),
+            budgetPct: intValue(obj["budgetPct"]),
+            energy: obj["energy"] as? String,
+            theme: obj["theme"] as? String
         )
     }
 
@@ -91,6 +101,8 @@ struct HarborWidgetSnapshot: Codable {
     var freeLabel: String?
     var freeNowMins: Int?
     var tasksOpen: Int?
+    var tasksDone: Int?
+    var tasksTotal: Int?
     var tasks: [HarborWidgetTask]?
     var nextEvent: HarborWidgetEvent?
     var events: [HarborWidgetEvent]?
@@ -103,8 +115,20 @@ struct HarborWidgetSnapshot: Codable {
     var eveningProgress: String?
     var ritualHint: String?
     var groceryOpen: Int?
+    var groceryChecked: Int?
+    var groceryItems: [String]?
     var billsDue: Int?
+    var billsDueAmount: Int?
+    var budgetSpent: Int?
+    var budgetLimit: Int?
+    var budgetLeft: Int?
+    var budgetPct: Int?
     var energy: String?
+    var theme: String?
+
+    var palette: HarborWidgetPalette {
+        HarborWidgetPalette.from(theme: theme)
+    }
 
     static let placeholder = HarborWidgetSnapshot(
         updatedAt: nil,
@@ -113,6 +137,8 @@ struct HarborWidgetSnapshot: Codable {
         freeLabel: nil,
         freeNowMins: nil,
         tasksOpen: 0,
+        tasksDone: 0,
+        tasksTotal: 0,
         tasks: [],
         nextEvent: nil,
         events: [],
@@ -125,8 +151,16 @@ struct HarborWidgetSnapshot: Codable {
         eveningProgress: nil,
         ritualHint: nil,
         groceryOpen: 0,
+        groceryChecked: 0,
+        groceryItems: [],
         billsDue: 0,
-        energy: nil
+        billsDueAmount: 0,
+        budgetSpent: 0,
+        budgetLimit: 0,
+        budgetLeft: 0,
+        budgetPct: 0,
+        energy: nil,
+        theme: "harbor"
     )
 
     var hasLiveData: Bool {
@@ -137,7 +171,35 @@ struct HarborWidgetSnapshot: Codable {
         if (groceryOpen ?? 0) > 0 { return true }
         if (billsDue ?? 0) > 0 { return true }
         if (streakActive ?? 0) > 0 { return true }
+        if (budgetSpent ?? 0) > 0 { return true }
         return false
+    }
+
+    var resolvedTasksDone: Int {
+        if let d = tasksDone { return d }
+        let open = tasksOpen ?? (tasks ?? []).count
+        let total = tasksTotal ?? open
+        return max(0, total - open)
+    }
+
+    var resolvedTasksTotal: Int {
+        if let t = tasksTotal, t > 0 { return t }
+        let open = tasksOpen ?? (tasks ?? []).count
+        return max(open, open + resolvedTasksDone)
+    }
+
+    var taskProgress: Double {
+        let total = resolvedTasksTotal
+        guard total > 0 else { return 0 }
+        return Double(resolvedTasksDone) / Double(total)
+    }
+
+    var resolvedBudgetPct: Int {
+        if let p = budgetPct { return min(100, max(0, p)) }
+        let limit = budgetLimit ?? 0
+        let spent = budgetSpent ?? 0
+        guard limit > 0 else { return 0 }
+        return min(100, max(0, Int((Double(spent) / Double(limit)) * 100.0)))
     }
 }
 
@@ -155,9 +217,7 @@ struct HarborWidgetTask: Codable, Hashable {
 struct HarborWidgetEvent: Codable, Hashable {
     var title: String?
     var time: String?
-    /// Minutes from midnight (local) when the event starts.
     var startMins: Int?
-    /// Minutes from midnight when the event ends (optional; defaults to start + 45).
     var endMins: Int?
     var minsUntil: Int?
     var who: String?
@@ -173,7 +233,6 @@ struct HarborWidgetEvent: Codable, Hashable {
         return 0
     }
 
-    /// Minutes until start. Negative means already started (or past).
     func liveMinsUntil(at date: Date = Date()) -> Int? {
         if let start = startMins, start >= 0, start < 24 * 60 + 180 {
             let cal = Calendar.current
@@ -188,7 +247,6 @@ struct HarborWidgetEvent: Codable, Hashable {
         return minsUntil
     }
 
-    /// True while the event is still relevant (not finished).
     func isStillRelevant(at date: Date = Date()) -> Bool {
         let cal = Calendar.current
         let nowMins = cal.component(.hour, from: date) * 60 + cal.component(.minute, from: date)
@@ -197,7 +255,6 @@ struct HarborWidgetEvent: Codable, Hashable {
             return end > nowMins
         }
         if let until = liveMinsUntil(at: date) {
-            // Keep showing from 30 min before start through ~45 min after start if no end
             return until > -45
         }
         return true
@@ -216,7 +273,6 @@ struct HarborWidgetEvent: Codable, Hashable {
         t = t.replacingOccurrences(of: #"[AaPp]\.?[Mm]\.?"#, with: "", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // "0900" / "1430" military compact
         if t.count == 3 || t.count == 4, t.allSatisfy(\.isNumber), !t.contains(":") {
             let padded = t.count == 3 ? "0" + t : t
             if let h = Int(padded.prefix(2)), let m = Int(padded.suffix(2)),
@@ -241,9 +297,8 @@ struct HarborEntry: TimelineEntry {
     let snapshot: HarborWidgetSnapshot
 }
 
-// MARK: - Live EventKit (refresh calendars without opening the app)
+// MARK: - Live EventKit
 
-/// Reads remaining today events from device calendars when permission was granted in Harbor.
 enum HarborWidgetCalendar {
     private static let store = EKEventStore()
 
@@ -300,7 +355,6 @@ enum HarborWidgetCalendar {
         return f.string(from: date)
     }
 
-    /// Prefer live EventKit when available; always drop finished events via wall clock.
     static func enrich(_ snap: HarborWidgetSnapshot) -> HarborWidgetSnapshot {
         let live = remainingEventsToday(limit: 4)
         guard !live.isEmpty else {

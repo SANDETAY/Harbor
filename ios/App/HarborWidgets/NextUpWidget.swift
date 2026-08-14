@@ -1,18 +1,19 @@
 import WidgetKit
 import SwiftUI
 
-/// Next calendar event — Calendar-app style.
+/// Smart-stack face: Events — hero next event + later list. Small / Medium / Large.
 struct HarborNextUpWidget: Widget {
     let kind = "HarborNextUpWidget"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: HarborProvider()) { entry in
             NextUpWidgetView(entry: entry)
-                .harborWidgetChrome()
+                .harborWidgetChrome(entry.snapshot.palette)
+                .widgetURL(HarborWidgetLink.events)
         }
-        .configurationDisplayName("Next up")
-        .description("Your next event with a live countdown.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .configurationDisplayName("Events")
+        .description("Next event with countdown — tap to open Schedule in Harbor.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
         .contentMarginsDisabled()
     }
 }
@@ -23,86 +24,112 @@ struct NextUpWidgetView: View {
 
     var body: some View {
         let snap = entry.snapshot
-        // Prefer live-filtered next; never show a finished event
+        let events = (snap.events ?? []).filter { $0.isStillRelevant(at: entry.date) }
         let ev: HarborWidgetEvent? = {
             if let n = snap.nextEvent, n.isStillRelevant(at: entry.date) { return n }
-            return (snap.events ?? []).first(where: { $0.isStillRelevant(at: entry.date) })
+            return events.first
         }()
+        let moreLimit = family == .systemLarge ? 4 : (family == .systemMedium ? 2 : 0)
+        let more = Array(events.dropFirst().prefix(moreLimit))
 
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: "calendar")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(HarborWidgetTheme.accent)
-                HarborCaption(text: "Next up")
-                Spacer(minLength: 0)
+        let pal = snap.palette
+        VStack(alignment: .leading, spacing: family == .systemSmall ? 5 : 6) {
+            HStack(alignment: .center, spacing: 8) {
+                HarborMark(symbol: "◷", colors: [pal.accent, pal.accentDeep],
+                           size: family == .systemSmall ? 20 : 22)
+                VStack(alignment: .leading, spacing: 1) {
+                    HarborCaption(text: "Events", color: pal.accent)
+                    Text("Next up")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(pal.muted)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 4)
+                HarborWidgetDateStamp(
+                    date: entry.date,
+                    palette: pal,
+                    compact: family == .systemSmall
+                )
             }
 
             if let ev = ev {
-                Text(ev.displayTitle)
-                    .font(.system(size: family == .systemSmall ? 17 : 20, weight: .semibold, design: .default))
-                    .foregroundStyle(HarborWidgetTheme.primary)
-                    .lineLimit(family == .systemSmall ? 2 : 2)
-                    .minimumScaleFactor(0.8)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 8) {
-                    if let t = ev.time, !t.isEmpty {
-                        Text(t)
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(HarborWidgetTheme.accentDeep)
-                            .monospacedDigit()
-                            .lineLimit(1)
-                    }
-                    if let until = formatEventStatus(ev, at: entry.date) {
-                        Text(until)
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(until == "now" ? HarborWidgetTheme.accent : HarborWidgetTheme.secondary)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(
-                                (until == "now" ? HarborWidgetTheme.accentSoft : Color.secondary.opacity(0.10)),
-                                in: Capsule()
+                HStack(alignment: .top, spacing: 9) {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [pal.accent, pal.accentDeep],
+                                startPoint: .top,
+                                endPoint: .bottom
                             )
-                            .lineLimit(1)
+                        )
+                        .frame(width: 4)
+                        .frame(minHeight: family == .systemSmall ? 40 : 48)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(ev.displayTitle)
+                            .font(.system(
+                                size: family == .systemSmall ? 18 : (family == .systemLarge ? 24 : 21),
+                                weight: .bold
+                            ))
+                            .foregroundStyle(pal.text)
+                            .lineLimit(family == .systemSmall ? 2 : 1)
+                            .minimumScaleFactor(0.75)
+
+                        HStack(spacing: 6) {
+                            if let t = ev.time, !t.isEmpty {
+                                Text(t)
+                                    .font(.system(size: family == .systemSmall ? 12 : 13, weight: .bold, design: .rounded))
+                                    .foregroundStyle(pal.accentDeep)
+                                    .monospacedDigit()
+                                    .lineLimit(1)
+                            }
+                            if let until = formatEventStatus(ev, at: entry.date) {
+                                Text(until)
+                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                                    .foregroundStyle(pal.accentDeep)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(pal.accent.opacity(0.14), in: Capsule())
+                                    .lineLimit(1)
+                            }
+                        }
+
+                        if let who = ev.who, !who.isEmpty, family != .systemSmall {
+                            Text(who)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(pal.muted)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
+                        }
                     }
+                    Spacer(minLength: 0)
                 }
 
-                if let who = ev.who, !who.isEmpty, family != .systemSmall {
-                    Text(who)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(HarborWidgetTheme.secondary)
-                        .lineLimit(1)
-                }
-
-                if family == .systemMedium, let free = snap.freeLabel, !free.isEmpty {
-                    Spacer(minLength: 4)
-                    HStack(spacing: 5) {
-                        Image(systemName: "clock")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(HarborWidgetTheme.accent)
-                        Text(free)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(HarborWidgetTheme.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
+                if !more.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Divider().opacity(0.35)
+                        ForEach(Array(more.enumerated()), id: \.offset) { _, e in
+                            HStack {
+                                Text(e.displayTitle)
+                                    .font(.system(size: family == .systemLarge ? 13 : 12, weight: .semibold))
+                                    .foregroundStyle(pal.text)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.85)
+                                Spacer(minLength: 4)
+                                if let t = e.time, !t.isEmpty {
+                                    Text(t)
+                                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                                        .foregroundStyle(pal.muted)
+                                        .monospacedDigit()
+                                        .lineLimit(1)
+                                }
+                            }
+                        }
                     }
                 }
             } else {
                 Spacer(minLength: 0)
-                Text("No more events today")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(HarborWidgetTheme.secondary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.9)
-                if let free = snap.freeLabel, !free.isEmpty {
-                    Text(free)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(HarborWidgetTheme.accent)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.85)
-                        .padding(.top, 2)
-                }
+                HarborEmptyLine(text: "No more events today", color: pal.muted)
                 Spacer(minLength: 0)
             }
 
