@@ -4,10 +4,10 @@ import SwiftUI
 @main
 struct HarborWidgetsBundle: WidgetBundle {
     var body: some Widget {
-        HarborTodayWidget()      // Tasks
-        HarborNextUpWidget()     // Events
+        HarborTodayWidget()      // Daily Brief
+        HarborNextUpWidget()     // Quick Wins
         HarborListsWidget()      // Grocery
-        HarborDayWidget()        // Budget
+        HarborDayWidget()        // Bills
     }
 }
 
@@ -49,9 +49,11 @@ enum HarborWidgetTheme {
 }
 
 enum HarborWidgetLink {
-    static let tasks = URL(string: "com.sandetay.harbor://today")!
+    static let today = URL(string: "com.sandetay.harbor://today")!
+    static let tasks = today
     static let events = URL(string: "com.sandetay.harbor://life/schedule")!
     static let grocery = URL(string: "com.sandetay.harbor://life/grocery")!
+    static let bills = URL(string: "com.sandetay.harbor://life/bills")!
     static let budget = URL(string: "com.sandetay.harbor://life/budget")!
 }
 
@@ -354,7 +356,18 @@ struct HarborProvider: TimelineProvider {
             budgetLimit: 2800,
             budgetLeft: 960,
             budgetPct: 66,
-            energy: "medium",
+            energy: "2",
+            statusLine: "2 quick wins available",
+            nextAction: "Unload dishwasher",
+            easyTasks: [
+                HarborWidgetTask(id: "1", title: "Unload dishwasher", mins: 8),
+                HarborWidgetTask(id: "5", title: "Wipe counters", mins: 5),
+                HarborWidgetTask(id: "6", title: "Recycling", mins: 4)
+            ],
+            mealLine: "You have most of Taco Tuesday",
+            budgetLine: "Spent $1,840 of $2,800 this month.",
+            nextBillTitle: "Electric",
+            nextBillWhen: "Due Tuesday",
             theme: "harbor"
         )
     }

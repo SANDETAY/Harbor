@@ -65,8 +65,23 @@ public class HarborSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
 
-        requestSpeechAndMic { [weak self] speechOk, micOk, err in
+        let go: () -> Void = { [weak self] in
             guard let self = self else { return }
+            do {
+                try self.beginListening()
+                call.resolve(["started": true])
+            } catch {
+                call.reject("Could not start listening: \(error.localizedDescription)")
+            }
+        }
+
+        if hasSpeechAndMicAuth() {
+            go()
+            return
+        }
+
+        requestSpeechAndMic { [weak self] speechOk, micOk, err in
+            guard self != nil else { return }
             if let err = err {
                 call.reject(err)
                 return
@@ -75,19 +90,14 @@ public class HarborSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
                 call.reject("Microphone or speech recognition permission denied")
                 return
             }
-            do {
-                try self.beginListening()
-                call.resolve(["started": true])
-            } catch {
-                call.reject("Could not start listening: \(error.localizedDescription)")
-            }
+            go()
         }
     }
 
     @objc func stop(_ call: CAPPluginCall) {
-        // Signal end-of-audio first so Apple can emit a final partial, then tear down
         recognitionRequest?.endAudio()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+        // Partials are already stored — don't wait a long flush
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
             let text = self?.endListening(cancel: false) ?? ""
             call.resolve(["transcript": text, "cancelled": false])
         }
@@ -99,6 +109,17 @@ public class HarborSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     // MARK: - Permissions
+
+    private func hasSpeechAndMicAuth() -> Bool {
+        let speechOk = SFSpeechRecognizer.authorizationStatus() == .authorized
+        let micOk: Bool
+        if #available(iOS 17.0, *) {
+            micOk = AVAudioApplication.shared.recordPermission == .granted
+        } else {
+            micOk = AVAudioSession.sharedInstance().recordPermission == .granted
+        }
+        return speechOk && micOk
+    }
 
     private func requestSpeechAndMic(completion: @escaping (Bool, Bool, String?) -> Void) {
         SFSpeechRecognizer.requestAuthorization { status in

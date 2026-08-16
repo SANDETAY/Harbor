@@ -3,514 +3,362 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Harbor Widgets Preview</title>
+  <title>Harbor widgets · redesign</title>
   <style>
     :root {
-      --accent: rgb(46, 140, 128);       /* 0.18, 0.55, 0.50 */
-      --accent-soft: rgba(46, 140, 128, 0.12);
-      --primary: #111;
-      --secondary: rgba(60, 60, 67, 0.6);
-      --bg: #fff;
-      --page: #e8ecef;
-      --hot: #ff9500;
-      --divider: rgba(60, 60, 67, 0.18);
+      --mint: #2F9B8C;
+      --mint-deep: #1C7066;
+      --bg: #D6E8E2;
+      --surface: #ECF5F1;
+      --text: #122825;
+      --muted: #566E68;
+      --page: #c5d9d2;
+      --shadow: 0 18px 40px rgba(18, 40, 37, 0.16);
     }
-    [data-theme="dark"] {
-      --primary: #f5f5f7;
-      --secondary: rgba(235, 235, 245, 0.55);
-      --bg: #1c1c1e;
-      --page: #0b0b0c;
-      --divider: rgba(235, 235, 245, 0.16);
-      --accent-soft: rgba(46, 140, 128, 0.18);
+    html[data-theme="dark"] {
+      --mint: #48B2A2;
+      --mint-deep: #9AD6CA;
+      --bg: #081210;
+      --surface: #10201D;
+      --text: #E8F2EE;
+      --muted: #849E96;
+      --page: #050a09;
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
-      background:
-        radial-gradient(1200px 600px at 20% -10%, rgba(46,140,128,0.18), transparent 55%),
-        linear-gradient(180deg, var(--page), #d5dbe0 100%);
-      color: var(--primary);
       min-height: 100vh;
-      padding: 28px 20px 60px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 480px at 12% -8%, rgba(47,155,140,.22), transparent 50%),
+        linear-gradient(180deg, var(--page), #b7cdc6 120%);
     }
-    [data-theme="dark"] body,
     html[data-theme="dark"] body {
       background:
-        radial-gradient(1200px 600px at 20% -10%, rgba(46,140,128,0.22), transparent 55%),
-        linear-gradient(180deg, #0b0b0c, #151518 100%);
+        radial-gradient(900px 480px at 12% -8%, rgba(72,178,162,.18), transparent 52%),
+        linear-gradient(180deg, #050a09, #0d1816 120%);
     }
     header {
-      max-width: 980px;
-      margin: 0 auto 22px;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 20px 8px;
       display: flex;
       flex-wrap: wrap;
       gap: 12px 18px;
-      align-items: end;
       justify-content: space-between;
+      align-items: flex-end;
     }
-    h1 {
-      margin: 0;
-      font-size: 22px;
-      font-weight: 650;
-      letter-spacing: -0.02em;
-    }
-    .sub {
-      margin: 4px 0 0;
-      color: var(--secondary);
-      font-size: 13px;
-    }
-    .toolbar {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
+    h1 { margin: 0; font-size: 1.45rem; letter-spacing: -.03em; }
+    .sub { margin: .3rem 0 0; color: var(--muted); font-size: .88rem; max-width: 38rem; line-height: 1.4; }
+    .tools { display: flex; gap: .45rem; }
     button {
-      border: 0;
-      border-radius: 999px;
-      padding: 8px 14px;
-      font: inherit;
-      font-size: 13px;
-      font-weight: 600;
-      background: rgba(255,255,255,0.75);
-      color: var(--primary);
-      backdrop-filter: blur(10px);
-      cursor: pointer;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+      appearance: none; border: 0; border-radius: 999px;
+      padding: .5rem .9rem; font: inherit; font-size: .82rem; font-weight: 650;
+      background: var(--surface); color: var(--text); cursor: pointer;
+      box-shadow: 0 1px 0 rgba(255,255,255,.45) inset;
     }
-    [data-theme="dark"] button {
-      background: rgba(44,44,46,0.9);
-      color: #f5f5f7;
-    }
-    button:hover { filter: brightness(0.97); }
-    .grid {
-      max-width: 980px;
-      margin: 0 auto;
-      display: grid;
-      gap: 28px;
-    }
-    .section-title {
-      font-size: 12px;
-      font-weight: 650;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--secondary);
-      margin: 0 0 12px;
-    }
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      align-items: flex-start;
-    }
-    .label {
-      font-size: 11px;
-      color: var(--secondary);
-      margin-top: 8px;
-      text-align: center;
-    }
-    .cell { display: flex; flex-direction: column; align-items: center; }
+    button.is-on { background: var(--mint); color: #fff; }
+    main { max-width: 1120px; margin: 0 auto; padding: 10px 20px 72px; }
+    .family { margin: 1.6rem 0 2rem; }
+    .family h2 { margin: 0 0 .25rem; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .family p { margin: 0 0 .85rem; font-size: .84rem; color: var(--muted); }
+    .row { display: flex; flex-wrap: wrap; gap: 1.1rem 1.25rem; align-items: flex-start; }
+    .cell { display: flex; flex-direction: column; gap: .4rem; }
+    .label { font-size: .68rem; font-weight: 650; color: var(--muted); }
 
-    /* Widget sizes (approx iOS points) */
-    .w-sm { width: 158px; height: 158px; }
-    .w-md { width: 338px; height: 158px; }
-    .w-lg { width: 338px; height: 354px; }
-
-    .widget {
+    .w {
       position: relative;
-      border-radius: 22px;
       overflow: hidden;
-      color: var(--primary);
       background:
-        linear-gradient(135deg, rgba(46,140,128,0.08), transparent 48%, rgba(46,140,128,0.03)),
-        var(--bg);
-      box-shadow:
-        0 10px 28px rgba(0,0,0,0.10),
-        0 1px 0 rgba(255,255,245,0.35) inset;
-      display: flex;
-      flex-direction: column;
+        linear-gradient(155deg, color-mix(in srgb, var(--surface) 92%, white) 0%, color-mix(in srgb, var(--mint) 14%, var(--bg)) 48%, var(--bg) 100%);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      display: flex; flex-direction: column;
     }
-    [data-theme="dark"] .widget {
-      box-shadow:
-        0 12px 30px rgba(0,0,0,0.45),
-        0 1px 0 rgba(255,255,255,0.06) inset;
+    html[data-theme="dark"] .w {
+      background: linear-gradient(155deg, var(--surface) 0%, color-mix(in srgb, var(--mint) 12%, var(--bg)) 55%, var(--bg));
     }
-    .pad-sm { padding: 10px; }
-    .pad-md { padding: 12px; }
-    .pad-lg { padding: 14px; }
+    .w-sm { width: 158px; height: 158px; border-radius: 22px; padding: 13px 13px 12px; }
+    .w-md { width: 338px; height: 158px; border-radius: 22px; padding: 14px 15px 13px; }
+    .w-lg { width: 338px; height: 354px; border-radius: 26px; padding: 16px 16px 15px; }
 
-    .caption {
-      font-size: 11px;
-      font-weight: 650;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--accent);
-      line-height: 1.1;
+    .kicker { font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--mint); }
+    .greet { font-size: 17px; font-weight: 750; letter-spacing: -.03em; line-height: 1.15; }
+    .w-sm .greet { font-size: 15px; }
+    .status { font-size: 12px; font-weight: 550; color: var(--muted); line-height: 1.25; }
+    .hero { font-size: 22px; font-weight: 780; letter-spacing: -.04em; line-height: 1.05; }
+    .w-sm .hero { font-size: 20px; }
+    .meta { font-size: 11px; font-weight: 600; color: var(--muted); }
+    .task { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .dot {
+      width: 11px; height: 11px; border-radius: 50%; flex: 0 0 auto;
+      border: 1.6px solid color-mix(in srgb, var(--mint) 75%, transparent);
     }
-    .muted { color: var(--secondary); }
-    .hot { color: var(--hot) !important; }
-    .mono { font-variant-numeric: tabular-nums; }
-    .grow { flex: 1; min-height: 0; }
-    .stack { display: flex; flex-direction: column; height: 100%; }
-    .row-h { display: flex; align-items: flex-start; gap: 8px; }
-    .row-c { display: flex; align-items: center; gap: 7px; }
-    .space { flex: 1; min-width: 0; }
-    .divider {
-      height: 1px;
-      background: var(--divider);
-      margin: 2px 0;
-      opacity: 0.9;
-    }
-
-    .free-pill {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 8px;
-      border-radius: 8px;
-      background: var(--accent-soft);
-      font-size: 12px;
-      font-weight: 500;
-      margin: 2px 0 2px;
-    }
-    .free-pill .ico { color: var(--accent); font-size: 11px; }
-
-    .metric { text-align: right; line-height: 1.05; }
-    .metric .n {
-      font-size: 16px;
-      font-weight: 650;
-      font-feature-settings: "tnum";
-    }
-    .metric .l {
-      font-size: 9px;
-      font-weight: 500;
-      color: var(--secondary);
-    }
-
-    .task-dot {
-      width: 11px; height: 11px; border-radius: 50%;
-      border: 1.5px solid rgba(46,140,128,0.65);
-      flex: 0 0 auto;
-    }
-    .circle-outline {
-      width: 10px; height: 10px; border-radius: 50%;
-      border: 1.2px solid var(--secondary);
-      flex: 0 0 auto;
-      opacity: 0.75;
-    }
-    .task-line {
-      font-size: 13px;
-      font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .mins {
-      font-size: 11px;
-      color: var(--secondary);
-      font-feature-settings: "tnum";
-      flex: 0 0 auto;
-    }
-
-    .event-title { font-weight: 650; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .event-title.sm { font-size: 12.5px; }
-    .event-meta { font-size: 11px; color: var(--secondary); font-feature-settings: "tnum"; }
-
-    .next-title {
-      font-weight: 650;
-      line-height: 1.15;
-      letter-spacing: -0.01em;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .next-title.sm { font-size: 16px; }
-    .next-title.md { font-size: 20px; }
-    .next-time {
-      font-size: 13px;
-      font-weight: 650;
-      color: var(--accent);
-      font-feature-settings: "tnum";
-    }
-    .next-until { font-size: 12px; color: var(--secondary); }
-
-    .stat {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-    .stat .ico { color: var(--accent); font-size: 12px; }
-    .stat .n {
-      font-size: 20px;
-      font-weight: 650;
-      font-feature-settings: "tnum";
-      line-height: 1;
-    }
-    .stat .l { font-size: 10px; font-weight: 500; color: var(--secondary); }
-
-    .list-row {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      font-size: 13px;
-      font-weight: 500;
-    }
-    .list-row .ico {
-      width: 16px;
-      text-align: center;
-      color: var(--accent);
-      font-size: 12px;
-    }
-    .list-row .val {
-      font-size: 15px;
-      font-weight: 650;
-      font-feature-settings: "tnum";
-    }
-
-    .ritual {
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--accent);
+    .task span { font-size: 13.5px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .w-sm .task span { font-size: 12.5px; }
+    .mins { margin-left: auto; font-size: 11px; font-weight: 650; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .smart {
       margin-top: auto;
+      font-size: 11.5px; font-weight: 600; line-height: 1.3; color: var(--mint-deep);
     }
-    .empty {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--secondary);
-      margin: auto 0;
+    html[data-theme="dark"] .smart { color: var(--mint); }
+    .stack { display: flex; flex-direction: column; height: 100%; gap: 7px; }
+    .w-lg .stack { gap: 9px; }
+    .gap { flex: 1; }
+    .empty { font-size: 14px; font-weight: 550; color: var(--muted); margin: auto 0; }
+    .count {
+      font-size: 34px; font-weight: 780; letter-spacing: -.05em; color: var(--mint-deep);
+      font-variant-numeric: tabular-nums; line-height: 1;
     }
-    .count-lg {
-      font-size: 22px;
-      font-weight: 650;
-      font-feature-settings: "tnum";
-      line-height: 1;
+    html[data-theme="dark"] .count { color: var(--mint); }
+    .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .mark {
+      width: 22px; height: 22px; border-radius: 7px; flex: 0 0 auto;
+      display: grid; place-items: center;
+      background: linear-gradient(145deg, var(--mint), var(--mint-deep));
+      color: #fff; font-size: 11px; font-weight: 800;
     }
-    .count-sm {
-      font-size: 18px;
-      font-weight: 650;
-      font-feature-settings: "tnum";
-      line-height: 1;
+    .bill-amt { font-size: 26px; font-weight: 780; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+    .note { max-width: 1120px; margin: 0 auto; padding: 0 20px 40px; color: var(--muted); font-size: .8rem; line-height: 1.45; }
+    .tap { font-size: .66rem; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+    .chip {
+      display: inline-flex; align-items: center; gap: .35rem;
+      margin-top: .45rem; padding: .18rem .55rem; border-radius: 999px;
+      background: color-mix(in srgb, var(--mint) 16%, var(--surface));
+      color: var(--mint-deep); font-size: .72rem; font-weight: 650;
     }
-    .note {
-      max-width: 980px;
-      margin: 28px auto 0;
-      font-size: 12px;
-      color: var(--secondary);
-      line-height: 1.45;
+    html[data-theme="dark"] .chip { color: var(--mint); }
+    .hero-row { display: flex; flex-wrap: wrap; gap: 1.4rem 2rem; align-items: flex-end; }
+    @media (max-width: 720px) {
+      .w-md, .w-lg { width: min(338px, calc(100vw - 40px)); }
     }
   </style>
 </head>
 <body>
   <header>
     <div>
-      <h1>Harbor widgets preview</h1>
-      <p class="sub">HTML mock of the professional SwiftUI widgets (build 458 layout)</p>
+      <h1>Harbor widgets</h1>
+      <p class="sub">Glanceable in two seconds. Calm mint. Tap opens the right screen. This is the redesign before we ship.</p>
     </div>
-    <div class="toolbar">
-      <button type="button" id="themeBtn">Toggle dark</button>
+    <div class="tools">
+      <button type="button" id="btn-filled" class="is-on">Sample day</button>
+      <button type="button" id="btn-empty">All clear</button>
+      <button type="button" id="btn-theme">Night</button>
     </div>
   </header>
 
-  <div class="grid">
-    <!-- Day (medium + large) -->
-    <section>
-      <div class="section-title">Day · HarborDayWidget</div>
-      <div class="row">
-        <div class="cell">
-          <div class="widget w-md pad-md stack" style="gap:8px">
-            <div class="row-h">
-              <div style="min-width:0">
-                <div style="font-size:11px;font-weight:600;color:var(--accent)">Good morning</div>
-                <div style="font-size:15px;font-weight:650;margin-top:2px">Light day</div>
-              </div>
-              <div class="space"></div>
-              <div style="display:flex;gap:8px">
-                <div class="metric"><div class="n mono">3</div><div class="l">tasks</div></div>
-                <div class="metric"><div class="n mono">6</div><div class="l">list</div></div>
-                <div class="metric"><div class="n mono hot">1</div><div class="l">bills</div></div>
-              </div>
-            </div>
-            <div class="free-pill"><span class="ico">⏱</span><span>Free · 45 min</span></div>
-            <div class="row-c" style="align-items:flex-start">
-              <span style="color:var(--accent);font-size:11px;width:13px;flex:0 0 auto">📅</span>
-              <div style="min-width:0">
-                <div class="event-title">Dentist</div>
-                <div class="event-meta">2:30 PM · in 1h 35m</div>
-              </div>
-            </div>
-            <div class="divider"></div>
-            <div class="row-c"><span class="circle-outline"></span><span class="task-line space">Unload dishwasher</span><span class="mins mono">10m</span></div>
-            <div class="row-c"><span class="circle-outline"></span><span class="task-line space">Walk the dog</span><span class="mins mono">20m</span></div>
-            <div class="space"></div>
-            <div class="ritual">Evening ritual ready</div>
-          </div>
-          <div class="label">Medium</div>
-        </div>
-
-        <div class="cell">
-          <div class="widget w-lg pad-lg stack" style="gap:8px">
-            <div class="row-h">
-              <div style="min-width:0">
-                <div style="font-size:11px;font-weight:600;color:var(--accent)">Good morning</div>
-                <div style="font-size:15px;font-weight:650;margin-top:2px">Light day</div>
-              </div>
-              <div class="space"></div>
-              <div style="display:flex;gap:8px">
-                <div class="metric"><div class="n mono">3</div><div class="l">tasks</div></div>
-                <div class="metric"><div class="n mono">6</div><div class="l">list</div></div>
-                <div class="metric"><div class="n mono hot">1</div><div class="l">bills</div></div>
-              </div>
-            </div>
-            <div class="free-pill"><span class="ico">⏱</span><span>Free · 45 min</span></div>
-            <div class="row-c" style="align-items:flex-start">
-              <span style="color:var(--accent);font-size:11px;width:13px;flex:0 0 auto">📅</span>
-              <div style="min-width:0">
-                <div class="event-title">Dentist</div>
-                <div class="event-meta">2:30 PM · in 1h 35m</div>
-              </div>
-            </div>
-            <div class="row-c" style="align-items:flex-start">
-              <span style="color:var(--accent);font-size:11px;width:13px;flex:0 0 auto">📅</span>
-              <div style="min-width:0">
-                <div class="event-title sm">School pickup</div>
-                <div class="event-meta">4:00 PM · in 3h 5m</div>
-              </div>
-            </div>
-            <div class="divider"></div>
-            <div class="row-c"><span class="circle-outline"></span><span class="task-line space">Unload dishwasher</span><span class="mins mono">10m</span></div>
-            <div class="row-c"><span class="circle-outline"></span><span class="task-line space">Walk the dog</span><span class="mins mono">20m</span></div>
-            <div class="row-c"><span class="circle-outline"></span><span class="task-line space">Pay electric bill</span><span class="mins mono">5m</span></div>
-            <div class="row-c"><span class="circle-outline"></span><span class="task-line space">Prep dinner</span><span class="mins mono">25m</span></div>
-            <div class="space"></div>
-            <div class="ritual">Evening ritual ready</div>
-          </div>
-          <div class="label">Large</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tasks -->
-    <section>
-      <div class="section-title">Tasks · HarborTodayWidget</div>
-      <div class="row">
-        <div class="cell">
-          <div class="widget w-sm pad-sm stack" style="gap:6px">
-            <div class="row-c" style="align-items:baseline">
-              <div class="caption">Today</div>
-              <div class="space"></div>
-              <div class="count-sm mono">3</div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:5px;margin-top:2px">
-              <div class="row-c"><span class="task-dot"></span><span class="task-line" style="font-size:12.5px">Unload dishwasher</span></div>
-              <div class="row-c"><span class="task-dot"></span><span class="task-line" style="font-size:12.5px">Walk the dog</span></div>
-              <div class="row-c"><span class="task-dot"></span><span class="task-line" style="font-size:12.5px">Pay electric bill</span></div>
-            </div>
-            <div class="space"></div>
-          </div>
-          <div class="label">Small</div>
-        </div>
-        <div class="cell">
-          <div class="widget w-md pad-md stack" style="gap:8px">
-            <div class="row-c" style="align-items:baseline">
-              <div class="caption">Today</div>
-              <div class="space"></div>
-              <div class="count-lg mono">3</div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:7px">
-              <div class="row-c"><span class="task-dot"></span><span class="task-line space" style="font-size:13.5px">Unload dishwasher</span><span class="mins mono" style="font-size:12px">10m</span></div>
-              <div class="row-c"><span class="task-dot"></span><span class="task-line space" style="font-size:13.5px">Walk the dog</span><span class="mins mono" style="font-size:12px">20m</span></div>
-              <div class="row-c"><span class="task-dot"></span><span class="task-line space" style="font-size:13.5px">Pay electric bill</span><span class="mins mono" style="font-size:12px">5m</span></div>
-              <div class="row-c"><span class="task-dot"></span><span class="task-line space" style="font-size:13.5px">Prep dinner</span><span class="mins mono" style="font-size:12px">25m</span></div>
-            </div>
-            <div class="space"></div>
-          </div>
-          <div class="label">Medium</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Next up -->
-    <section>
-      <div class="section-title">Next up · HarborNextUpWidget</div>
-      <div class="row">
-        <div class="cell">
-          <div class="widget w-sm pad-sm stack" style="gap:6px">
-            <div class="caption">Next up</div>
-            <div class="next-title sm">Dentist</div>
-            <div class="row-c" style="gap:6px;margin-top:2px">
-              <span class="next-time mono">2:30 PM</span>
-              <span class="next-until">in 1h 35m</span>
-            </div>
-            <div class="space"></div>
-          </div>
-          <div class="label">Small</div>
-        </div>
-        <div class="cell">
-          <div class="widget w-md pad-md stack" style="gap:6px">
-            <div class="caption">Next up</div>
-            <div class="next-title md">Dentist</div>
-            <div class="row-c" style="gap:6px;margin-top:2px">
-              <span class="next-time mono">2:30 PM</span>
-              <span class="next-until">in 1h 35m</span>
-            </div>
-            <div class="muted" style="font-size:12px;font-weight:500">Dr. Patel · Main St</div>
-            <div class="space"></div>
-            <div class="muted" style="font-size:12px;font-weight:500">Free · 45 min</div>
-          </div>
-          <div class="label">Medium</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Lists -->
-    <section>
-      <div class="section-title">Lists · HarborListsWidget</div>
-      <div class="row">
-        <div class="cell">
-          <div class="widget w-sm pad-sm stack" style="gap:8px">
-            <div class="caption">Harbor</div>
-            <div style="display:flex;flex-direction:column;gap:7px">
-              <div class="list-row"><span class="ico">🛒</span><span class="space">Grocery</span><span class="val mono">6</span></div>
-              <div class="list-row"><span class="ico">☰</span><span class="space">Tasks</span><span class="val mono">3</span></div>
-              <div class="list-row"><span class="ico hot">💳</span><span class="space">Bills</span><span class="val mono hot">1</span></div>
-            </div>
-            <div class="space"></div>
-          </div>
-          <div class="label">Small</div>
-        </div>
-        <div class="cell">
-          <div class="widget w-md pad-md stack" style="gap:8px">
-            <div class="caption">Harbor</div>
-            <div class="row-h" style="gap:8px;margin-top:2px">
-              <div class="stat"><div class="ico">🛒</div><div class="n mono">6</div><div class="l">Grocery</div></div>
-              <div class="stat"><div class="ico">✓</div><div class="n mono">3</div><div class="l">Tasks</div></div>
-              <div class="stat"><div class="ico hot">💳</div><div class="n mono hot">1</div><div class="l">Bills</div></div>
-              <div class="stat"><div class="ico">🔥</div><div class="n mono">12</div><div class="l">Streak</div></div>
-            </div>
-            <div class="space"></div>
-            <div class="muted" style="font-size:12px;font-weight:500">Make the bed</div>
-          </div>
-          <div class="label">Medium</div>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <p class="note">
-    Preview only — matches SwiftUI structure, accent teal, system surface + soft wash, and padding
-    (10 / 12 / 14). Real home-screen widgets use SF Symbols and system materials; this is for a quick visual check.
-  </p>
+  <main id="board"></main>
+  <p class="note">Small + Medium ship first. Large is only on Today, and only if it stays this quiet. Real home-screen widgets use WidgetKit and the last snapshot from the app (energy, grocery, meals, bills).</p>
 
   <script>
-    const root = document.documentElement;
-    const btn = document.getElementById('themeBtn');
-    btn.addEventListener('click', () => {
-      const dark = root.getAttribute('data-theme') === 'dark';
-      root.setAttribute('data-theme', dark ? 'light' : 'dark');
-    });
+    const filled = {
+      greet: "Good Afternoon, Brittany",
+      status: "2 quick wins available",
+      next: "Unload the dishwasher",
+      tasks: [
+        { t: "Unload the dishwasher", m: "8m" },
+        { t: "Reply to school email", m: "10m" },
+        { t: "Start taco prep", m: "20m" },
+        { t: "Walk the dog", m: "25m" },
+        { t: "Pay water bill", m: "5m" }
+      ],
+      energy: "Matched to last energy · Medium",
+      smart: "You have ingredients for Taco Tuesday",
+      easy: [
+        { t: "Unload the dishwasher", m: "8m" },
+        { t: "Wipe kitchen counters", m: "5m" },
+        { t: "Take out recycling", m: "4m" }
+      ],
+      groceryN: 7,
+      groceryItems: ["Ground beef", "Tortillas", "Romaine"],
+      meal: "You have ingredients for Taco Tuesday",
+      bill: { name: "Electric", when: "Due Tuesday", amt: "$142" }
+    };
+    const empty = {
+      greet: "Good Afternoon",
+      status: "All clear",
+      next: "All clear",
+      energy: "Matched to last energy · Medium",
+      tasks: [],
+      smart: "",
+      easy: [],
+      groceryN: 0,
+      groceryItems: [],
+      meal: "",
+      bill: null
+    };
+
+    let data = filled;
+    let emptyOn = false;
+
+    function widget(size, inner) {
+      return `<div class="w w-${size}">${inner}</div>`;
+    }
+    function tasksHtml(list, n, showMins) {
+      if (!list.length) return `<div class="empty">All clear</div>`;
+      return list.slice(0, n).map(x =>
+        `<div class="task"><i class="dot"></i><span>${x.t}</span>${showMins && x.m ? `<em class="mins">${x.m}</em>` : ""}</div>`
+      ).join("");
+    }
+
+    function todaySmall() {
+      return widget("sm", `<div class="stack">
+        <div class="kicker">Today</div>
+        <div class="greet">${data.next}</div>
+        <div class="status">${data.status}</div>
+        <div class="gap"></div>
+      </div>`);
+    }
+    function todayMedium() {
+      return widget("md", `<div class="stack">
+        <div>
+          <div class="kicker">Today</div>
+          <div class="greet">${data.greet}</div>
+          <div class="status">${data.status}</div>
+        </div>
+        ${tasksHtml(data.tasks, 3, true)}
+        ${data.smart ? `<div class="smart">${data.smart}</div>` : `<div class="gap"></div>`}
+      </div>`);
+    }
+    function todayLarge() {
+      return widget("lg", `<div class="stack">
+        <div>
+          <div class="kicker">Today</div>
+          <div class="greet">${data.greet}</div>
+          <div class="status">${data.status}</div>
+        </div>
+        ${tasksHtml(data.tasks, 5, true)}
+        <div class="gap"></div>
+        ${data.smart ? `<div class="smart">${data.smart}</div>` : ""}
+      </div>`);
+    }
+    function winsSmall() {
+      const first = data.easy[0];
+      return widget("sm", `<div class="stack">
+        <div class="kicker">Quick wins</div>
+        <div class="hero">${first ? first.t : "Nothing easy left"}</div>
+        <div class="status">${first ? "Low effort · due today" : "Come back later"}</div>
+      </div>`);
+    }
+    function winsMedium() {
+      return widget("md", `<div class="stack">
+        <div class="kicker">Quick wins</div>
+        <div class="status">${data.easy.length ? "Easy tasks for a low-energy stretch" : "No low-effort items right now"}</div>
+        ${tasksHtml(data.easy, 3, true)}
+        <div class="gap"></div>
+      </div>`);
+    }
+    function grocerySmall() {
+      return widget("sm", `<div class="stack">
+        <div class="head">
+          <div class="kicker">Grocery</div>
+        </div>
+        <div class="count">${data.groceryN}</div>
+        <div class="status">${data.groceryN ? "items left" : "No items left"}</div>
+        <div class="gap"></div>
+        ${data.meal ? `<div class="smart">${data.meal}</div>` : ""}
+      </div>`);
+    }
+    function groceryMedium() {
+      return widget("md", `<div class="stack">
+        <div class="head">
+          <div>
+            <div class="kicker">Grocery</div>
+            <div class="status">${data.groceryN ? `${data.groceryN} items left` : "List is clear"}</div>
+          </div>
+          <div class="count" style="font-size:28px">${data.groceryN}</div>
+        </div>
+        ${data.groceryItems.length
+          ? data.groceryItems.map(n => `<div class="task"><i class="dot"></i><span>${n}</span></div>`).join("")
+          : `<div class="empty">No items left</div>`}
+        <div class="gap"></div>
+        ${data.meal ? `<div class="smart">${data.meal}</div>` : ""}
+      </div>`);
+    }
+    function billsSmall() {
+      if (!data.bill) {
+        return widget("sm", `<div class="stack">
+          <div class="kicker">Bills</div>
+          <div class="hero">No bills due this week</div>
+          <div class="gap"></div>
+        </div>`);
+      }
+      return widget("sm", `<div class="stack">
+        <div class="kicker">Bills</div>
+        <div class="greet">${data.bill.name}</div>
+        <div class="bill-amt">${data.bill.amt}</div>
+        <div class="status">${data.bill.when}</div>
+      </div>`);
+    }
+
+    function paint() {
+      document.getElementById("board").innerHTML = `
+        <section class="family">
+          <h2>Recommended default</h2>
+          <p>Today · Medium. Greeting, energy-matched next tasks, one smart line. Tap opens Today.</p>
+          <div class="hero-row">
+            <div class="cell">
+              <span class="label">Today · Medium</span>
+              ${todayMedium()}
+              <span class="tap">Opens Today</span>
+              <span class="chip">${data.energy}</span>
+            </div>
+          </div>
+        </section>
+        <section class="family">
+          <h2>1 · Today / Daily Brief</h2>
+          <p>Main widget. Small is the next action. Large only if it stays this quiet.</p>
+          <div class="row">
+            <div class="cell"><span class="label">Small</span>${todaySmall()}<span class="tap">Opens Today</span></div>
+            <div class="cell"><span class="label">Medium · default</span>${todayMedium()}<span class="tap">Opens Today</span></div>
+            <div class="cell"><span class="label">Large · later</span>${todayLarge()}<span class="tap">Opens Today</span></div>
+          </div>
+        </section>
+        <section class="family">
+          <h2>2 · Quick Wins</h2>
+          <p>Low-effort due or overdue work. For tired days.</p>
+          <div class="row">
+            <div class="cell"><span class="label">Small</span>${winsSmall()}<span class="tap">Opens Today</span></div>
+            <div class="cell"><span class="label">Medium</span>${winsMedium()}<span class="tap">Opens Today</span></div>
+          </div>
+        </section>
+        <section class="family">
+          <h2>3 · Grocery</h2>
+          <p>Count + next meal. Optional top items on Medium.</p>
+          <div class="row">
+            <div class="cell"><span class="label">Small</span>${grocerySmall()}<span class="tap">Opens Grocery</span></div>
+            <div class="cell"><span class="label">Medium</span>${groceryMedium()}<span class="tap">Opens Grocery</span></div>
+          </div>
+        </section>
+        <section class="family">
+          <h2>4 · Bills</h2>
+          <p>Next due bill, or a quiet empty state.</p>
+          <div class="row">
+            <div class="cell"><span class="label">Small</span>${billsSmall()}<span class="tap">Opens Bills</span></div>
+          </div>
+        </section>`;
+    }
+
+    paint();
+    document.getElementById("btn-filled").onclick = () => {
+      emptyOn = false; data = filled;
+      document.getElementById("btn-filled").classList.add("is-on");
+      document.getElementById("btn-empty").classList.remove("is-on");
+      paint();
+    };
+    document.getElementById("btn-empty").onclick = () => {
+      emptyOn = true; data = empty;
+      document.getElementById("btn-empty").classList.add("is-on");
+      document.getElementById("btn-filled").classList.remove("is-on");
+      paint();
+    };
+    document.getElementById("btn-theme").onclick = (e) => {
+      const dark = document.documentElement.getAttribute("data-theme") !== "dark";
+      document.documentElement.setAttribute("data-theme", dark ? "dark" : "harbor");
+      e.target.textContent = dark ? "Mint" : "Night";
+    };
   </script>
 </body>
 </html>

@@ -4,20 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="robots" content="noindex">
-  <title>Harbor · Mobile preview</title>
+  <title>Harbor · iPhone 16 Pro Max preview</title>
   <link rel="icon" type="image/png" sizes="32x32" href="./harbor-favicon-32.png">
   <style>
     :root {
-      --bezel: #081716;
-      --frame: #122E2C;
+      /* iPhone 16 Pro Max — CSS points (3× physical) */
+      --screen-w: 440px;
+      --screen-h: 956px;
+      --safe-top: 62px;
+      --safe-bottom: 34px;
+      --screen-radius: 62px;
+      --bezel: 11px;
+      --device-radius: 74px;
+      --island-w: 126px;
+      --island-h: 37px;
+      --island-top: 12px;
+      --home-w: 139px;
+      --home-h: 5px;
+      --home-bottom: 8px;
       --accent: #2F9B8C;
       --muted: #8FA8A3;
       --bg: #0A1F1E;
     }
     * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
       margin: 0;
-      min-height: 100vh;
       min-height: 100dvh;
       background:
         radial-gradient(ellipse 70% 50% at 50% 0%, rgba(61, 154, 139, 0.12), transparent 55%),
@@ -27,9 +39,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      padding: 1.25rem;
+      padding: 0.85rem 1rem 0.75rem;
+      overflow: hidden;
     }
     #file-protocol-banner {
       display: none;
@@ -41,13 +52,16 @@
       color: #F0C4BC;
       font-size: 0.75rem;
       line-height: 1.45;
+      flex-shrink: 0;
     }
     .bar {
-      width: min(440px, 100%);
+      width: min(520px, 100%);
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 0.75rem;
+      flex-shrink: 0;
+      margin-bottom: 0.65rem;
     }
     .bar h1 {
       margin: 0;
@@ -79,49 +93,76 @@
       cursor: pointer;
     }
     .links a:hover, .links button:hover { background: rgba(61, 154, 139, 0.18); }
-    .phone {
-      /* iPhone 16 Pro Max logical size: 440 × 956 */
-      width: min(440px, calc((100dvh - 6.5rem) * 440 / 956), 100%);
-      height: min(956px, calc(100dvh - 6.5rem));
-      aspect-ratio: 440 / 956;
+    .stage {
+      flex: 1 1 auto;
       min-height: 0;
-      border-radius: 3.45rem;
-      padding: 0.62rem;
-      background: linear-gradient(160deg, #2a3440, var(--bezel));
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .device {
+      width: calc(var(--screen-w) + var(--bezel) * 2);
+      height: calc(var(--screen-h) + var(--bezel) * 2);
+      padding: var(--bezel);
+      border-radius: var(--device-radius);
+      background: linear-gradient(160deg, #2a3440, #081716);
       box-shadow:
         0 24px 60px rgba(0, 0, 0, 0.55),
         0 0 0 1px rgba(255, 255, 255, 0.06),
         inset 0 1px 0 rgba(255, 255, 255, 0.08);
-      position: relative;
+      transform-origin: center center;
+      flex-shrink: 0;
     }
-    .phone::before {
-      content: '';
+    .screen {
+      position: relative;
+      width: var(--screen-w);
+      height: var(--screen-h);
+      border-radius: var(--screen-radius);
+      overflow: hidden;
+      background: #D6E8E2;
+    }
+    .screen iframe {
+      width: 440px;
+      height: 956px;
+      border: 0;
+      display: block;
+      background: #D6E8E2;
+    }
+    .island {
       position: absolute;
-      top: 0.78rem;
+      top: var(--island-top);
       left: 50%;
       transform: translateX(-50%);
-      width: 7.85rem;
-      height: 2.15rem;
-      border-radius: 1.35rem;
+      width: var(--island-w);
+      height: var(--island-h);
+      border-radius: 999px;
       background: #050b0b;
-      z-index: 2;
+      z-index: 3;
+      pointer-events: none;
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
     }
-    .phone iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
-      border-radius: 2.85rem;
-      background: #D6E8E2;
-      display: block;
+    .home-bar {
+      position: absolute;
+      bottom: var(--home-bottom);
+      left: 50%;
+      transform: translateX(-50%);
+      width: var(--home-w);
+      height: var(--home-h);
+      border-radius: 999px;
+      background: rgba(18, 40, 37, 0.42);
+      z-index: 3;
+      pointer-events: none;
     }
     .note {
-      width: min(440px, 100%);
+      flex-shrink: 0;
+      margin: 0.55rem 0 0;
       font-size: 0.65rem;
       color: var(--muted);
       line-height: 1.4;
       text-align: center;
     }
+    .note strong { color: #d5e6e2; font-weight: 650; }
     code {
       font-size: 0.62rem;
       color: #b7d4ce;
@@ -135,13 +176,13 @@
   <div id="file-protocol-banner" role="alert">
     <strong>Don’t open this as a file.</strong> Use
     <code>http://localhost:3000/mobile.html</code>
-    after <code>npm start</code> (or <code>py -m http.server 3000</code>).
+    after <code>npm start</code> (or <code>python3 -m http.server 3000</code>).
   </div>
 
   <div class="bar">
     <div>
-      <h1>Mobile preview · 16 Pro Max</h1>
-      <p>Same app as <code>index.html</code> — 440×956 iPhone 16 Pro Max frame.</p>
+      <h1>iPhone 16 Pro Max</h1>
+      <p id="size-line">Layout 440×956 · safe 62 / 34 · 3×</p>
     </div>
     <div class="links">
       <button type="button" id="reload-btn">Reload</button>
@@ -150,17 +191,20 @@
     </div>
   </div>
 
-  <div class="phone" aria-label="iPhone 16 Pro Max Harbor preview">
-    <iframe id="mobile-frame" title="Harbor mobile" allow="geolocation *; microphone *"></iframe>
+  <div class="stage" id="stage">
+    <div class="device" id="device" aria-label="iPhone 16 Pro Max Harbor preview">
+      <div class="screen">
+        <iframe id="mobile-frame" title="Harbor mobile" width="440" height="956" allow="geolocation *; microphone *"></iframe>
+        <div class="island" aria-hidden="true"></div>
+        <div class="home-bar" aria-hidden="true"></div>
+      </div>
+    </div>
   </div>
 
   <p class="note">
-    Edit only <code>index.html</code>. Prefer
-    <code>http://localhost:3000/dual-preview.html</code> for side-by-side checks.
-    <strong>Account login (Apple / Google / Microsoft)</strong> leaves this frame and
-    opens full-screen — that is required (providers block sign-in inside the phone iframe).
-    After login you return to <code>index.html</code>. Or test auth on
-    <a href="./index.html" style="color:var(--accent)">Web</a> first.
+    Harbor always lays out at <strong>440×956</strong> (16 Pro Max points), even if this
+    window scales the chrome to fit. That is the same CSS size as TestFlight.
+    Edit <code>index.html</code> only.
   </p>
 
   <script>
@@ -169,11 +213,36 @@
         document.getElementById('file-protocol-banner').style.display = 'block';
       }
       var frame = document.getElementById('mobile-frame');
+      var device = document.getElementById('device');
+      var stage = document.getElementById('stage');
+      var sizeLine = document.getElementById('size-line');
+
+      function fit() {
+        if (!device || !stage) return;
+        device.style.transform = 'none';
+        var availW = stage.clientWidth;
+        var availH = stage.clientHeight;
+        var w = device.offsetWidth;
+        var h = device.offsetHeight;
+        var scale = Math.min(1, availW / w, availH / h);
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        device.style.transform = 'scale(' + scale + ')';
+        var pct = Math.round(scale * 100);
+        sizeLine.textContent = scale >= 0.995
+          ? 'Layout 440×956 · safe 62 / 34 · exact 1×'
+          : 'Layout 440×956 · safe 62 / 34 · visual ' + pct + '% (layout unchanged)';
+      }
+
       function load() {
         frame.src = './index.html?preview=mobile&t=' + Date.now();
       }
       document.getElementById('reload-btn').addEventListener('click', load);
+      window.addEventListener('resize', fit);
       load();
+      requestAnimationFrame(function () {
+        fit();
+        requestAnimationFrame(fit);
+      });
     })();
   </script>
 </body>

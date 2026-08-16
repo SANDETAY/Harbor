@@ -1,7 +1,7 @@
 import WidgetKit
 import SwiftUI
 
-/// Smart-stack face: Grocery — open count + item chips. Small / Medium / Large.
+/// Grocery — items left + next meal. Small / Medium.
 struct HarborListsWidget: Widget {
     let kind = "HarborStreakWidget"
 
@@ -12,8 +12,8 @@ struct HarborListsWidget: Widget {
                 .widgetURL(HarborWidgetLink.grocery)
         }
         .configurationDisplayName("Grocery")
-        .description("Open grocery items — tap to open Grocery in Harbor.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .description("Items left and tonight’s meal. Tap to open Grocery.")
+        .supportedFamilies([.systemSmall, .systemMedium])
         .contentMarginsDisabled()
     }
 }
@@ -24,87 +24,72 @@ struct GroceryWidgetView: View {
 
     var body: some View {
         let snap = entry.snapshot
-        let open = snap.groceryOpen ?? 0
-        let checked = snap.groceryChecked ?? 0
-        let items = Array((snap.groceryItems ?? []).prefix(family == .systemLarge ? 12 : (family == .systemMedium ? 6 : 4)))
         let pal = snap.palette
+        let open = snap.groceryOpen ?? 0
+        let items = Array((snap.groceryItems ?? []).prefix(3))
+        let meal = snap.mealLine
 
-        VStack(alignment: .leading, spacing: family == .systemSmall ? 6 : 8) {
-            HStack(alignment: .center, spacing: 8) {
-                HarborMark(symbol: "▣", colors: [pal.accent, pal.accentDeep],
-                           size: family == .systemSmall ? 20 : 22)
-                VStack(alignment: .leading, spacing: 1) {
-                    HarborCaption(text: "Grocery", color: pal.accent)
-                    Text(checked > 0 ? "\(checked) checked · list open" : "Shopping list")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(pal.muted)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+        VStack(alignment: .leading, spacing: 6) {
+            Text("GROCERY")
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundStyle(pal.accent)
+                .tracking(0.7)
+
+            if family == .systemSmall {
+                Text("\(open)")
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .foregroundStyle(pal.accentDeep)
+                    .monospacedDigit()
+                Text(open == 0 ? "No items left" : "items left")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(pal.muted)
+                Spacer(minLength: 0)
+                if let meal, !meal.isEmpty {
+                    Text(meal)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(pal.accentDeep)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
                 }
-                Spacer(minLength: 4)
-                VStack(alignment: .trailing, spacing: 1) {
+            } else {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(open == 0 ? "List is clear" : "\(open) items left")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(pal.muted)
+                    Spacer()
                     Text("\(open)")
-                        .font(.system(size: HarborWidgetTheme.heroSize(for: family), weight: .bold, design: .rounded))
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundStyle(pal.accentDeep)
                         .monospacedDigit()
-                        .minimumScaleFactor(0.7)
-                        .lineLimit(1)
-                    Text("left")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(HarborWidgetTheme.secondary)
                 }
-            }
-
-            if items.isEmpty {
-                Spacer(minLength: 0)
-                HarborEmptyLine(text: open == 0 ? "List is clear" : "Open Harbor for items", color: pal.muted)
-                Spacer(minLength: 0)
-            } else if family == .systemSmall {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(Array(items.prefix(3).enumerated()), id: \.offset) { _, name in
-                        HStack(spacing: 6) {
+                if items.isEmpty {
+                    Spacer(minLength: 0)
+                    HarborEmptyLine(text: "No items left", color: pal.muted)
+                    Spacer(minLength: 0)
+                } else {
+                    ForEach(Array(items.enumerated()), id: \.offset) { _, name in
+                        HStack(spacing: 8) {
                             Circle()
                                 .strokeBorder(pal.accent.opacity(0.65), lineWidth: 1.4)
                                 .frame(width: 10, height: 10)
                             Text(name)
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.system(size: 13, weight: .medium))
                                 .foregroundStyle(pal.text)
                                 .lineLimit(1)
-                                .minimumScaleFactor(0.85)
                         }
                     }
+                    Spacer(minLength: 0)
+                    if let meal, !meal.isEmpty {
+                        Text(meal)
+                            .font(.system(size: 11.5, weight: .semibold))
+                            .foregroundStyle(pal.accentDeep)
+                            .lineLimit(2)
+                    }
                 }
-                Spacer(minLength: 0)
-            } else {
-                FlowishChips(items: items, accent: pal.accent, deep: pal.accentDeep)
-                Spacer(minLength: 0)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .harborWidgetPadding(family)
-    }
-}
-
-/// Simple chip grid without UIKit — rows of wrapped-looking chips via LazyVGrid.
-struct FlowishChips: View {
-    let items: [String]
-    let accent: Color
-    let deep: Color
-
-    var body: some View {
-        let columns = [GridItem(.adaptive(minimum: 72, maximum: 140), spacing: 5, alignment: .leading)]
-        LazyVGrid(columns: columns, alignment: .leading, spacing: 5) {
-            ForEach(Array(items.enumerated()), id: \.offset) { _, name in
-                Text(name)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(deep)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 4)
-                    .background(accent.opacity(0.16), in: Capsule())
-            }
-        }
     }
 }
 

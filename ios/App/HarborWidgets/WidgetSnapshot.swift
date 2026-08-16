@@ -69,6 +69,19 @@ enum HarborWidgetStore {
             budgetLeft: intValue(obj["budgetLeft"]),
             budgetPct: intValue(obj["budgetPct"]),
             energy: obj["energy"] as? String,
+            statusLine: obj["statusLine"] as? String,
+            nextAction: obj["nextAction"] as? String,
+            easyTasks: (obj["easyTasks"] as? [[String: Any]])?.map { t in
+                HarborWidgetTask(
+                    id: t["id"] as? String ?? (t["id"] as? NSNumber)?.stringValue,
+                    title: t["title"] as? String,
+                    mins: intValue(t["mins"])
+                )
+            },
+            mealLine: obj["mealLine"] as? String,
+            budgetLine: obj["budgetLine"] as? String,
+            nextBillTitle: obj["nextBillTitle"] as? String,
+            nextBillWhen: obj["nextBillWhen"] as? String,
             theme: obj["theme"] as? String
         )
     }
@@ -124,6 +137,13 @@ struct HarborWidgetSnapshot: Codable {
     var budgetLeft: Int?
     var budgetPct: Int?
     var energy: String?
+    var statusLine: String?
+    var nextAction: String?
+    var easyTasks: [HarborWidgetTask]?
+    var mealLine: String?
+    var budgetLine: String?
+    var nextBillTitle: String?
+    var nextBillWhen: String?
     var theme: String?
 
     var palette: HarborWidgetPalette {
@@ -160,6 +180,13 @@ struct HarborWidgetSnapshot: Codable {
         budgetLeft: 0,
         budgetPct: 0,
         energy: nil,
+        statusLine: nil,
+        nextAction: nil,
+        easyTasks: [],
+        mealLine: nil,
+        budgetLine: nil,
+        nextBillTitle: nil,
+        nextBillWhen: nil,
         theme: "harbor"
     )
 
