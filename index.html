@@ -20229,6 +20229,17 @@
     html.layout-wide .main-nav-fab-slot {
       display: none !important;
     }
+    #tab-today {
+      display: none;
+    }
+    html.layout-wide #tab-today {
+      display: flex !important;
+      order: -1;
+    }
+    html.layout-wide #tab-more { order: -2; }
+    html.layout-wide #tab-tasks { order: 1; }
+    html.layout-wide #tab-life { order: 2; }
+    html.layout-wide #tab-streaks { order: 3; }
     html.layout-wide body > #summary-launcher.summary-orb {
       position: fixed !important;
       top: auto !important;
@@ -20761,6 +20772,11 @@
           <i class="fa-solid fa-fire nav-tab-icon" aria-hidden="true"></i>
           <span class="nav-tab-label">Streaks</span>
         </button>
+        <button type="button" role="tab" aria-selected="true" onclick="switchTab('today')" id="tab-today"
+          class="main-nav-tab nav-active" aria-label="Today">
+          <i class="fa-solid fa-anchor nav-tab-icon" aria-hidden="true"></i>
+          <span class="nav-tab-label">Today</span>
+        </button>
         <div class="main-nav-fab-slot" id="main-nav-fab-slot">
           <button type="button" id="summary-launcher" class="summary-orb summary-orb--dock"
             onclick="switchTab('today')"
@@ -20879,7 +20895,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 729;
+    const HARBOR_BUILD_NUMBER = 730;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -61162,11 +61178,12 @@
       const slot = document.getElementById('main-nav-fab-slot');
       if (orb && slot) {
         if (wide) {
-          if (orb.parentElement !== document.body) {
-            document.body.appendChild(orb);
+          // Website: Today is a top tab — keep the orb in the (hidden) dock slot
+          if (orb.parentElement !== slot) {
+            slot.appendChild(orb);
           }
-          orb.classList.add('summary-orb--desktop');
-          orb.classList.remove('summary-orb--dock');
+          orb.classList.add('summary-orb--dock');
+          orb.classList.remove('summary-orb--desktop');
         } else {
           if (orb.parentElement !== slot) {
             slot.appendChild(orb);
@@ -72108,6 +72125,11 @@
           // Ensure onboarded flag is dual-written after older sessions
           markUserOnboarded();
           saveState();
+          try {
+            const native = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function'
+              && window.Capacitor.isNativePlatform());
+            if (!native && typeof switchTab === 'function') switchTab('today', { force: true });
+          } catch (_) { /* ignore */ }
         }
         
         updateDate();
