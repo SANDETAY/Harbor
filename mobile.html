@@ -42,9 +42,10 @@
       padding: 0.85rem 1rem 0.75rem;
       overflow: hidden;
     }
-    #file-protocol-banner {
+    #file-protocol-banner,
+    #server-fail-banner {
       display: none;
-      width: min(440px, 100%);
+      width: min(520px, 100%);
       padding: 0.75rem 0.9rem;
       background: rgba(224, 122, 106, 0.12);
       border: 1px solid rgba(224, 122, 106, 0.35);
@@ -53,7 +54,9 @@
       font-size: 0.75rem;
       line-height: 1.45;
       flex-shrink: 0;
+      margin-bottom: 0.55rem;
     }
+    #server-fail-banner code { color: #F0C4BC; }
     .bar {
       width: min(520px, 100%);
       display: flex;
@@ -176,7 +179,12 @@
   <div id="file-protocol-banner" role="alert">
     <strong>Don’t open this as a file.</strong> Use
     <code>http://localhost:3000/mobile.html</code>
-    after <code>npm start</code> (or <code>python3 -m http.server 3000</code>).
+    after <code>cd ~/Desktop/Harbor && python3 -m http.server 3000</code>.
+  </div>
+  <div id="server-fail-banner" role="alert">
+    <strong>Preview server isn’t answering.</strong>
+    In Terminal: <code>cd ~/Desktop/Harbor && python3 -m http.server 3000</code>
+    then tap Reload.
   </div>
 
   <div class="bar">
@@ -186,6 +194,7 @@
     </div>
     <div class="links">
       <button type="button" id="reload-btn">Reload</button>
+      <button type="button" id="skip-splash-btn" title="Skip the launch splash so Task / Upcoming is reviewable immediately">Skip splash</button>
       <a href="./index.html" target="_blank" rel="noopener">Web</a>
       <a href="./dual-preview.html" rel="noopener">Both</a>
     </div>
@@ -216,6 +225,15 @@
       var device = document.getElementById('device');
       var stage = document.getElementById('stage');
       var sizeLine = document.getElementById('size-line');
+      var failBanner = document.getElementById('server-fail-banner');
+      var skipSplashBtn = document.getElementById('skip-splash-btn');
+      var skipSplash = true;
+      var loadTimer = null;
+
+      function setSkipSplashLabel() {
+        if (!skipSplashBtn) return;
+        skipSplashBtn.textContent = skipSplash ? 'Show splash' : 'Skip splash';
+      }
 
       function fit() {
         if (!device || !stage) return;
@@ -233,10 +251,56 @@
           : 'Layout 440×956 · safe 62 / 34 · visual ' + pct + '% (layout unchanged)';
       }
 
-      function load() {
-        frame.src = './index.html?preview=mobile&t=' + Date.now();
+      function hideFail() {
+        if (failBanner) failBanner.style.display = 'none';
       }
+
+      function showFail() {
+        if (failBanner) failBanner.style.display = 'block';
+      }
+
+      function load() {
+        hideFail();
+        if (loadTimer) clearTimeout(loadTimer);
+        var q = 'preview=mobile&t=' + Date.now();
+        if (skipSplash) q += '&nosplash=1';
+        frame.src = './index.html?' + q;
+        loadTimer = setTimeout(function () {
+          try {
+            var doc = frame.contentDocument;
+            var ok = doc && doc.documentElement && /harbor/i.test(doc.title || '') ||
+              (doc && doc.getElementById('task-list'));
+            if (!ok) showFail();
+          } catch (e) {
+            showFail();
+          }
+        }, 2500);
+      }
+
+      frame.addEventListener('load', function () {
+        if (loadTimer) clearTimeout(loadTimer);
+        try {
+          var doc = frame.contentDocument;
+          if (!doc || !doc.documentElement || doc.documentElement.innerHTML.length < 80) {
+            showFail();
+            return;
+          }
+          hideFail();
+        } catch (e) {
+          hideFail();
+        }
+      });
+      frame.addEventListener('error', showFail);
+
       document.getElementById('reload-btn').addEventListener('click', load);
+      if (skipSplashBtn) {
+        setSkipSplashLabel();
+        skipSplashBtn.addEventListener('click', function () {
+          skipSplash = !skipSplash;
+          setSkipSplashLabel();
+          load();
+        });
+      }
       window.addEventListener('resize', fit);
       load();
       requestAnimationFrame(function () {

@@ -5253,7 +5253,96 @@
       opacity: 0.9;
     }
     #quick-task-modal .qt-block {
-      margin-bottom: 0.95rem;
+      margin-bottom: 1.15rem;
+    }
+    #quick-task-modal .qt-preview {
+      margin: 0.15rem 0 1rem;
+      padding: 0.7rem 0.9rem;
+      border-radius: 0.95rem;
+      background: rgb(var(--harbor-primary) / 0.08);
+      border: 1px solid rgb(var(--harbor-primary) / 0.18);
+      color: rgb(var(--harbor-text));
+      font-size: 0.82rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    #quick-task-modal .qt-preview span {
+      display: block;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: rgb(var(--harbor-muted));
+      margin-bottom: 0.15rem;
+    }
+    #quick-task-modal .qt-interval {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-top: 0.35rem;
+    }
+    #quick-task-modal .qt-interval-n {
+      width: 4.2rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    #quick-task-modal .qt-select {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 100%;
+      min-height: 2.85rem;
+      padding: 0.7rem 2.2rem 0.7rem 0.85rem;
+      border: 1.5px solid rgb(var(--harbor-border) / 0.75);
+      border-radius: 0.95rem;
+      background-color: rgb(var(--harbor-raised));
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%238FA8A3' d='M1.2 1.4L6 6.2l4.8-4.8' stroke='%238FA8A3' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 0.85rem center;
+      background-size: 12px 8px;
+      color: rgb(var(--harbor-text));
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 650;
+      outline: none;
+    }
+    #quick-task-modal .qt-select:focus {
+      border-color: rgb(var(--harbor-primary) / 0.55);
+      box-shadow: 0 0 0 3px rgb(var(--harbor-primary) / 0.12);
+    }
+    #quick-task-modal .qt-interval .qt-select {
+      flex: 1 1 auto;
+      width: auto;
+    }
+    #quick-task-modal .qt-assign-lock {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      min-height: 2.85rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 1rem;
+      border: 1px dashed rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised) / 0.4);
+      color: rgb(var(--harbor-text));
+      font: inherit;
+      font-size: 0.86rem;
+      font-weight: 650;
+    }
+    #quick-task-modal .qt-pro-badge {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.18rem 0.42rem;
+      border-radius: 999px;
+      background: rgb(var(--harbor-primary) / 0.16);
+      color: rgb(var(--harbor-primary-light));
+    }
+    #quick-task-modal .qt-month-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.38rem;
     }
     #quick-task-modal #qt-title {
       width: 100%;
@@ -5674,6 +5763,14 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      border: 1px solid rgb(var(--harbor-border));
+      background: rgb(var(--harbor-raised));
+      color: rgb(var(--harbor-muted));
+    }
+    #quick-task-modal .qt-weekday-chip.is-active {
+      background: rgb(var(--harbor-primary));
+      border-color: rgb(var(--harbor-primary));
+      color: #fff;
     }
     #quick-task-modal .qt-times-row,
     #quick-task-modal .qt-recurrence-row,
@@ -20782,7 +20879,7 @@
     // (cache + support + TestFlight). Changelog is one entry per calendar day.
     const HARBOR_VERSION = '1.0';
     // Monotonic internal build for cache busting, support, and “which binary is this?”
-    const HARBOR_BUILD_NUMBER = 726;
+    const HARBOR_BUILD_NUMBER = 729;
     /**
      * Harbor Day (rest meter / claim / bank) is retired from product UI.
      * Keep false: hide Streaks section, rest strip, settings toggle, tips, tour step.
@@ -29411,7 +29508,11 @@
             for (let i = 0; i < 40; i++) {
               const ds = dateStrLocal(cursor);
               if (getHabitPeriodKey(habit, ds) !== key) break;
-              if (preferred.includes(cursor.getDay()) && (!added || String(added) <= String(ds))) {
+              // Catch-up can only fill preferred days already past — not today.
+              // Including today let a Monday log “complete” Sunday trash on Sunday.
+              if (ds !== String(dateStr)
+                  && preferred.includes(cursor.getDay())
+                  && (!added || String(added) <= String(ds))) {
                 preferredDueSoFar += 1;
               }
               cursor.setDate(cursor.getDate() - 1);
@@ -29420,12 +29521,10 @@
             preferredDueSoFar = preferred.length;
           }
           const openMisses = Math.max(0, preferredDueSoFar - hit.size);
-          // Catch-up fills preferred days already past; leftover off-day logs (early
-          // “Add from Coming up” on Friday for Monday laundry) pre-satisfy remaining slots
+          // Catch-up only fills preferred days that have already happened this period.
+          // Never pre-spend a future Sunday (Monday complete used to hide trash until next week).
           const catchUpUsed = Math.min(catchUpLogs, openMisses);
-          const earlyCredit = Math.max(0, catchUpLogs - catchUpUsed);
-          const remainingSlots = Math.max(0, preferred.length - preferredDueSoFar);
-          const credit = hit.size + catchUpUsed + Math.min(earlyCredit, remainingSlots);
+          const credit = hit.size + catchUpUsed;
           return Math.min(preferred.length, credit);
         }
       } catch (_) { /* fall through */ }
@@ -29528,10 +29627,8 @@
               && hasCompletionOnCalendarDay(habit.id, dateStr)) {
             return false;
           }
-          const done = typeof countCompletionsInPeriod === 'function'
-            ? countCompletionsInPeriod(habit, dateStr)
-            : 0;
-          if (done >= preferred.length) return false;
+          // Assigned day with no same-day log stays due. Period credit / a Monday
+          // catch-up must not skip “trash · Sunday”.
           return true;
         }
       } catch (_) { /* fall through */ }
@@ -30852,6 +30949,8 @@
      */
     function isOneOffTask(habit) {
       if (!habit) return false;
+      if (habit.isRecurring === true) return false;
+      if (habit.isRecurring === false) return true;
       return habit.interval_days === 0 || habit.interval_days === '0';
     }
 
@@ -31346,10 +31445,21 @@
       if (!list.length) return null;
       const days = [...new Set(list.map((n) => {
         const v = Number(n);
-        return Number.isFinite(v) ? Math.trunc(v) : NaN;
+        if (!Number.isFinite(v)) return NaN;
+        const t = Math.trunc(v);
+        if (t === 7) return 0; // ISO Sunday
+        return t;
       }).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6))]
         .sort((a, b) => a - b);
       return days.length ? days : null;
+    }
+
+    /** Curb-day trash titles (pickup night) — not generic “take out trash”. */
+    function isCurbTrashTitle(title) {
+      const t = String(title || '');
+      if (!t) return false;
+      return /\b(curb|kerb)\b/i.test(t)
+        && /\b(trash|garbage|rubbish|recycl|bins?|cans?)\b/i.test(t);
     }
 
     function getHabitWeekdays(habit) {
@@ -31359,7 +31469,7 @@
         || normalizeWeekdayList(habit.preferred_weekdays);
       // Safety net only: known curb-trash title with wiped days → Sunday
       // (does not invent days for other chores)
-      if ((!days || !days.length) && habit && /put\s+trash\s+on\s+(the\s+)?curb/i.test(String(habit.title || ''))) {
+      if ((!days || !days.length) && habit && isCurbTrashTitle(habit.title)) {
         return [0];
       }
       return days;
@@ -31386,7 +31496,7 @@
             ? (normalizeWeekdayList(fromLib.weekdays) || normalizeWeekdayList(fromLib.preferred_weekdays))
             : null;
         }
-        if ((!days || !days.length) && /put\s+trash\s+on\s+(the\s+)?curb/i.test(String(h.title || ''))) {
+        if ((!days || !days.length) && isCurbTrashTitle(h.title)) {
           days = [0]; // Sunday — user-assigned cadence for this chore
         }
         if (!days || !days.length) return;
@@ -31908,16 +32018,363 @@
       return dateStrLocal(d);
     }
 
-    function getNextDueDate(habit) {
-      const interval = habit?.interval_days;
-      if (interval == null || interval <= 1) return todayStr();
-      if (typeof isRollingCadenceHabit === 'function' && isRollingCadenceHabit(habit)) {
-        return getRollingNextDueDate(habit);
+    // ── Recurrence: nextDueDate is the only visibility clock ──────────
+    function addDaysToDateStr(dateStr, days) {
+      const d = new Date(String(dateStr).slice(0, 10) + 'T12:00:00');
+      d.setDate(d.getDate() + Number(days || 0));
+      return dateStrLocal(d);
+    }
+
+    function lastDayOfMonthNum(year, monthIndex) {
+      return new Date(year, monthIndex + 1, 0).getDate();
+    }
+
+    function ymdFromParts(year, monthIndex, day) {
+      const dim = lastDayOfMonthNum(year, monthIndex);
+      const use = Math.min(Math.max(1, Number(day) || 1), dim);
+      return dateStrLocal(new Date(year, monthIndex, use, 12, 0, 0));
+    }
+
+    function parseYmdParts(dateStr) {
+      const d = new Date(String(dateStr).slice(0, 10) + 'T12:00:00');
+      return { y: d.getFullYear(), m: d.getMonth(), day: d.getDate(), d };
+    }
+
+    function normalizeRecurrenceRule(raw) {
+      if (!raw || typeof raw !== 'object') return null;
+      const freq = String(raw.frequency || raw.freq || '').toLowerCase();
+      if (!['daily', 'weekly', 'monthly', 'yearly'].includes(freq)) return null;
+      const interval = Math.max(1, Math.min(99, Number(raw.interval) || 1));
+      const times = Math.max(1, Math.min(7, Number(raw.timesPerPeriod || raw.times_per_period) || 1));
+      const days = typeof normalizeWeekdayList === 'function'
+        ? normalizeWeekdayList(raw.daysOfWeek || raw.days_of_week || raw.weekdays)
+        : null;
+      const monthDay = Number(raw.monthDay || raw.month_day);
+      const yearMonth = Number(raw.yearMonth || raw.year_month);
+      const monthWeek = String(raw.monthWeek || raw.month_week || '').toLowerCase();
+      const rule = { frequency: freq, interval, timesPerPeriod: times };
+      if (days && days.length) rule.daysOfWeek = days.slice();
+      if (Number.isInteger(monthDay) && monthDay >= 1 && monthDay <= 31) rule.monthDay = monthDay;
+      if (Number.isInteger(yearMonth) && yearMonth >= 1 && yearMonth <= 12) rule.yearMonth = yearMonth;
+      if (monthWeek === 'first-weekday' || monthWeek === 'last-weekday' || monthWeek === 'last') {
+        rule.monthWeek = monthWeek;
       }
-      const daysUntil = getDaysUntilNextPeriodStart(habit);
-      const next = new Date(todayStr() + 'T12:00:00');
-      next.setDate(next.getDate() + (daysUntil || interval));
-      return dateStrLocal(next);
+      return rule;
+    }
+
+    function deriveRecurrenceRuleFromHabit(habit) {
+      if (!habit) return null;
+      const existing = normalizeRecurrenceRule(habit.recurrenceRule || habit.recurrence_rule);
+      if (habit.isRecurring === false || habit.interval_days === 0 || habit.interval_days === '0') {
+        return null;
+      }
+      if (typeof isOneOffTask === 'function' && isOneOffTask({
+        interval_days: habit.interval_days,
+        isRecurring: habit.isRecurring === true ? true : undefined
+      }) && habit.isRecurring !== true) {
+        return null;
+      }
+      const iv = habit.interval_days;
+      const wd = typeof getHabitWeekdays === 'function' ? getHabitWeekdays(habit) : null;
+      const times = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
+      if (iv == null || iv === 1) {
+        const rule = { frequency: 'daily', interval: 1, timesPerPeriod: Math.max(1, times || 1) };
+        if (wd && wd.length) rule.daysOfWeek = wd.slice();
+        return rule;
+      }
+      if (Number(iv) === 0) return null;
+      if (Number(iv) === 7 || (wd && wd.length && Number(iv) <= 14)) {
+        return {
+          frequency: 'weekly',
+          interval: Number(iv) === 14 ? 2 : 1,
+          timesPerPeriod: (wd && wd.length) ? wd.length : Math.max(1, times || 1),
+          daysOfWeek: (wd && wd.length) ? wd.slice() : undefined
+        };
+      }
+      if (Number(iv) === 14) {
+        return { frequency: 'weekly', interval: 2, timesPerPeriod: 1, daysOfWeek: (wd && wd.length) ? wd.slice() : undefined };
+      }
+      if (Number(iv) >= 25 && Number(iv) <= 35) {
+        const added = typeof getHabitAddedDate === 'function' ? getHabitAddedDate(habit) : todayStr();
+        const rule = {
+          frequency: 'monthly',
+          interval: 1,
+          timesPerPeriod: 1,
+          monthDay: (existing && existing.monthDay) || parseYmdParts(added).day
+        };
+        if (existing && existing.monthWeek) rule.monthWeek = existing.monthWeek;
+        return rule;
+      }
+      if (Number(iv) >= 85 && Number(iv) <= 95) {
+        const added = typeof getHabitAddedDate === 'function' ? getHabitAddedDate(habit) : todayStr();
+        return { frequency: 'monthly', interval: 3, timesPerPeriod: 1, monthDay: parseYmdParts(added).day };
+      }
+      if (Number(iv) >= 170 && Number(iv) <= 190) {
+        const added = typeof getHabitAddedDate === 'function' ? getHabitAddedDate(habit) : todayStr();
+        return { frequency: 'monthly', interval: 6, timesPerPeriod: 1, monthDay: parseYmdParts(added).day };
+      }
+      if (Number(iv) >= 360) {
+        const added = typeof getHabitAddedDate === 'function' ? getHabitAddedDate(habit) : todayStr();
+        const p = parseYmdParts(added);
+        return { frequency: 'yearly', interval: 1, timesPerPeriod: 1, yearMonth: p.m + 1, monthDay: p.day };
+      }
+      const n = Math.max(2, Number(iv) || 2);
+      const built = { frequency: 'daily', interval: n, timesPerPeriod: 1 };
+      if (existing) {
+        if (existing.monthDay && !built.monthDay) built.monthDay = existing.monthDay;
+        if (existing.yearMonth && !built.yearMonth) built.yearMonth = existing.yearMonth;
+        if (existing.timesPerPeriod > 1 && (!built.timesPerPeriod || built.timesPerPeriod < 2)) {
+          built.timesPerPeriod = existing.timesPerPeriod;
+        }
+      }
+      return built;
+    }
+
+    function getRecurrenceRule(habit) {
+      return deriveRecurrenceRuleFromHabit(habit);
+    }
+
+    function recurrenceRulesEqual(a, b) {
+      try { return JSON.stringify(a || null) === JSON.stringify(b || null); } catch (_) { return false; }
+    }
+
+    /**
+     * Next calendar date matching the rule.
+     * includeFrom: true → today can count (create / first stamp).
+     * includeFrom: false → start tomorrow (or after interval), used on complete.
+     */
+    function computeNextOccurrence(rule, fromDateStr, opts = {}) {
+      const normalized = normalizeRecurrenceRule(rule) || rule;
+      if (!normalized || !fromDateStr) return null;
+      const includeFrom = opts.includeFrom !== false;
+      const interval = Math.max(1, Number(normalized.interval) || 1);
+      const from = String(fromDateStr).slice(0, 10);
+      const freq = normalized.frequency;
+
+      if (freq === 'daily') {
+        if (normalized.daysOfWeek && normalized.daysOfWeek.length) {
+          const start = includeFrom ? from : addDaysToDateStr(from, 1);
+          for (let i = 0; i < 400; i++) {
+            const ds = addDaysToDateStr(start, i);
+            if (normalized.daysOfWeek.includes(dateWeekday(ds))) return ds;
+          }
+          return start;
+        }
+        if (interval <= 1) return includeFrom ? from : addDaysToDateStr(from, 1);
+        return includeFrom ? from : addDaysToDateStr(from, interval);
+      }
+
+      if (freq === 'weekly') {
+        const days = normalized.daysOfWeek;
+        if (days && days.length) {
+          const skip = includeFrom ? 0 : (1 + (interval - 1) * 7);
+          const start = addDaysToDateStr(from, skip);
+          for (let i = 0; i < 400; i++) {
+            const ds = addDaysToDateStr(start, i);
+            if (days.includes(dateWeekday(ds))) return ds;
+          }
+          return start;
+        }
+        return includeFrom ? from : addDaysToDateStr(from, 7 * interval);
+      }
+
+      if (freq === 'monthly') {
+        const start = includeFrom ? from : addDaysToDateStr(from, 1);
+        const sp = parseYmdParts(start);
+        const monthDay = Number(normalized.monthDay) || sp.day;
+        const weekMode = String(normalized.monthWeek || '');
+        const monthlyCand = (y, m) => {
+          if (weekMode === 'first-weekday') {
+            const d = new Date(y, m, 1, 12, 0, 0);
+            while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+            return dateStrLocal(d);
+          }
+          if (weekMode === 'last-weekday') {
+            const d = new Date(y, m + 1, 0, 12, 0, 0);
+            while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1);
+            return dateStrLocal(d);
+          }
+          if (weekMode === 'last') return ymdFromParts(y, m, 31);
+          return ymdFromParts(y, m, monthDay);
+        };
+        let y = sp.y;
+        let m = sp.m;
+        if (!includeFrom && interval > 1) {
+          m += (interval - 1);
+          while (m > 11) { m -= 12; y += 1; }
+        }
+        for (let k = 0; k < 36; k++) {
+          const cand = monthlyCand(y, m);
+          if (cand >= start) return cand;
+          m += 1;
+          if (m > 11) { m = 0; y += 1; }
+        }
+        return start;
+      }
+
+      if (freq === 'yearly') {
+        const start = includeFrom ? from : addDaysToDateStr(from, 1);
+        const sp = parseYmdParts(start);
+        const monthIndex = Number.isInteger(Number(normalized.yearMonth))
+          ? Number(normalized.yearMonth) - 1
+          : sp.m;
+        const monthDay = Number(normalized.monthDay) || sp.day;
+        let y = sp.y;
+        for (let k = 0; k < 12; k++) {
+          const cand = ymdFromParts(y, monthIndex, monthDay);
+          if (cand >= start) return cand;
+          y += interval;
+        }
+        return start;
+      }
+      return includeFrom ? from : addDaysToDateStr(from, 1);
+    }
+
+    function getStoredNextDueDate(habit) {
+      const raw = habit?.nextDueDate || habit?.next_due_date;
+      if (!raw) return null;
+      const s = String(raw).slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+    }
+
+    function setHabitNextDueDate(habit, dateStr) {
+      if (!habit || !dateStr) return null;
+      const s = String(dateStr).slice(0, 10);
+      habit.nextDueDate = s;
+      return s;
+    }
+
+    function inferNextDueDateFromHistory(habit, today = todayStr()) {
+      const rule = getRecurrenceRule(habit);
+      if (!rule) {
+        const added = typeof getHabitAddedDate === 'function' ? getHabitAddedDate(habit) : today;
+        return String(added || today);
+      }
+      const last = typeof getLastCompletionDate === 'function' ? getLastCompletionDate(habit.id) : null;
+      if (last) {
+        const times = Math.max(1, Number(rule.timesPerPeriod) || 1);
+        const loggedLast = typeof countCompletionsOnDate === 'function'
+          ? countCompletionsOnDate(habit.id, last)
+          : 1;
+        if (rule.frequency === 'daily' && times > 1 && last === today && loggedLast < times) {
+          return today;
+        }
+        return computeNextOccurrence(rule, last, { includeFrom: false }) || addDaysToDateStr(last, 1);
+      }
+      const added = typeof getHabitAddedDate === 'function' ? getHabitAddedDate(habit) : today;
+      return computeNextOccurrence(rule, added || today, { includeFrom: true }) || today;
+    }
+
+    function ensureHabitNextDueDate(habit, today = todayStr()) {
+      if (!habit) return today;
+      const stored = getStoredNextDueDate(habit);
+      if (stored) return stored;
+      const next = inferNextDueDateFromHistory(habit, today);
+      setHabitNextDueDate(habit, next);
+      return next;
+    }
+
+    function getHabitNextDueDate(habit, today = todayStr()) {
+      return ensureHabitNextDueDate(habit, today);
+    }
+
+    function formatNextDueWeekday(dateStr) {
+      try {
+        const d = new Date(String(dateStr).slice(0, 10) + 'T12:00:00');
+        return d.toLocaleDateString(undefined, { weekday: 'long' });
+      } catch (_) {
+        return String(dateStr || '');
+      }
+    }
+
+    function formatUpcomingDateLabel(dateStr, today = todayStr()) {
+      if (!dateStr) return 'Later';
+      if (dateStr === today) return 'Today';
+      if (typeof tomorrowStr === 'function' && dateStr === tomorrowStr()) return 'Tomorrow';
+      try {
+        const d = new Date(String(dateStr) + 'T12:00:00');
+        const days = typeof daysBetweenDateStrs === 'function'
+          ? daysBetweenDateStrs(today, dateStr)
+          : 99;
+        if (days >= 0 && days <= 7) {
+          return d.toLocaleDateString(undefined, { weekday: 'long' });
+        }
+        return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      } catch (_) {
+        return String(dateStr);
+      }
+    }
+
+    /**
+     * After a completion: record-driven next date.
+     * Same-day repeats stay today until timesPerPeriod is met (daily 2×).
+     * Otherwise start from tomorrow (forgiving: overdue advances from completion day).
+     */
+    function advanceHabitNextDueDate(habit, completedOn = todayStr()) {
+      if (!habit) return null;
+      const rule = getRecurrenceRule(habit);
+      if (!rule || (typeof isOneOffTask === 'function' && isOneOffTask(habit))) {
+        return getStoredNextDueDate(habit);
+      }
+      const times = Math.max(1, Number(rule.timesPerPeriod) || 1);
+      const logged = typeof countCompletionsOnDate === 'function'
+        ? countCompletionsOnDate(habit.id, completedOn)
+        : 1;
+      const sameDayOk = rule.frequency === 'daily' && times > 1 && logged < times;
+      if (sameDayOk) {
+        return setHabitNextDueDate(habit, completedOn);
+      }
+      const next = computeNextOccurrence(rule, completedOn, { includeFrom: false })
+        || addDaysToDateStr(completedOn, 1);
+      return setHabitNextDueDate(habit, next);
+    }
+
+    function applyHabitRecurrenceModel(habit, opts = {}) {
+      if (!habit) return habit;
+      const rule = deriveRecurrenceRuleFromHabit(habit);
+      const prevRule = normalizeRecurrenceRule(habit.recurrenceRule);
+      habit.recurrenceRule = rule;
+      habit.isRecurring = !!rule && !(typeof isOneOffTask === 'function' && isOneOffTask({
+        ...habit,
+        isRecurring: undefined,
+        interval_days: habit.interval_days
+      }) && !rule);
+      if (habit.interval_days === 0 || habit.interval_days === '0') {
+        habit.isRecurring = false;
+        habit.recurrenceRule = null;
+      } else if (rule) {
+        habit.isRecurring = true;
+      }
+      const preserve = opts.preserveNextDue !== false
+        && getStoredNextDueDate(habit)
+        && recurrenceRulesEqual(prevRule, rule);
+      if (preserve) {
+        ensureHabitNextDueDate(habit);
+      } else if (rule) {
+        const seeded = opts.fromToday
+          ? (computeNextOccurrence(rule, todayStr(), { includeFrom: true }) || todayStr())
+          : (inferNextDueDateFromHistory(habit) || todayStr());
+        setHabitNextDueDate(habit, seeded);
+      } else if (!getStoredNextDueDate(habit)) {
+        setHabitNextDueDate(habit, habit.added_at || todayStr());
+      }
+      return habit;
+    }
+
+    function ensureAllHabitsHaveNextDueDate() {
+      if (!Array.isArray(state.habits)) return false;
+      let changed = false;
+      state.habits.forEach((h) => {
+        if (!h) return;
+        const before = getStoredNextDueDate(h);
+        applyHabitRecurrenceModel(h, { preserveNextDue: true });
+        if (getStoredNextDueDate(h) !== before || h.isRecurring == null) changed = true;
+      });
+      return changed;
+    }
+
+    function getNextDueDate(habit) {
+      return getHabitNextDueDate(habit);
     }
 
     function stampHabitMeta(habit) {
@@ -31931,6 +32388,7 @@
       } else if (typeof isLifeImprovementHabit === 'function' && isLifeImprovementHabit(habit)) {
         if (habit.trackStreak !== false) habit.trackStreak = true;
       }
+      try { applyHabitRecurrenceModel(habit, { preserveNextDue: true }); } catch (_) { /* ignore */ }
       return habit;
     }
 
@@ -32307,6 +32765,16 @@
     }
 
     function getDaysUntilHabitDue(habit) {
+      try {
+        const today = todayStr();
+        const next = typeof getHabitNextDueDate === 'function' ? getHabitNextDueDate(habit, today) : null;
+        if (next) {
+          const delta = typeof daysBetweenDateStrs === 'function'
+            ? daysBetweenDateStrs(today, next)
+            : 0;
+          return Math.max(0, Number.isFinite(delta) ? delta : 0);
+        }
+      } catch (_) { /* fall through */ }
       if (isOneOffTask(habit)) return 0;
       if (!isHabitInSeason(habit)) {
         // Days until the 1st of the next in-season month (so lists don't treat it as due now)
@@ -32331,6 +32799,14 @@
           const ds = dateStrLocal(d);
           if (!weekdays.includes(d.getDay())) continue;
           if (i === 0 && isCompletedToday(habit.id)) continue;
+          // Open assigned day (Sunday trash) is due today — even if a mid-week
+          // catch-up already marked the Mon–Sun period complete.
+          if (i === 0) {
+            const loggedToday = typeof hasCompletionOnCalendarDay === 'function'
+              ? hasCompletionOnCalendarDay(habit.id, today)
+              : false;
+            if (!loggedToday) return 0;
+          }
           if (isDailyTask(habit)) return i;
           // weekly+: only if this period still open (or next week's matching day)
           if (isHabitActiveThisPeriod(habit) || i > 0) {
@@ -34292,15 +34768,26 @@
       const presetTitle = editSource ? editSource.title : (options.title || '');
 
       let repeats = null;
-      let often = 'daily';
+      let often = 'weekly';
       let customCadence = '';
+      let customN = 2;
+      let customUnit = 'weeks';
       let times = 1;
       let weekdays = [];
+      let monthPick = { type: 'day', day: new Date().getDate() };
       let trackStreak = false;
       let remindOn = false;
       let remindTime = '09:00';
       let dueDate = '';
       let energy = 2;
+      let selectedPersonIds = typeof getHabitPersonIds === 'function'
+        ? getHabitPersonIds(editSource || { personId: 'me' })
+        : ['me'];
+      selectedPersonIds = typeof normalizeHabitPersonIds === 'function'
+        ? normalizeHabitPersonIds(selectedPersonIds)
+        : (selectedPersonIds || ['me']);
+      const householdReady = typeof householdHasMultiplePeople === 'function' && householdHasMultiplePeople();
+      const proReady = typeof isHarborPro === 'function' && isHarborPro();
 
       if (editSource) {
         const oneOff = editSource.interval_days === 0 || editSource.interval_days === '0';
@@ -34322,6 +34809,21 @@
         weekdays = typeof getHabitWeekdays === 'function' && getHabitWeekdays(editSource)
           ? [...getHabitWeekdays(editSource)]
           : [];
+        const rule = editSource.recurrenceRule || {};
+        if (rule.monthWeek === 'first-weekday' || rule.monthWeek === 'last-weekday' || rule.monthWeek === 'last') {
+          monthPick = { type: rule.monthWeek };
+        } else if (Number(rule.monthDay) >= 1) {
+          monthPick = { type: 'day', day: Number(rule.monthDay) };
+        } else if (often === 'monthly') {
+          monthPick = { type: 'day', day: new Date().getDate() };
+        }
+        if (often === 'custom') {
+          const n = Number(editSource.interval_days);
+          if (n === 14) { customN = 2; customUnit = 'weeks'; }
+          else if (n >= 28 && n <= 31) { customN = 1; customUnit = 'months'; }
+          else if (n >= 7 && n % 7 === 0) { customN = n / 7; customUnit = 'weeks'; }
+          else if (Number.isFinite(n) && n > 1) { customN = n; customUnit = 'days'; }
+        }
         trackStreak = editSource.trackStreak === true
           || String(editSource.listKind || '').toLowerCase() === 'habit';
         const rts = typeof getHabitReminderTimes === 'function' ? getHabitReminderTimes(editSource) : [];
@@ -34357,58 +34859,74 @@
             ${isEdit ? '' : '<button type="button" class="qt-browse-lib" id="qt-browse-lib">Browse the Library</button>'}
           </div>
           <div class="qt-block">
+            <span class="qt-field-label">Effort</span>
+            <div class="qt-energy-pick" role="group" aria-label="Effort">
+              ${[1, 2, 3].map((lvl) => {
+                const name = lvl === 1 ? 'Low' : lvl === 3 ? 'High' : 'Medium';
+                const on = energy === lvl;
+                const svg = typeof energyMeterSvg === 'function' ? energyMeterSvg(lvl, on) : '';
+                return `<button type="button" class="energy-btn ${on ? 'is-selected' : 'is-idle'} py-2 flex items-center justify-center gap-x-2" data-energy="${lvl}" data-diff="${lvl}" aria-label="${name} energy" aria-pressed="${on ? 'true' : 'false'}">${svg}<span class="energy-label-text">${name}</span></button>`;
+              }).join('')}
+            </div>
+          </div>
+          <div class="qt-block">
             <div class="qt-ask">Does this repeat?</div>
             <div class="qt-split" role="group" aria-label="Does this repeat?">
-              <button type="button" class="qt-split-btn" data-rep="no">No<small>One-time task</small></button>
+              <button type="button" class="qt-split-btn" data-rep="no">No<small>One-time</small></button>
               <button type="button" class="qt-split-btn" data-rep="yes">Yes<small>Repeating</small></button>
             </div>
           </div>
-          <div id="qt-extra" class="hidden">
-            <div class="qt-block">
-              <div class="qt-energy-pick" role="group" aria-label="Energy">
-                ${[1, 2, 3].map((lvl) => {
-                  const name = lvl === 1 ? 'Low' : lvl === 3 ? 'High' : 'Medium';
-                  const on = energy === lvl;
-                  const svg = typeof energyMeterSvg === 'function' ? energyMeterSvg(lvl, on) : '';
-                  return `<button type="button" class="energy-btn ${on ? 'is-selected' : 'is-idle'} py-2 flex items-center justify-center gap-x-2" data-energy="${lvl}" data-diff="${lvl}" aria-label="${name} energy" aria-pressed="${on ? 'true' : 'false'}">${svg}<span class="energy-label-text">${name}</span></button>`;
-                }).join('')}
-              </div>
-            </div>
-            <div id="qt-remind-host-once"></div>
-          </div>
           <div id="qt-repeat" class="hidden">
             <div class="qt-block">
-              <span class="qt-field-label">How often?</span>
-              <div class="qt-chip-row" id="qt-often">
-                <button type="button" class="qt-pill" data-often="daily">Daily</button>
-                <button type="button" class="qt-pill" data-often="weekly">Weekly</button>
-                <button type="button" class="qt-pill" data-often="monthly">Monthly</button>
-                <button type="button" class="qt-pill" data-often="custom">Custom</button>
-              </div>
-              <div id="qt-custom-wrap" class="qt-custom-cadence hidden">
-                <input id="qt-custom-cadence" type="text" inputmode="text" autocomplete="off"
-                  placeholder="90, quarterly, every 2 weeks…"
-                  aria-label="Custom how often">
-                <div id="qt-custom-hint" class="qt-custom-hint">Type days or a word like quarterly</div>
-              </div>
+              <span class="qt-field-label">Frequency</span>
+              <select id="qt-often" class="qt-select" aria-label="Frequency">
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="custom">Custom</option>
+              </select>
             </div>
-            <div class="qt-block">
-              <span class="qt-field-label">How many times?</span>
-              <input id="qt-times" class="qt-date" type="number" min="1" step="1" inputmode="numeric" value="1" aria-label="How many times">
+            <div class="qt-block hidden" id="qt-times-wrap">
+              <span class="qt-field-label">Times per day</span>
+              <div class="qt-chip-row" id="qt-times-row" role="group" aria-label="Times per day"></div>
             </div>
             <div class="qt-block hidden" id="qt-days-wrap">
               <span class="qt-field-label">Which days?</span>
-              <div class="qt-chip-row" id="qt-days"></div>
+              <div class="qt-weekday-row" id="qt-days"></div>
+            </div>
+            <div class="qt-block hidden" id="qt-month-wrap">
+              <span class="qt-field-label">On which day?</span>
+              <div class="qt-month-row" id="qt-month-row"></div>
+            </div>
+            <div class="qt-block hidden" id="qt-custom-wrap">
+              <span class="qt-field-label">Every</span>
+              <div class="qt-interval">
+                <input id="qt-custom-n" class="qt-date qt-interval-n" type="number" min="1" max="365" step="1" inputmode="numeric" value="2" aria-label="Interval count">
+                <select id="qt-custom-unit" class="qt-select" aria-label="Interval unit">
+                  <option value="days">days</option>
+                  <option value="weeks">weeks</option>
+                  <option value="months">months</option>
+                </select>
+              </div>
             </div>
             <div class="qt-block">
               <label class="qt-streak">
                 <span class="qt-streak-copy">
-                  <strong>Keep Track of Streak?</strong>
+                  <strong>Keep track of streak?</strong>
+                  <span>Off unless you want a fire on Streaks</span>
                 </span>
                 <input id="qt-streak" type="checkbox">
               </label>
             </div>
-            <div id="qt-remind-host-repeat"></div>
+          </div>
+          <div id="qt-assign" class="qt-block hidden">
+            <span class="qt-field-label">Assign to</span>
+            <select id="qt-person-select" class="qt-select" aria-label="Assign to"></select>
+          </div>
+          <div id="qt-remind-host-once"></div>
+          <div id="qt-preview" class="qt-preview hidden" aria-live="polite">
+            <span>Next due</span>
+            <div id="qt-preview-line">Today</div>
           </div>
           <div id="qt-remind-block" class="qt-block" hidden>
             <span class="qt-field-label">Remind me</span>
@@ -34442,11 +34960,14 @@
 
       const titleInput = modal.querySelector('#qt-title');
       const repeatEl = modal.querySelector('#qt-repeat');
-      const extraEl = modal.querySelector('#qt-extra');
       const streakEl = modal.querySelector('#qt-streak');
+      const previewEl = modal.querySelector('#qt-preview');
+      const previewLine = modal.querySelector('#qt-preview-line');
+      const assignEl = modal.querySelector('#qt-assign');
+      const personSelect = modal.querySelector('#qt-person-select');
       const remindBlock = modal.querySelector('#qt-remind-block');
       const hostOnce = modal.querySelector('#qt-remind-host-once');
-      const hostRepeat = modal.querySelector('#qt-remind-host-repeat');
+      const hostRepeat = hostOnce;
       const remindTimeEl = modal.querySelector('#qt-remind-time');
       const remindCal = modal.querySelector('#qt-remind-cal');
       const remindDayEl = modal.querySelector('#qt-remind-day');
@@ -34528,57 +35049,176 @@
         }
       };
 
+      const paintAssign = () => {
+        if (!assignEl) return;
+        const show = repeats != null && householdReady && proReady
+          && personSelect && typeof getHouseholdProfiles === 'function';
+        assignEl.classList.toggle('hidden', !show);
+        if (!show) return;
+        const people = getHouseholdProfiles() || [];
+        const current = (selectedPersonIds && selectedPersonIds[0]) || 'me';
+        personSelect.innerHTML = people.map((p) => {
+          const id = String(p.id || 'me');
+          const name = String(p.name || (id === 'me' ? 'Me' : id));
+          const sel = id === String(current) ? ' selected' : '';
+          return `<option value="${String(id).replace(/"/g, '&quot;')}"${sel}>${name.replace(/</g, '')}</option>`;
+        }).join('');
+        if (![...personSelect.options].some((o) => o.value === String(current))) {
+          personSelect.value = people[0]?.id || 'me';
+        } else {
+          personSelect.value = String(current);
+        }
+        selectedPersonIds = [personSelect.value || 'me'];
+      };
+
+      const draftNextDue = () => {
+        const today = todayStr();
+        if (repeats !== true) {
+          if (dueDate && String(dueDate) > today) return dueDate;
+          return today;
+        }
+        const rule = (() => {
+          if (often === 'daily') {
+            return { frequency: 'daily', interval: 1, timesPerPeriod: Math.max(1, times) };
+          }
+          if (often === 'weekly') {
+            return {
+              frequency: 'weekly',
+              interval: 1,
+              daysOfWeek: weekdays.length ? weekdays.slice() : [new Date().getDay()]
+            };
+          }
+          if (often === 'monthly') {
+            const rule = { frequency: 'monthly', interval: 1, monthDay: monthPick.day || new Date().getDate() };
+            if (monthPick.type === 'first-weekday' || monthPick.type === 'last-weekday' || monthPick.type === 'last') {
+              rule.monthWeek = monthPick.type;
+            }
+            return rule;
+          }
+          const n = Math.max(1, Number(customN) || 1);
+          if (customUnit === 'weeks') return { frequency: 'weekly', interval: n };
+          if (customUnit === 'months') return { frequency: 'monthly', interval: n, monthDay: new Date().getDate() };
+          return { frequency: 'daily', interval: n };
+        })();
+        if (typeof computeNextOccurrence === 'function') {
+          return computeNextOccurrence(rule, today, { includeFrom: true }) || today;
+        }
+        return today;
+      };
+
+      const paintPreview = () => {
+        if (!previewEl || !previewLine) return;
+        if (repeats == null) {
+          previewEl.classList.add('hidden');
+          return;
+        }
+        previewEl.classList.remove('hidden');
+        const next = draftNextDue();
+        try {
+          const d = new Date(String(next) + 'T12:00:00');
+          previewLine.textContent = d.toLocaleDateString(undefined, {
+            weekday: 'long',
+            month: 'short',
+            day: 'numeric'
+          });
+        } catch (_) {
+          previewLine.textContent = String(next);
+        }
+      };
+
       const paint = () => {
         modal.querySelectorAll('[data-rep]').forEach((btn) => {
           const on = (btn.dataset.rep === 'yes' && repeats === true) || (btn.dataset.rep === 'no' && repeats === false);
           btn.classList.toggle('is-on', on);
         });
-        extraEl.classList.toggle('hidden', repeats == null);
         repeatEl.classList.toggle('hidden', repeats !== true);
         placeRemindBlock();
-        modal.querySelectorAll('[data-often]').forEach((btn) => {
-          btn.classList.toggle('is-on', btn.dataset.often === often);
-        });
-        const customWrap = modal.querySelector('#qt-custom-wrap');
-        const customHint = modal.querySelector('#qt-custom-hint');
-        customWrap?.classList.toggle('hidden', !(repeats === true && often === 'custom'));
-        if (repeats === true && often === 'custom' && customHint) {
-          const parsed = parseCustomCadence(customCadence);
-          if (!customCadence.trim()) {
-            customHint.textContent = 'Type days or a word like quarterly';
-            customHint.classList.remove('is-ok');
-          } else if (parsed) {
-            customHint.textContent = parsed.label + (parsed.days > 1 ? ` · ${parsed.days} days` : '');
-            customHint.classList.add('is-ok');
-          } else {
-            customHint.textContent = 'Try 90, quarterly, or every 2 weeks';
-            customHint.classList.remove('is-ok');
+        const oftenSel = modal.querySelector('#qt-often');
+        if (oftenSel && oftenSel.value !== often) oftenSel.value = often;
+        modal.querySelector('#qt-times-wrap')?.classList.toggle('hidden', !(repeats === true && often === 'daily'));
+        modal.querySelector('#qt-days-wrap')?.classList.toggle('hidden', !(repeats === true && often === 'weekly'));
+        modal.querySelector('#qt-month-wrap')?.classList.toggle('hidden', !(repeats === true && often === 'monthly'));
+        modal.querySelector('#qt-custom-wrap')?.classList.toggle('hidden', !(repeats === true && often === 'custom'));
+
+        if (repeats === true && often === 'daily') {
+          const row = modal.querySelector('#qt-times-row');
+          if (row) {
+            row.innerHTML = [1, 2, 3, 4].map((n) =>
+              `<button type="button" class="qt-pill${times === n ? ' is-on' : ''}" data-times="${n}">${n}×</button>`
+            ).join('');
+            row.querySelectorAll('[data-times]').forEach((btn) => {
+              btn.onclick = () => {
+                times = parseInt(btn.dataset.times, 10) || 1;
+                paint();
+              };
+            });
           }
         }
-        const timesInput = modal.querySelector('#qt-times');
-        if (timesInput && document.activeElement !== timesInput) {
-          timesInput.value = String(Math.max(1, times));
+
+        if (repeats === true && often === 'weekly') {
+          if (!weekdays.length) weekdays = [new Date().getDay()];
+          const daysRow = modal.querySelector('#qt-days');
+          if (daysRow) {
+            const letters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            daysRow.innerHTML = letters.map((letter, d) =>
+              `<button type="button" class="qt-weekday-chip${weekdays.includes(d) ? ' is-active' : ''}" data-day="${d}" aria-label="${names[d]}" aria-pressed="${weekdays.includes(d) ? 'true' : 'false'}">${letter}</button>`
+            ).join('');
+            daysRow.querySelectorAll('[data-day]').forEach((btn) => {
+              btn.onclick = () => {
+                const d = parseInt(btn.dataset.day, 10);
+                if (weekdays.includes(d)) {
+                  if (weekdays.length === 1) return;
+                  weekdays = weekdays.filter((x) => x !== d);
+                } else {
+                  weekdays = [...weekdays, d].sort((a, b) => a - b);
+                }
+                paint();
+              };
+            });
+          }
         }
-        const daysWrap = modal.querySelector('#qt-days-wrap');
-        const daysRow = modal.querySelector('#qt-days');
-        const showDays = repeats === true && often === 'weekly';
-        daysWrap?.classList.toggle('hidden', !showDays);
-        if (showDays && daysRow) {
-          const letters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-          const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-          daysRow.innerHTML = letters.map((letter, d) =>
-            `<button type="button" class="qt-pill${weekdays.includes(d) ? ' is-on' : ''}" data-day="${d}" aria-label="${names[d]}">${letter}</button>`
-          ).join('');
-          daysRow.querySelectorAll('[data-day]').forEach((btn) => {
-            btn.onclick = () => {
-              const d = parseInt(btn.dataset.day, 10);
-              if (weekdays.includes(d)) weekdays = weekdays.filter((x) => x !== d);
-              else weekdays = [...weekdays, d].sort((a, b) => a - b);
-              if (weekdays.length) times = Math.max(times, weekdays.length);
-              paint();
-            };
-          });
+
+        if (repeats === true && often === 'monthly') {
+          const row = modal.querySelector('#qt-month-row');
+          if (row) {
+            const todayN = new Date().getDate();
+            const opts = [
+              { type: 'day', day: 1, label: '1st' },
+              { type: 'day', day: 15, label: '15th' },
+              { type: 'day', day: todayN, label: `Today (${todayN})` },
+              { type: 'last', label: 'Last day' },
+              { type: 'first-weekday', label: 'First weekday' },
+              { type: 'last-weekday', label: 'Last weekday' }
+            ];
+            const seen = new Set();
+            row.innerHTML = opts.filter((o) => {
+              const key = o.type === 'day' ? `d${o.day}` : o.type;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            }).map((o) => {
+              const on = monthPick.type === o.type && (o.type !== 'day' || monthPick.day === o.day);
+              return `<button type="button" class="qt-pill${on ? ' is-on' : ''}" data-mtype="${o.type}" data-mday="${o.day || ''}">${o.label}</button>`;
+            }).join('');
+            row.querySelectorAll('[data-mtype]').forEach((btn) => {
+              btn.onclick = () => {
+                const type = btn.dataset.mtype;
+                if (type === 'day') monthPick = { type: 'day', day: parseInt(btn.dataset.mday, 10) || todayN };
+                else monthPick = { type };
+                paint();
+              };
+            });
+          }
         }
+
+        if (repeats === true && often === 'custom') {
+          const nEl = modal.querySelector('#qt-custom-n');
+          if (nEl && document.activeElement !== nEl) nEl.value = String(customN);
+          const unitSel = modal.querySelector('#qt-custom-unit');
+          if (unitSel && unitSel.value !== customUnit) unitSel.value = customUnit;
+        }
+
         modal.querySelectorAll('.qt-energy-pick .energy-btn').forEach((btn) => {
           const lvl = Number(btn.dataset.energy || btn.dataset.diff);
           const on = lvl === energy;
@@ -34590,7 +35230,9 @@
             btn.innerHTML = `${energyMeterSvg(lvl, on)}<span class="energy-label-text">${name}</span>`;
           }
         });
+        paintAssign();
         paintRemindDay();
+        paintPreview();
       };
 
       modal.querySelectorAll('[data-rep]').forEach((btn) => {
@@ -34600,35 +35242,38 @@
           paint();
         };
       });
-      modal.querySelectorAll('[data-often]').forEach((btn) => {
-        btn.onclick = () => {
-          often = btn.dataset.often;
-          paint();
-          if (often === 'custom') {
-            setTimeout(() => modal.querySelector('#qt-custom-cadence')?.focus(), 40);
-          }
-        };
+      modal.querySelector('#qt-often')?.addEventListener('change', (e) => {
+        const v = e.target && e.target.value;
+        if (v === 'daily' || v === 'weekly' || v === 'monthly' || v === 'custom') often = v;
+        if (often === 'weekly' && !weekdays.length) weekdays = [new Date().getDay()];
+        if (often === 'daily') times = Math.max(1, times);
+        paint();
+        if (often === 'custom') {
+          setTimeout(() => modal.querySelector('#qt-custom-n')?.focus(), 40);
+        }
       });
-      const timesInputEl = modal.querySelector('#qt-times');
-      if (timesInputEl) {
-        timesInputEl.value = String(Math.max(1, times));
-        timesInputEl.addEventListener('input', () => {
-          const n = parseInt(timesInputEl.value, 10);
-          times = Number.isFinite(n) && n > 0 ? n : 1;
+      const customNEl = modal.querySelector('#qt-custom-n');
+      if (customNEl) {
+        customNEl.value = String(customN);
+        customNEl.addEventListener('input', () => {
+          const n = parseInt(customNEl.value, 10);
+          customN = Number.isFinite(n) && n > 0 ? n : 1;
+          paintPreview();
         });
-        timesInputEl.addEventListener('blur', () => {
-          times = Math.max(1, parseInt(timesInputEl.value, 10) || 1);
-          timesInputEl.value = String(times);
-        });
-      }
-      const customInput = modal.querySelector('#qt-custom-cadence');
-      if (customInput) {
-        if (customCadence) customInput.value = customCadence;
-        customInput.addEventListener('input', () => {
-          customCadence = customInput.value;
+        customNEl.addEventListener('blur', () => {
+          customN = Math.max(1, parseInt(customNEl.value, 10) || 1);
+          customNEl.value = String(customN);
           paint();
         });
       }
+      modal.querySelector('#qt-custom-unit')?.addEventListener('change', (e) => {
+        const v = e.target && e.target.value;
+        if (v === 'days' || v === 'weeks' || v === 'months') customUnit = v;
+        paint();
+      });
+      personSelect?.addEventListener('change', () => {
+        selectedPersonIds = [personSelect.value || 'me'];
+      });
       if (streakEl) streakEl.onchange = () => { trackStreak = !!streakEl.checked; };
       const applyTypedTime = (pretty) => {
         const tm = typeof parseTypedReminderTime === 'function'
@@ -34700,15 +35345,16 @@
         else {
           often = 'custom';
           const n = Number(iv);
-          customCadence = (n >= 350) ? 'yearly'
-            : (n >= 85 && n <= 95) ? 'quarterly'
-            : String(n || '');
-          if (customInput) customInput.value = customCadence;
+          if (n === 14) { customN = 2; customUnit = 'weeks'; }
+          else if (n >= 28 && n <= 31) { customN = 1; customUnit = 'months'; }
+          else if (n >= 7 && n % 7 === 0) { customN = n / 7; customUnit = 'weeks'; }
+          else { customN = Math.max(2, n || 2); customUnit = 'days'; }
         }
         times = Math.max(1, Number(task.times_per_day || task.times_per_period) || 1);
         weekdays = typeof getHabitWeekdays === 'function' && getHabitWeekdays(task)
           ? [...getHabitWeekdays(task)]
           : [];
+        if (often === 'weekly' && !weekdays.length) weekdays = [new Date().getDay()];
         trackStreak = task.trackStreak === true || String(task.librarySection || '').includes('Daily Habit');
         if (streakEl) streakEl.checked = trackStreak;
         const d = Number(task.difficulty);
@@ -34727,17 +35373,18 @@
           if (often === 'daily') interval = null;
           else if (often === 'weekly') interval = 7;
           else if (often === 'monthly') interval = 30;
-          else if (often === 'yearly') interval = 365;
           else {
-            const parsed = parseCustomCadence(customCadence);
-            if (!parsed) {
-              showToast('Enter how often — 90, quarterly, every 2 weeks…');
-              modal.querySelector('#qt-custom-cadence')?.focus();
-              return;
-            }
-            interval = parsed.days <= 1 ? null : parsed.days;
+            const n = Math.max(1, Number(customN) || 1);
+            interval = customUnit === 'weeks' ? n * 7
+              : customUnit === 'months' ? n * 30
+              : n;
+            if (interval <= 1) interval = null;
           }
         }
+        const canAssign = householdReady && proReady;
+        const personIds = canAssign
+          ? (typeof normalizeHabitPersonIds === 'function' ? normalizeHabitPersonIds(selectedPersonIds) : (selectedPersonIds || ['me']))
+          : (isEdit && typeof getHabitPersonIds === 'function' ? getHabitPersonIds(editSource) : ['me']);
         const listKind = !repeats ? 'task' : (trackStreak ? 'habit' : 'chore');
         const task = {
           id: isEdit ? (options.editHabitId || options.editTaskId) : ((isLibrary || repeats) ? 'custom-lib-' : 'custom-') + Date.now(),
@@ -34751,15 +35398,26 @@
           librarySection: (isLibrary || repeats) ? 'Personal' : undefined,
           trackStreak: !!(repeats && trackStreak),
           listKind,
-          personId: 'me',
-          personIds: ['me'],
+          personId: personIds[0] || 'me',
+          personIds,
           parkOnSummary: false,
+          isRecurring: !!repeats,
           updatedAt: new Date().toISOString()
         };
-        if (repeats && times > 1) task.times_per_day = times;
+        if (repeats && often === 'daily' && times > 1) task.times_per_day = times;
         if (repeats && often === 'weekly' && weekdays.length) {
           task.weekdays = [...weekdays];
           task.preferred_weekdays = [...weekdays];
+        }
+        if (repeats && often === 'monthly') {
+          task.recurrenceRule = {
+            frequency: 'monthly',
+            interval: 1,
+            monthDay: monthPick.type === 'day' ? (monthPick.day || new Date().getDate()) : 31
+          };
+          if (monthPick.type === 'first-weekday' || monthPick.type === 'last-weekday' || monthPick.type === 'last') {
+            task.recurrenceRule.monthWeek = monthPick.type;
+          }
         }
         const due = String(dueDate || '').slice(0, 10);
         if (!repeats) {
@@ -34767,8 +35425,10 @@
           task.pullToToday = due && due > today ? undefined : today;
           task.added_at = today;
         } else {
-          if (due && due > today) task.snoozeUntil = due;
-          else task.pullToToday = today;
+          const next = draftNextDue();
+          task.nextDueDate = next;
+          if (next === today) task.pullToToday = today;
+          else delete task.pullToToday;
         }
         const tm = typeof parseTypedReminderTime === 'function'
           ? parseTypedReminderTime(remindTimeEl?.value || remindTime || '')
@@ -51735,64 +52395,37 @@
     function collectDiscoverableLaterTasks(limit = 80) {
       const today = todayStr();
       const tomorrow = tomorrowDateStr();
-      const afternoon = isAfternoonLookAheadWindow();
       const out = [];
       (state.habits || []).forEach(h => {
         if (!h || h.is_pro_reminder) return;
-        // Soft “Later” today — ALWAYS list under Coming up (even if a streak skip was also recorded)
         const deferredLater = typeof isHabitDeferredToLater === 'function' && isHabitDeferredToLater(h, today);
         if (!deferredLater) {
           if (getHabitSkips(h.id).includes(today)) return;
           if (getHabitPasses(h.id).includes(today)) return;
         }
-        // Finished one-time tasks never linger in Coming up
         if (typeof isOneOffTask === 'function' && isOneOffTask(h)) {
           if (typeof isOneOffFullyDone === 'function' && isOneOffFullyDone(h)) return;
           const comps = typeof getCompletions === 'function' ? (getCompletions(h.id) || []) : [];
           if (comps.length > 0) return;
         }
-        // Due on Task but hidden by Me / person filter → still list so it never vanishes
         const personHidden = !deferredLater
           && typeof belongsOnTodayTab === 'function'
           && belongsOnTodayTab(h)
           && typeof isHiddenByTaskPersonFilter === 'function'
           && isHiddenByTaskPersonFilter(h);
-        // Already on the main Today list (and visible under current person filter)
         if (!deferredLater && !personHidden && typeof belongsOnTodayTab === 'function' && belongsOnTodayTab(h)) return;
 
-        const periodDone = !deferredLater && typeof isCompletedToday === 'function' && isCompletedToday(h.id);
-        // Finished dailies land in “Completed today” — not here
-        if (periodDone && !isNonDailyRecurring(h) && !isOneOffTask(h)) return;
+        const next = typeof ensureHabitNextDueDate === 'function'
+          ? ensureHabitNextDueDate(h, today)
+          : (h.nextDueDate || '');
+        const loggedToday = typeof hasCompletionOnCalendarDay === 'function'
+          && hasCompletionOnCalendarDay(h.id, today);
+        // Finished today and next occurrence is later → Done strip, not Upcoming
+        if (!deferredLater && !personHidden && loggedToday && next && next > today) return;
 
-        const parkedReady = !periodDone
-          && !deferredLater
-          && !personHidden
-          && typeof isParkedForSummary === 'function'
-          && isParkedForSummary(h)
-          && isDueToday(h)
-          && !isPulledToToday(h);
-        // Weekly / monthly / custom interval — not due right now, or resting after period complete
-        const laterWeekly = !deferredLater && !personHidden && isNonDailyRecurring(h) && (!isDueToday(h) || periodDone);
-        // Preferred-day Taskers when today isn’t their day (weekly or daily Mon–Fri)
-        const preferredOffDay = !periodDone
-          && !deferredLater
-          && !personHidden
-          && typeof getHabitWeekdays === 'function'
-          && getHabitWeekdays(h)
-          && !isDueToday(h)
-          && !isOneOffTask(h);
-        // Interval / next-due in the future (every other day, etc.)
-        const notDueToday = !periodDone && !deferredLater && !personHidden
-          && typeof isDueToday === 'function' && !isDueToday(h)
-          && typeof belongsOnTodayTab === 'function' && !belongsOnTodayTab(h);
-        // After noon: surface tomorrow’s schedule under Coming up so nothing sneaks up
-        const dueTomorrow = !deferredLater && !personHidden && !periodDone
-          && afternoon
-          && wouldBeDueOnDate(h, tomorrow)
-          && !isDueToday(h);
-        // Must match at least one Coming up reason (never vanish)
-        if (!(deferredLater || personHidden || parkedReady || laterWeekly
-            || preferredOffDay || dueTomorrow || notDueToday)) return;
+        const future = next && String(next) > String(today);
+        if (!(deferredLater || personHidden || future || (next && !belongsOnTodayTab(h)))) return;
+        if (!deferredLater && !personHidden && !future) return;
 
         let nextLabel = '';
         let kind = 'later';
@@ -51816,53 +52449,32 @@
           } else if (deferredLater) {
             kind = 'deferred';
             nextLabel = 'Parked for later today';
-          } else if (dueTomorrow) {
-            kind = 'tomorrow';
-            nextLabel = 'Tomorrow';
-          } else if (parkedReady) {
-            kind = 'parked';
-            nextLabel = 'Ready when you can';
-          } else if (periodDone && isNonDailyRecurring(h)) {
-            kind = 'resting';
-            const next = typeof getNextDueDate === 'function' ? getNextDueDate(h) : null;
-            if (next && next !== today) {
-              const d = new Date(next + 'T12:00:00');
-              nextLabel = 'Done · next ' + d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-            } else {
-              nextLabel = 'Done this period';
-            }
           } else if (!isHabitInSeason(h, today)) {
             kind = 'out-of-season';
             nextLabel = 'Out of season';
+          } else if (next === tomorrow) {
+            kind = 'tomorrow';
+            nextLabel = 'Tomorrow';
           } else {
-            const next = typeof getNextDueDate === 'function' ? getNextDueDate(h) : null;
-            if (next && next === tomorrow) nextLabel = 'Tomorrow';
-            else if (next && next === today) nextLabel = 'Due soon';
-            else if (next) {
-              const d = new Date(next + 'T12:00:00');
-              nextLabel = 'Next ' + d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-            } else {
-              const pref = typeof getHabitWeekdays === 'function' ? getHabitWeekdays(h) : null;
-              if (pref && pref.length) {
-                nextLabel = typeof formatWeekdayShortList === 'function'
-                  ? formatWeekdayShortList(pref)
-                  : 'Selected days';
-              } else {
-                nextLabel = formatIntervalLabel(h.interval_days, h) || 'Later';
-              }
-            }
+            const days = typeof daysBetweenDateStrs === 'function'
+              ? daysBetweenDateStrs(today, next)
+              : 99;
+            kind = days <= 7 ? 'this-week' : 'later';
+            nextLabel = typeof formatUpcomingDateLabel === 'function'
+              ? formatUpcomingDateLabel(next, today)
+              : (next || 'Later');
           }
         } catch (_) {
-          nextLabel = personHidden
-            ? 'Hidden by People filter'
-            : (parkedReady ? 'Ready when you can' : (periodDone ? 'Done this period' : 'Later'));
+          nextLabel = personHidden ? 'Hidden by People filter' : 'Later';
         }
 
         let daysUntil = 999;
         try {
           if (kind === 'out-of-season') daysUntil = 900;
-          else if (typeof getDaysUntilHabitDue === 'function') {
-            daysUntil = getDaysUntilHabitDue(h);
+          else if (next) {
+            daysUntil = typeof daysBetweenDateStrs === 'function'
+              ? daysBetweenDateStrs(today, next)
+              : 999;
             if (!Number.isFinite(daysUntil)) daysUntil = 999;
           }
         } catch (_) { daysUntil = 999; }
@@ -51871,7 +52483,8 @@
           habit: h,
           kind,
           nextLabel,
-          daysUntil
+          daysUntil,
+          nextDueDate: next
         });
       });
 
@@ -51879,10 +52492,9 @@
       const kindRank = {
         deferred: 0,
         tomorrow: 1,
-        'person-filter': 2,
-        parked: 3,
+        'this-week': 2,
+        'person-filter': 3,
         later: 4,
-        resting: 5,
         'out-of-season': 9
       };
       out.sort((a, b) => {
@@ -52152,18 +52764,8 @@
           if (isCompletedToday(h.id)) return;
         }
         if (isCompletedToday(h.id)) return;
-        // Skip hides Active unless user explicitly Add’d from Coming up (pullToToday)
+        // Skip hides Active unless user explicitly Add’d from Upcoming
         if (getHabitSkips(h.id).includes(today) && !isPulledToToday(h)) return;
-        // Absolute preferred-day filter (trash Sunday): never Active mid-week unless pulled
-        try {
-          const pref = typeof getHabitWeekdays === 'function' ? getHabitWeekdays(h) : null;
-          if (pref && pref.length
-              && typeof habitMatchesWeekdayPreference === 'function'
-              && !habitMatchesWeekdayPreference(h, today)
-              && !(typeof isPulledToToday === 'function' && isPulledToToday(h))) {
-            return;
-          }
-        } catch (_) { /* ignore */ }
         if (!belongsOnTodayTab(h)) return;
         active.push(h);
       });
@@ -52288,101 +52890,34 @@
 
     // ==================== DUE LOGIC & RENDERING ====================
     function isDueToday(habit) {
+      if (!habit) return false;
       const today = todayStr();
-      const comps = getCompletions(habit.id);
       if (typeof habitRepeatEnded === 'function' && habitRepeatEnded(habit, today)) return false;
-
-      // Finished one-time Taskers are never due again (check before pull/carry-forward)
       if (typeof isOneOffFullyDone === 'function' && isOneOffFullyDone(habit)) return false;
-      // Done for today (preferred-day log, daily multi done, etc.) never stay due
-      if (typeof isCompletedToday === 'function' && isCompletedToday(habit.id)) return false;
-
-      // Fully done for period (Frequency N× day/week/month — e.g. Swim 3× this week)
-      if (isCompletedToday(habit.id)) return false;
-      if (getHabitSkips(habit.id).includes(today)) return false;
-      if (getHabitPasses(habit.id).includes(today)) return false;
-      // Soft “Later” — hide from main Task for the rest of today (not a streak skip)
+      if (getHabitSkips(habit.id).includes(today)
+          && !(typeof isPulledToToday === 'function' && isPulledToToday(habit))) return false;
+      if (getHabitPasses(habit.id).includes(today)
+          && !(typeof isPulledToToday === 'function' && isPulledToToday(habit))) return false;
       if (typeof isHabitDeferredToLater === 'function' && isHabitDeferredToLater(habit, today)) {
         return false;
       }
-      // User moved to tomorrow (or later)
       if (habit.snoozeUntil) {
         if (String(habit.snoozeUntil) > today) return false;
-        if (String(habit.snoozeUntil) <= today) {
-          // Snooze expired — clear so it returns to the list
-          try { delete habit.snoozeUntil; } catch (_) {}
-        }
+        try { delete habit.snoozeUntil; } catch (_) {}
       }
 
-      // User explicitly Add’d from Coming up → on Active until finished for *today*
-      // (even if not normally due / out of season — early laundry, pull HVAC early, etc.)
+      // Manual “Add to Today” — stay Active until finished today
       if (typeof isPulledToToday === 'function' && isPulledToToday(habit)) {
         if (typeof isCompletedToday === 'function' && isCompletedToday(habit.id)) return false;
-        if (typeof hasCompletionOnCalendarDay === 'function'
-            && hasCompletionOnCalendarDay(habit.id, today)) {
-          const preferred = typeof getHabitWeekdays === 'function' ? getHabitWeekdays(habit) : null;
-          const need = typeof getTimesPerPeriod === 'function' ? getTimesPerPeriod(habit) : 1;
-          // Preferred-day or single need: one log today finishes Active
-          if ((preferred && preferred.length) || need <= 1) {
-            if (typeof isDailyTask === 'function' && isDailyTask(habit) && need > 1) {
-              return typeof isNextMultiRepDueOn === 'function' ? isNextMultiRepDueOn(habit, today) : false;
-            }
-            return false;
-          }
-        }
         return true;
       }
 
-      // Preferred days (trash Sunday, vitamins Mon/Wed/Fri): HARD GATE before carry/period.
-      // Off assigned days → never due (Coming up only), even if last Sunday was missed.
-      // Only pullToToday above can put them on Active early.
-      const preferred = typeof getHabitWeekdays === 'function' ? getHabitWeekdays(habit) : null;
-      if (preferred && preferred.length) {
-        // Mid-week trash etc. must not land on Active (Coming up only)
-        if (!habitMatchesWeekdayPreference(habit, today)) return false;
-        // Period already satisfied (early Friday complete, or all preferred days hit)
-        try {
-          if (typeof isPeriodFullyComplete === 'function' && isPeriodFullyComplete(habit, today)) {
-            return false;
-          }
-        } catch (_) { /* ignore */ }
-        // Already logged today
-        if (typeof hasCompletionOnCalendarDay === 'function'
-            && hasCompletionOnCalendarDay(habit.id, today)) {
-          return false;
-        }
-        // Daily preferred (Mon–Fri only): multi× per day when set
-        if (typeof isDailyTask === 'function' && isDailyTask(habit)) {
-          return typeof isNextMultiRepDueOn === 'function' ? isNextMultiRepDueOn(habit, today) : true;
-        }
-        // Weekly/monthly preferred: due only on the scheduled day if still open
-        return typeof isNextMultiRepDueOn === 'function' ? isNextMultiRepDueOn(habit, today) : true;
-      }
+      if (typeof isHabitInSeason === 'function' && !isHabitInSeason(habit, today)) return false;
 
-      // Seasonal chores stay off Today until their window (e.g. heating tune-up in fall)
-      if (!isHabitInSeason(habit, today)) return false;
-
-      // Unfinished routines stay due every day until checked off (period rollover).
-      // Preferred-day habits never reach here (gated above).
-      if (typeof habitHasCarryForwardDue === 'function' && habitHasCarryForwardDue(habit)) {
-        if (isOneOffTask(habit)) return comps.length === 0;
-        return typeof isNextMultiRepDueOn === 'function' ? isNextMultiRepDueOn(habit, today) : true;
-      }
-
-      if (isOneOffTask(habit)) {
-        // Finished one-offs never return to Active (even if a completion row was lost later)
-        if (typeof isOneOffFullyDone === 'function' && isOneOffFullyDone(habit)) return false;
-        return comps.length === 0;
-      }
-      
-      if (habit.interval_days == null || habit.interval_days <= 1) {
-        // Daily multi-log (2×/day) stays due until all N are logged today
-        return typeof isNextMultiRepDueOn === 'function' ? isNextMultiRepDueOn(habit, today) : true;
-      }
-
-      if (!isHabitActiveThisPeriod(habit)) return false;
-      // N× week/month: only when the next spaced rep is due (or catch-up)
-      return typeof isNextMultiRepDueOn === 'function' ? isNextMultiRepDueOn(habit, today) : true;
+      const next = typeof ensureHabitNextDueDate === 'function'
+        ? ensureHabitNextDueDate(habit, today)
+        : (habit.nextDueDate || today);
+      return String(next) <= String(today);
     }
 
     /**
@@ -52623,45 +53158,19 @@
      *  Soft “Later” and finished one-offs never return to Active.
      *  Overdue / carry-forward routines never hide in Coming up — stay until checked off. */
     function belongsOnTodayTab(habit) {
-      // Critical: completed once-only Taskers must not reappear after midnight / pull flags
       try {
         if (typeof isOneOffFullyDone === 'function' && isOneOffFullyDone(habit)) return false;
       } catch (_) { /* ignore */ }
-      // Finished for today (incl. preferred-day log) never stays on Active
-      try {
-        if (typeof isCompletedToday === 'function' && isCompletedToday(habit.id)) return false;
-      } catch (_) { /* ignore */ }
-      // Soft Later — hide from Active until tomorrow (or until they Add again)
       try {
         if (typeof isHabitDeferredToLater === 'function' && isHabitDeferredToLater(habit)) return false;
       } catch (_) { /* ignore */ }
-
-      // Preferred-day hard gate (Put Trash on the Curb · Sunday): off assigned days
-      // → Coming up only. Explicit Add (pullToToday) still wins for early complete.
-      try {
-        const pref = typeof getHabitWeekdays === 'function' ? getHabitWeekdays(habit) : null;
-        if (pref && pref.length
-            && typeof habitMatchesWeekdayPreference === 'function'
-            && !habitMatchesWeekdayPreference(habit)) {
-          return isPulledToToday(habit);
-        }
-      } catch (_) { /* ignore */ }
-
-      // User tapped Add on Coming up — stay on Active until finished today
-      if (isPulledToToday(habit)) return true;
-
-      if (!isDueToday(habit)) return false;
-      // Keep unfinished overdue work on Task (don't park heavy weekly chores that are late)
-      // Preferred-day already gated above — this is for non-preferred weekly/monthly only.
-      try {
-        const pref = typeof getHabitWeekdays === 'function' ? getHabitWeekdays(habit) : null;
-        if (!(pref && pref.length)) {
-          if (typeof isHabitOverdue === 'function' && isHabitOverdue(habit)) return true;
-          if (typeof habitHasCarryForwardDue === 'function' && habitHasCarryForwardDue(habit)) return true;
-        }
-      } catch (_) { /* ignore */ }
-      if (isParkedForSummary(habit)) return false;
-      return true;
+      if (isPulledToToday(habit)) {
+        try {
+          if (typeof isCompletedToday === 'function' && isCompletedToday(habit.id)) return false;
+        } catch (_) { /* ignore */ }
+        return true;
+      }
+      return !!isDueToday(habit);
     }
 
     function clearExpiredPullToTodayFlags(opts = {}) {
@@ -53874,7 +54383,7 @@
         </div>
         <div class="flex items-center gap-1.5 flex-shrink-0 row-inline-actions">
           ${canAdd
-            ? `<button type="button" class="later-add-today-btn text-[11px] font-semibold text-white px-2.5 py-1.5 rounded-xl bg-harbor-primary shadow-sm" data-pull="1" aria-label="Add ${titleSafe} to Task">Add</button>`
+            ? `<button type="button" class="later-add-today-btn text-[11px] font-semibold text-white px-2.5 py-1.5 rounded-xl bg-harbor-primary shadow-sm" data-pull="1" aria-label="Add ${titleSafe} to Today">Add to Today</button>`
             : ''}
           <button type="button" class="text-[10px] font-semibold text-harbor-muted px-2 py-1.5 rounded-xl border border-harbor-border bg-harbor-raised/80" data-edit="1" aria-label="Edit ${titleSafe}">Edit</button>
         </div>
@@ -53933,7 +54442,7 @@
       const wrap = document.createElement('div');
       wrap.className = 'later-routines-block mt-3';
       wrap.setAttribute('role', 'region');
-      wrap.setAttribute('aria-label', 'Coming up');
+      wrap.setAttribute('aria-label', 'Upcoming');
 
       const toggle = document.createElement('button');
       toggle.type = 'button';
@@ -53942,7 +54451,7 @@
       toggle.innerHTML = `
         <span class="text-base flex-shrink-0" aria-hidden="true">🗓️</span>
         <span class="flex-1 min-w-0">
-          <span class="block text-xs font-semibold text-harbor-text">Coming up</span>
+          <span class="block text-xs font-semibold text-harbor-text">Upcoming</span>
           <span class="block text-[10px] text-harbor-muted mt-0.5">${n} · tap to ${laterRoutinesExpanded ? 'hide' : 'show'}</span>
         </span>
         <i class="fa-solid fa-chevron-${laterRoutinesExpanded ? 'up' : 'down'} text-[10px] text-harbor-muted flex-shrink-0" aria-hidden="true"></i>
@@ -53953,7 +54462,29 @@
       if (laterRoutinesExpanded) {
         const list = document.createElement('div');
         list.className = 'mt-2 space-y-2';
-        laterItems.forEach(item => renderLaterChoreDiscoverCard(item, list));
+        const groups = [
+          { key: 'tomorrow', label: 'Tomorrow' },
+          { key: 'this-week', label: 'This week' },
+          { key: 'later', label: 'Later' },
+          { key: 'deferred', label: 'Later today' },
+          { key: 'person-filter', label: 'Other people' },
+          { key: 'out-of-season', label: 'Out of season' }
+        ];
+        const used = new Set();
+        groups.forEach((g) => {
+          const rows = laterItems.filter((it) => it.kind === g.key);
+          if (!rows.length) return;
+          used.add(g.key);
+          const head = document.createElement('div');
+          head.className = 'text-[10px] font-semibold uppercase tracking-wide text-harbor-muted px-1 pt-2 pb-1';
+          head.textContent = g.label;
+          list.appendChild(head);
+          rows.forEach((item) => renderLaterChoreDiscoverCard(item, list));
+        });
+        laterItems.forEach((item) => {
+          if (used.has(item.kind)) return;
+          renderLaterChoreDiscoverCard(item, list);
+        });
         wrap.appendChild(list);
         if (typeof bindSwipeRows === 'function') bindSwipeRows(list, { force: true });
       }
@@ -54697,14 +55228,12 @@
         const laterN = laterItems.length;
         const title = !hasAnyHabits
           ? 'Today'
-          : parkedDue || laterN
-            ? 'Today is light'
-            : 'All clear';
+          : 'Nothing due today. Enjoy the breathing room.';
         const sub = !hasAnyHabits
           ? 'Add one small thing — Harbor will sort it by energy.'
-          : parkedDue || laterN
-            ? (laterN ? `${laterN} in Later.` : 'Heavier stuff can wait.')
-            : 'Nice work. Rest, or add something for later.';
+          : laterN
+            ? `${laterN} upcoming.`
+            : 'No upcoming tasks.';
         const actions = !hasAnyHabits
           ? `<div class="harbor-empty-actions">
             <button type="button" class="chip-add-btn" onclick="showQuickTaskModal({ mode: 'habit' })"><i class="fa-solid fa-plus"></i>Add</button>
@@ -54897,6 +55426,9 @@
           try {
             if (typeof repairHabitPreferredWeekdays === 'function') repairHabitPreferredWeekdays();
           } catch (_) { /* ignore */ }
+          try {
+            if (typeof ensureAllHabitsHaveNextDueDate === 'function') ensureAllHabitsHaveNextDueDate();
+          } catch (_) { /* ignore */ }
         }
         const day = typeof todayStr === 'function' ? todayStr() : '';
         if (!force && !_taskRepairsDirty && day && day === _taskRepairsDay) return;
@@ -55025,6 +55557,14 @@
       const next = comps.slice();
       next.splice(removeIdx, 1);
       state.completions[hid] = next;
+      try {
+        if (habit.nextDueBeforeComplete) {
+          habit.nextDueDate = habit.nextDueBeforeComplete;
+          delete habit.nextDueBeforeComplete;
+        } else if (removedDate) {
+          habit.nextDueDate = removedDate;
+        }
+      } catch (_) { /* ignore */ }
       if (String(hid) !== idKey && state.completions[idKey] === comps) {
         state.completions[idKey] = next;
       }
@@ -55171,6 +55711,16 @@
       comps.push(today);
       // Do NOT unique-sort: multi×/day needs duplicate same-day entries (2/2 feed dogs)
       comps.sort();
+      let advancedNextDue = null;
+      try {
+        const priorDue = typeof getHabitNextDueDate === 'function'
+          ? getHabitNextDueDate(habit, today)
+          : (habit.nextDueDate || today);
+        habit.nextDueBeforeComplete = priorDue;
+        if (typeof advanceHabitNextDueDate === 'function') {
+          advancedNextDue = advanceHabitNextDueDate(habit, today);
+        }
+      } catch (_) { /* ignore */ }
       const afterCount = doneCount + 1;
       // Preferred-day catch-up (e.g. Mon complete after missed Sat): may not raise
       // period preferred-hit count, but still finishes the open overdue for today.
@@ -55288,12 +55838,13 @@
           if (typeof undoCompleteHabit === 'function') undoCompleteHabit(habitId);
         }
       };
-      // Preferred-day: toast can still show week progress (2/3) while leaving Active
       const preferredDays = typeof getHabitWeekdays === 'function' ? getHabitWeekdays(habit) : null;
-      if (need > 1 && !fullyDone && !(preferredDays && preferredDays.length && doneForTodayUi)) {
+      if (advancedNextDue && String(advancedNextDue) > String(today)
+          && typeof formatNextDueWeekday === 'function') {
+        showToast(`Next time: ${formatNextDueWeekday(advancedNextDue)}`, 'success', { action: undoAction, durationMs: 5200 });
+      } else if (need > 1 && !fullyDone && !(preferredDays && preferredDays.length && doneForTodayUi)) {
         showToast(`${habit.title} · ${afterCount}/${need} ${periodLabel}`, 'success', { action: undoAction, durationMs: 5200 });
       } else if (fullyDone && pointsEarned > 0 && typeof formatHarborEarnToast === 'function') {
-        // Lead with the dopamine line (treat + %) so points feel like progress
         showToast(`${formatHarborEarnToast(pointsEarned, habit.title)}${passMsg}`, 'success', { action: undoAction, durationMs: 5200 });
       } else if (preferredDays && preferredDays.length && doneForTodayUi && !fullyDone) {
         showToast(`🔥 ${habit.title} · done for today · ${afterCount}/${need} ${periodLabel}${passMsg}`, 'success', { action: undoAction, durationMs: 5200 });
